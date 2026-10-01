@@ -1,7 +1,7 @@
-import { createAssistantTasks } from './assistant/tasks.js';
+import { createAssistantRuns, isTerminal, isWaiting } from './assistant/runs.js';
 import { createAssistantApi } from './assistant/api.js';
 import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
-import { escapeHtml, formatChatDate } from './assistant/presentation.js';
+import { escapeHtml, formatChatDate, quizLink } from './assistant/presentation.js';
 import { currentBookPageContext, matchesOwnedStatus, populateContextOptions } from './assistant/context-options.js';
 import {
     createLatestRequestGate,
@@ -67,7 +67,6 @@ import {
     let initialized = false;
     const chatsUrl = '/Assistant/Chats';
     const chatHistoryUrl = (threadId) => `/Assistant/Chats/${threadId}/History`;
-    const chatSendUrl = (threadId) => `/Assistant/Chats/${threadId}/Send`;
     const chatUrl = (threadId) => `/Assistant/Chats/${threadId}`;
     const applyUrl = (messageId) => `/Assistant/Apply/${messageId}`;
     const rejectUrl = (messageId) => `/Assistant/Reject/${messageId}`;
@@ -482,7 +481,7 @@ import {
         selection.historyLoaded = true;
         submit.disabled = pendingSends.has(threadId);
         if (!contextPersisted) setStatus('Could not save chat context.', true);
-        else if (pendingSends.has(threadId)) setStatus('Thinking...');
+        else if (pendingSends.has(threadId)) setStatus(t('Client.AssistantRunWorking', 'Working…'));
         else if (sendErrors.has(threadId)) setStatus(sendErrors.get(threadId), true);
         else setStatus('');
     };
@@ -567,9 +566,64 @@ import {
         }
     };
 
+    const bubble = (text) => {
+        const body = document.createElement('div');
+        body.className = 'assistant-bubble';
+        body.dir = 'auto';
+        body.innerHTML = escapeHtml(text).replace(/\n/g, '<br />');
+        return body;
+    };
+
+    const toolIcons = {
+        completed: 'check_circle',
+        error: 'error',
+        rejected: 'block',
+        superseded: 'remove_circle',
+        awaiting_approval: 'pending',
+        awaiting_input: 'help',
+        approved: 'pending',
+        pending: 'progress_activity',
+    };
+
+    // A reply is its parts in order: text, and runs of tool activity shown as one list each.
+    const renderParts = (container, parts) => {
+        let activity = null;
+        for (const part of parts || []) {
+            if (part.type === 'quiz_link') {
+                activity = null;
+                const link = quizLink(document, part);
+                if (link) container.appendChild(link);
+                continue;
+            }
+            if (part.type === 'text') {
+                activity = null;
+                if (part.text) container.appendChild(bubble(part.text));
+                continue;
+            }
+            if (part.type !== 'tool') continue;
+            if (!activity) {
+                activity = document.createElement('ul');
+                activity.className = 'assistant-activity';
+                container.appendChild(activity);
+            }
+            const item = document.createElement('li');
+            item.className = `assistant-activity-item is-${part.state || 'pending'}`;
+            item.dir = 'auto';
+            const icon = document.createElement('span');
+            icon.className = 'material-symbols-outlined';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = toolIcons[part.state] || 'progress_activity';
+            const label = document.createElement('span');
+            label.textContent = part.title || part.tool || '';
+            item.append(icon, label);
+            activity.appendChild(item);
+        }
+    };
+
     const renderMessage = (message) => {
         const hasPendingChanges = Array.isArray(message.pendingChanges) && message.pendingChanges.length > 0;
-        if (!message.text && !hasPendingChanges) {
+        const hasParts = Array.isArray(message.parts) && message.parts.length > 0;
+        if (!message.text && !hasPendingChanges && !hasParts) {
             return;
         }
 
@@ -579,13 +633,16 @@ import {
         row.className = `assistant-message assistant-message-${message.role}`;
         row.dataset.messageId = message.id;
         if (message.turnId) row.dataset.turnId = message.turnId;
+        if (message.runId) row.dataset.runId = message.runId;
 
-        if (message.text) {
-            const body = document.createElement('div');
-            body.className = 'assistant-bubble';
-            body.dir = 'auto';
-            body.innerHTML = escapeHtml(message.text).replace(/\n/g, '<br />');
-            row.appendChild(body);
+        if (hasParts) {
+            renderParts(row, message.undone ? message.parts.filter(part => part.type !== 'quiz_link') : message.parts);
+        } else if (message.text) {
+            row.appendChild(bubble(message.text));
+        }
+
+        if (message.canUndo || message.undone) {
+            row.appendChild(renderUndo(message.runId, message.undone));
         }
 
         if (hasPendingChanges) {
@@ -939,76 +996,205 @@ import {
         }
     };
 
-    let taskControls;
-    const taskStatusLabels = {
-        awaiting_input: ['Client.AssistantTaskAwaitingInput', 'Waiting for your reply'],
-        awaiting_approval: ['Client.AssistantTaskAwaitingApproval', 'Waiting for your review'],
-        paused: ['Client.AssistantTaskPaused', 'Paused'],
-        failed: ['Client.AssistantTaskFailed', 'Could not finish'],
+    const runStatusText = {
+        queued: () => t('Client.AssistantRunQueued', 'Queued'),
+        running: () => t('Client.AssistantRunWorking', 'Working…'),
+        retry_wait: () => t('Client.AssistantRunRetrying', 'Retrying soon'),
+        awaiting_input: () => t('Client.AssistantRunAwaitingInput', 'Waiting for your answer'),
+        awaiting_approval: () => t('Client.AssistantRunAwaitingApproval', 'Waiting for your approval'),
+        paused: () => t('Client.AssistantRunPaused', 'Paused'),
+        cancelled: () => t('Client.AssistantRunStopped', 'Stopped'),
+        failed: () => t('Client.AssistantRunFailed', 'Could not finish'),
     };
-    const taskStatusLabel = status => taskStatusLabels[status] ? t(...taskStatusLabels[status]) : status;
-    const durableTasks = createAssistantTasks({
+
+    const button = (label, className, onClick) => {
+        const element = document.createElement('button');
+        element.type = 'button';
+        element.className = className;
+        element.textContent = label;
+        element.addEventListener('click', async () => {
+            element.disabled = true;
+            try {
+                await onClick();
+            } catch (error) {
+                setStatus(error.message || t('Client.GenericError', 'Something went wrong. Please try again.'), true);
+                element.disabled = false;
+            }
+        });
+        return element;
+    };
+
+    const renderUndo = (runId, undone) => {
+        const bar = document.createElement('div');
+        bar.className = 'assistant-undo';
+        if (undone) {
+            const tag = document.createElement('span');
+            tag.className = 'assistant-pending-tag muted';
+            tag.textContent = t('Client.AssistantUndone', 'Changes undone');
+            bar.appendChild(tag);
+            return bar;
+        }
+        bar.appendChild(button(t('Client.AssistantUndo', 'Undo changes'), 'btn-secondary', async () => {
+            if (!window.confirm(t('Client.AssistantUndoConfirm', 'Undo every change from this reply?'))) return;
+            const result = await runs.undo(runId);
+            setStatus(result?.kept
+                ? t('Client.AssistantUndoKept', '{0} undone · {1} kept because you changed them', result.undone, result.kept)
+                : t('Client.AssistantUndone', 'Changes undone'));
+            if (chatSelection) await loadHistory(chatSelection);
+        }));
+        return bar;
+    };
+
+    const renderPlan = (plan) => {
+        const section = document.createElement('div');
+        section.className = 'assistant-plan';
+        const heading = document.createElement('div');
+        heading.className = 'assistant-plan-heading';
+        heading.textContent = t('Client.AssistantPlan', 'Plan');
+        const list = document.createElement('ol');
+        for (const item of plan) {
+            const entry = document.createElement('li');
+            entry.className = `is-${item.status}`;
+            entry.dir = 'auto';
+            entry.textContent = item.text;
+            list.appendChild(entry);
+        }
+        section.append(heading, list);
+        return section;
+    };
+
+    const renderQuestion = (run) => {
+        const card = document.createElement('div');
+        card.className = 'assistant-question';
+        const question = document.createElement('p');
+        question.dir = 'auto';
+        question.textContent = run.question.question;
+        card.appendChild(question);
+        if (run.question.options.length) {
+            const options = document.createElement('div');
+            options.className = 'assistant-question-options';
+            const chosen = new Set();
+            for (const option of run.question.options) {
+                options.appendChild(button(option, 'btn-secondary', async () => {
+                    if (!run.question.multiple) {
+                        await runs.answer(run.threadId, [option]);
+                        return;
+                    }
+                    chosen.add(option);
+                }));
+            }
+            card.appendChild(options);
+            if (run.question.multiple) {
+                card.appendChild(button(t('Client.AssistantAnswer', 'Answer'), 'btn-submit', () => runs.answer(run.threadId, [...chosen])));
+            }
+        }
+        const hint = document.createElement('small');
+        hint.textContent = t('Client.AssistantAnswerPlaceholder', 'Or type your own answer');
+        card.appendChild(hint);
+        return card;
+    };
+
+    const renderApproval = (run) => {
+        const card = document.createElement('div');
+        card.className = 'assistant-pending-card';
+        const heading = document.createElement('div');
+        heading.className = 'assistant-pending-heading';
+        heading.textContent = t('Client.AssistantApprovalTitle', 'Approve these changes?');
+        const list = document.createElement('ul');
+        list.className = 'assistant-pending-list';
+        for (const change of run.approval.changes) {
+            const item = document.createElement('li');
+            item.dir = 'auto';
+            item.textContent = change.summary;
+            list.appendChild(item);
+        }
+        const reason = document.createElement('input');
+        reason.type = 'text';
+        reason.className = 'form-input';
+        reason.maxLength = 500;
+        reason.placeholder = t('Client.AssistantDeclineReason', 'Why not? (optional)');
+        const actions = document.createElement('div');
+        actions.className = 'assistant-pending-actions';
+        actions.append(
+            button(t('Client.AssistantApprove', 'Approve'), 'btn-submit', () => runs.approve(run.threadId)),
+            button(t('Client.AssistantApproveAlways', 'Always allow in this chat'), 'btn-secondary', () => runs.approve(run.threadId, true)),
+            button(t('Client.AssistantDecline', 'Decline'), 'btn-secondary', () => runs.reject(run.threadId, reason.value.trim())));
+        card.append(heading, list, reason, actions);
+        return card;
+    };
+
+    // One card per run, rebuilt from each update: the server's view is the whole truth.
+    const renderRun = (run) => {
+        if (!transcript) return;
+        let row = transcript.querySelector(`[data-live-run="${run.id}"]`);
+        if (!row) {
+            // A reply already in the history for this run is replaced by the live card.
+            transcript.querySelectorAll(`.assistant-message-model[data-run-id="${run.id}"]`).forEach(node => node.remove());
+            if (empty) empty.remove();
+            row = document.createElement('article');
+            row.className = 'assistant-message assistant-message-model assistant-run';
+            row.dataset.liveRun = run.id;
+            transcript.appendChild(row);
+        }
+        row.replaceChildren();
+        renderParts(row, run.undone ? run.parts.filter(part => part.type !== 'quiz_link') : run.parts);
+        if (run.plan?.length) row.appendChild(renderPlan(run.plan));
+        if (run.status === 'awaiting_input' && run.question) row.appendChild(renderQuestion(run));
+        if (run.status === 'awaiting_approval' && run.approval) row.appendChild(renderApproval(run));
+
+        const footer = document.createElement('div');
+        footer.className = 'assistant-run-status';
+        const label = runStatusText[run.status]?.();
+        if (label) {
+            const text = document.createElement('span');
+            text.textContent = run.reason && (isWaiting(run.status) || run.status === 'failed') ? `${label} · ${run.reason}` : label;
+            footer.appendChild(text);
+        }
+        if (run.savedChanges > 0) {
+            const saved = document.createElement('span');
+            saved.className = 'assistant-run-saved';
+            saved.textContent = t('Client.AssistantSaved', '{0} saved', run.savedChanges);
+            footer.appendChild(saved);
+        }
+        if (!isTerminal(run.status)) {
+            footer.appendChild(button(t('Client.Stop', 'Stop'), 'btn-secondary', () => runs.stop(run.threadId)));
+        }
+        if (run.status === 'paused') {
+            footer.appendChild(button(t('Client.AssistantResume', 'Resume'), 'btn-submit', () => runs.resume(run.threadId)));
+        }
+        if (footer.childElementCount) row.appendChild(footer);
+        transcript.scrollTop = transcript.scrollHeight;
+    };
+
+    const runs = createAssistantRuns({
         request: async (url, options = {}) => {
-            const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST') });
-            const data = await response.json().catch(() => null);
+            const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST' && !!options.body) });
+            // Drain empty responses too, so the browser can finish the request normally.
+            let data = null;
+            if (response.status === 204) await response.text();
+            else data = await response.json().catch(() => null);
             if (!response.ok) {
-                const error = new Error(data?.detail || data?.title || 'Could not update assistant task.');
+                const error = new Error(localizedProblem(data, response, 'Client.AssistantFailed', data?.detail || 'The assistant could not respond.'));
                 error.status = response.status;
                 throw error;
             }
             return data;
         },
         isCurrent: threadId => activeThreadId === threadId,
-        onCompleted: async () => { if (chatSelection) await loadHistory(chatSelection); await loadChats(); },
-        onProgress: task => {
-            if (!task) { if (taskControls) taskControls.hidden = true; return; }
-            const working = ['queued', 'running', 'retry_wait'].includes(task.status);
-            const needsAction = ['awaiting_input', 'awaiting_approval', 'paused'].includes(task.status);
-            if (working) setStatus('Thinking...');
-            else if (task.status === 'failed') setStatus(task.reason || taskStatusLabel(task.status), true);
-            else if (needsAction) setStatus(taskStatusLabel(task.status));
-            else setStatus('');
-
-            if (!working && !needsAction) {
-                if (taskControls) taskControls.hidden = true;
-                return;
-            }
-            if (!taskControls) {
-                taskControls = document.createElement('div');
-                taskControls.className = 'assistant-task-progress';
-                form.before(taskControls);
-            }
-            taskControls.hidden = false;
-            taskControls.replaceChildren();
-            if (needsAction && task.reason) {
-                const reason = document.createElement('p'); reason.textContent = task.reason; taskControls.appendChild(reason);
-            }
-            for (const [command, label, visible] of [
-                ['cancel', t('Client.Stop', 'Stop'), true],
-                ['resume', t('Client.AssistantTaskResume', 'Resume'), ['paused', 'awaiting_input'].includes(task.status)],
-                ['approve', t('Client.AssistantTaskApprove', 'Apply reviewed changes'), task.status === 'awaiting_approval'],
-            ]) {
-                if (!visible) continue;
-                const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
-                button.addEventListener('click', async () => {
-                    button.disabled = true;
-                    try { await durableTasks.command(task.threadId, command); }
-                    catch (error) { setStatus(error.message, true); await durableTasks.discover(task.threadId); }
-                });
-                taskControls.appendChild(button);
-            }
-            if (task.approvalChanges?.length) {
-                const proposals = document.createElement('ul');
-                for (const change of task.approvalChanges) {
-                    const item = document.createElement('li');
-                    item.textContent = change.summary; proposals.appendChild(item);
-                }
-                taskControls.appendChild(proposals);
+        onUpdate: async run => {
+            renderRun(run);
+            submit.disabled = false;
+            if (isTerminal(run.status)) {
+                setStatus(run.status === 'failed' ? (run.reason || runStatusText.failed()) : '', run.status === 'failed');
+                if (chatSelection?.threadId === run.threadId) await loadHistory(chatSelection, false);
+                await loadChats();
+            } else {
+                setStatus('');
             }
         },
     });
 
-    const loadHistory = async (selection) => {
+    const loadHistory = async (selection, discover = true) => {
         if (!ownsSelection(selection)) return false;
         const { threadId } = selection;
         try {
@@ -1022,7 +1208,11 @@ import {
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
-            void durableTasks.discover(threadId).catch(() => { /* Polling can reconnect later. */ });
+            if (discover) {
+                void runs.discover(threadId)
+                    .then(run => { if (run && !isTerminal(run.status) && ownsSelection(selection)) renderRun(run); })
+                    .catch(() => { /* The next open reconnects to the run. */ });
+            }
             return true;
         } catch (err) {
             return false;
@@ -1187,59 +1377,28 @@ import {
         });
         textarea.value = '';
         submit.disabled = true;
-        setStatus('Thinking...');
+        setStatus(t('Client.AssistantRunWorking', 'Working…'));
         const clientStartedAt = performance.now();
 
         try {
-            if (await durableTasks.send(threadId, {
-                message, contextQuizId: quizId, focusedWordId,
+            const run = await runs.send(threadId, {
+                message,
+                contextQuizId: quizId,
+                focusedWordId,
                 transcriptId: materialKind === 'transcript' ? materialId : null,
                 bookDocumentId: materialKind === 'book' ? materialId : null,
-                documentContext, transcriptContext,
-            })) return;
-            const response = await fetch(chatSendUrl(threadId), {
-                method: 'POST',
-                headers: requestHeaders(true),
-                body: JSON.stringify({
-                    message,
-                    contextQuizId: quizId,
-                    focusedWordId,
-                    transcriptId: materialKind === 'transcript' ? materialId : null,
-                    bookDocumentId: materialKind === 'book' ? materialId : null,
-                    documentContext,
-                    transcriptContext,
-                }),
+                documentContext,
+                transcriptContext,
             });
-            const data = await response.json().catch(() => null);
-            if (!response.ok) {
-                const sendError = localizedProblem(data, response, 'Client.AssistantFailed', 'The assistant could not respond.');
-                sendErrors.set(threadId, sendError);
-                if (ownsSelection(selection)) {
-                    setStatus(sendError, true);
-                }
-                return;
-            }
-            if (!data) throw new Error('The assistant returned an unreadable response. Reopen the chat to check its status.');
-            if (ownsSelection(selection)) renderMessage({
-                id: data.assistantMessageId,
-                turnId: data.turnId,
-                role: 'model',
-                text: data.assistantText,
-                toolEvents: data.toolEvents,
-                pendingChanges: data.pendingChanges,
-                status: data.status,
-                feedback: data.feedback,
-                canRate: true,
-            });
+            if (run && ownsSelection(selection)) renderRun(run);
             const clientDurationMs = performance.now() - clientStartedAt;
-            if (data.turnId && validClientDuration(clientDurationMs)) {
-                void api.json(clientMetricsUrl(data.turnId), {
+            if (run?.turnId && validClientDuration(clientDurationMs)) {
+                void api.json(clientMetricsUrl(run.turnId), {
                     method: 'PUT',
                     body: JSON.stringify({ clientDurationMs }),
                 }).catch(() => { /* Timing is best-effort and never blocks the reply. */ });
             }
-            await loadChats();
-            if (ownsSelection(selection)) setStatus('');
+            void loadChats();
         } catch (err) {
             // fetch rejects with a TypeError worded by the browser ("Failed to fetch"). Show
             // the localized network message then; errors raised here keep their own text.
@@ -1247,7 +1406,8 @@ import {
                 ? t('Client.AssistantNetwork', 'Network error talking to the assistant.')
                 : err.message;
             if (ownsSelection(selection) && !textarea.value) textarea.value = message;
-            void durableTasks.discover(threadId).catch(() => { /* Reconnect when the user reopens the chat. */ });
+            // The request may have reached the server before the connection dropped.
+            void runs.discover(threadId).catch(() => { /* Reconnect when the user reopens the chat. */ });
             sendErrors.set(threadId, sendError);
             if (ownsSelection(selection)) {
                 setStatus(sendError, true);
@@ -1258,7 +1418,7 @@ import {
                 submit.disabled = false;
                 if (canFocusAssistant()) textarea.focus();
             } else if (activeThreadId === threadId) {
-                // The user returned while this turn was pending. Reload the stored
+                // The user returned while this send was pending. Reload the stored
                 // conversation instead of appending to a newer history snapshot.
                 await selectChat(threadId);
             }

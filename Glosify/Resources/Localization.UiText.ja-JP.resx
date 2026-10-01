@@ -891,6 +891,28 @@
   <data name="Client.AssistantNetwork" xml:space="preserve">
     <value>アシスタントとの通信中にネットワークエラーが発生しました。</value>
   </data>
+  <data name="Client.AssistantRunQueued" xml:space="preserve"><value>待機中</value></data>
+  <data name="Client.AssistantRunWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="Client.AssistantRunRetrying" xml:space="preserve"><value>まもなく再試行します</value></data>
+  <data name="Client.AssistantRunAwaitingInput" xml:space="preserve"><value>回答を待っています</value></data>
+  <data name="Client.AssistantRunAwaitingApproval" xml:space="preserve"><value>承認を待っています</value></data>
+  <data name="Client.AssistantRunPaused" xml:space="preserve"><value>一時停止中</value></data>
+  <data name="Client.AssistantRunStopped" xml:space="preserve"><value>停止しました</value></data>
+  <data name="Client.AssistantRunFailed" xml:space="preserve"><value>完了できませんでした</value></data>
+  <data name="Client.AssistantResume" xml:space="preserve"><value>再開</value></data>
+  <data name="Client.AssistantApprove" xml:space="preserve"><value>承認</value></data>
+  <data name="Client.AssistantApproveAlways" xml:space="preserve"><value>このチャットでは常に許可</value></data>
+  <data name="Client.AssistantDecline" xml:space="preserve"><value>拒否</value></data>
+  <data name="Client.AssistantDeclineReason" xml:space="preserve"><value>理由（任意）</value></data>
+  <data name="Client.AssistantApprovalTitle" xml:space="preserve"><value>これらの変更を承認しますか？</value></data>
+  <data name="Client.AssistantAnswerPlaceholder" xml:space="preserve"><value>または自分で回答を入力</value></data>
+  <data name="Client.AssistantAnswer" xml:space="preserve"><value>回答</value></data>
+  <data name="Client.AssistantPlan" xml:space="preserve"><value>計画</value></data>
+  <data name="Client.AssistantUndo" xml:space="preserve"><value>変更を元に戻す</value></data>
+  <data name="Client.AssistantUndone" xml:space="preserve"><value>変更を元に戻しました</value></data>
+  <data name="Client.AssistantUndoKept" xml:space="preserve"><value>{0} 件を元に戻しました · 変更済みの {1} 件は保持しました</value></data>
+  <data name="Client.AssistantSaved" xml:space="preserve"><value>{0} 件を保存</value></data>
+  <data name="Client.AssistantUndoConfirm" xml:space="preserve"><value>この返信の変更をすべて元に戻しますか？</value></data>
   <data name="Client.PictureFailed" xml:space="preserve">
     <value>この画像からテキストを読み取れませんでした。</value>
   </data>
@@ -1670,61 +1692,4 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>苦手な内容を繰り返し、自分のペースで進みましょう。</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>的を絞ったクイズで復習し、残したい単語をAnkiに保存しましょう。</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>もっと多くの学び方を探す</value></data>
-  <data name="Client.AssistantTaskProgress" xml:space="preserve">
-    <value>{0} · 保存済みの変更 {1} 件</value>
-  </data>
-  <data name="Client.AssistantTaskResume" xml:space="preserve">
-    <value>再開</value>
-  </data>
-  <data name="Client.AssistantTaskApprove" xml:space="preserve">
-    <value>確認した変更を適用</value>
-  </data>
-  <data name="Client.AssistantTaskActivity" xml:space="preserve">
-    <value>アクティビティ · {0}/{1} 件の呼び出しを評価済み</value>
-  </data>
-  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
-    <value>{0}（信頼度 {1}%）</value>
-  </data>
-  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
-    <value>不確実: {0}</value>
-  </data>
-  <data name="Client.AssistantTaskReview" xml:space="preserve">
-    <value>{0}: {1} · レビュー: {2}</value>
-  </data>
-  <data name="Client.AssistantTaskQueued" xml:space="preserve">
-    <value>待機中</value>
-  </data>
-  <data name="Client.AssistantTaskRunning" xml:space="preserve">
-    <value>作業中</value>
-  </data>
-  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
-    <value>まもなく再試行</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
-    <value>返信を待っています</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
-    <value>確認を待っています</value>
-  </data>
-  <data name="Client.AssistantTaskPaused" xml:space="preserve">
-    <value>一時停止中</value>
-  </data>
-  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
-    <value>完了</value>
-  </data>
-  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
-    <value>停止済み</value>
-  </data>
-  <data name="Client.AssistantTaskFailed" xml:space="preserve">
-    <value>完了できませんでした</value>
-  </data>
-  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
-    <value>作成中</value>
-  </data>
-  <data name="Client.AssistantArtifactReady" xml:space="preserve">
-    <value>準備完了</value>
-  </data>
-  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
-    <value>未完了</value>
-  </data>
 </root>

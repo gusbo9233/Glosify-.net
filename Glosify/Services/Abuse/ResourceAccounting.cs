@@ -15,7 +15,7 @@ public static class ResourceAccounting
         "Quiz", "Word", "QuizSentence", "Collection", "AnkiCollection", "AnkiQuizLink",
         "AnkiNote", "AnkiCard", "AnkiReview", "QuizAttempt", "QuizAttemptItem",
         "BookDocument", "BookPage", "BookPageTranslation", "AssistantThread", "AssistantMessage",
-        "AssistantTask", "AssistantTaskCall", "AssistantTaskAttempt",
+        "AssistantRun", "AssistantPart", "AssistantChange", "AssistantToolEvaluation",
         "AssistantPendingChange", "AssistantFeedback", "AssistantFeedbackReason", "RealtimeTranslationCaptureEvent",
         "RealtimeTranslationTranscript", "RealtimeTranslationTranscriptSegment",
         "SavedTranslation", "SavedTranslationSession", "BlobCleanupRequest"];

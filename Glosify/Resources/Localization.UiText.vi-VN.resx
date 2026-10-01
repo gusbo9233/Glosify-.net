@@ -891,6 +891,28 @@
   <data name="Client.AssistantNetwork" xml:space="preserve">
     <value>Lỗi mạng khi trò chuyện với trợ lý.</value>
   </data>
+  <data name="Client.AssistantRunQueued" xml:space="preserve"><value>Đang chờ</value></data>
+  <data name="Client.AssistantRunWorking" xml:space="preserve"><value>Đang xử lý…</value></data>
+  <data name="Client.AssistantRunRetrying" xml:space="preserve"><value>Sẽ thử lại sớm</value></data>
+  <data name="Client.AssistantRunAwaitingInput" xml:space="preserve"><value>Đang chờ câu trả lời của bạn</value></data>
+  <data name="Client.AssistantRunAwaitingApproval" xml:space="preserve"><value>Đang chờ bạn phê duyệt</value></data>
+  <data name="Client.AssistantRunPaused" xml:space="preserve"><value>Đã tạm dừng</value></data>
+  <data name="Client.AssistantRunStopped" xml:space="preserve"><value>Đã dừng</value></data>
+  <data name="Client.AssistantRunFailed" xml:space="preserve"><value>Không thể hoàn tất</value></data>
+  <data name="Client.AssistantResume" xml:space="preserve"><value>Tiếp tục</value></data>
+  <data name="Client.AssistantApprove" xml:space="preserve"><value>Phê duyệt</value></data>
+  <data name="Client.AssistantApproveAlways" xml:space="preserve"><value>Luôn cho phép trong cuộc trò chuyện này</value></data>
+  <data name="Client.AssistantDecline" xml:space="preserve"><value>Từ chối</value></data>
+  <data name="Client.AssistantDeclineReason" xml:space="preserve"><value>Vì sao không? (không bắt buộc)</value></data>
+  <data name="Client.AssistantApprovalTitle" xml:space="preserve"><value>Phê duyệt các thay đổi này?</value></data>
+  <data name="Client.AssistantAnswerPlaceholder" xml:space="preserve"><value>Hoặc nhập câu trả lời của bạn</value></data>
+  <data name="Client.AssistantAnswer" xml:space="preserve"><value>Trả lời</value></data>
+  <data name="Client.AssistantPlan" xml:space="preserve"><value>Kế hoạch</value></data>
+  <data name="Client.AssistantUndo" xml:space="preserve"><value>Hoàn tác thay đổi</value></data>
+  <data name="Client.AssistantUndone" xml:space="preserve"><value>Đã hoàn tác thay đổi</value></data>
+  <data name="Client.AssistantUndoKept" xml:space="preserve"><value>Đã hoàn tác {0} · Giữ lại {1} vì bạn đã sửa chúng</value></data>
+  <data name="Client.AssistantSaved" xml:space="preserve"><value>Đã lưu {0}</value></data>
+  <data name="Client.AssistantUndoConfirm" xml:space="preserve"><value>Hoàn tác mọi thay đổi từ câu trả lời này?</value></data>
   <data name="Client.PictureFailed" xml:space="preserve">
     <value>Không thể đọc văn bản từ hình ảnh đó.</value>
   </data>
@@ -1670,61 +1692,4 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Ôn lại những ý cần luyện tập và tiến bộ theo nhịp độ của bạn.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Ôn tập bằng các bài kiểm tra trọng tâm, rồi lưu những từ bạn muốn vào Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Khám phá thêm cách học</value></data>
-  <data name="Client.AssistantTaskProgress" xml:space="preserve">
-    <value>{0} · {1} thay đổi đã lưu</value>
-  </data>
-  <data name="Client.AssistantTaskResume" xml:space="preserve">
-    <value>Tiếp tục</value>
-  </data>
-  <data name="Client.AssistantTaskApprove" xml:space="preserve">
-    <value>Áp dụng các thay đổi đã xem xét</value>
-  </data>
-  <data name="Client.AssistantTaskActivity" xml:space="preserve">
-    <value>Hoạt động · đã đánh giá {0}/{1} lệnh gọi</value>
-  </data>
-  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
-    <value>{0} (độ tin cậy {1}%)</value>
-  </data>
-  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
-    <value>Không chắc chắn: {0}</value>
-  </data>
-  <data name="Client.AssistantTaskReview" xml:space="preserve">
-    <value>{0}: {1} · Đánh giá: {2}</value>
-  </data>
-  <data name="Client.AssistantTaskQueued" xml:space="preserve">
-    <value>Đang chờ</value>
-  </data>
-  <data name="Client.AssistantTaskRunning" xml:space="preserve">
-    <value>Đang xử lý</value>
-  </data>
-  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
-    <value>Sắp thử lại</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
-    <value>Đang chờ bạn trả lời</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
-    <value>Đang chờ bạn xem xét</value>
-  </data>
-  <data name="Client.AssistantTaskPaused" xml:space="preserve">
-    <value>Đã tạm dừng</value>
-  </data>
-  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
-    <value>Đã xong</value>
-  </data>
-  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
-    <value>Đã dừng</value>
-  </data>
-  <data name="Client.AssistantTaskFailed" xml:space="preserve">
-    <value>Không thể hoàn tất</value>
-  </data>
-  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
-    <value>Đang tạo</value>
-  </data>
-  <data name="Client.AssistantArtifactReady" xml:space="preserve">
-    <value>Sẵn sàng</value>
-  </data>
-  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
-    <value>Chưa hoàn tất</value>
-  </data>
 </root>

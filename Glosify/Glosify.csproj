@@ -40,6 +40,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Assistant prompts are versioned text, reviewed like code and loaded at runtime. -->
+    <EmbeddedResource Include="Services/Ai/Assistant/Prompts/*.md"
+                      LogicalName="Glosify.Assistant.Prompts.%(Filename)%(Extension)" />
     <EmbeddedResource Update="Resources/Localization.UiText.*.resx"
                       WithCulture="false"
                       LogicalName="Glosify.Resources.%(Filename).resources" />

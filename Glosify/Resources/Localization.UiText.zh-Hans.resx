@@ -891,6 +891,28 @@
   <data name="Client.AssistantNetwork" xml:space="preserve">
     <value>与助手通信时网络错误。</value>
   </data>
+  <data name="Client.AssistantRunQueued" xml:space="preserve"><value>排队中</value></data>
+  <data name="Client.AssistantRunWorking" xml:space="preserve"><value>处理中…</value></data>
+  <data name="Client.AssistantRunRetrying" xml:space="preserve"><value>即将重试</value></data>
+  <data name="Client.AssistantRunAwaitingInput" xml:space="preserve"><value>等待你的回答</value></data>
+  <data name="Client.AssistantRunAwaitingApproval" xml:space="preserve"><value>等待你的批准</value></data>
+  <data name="Client.AssistantRunPaused" xml:space="preserve"><value>已暂停</value></data>
+  <data name="Client.AssistantRunStopped" xml:space="preserve"><value>已停止</value></data>
+  <data name="Client.AssistantRunFailed" xml:space="preserve"><value>无法完成</value></data>
+  <data name="Client.AssistantResume" xml:space="preserve"><value>继续</value></data>
+  <data name="Client.AssistantApprove" xml:space="preserve"><value>批准</value></data>
+  <data name="Client.AssistantApproveAlways" xml:space="preserve"><value>在此聊天中始终允许</value></data>
+  <data name="Client.AssistantDecline" xml:space="preserve"><value>拒绝</value></data>
+  <data name="Client.AssistantDeclineReason" xml:space="preserve"><value>为什么不？（可选）</value></data>
+  <data name="Client.AssistantApprovalTitle" xml:space="preserve"><value>批准这些更改？</value></data>
+  <data name="Client.AssistantAnswerPlaceholder" xml:space="preserve"><value>或输入你自己的回答</value></data>
+  <data name="Client.AssistantAnswer" xml:space="preserve"><value>回答</value></data>
+  <data name="Client.AssistantPlan" xml:space="preserve"><value>计划</value></data>
+  <data name="Client.AssistantUndo" xml:space="preserve"><value>撤销更改</value></data>
+  <data name="Client.AssistantUndone" xml:space="preserve"><value>已撤销更改</value></data>
+  <data name="Client.AssistantUndoKept" xml:space="preserve"><value>已撤销 {0} 项 · 保留 {1} 项（你已修改过）</value></data>
+  <data name="Client.AssistantSaved" xml:space="preserve"><value>已保存 {0} 项</value></data>
+  <data name="Client.AssistantUndoConfirm" xml:space="preserve"><value>撤销此回复中的所有更改？</value></data>
   <data name="Client.PictureFailed" xml:space="preserve">
     <value>无法从该图片中读取文本。</value>
   </data>
@@ -1670,61 +1692,4 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>重复练习需要巩固的知识，按自己的节奏进步。</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>通过重点测验复习，再将所需词汇保存到 Anki。</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>探索更多学习方式</value></data>
-  <data name="Client.AssistantTaskProgress" xml:space="preserve">
-    <value>{0} · 已保存 {1} 项更改</value>
-  </data>
-  <data name="Client.AssistantTaskResume" xml:space="preserve">
-    <value>继续</value>
-  </data>
-  <data name="Client.AssistantTaskApprove" xml:space="preserve">
-    <value>应用已审阅的更改</value>
-  </data>
-  <data name="Client.AssistantTaskActivity" xml:space="preserve">
-    <value>活动 · 已评估 {0}/{1} 次调用</value>
-  </data>
-  <data name="Client.AssistantTaskConfidence" xml:space="preserve">
-    <value>{0}（置信度 {1}%）</value>
-  </data>
-  <data name="Client.AssistantTaskUncertain" xml:space="preserve">
-    <value>不确定：{0}</value>
-  </data>
-  <data name="Client.AssistantTaskReview" xml:space="preserve">
-    <value>{0}：{1} · 审阅：{2}</value>
-  </data>
-  <data name="Client.AssistantTaskQueued" xml:space="preserve">
-    <value>排队中</value>
-  </data>
-  <data name="Client.AssistantTaskRunning" xml:space="preserve">
-    <value>处理中</value>
-  </data>
-  <data name="Client.AssistantTaskRetrying" xml:space="preserve">
-    <value>即将重试</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingInput" xml:space="preserve">
-    <value>等待您的回复</value>
-  </data>
-  <data name="Client.AssistantTaskAwaitingApproval" xml:space="preserve">
-    <value>等待您的审阅</value>
-  </data>
-  <data name="Client.AssistantTaskPaused" xml:space="preserve">
-    <value>已暂停</value>
-  </data>
-  <data name="Client.AssistantTaskCompleted" xml:space="preserve">
-    <value>已完成</value>
-  </data>
-  <data name="Client.AssistantTaskCancelled" xml:space="preserve">
-    <value>已停止</value>
-  </data>
-  <data name="Client.AssistantTaskFailed" xml:space="preserve">
-    <value>无法完成</value>
-  </data>
-  <data name="Client.AssistantArtifactBuilding" xml:space="preserve">
-    <value>创建中</value>
-  </data>
-  <data name="Client.AssistantArtifactReady" xml:space="preserve">
-    <value>已就绪</value>
-  </data>
-  <data name="Client.AssistantArtifactIncomplete" xml:space="preserve">
-    <value>未完成</value>
-  </data>
 </root>

@@ -31,34 +31,11 @@ internal sealed class AssistantContextResolver(
         (await languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Code;
 
     /// <summary>
-    /// The language quiz content should be translated into.
+    /// Existing quiz translations stay consistent. For a new quiz the model infers the
+    /// translation language from the user's own request; English is the fallback.
     /// </summary>
-    /// <remarks>
-    /// The selected quiz wins, because changing an existing quiz has to stay consistent with
-    /// the translations already in it. Null means genuinely unknown, and only then is asking
-    /// the user the right move.
-    /// </remarks>
-    public async Task<string?> ResolveSourceLanguageAsync(
-        Quiz? selectedQuiz,
-        string userId,
-        AssistantThread? thread,
-        CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(selectedQuiz?.SourceLanguage))
-        {
-            return selectedQuiz.SourceLanguage;
-        }
-
-        var preferred = await context.Users
-            .AsNoTracking()
-            .Where(user => user.Id == userId)
-            .Select(user => user.PreferredSourceLanguage)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        return string.IsNullOrWhiteSpace(preferred)
-            ? NullIfBlank(thread?.ConversationLanguage)
-            : preferred;
-    }
+    public string ResolveSourceLanguage(Quiz? selectedQuiz) =>
+        NullIfBlank(selectedQuiz?.SourceLanguage) ?? "English";
 
     /// <summary>
     /// The language the assistant should reply in.

@@ -101,6 +101,14 @@ internal static class OpenAiMessageMapper
         }
     }
 
+    /// <summary>A tool_choice that limits calls to <paramref name="names"/> without changing the tool list.</summary>
+    internal static string AllowedTools(IEnumerable<string> names) => JsonSerializer.Serialize(new
+    {
+        type = "allowed_tools",
+        mode = "auto",
+        tools = names.Select(name => new { type = "function", name }),
+    });
+
     internal static ResponseTool MapTool(AgentToolDeclaration declaration) =>
         ResponseTool.CreateFunctionTool(
             declaration.Name,

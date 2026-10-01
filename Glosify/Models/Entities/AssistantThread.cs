@@ -55,4 +55,11 @@ public class AssistantThread
 
     [Column("active_turn_expires_at")]
     public DateTime? ActiveTurnExpiresAt { get; set; }
+
+    /// <summary>
+    /// Change kinds the user chose to allow without asking again in this chat, as a JSON
+    /// array. Null means every kind that needs approval still asks.
+    /// </summary>
+    [Column("approval_rules")]
+    public string? ApprovalRules { get; set; }
 }

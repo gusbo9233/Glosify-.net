@@ -638,6 +638,79 @@ namespace Glosify.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AfterJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("after_json");
+
+                    b.Property<string>("BeforeJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("before_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("part_id");
+
+                    b.Property<Guid?>("QuizId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("quiz_id");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RunId", "Sequence")
+                        .IsUnique();
+
+                    b.ToTable("assistant_changes");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.AssistantFeedback", b =>
                 {
                     b.Property<Guid>("Id")
@@ -775,6 +848,10 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(64)")
                         .HasColumnName("agent_version");
 
+                    b.Property<int?>("CachedPromptTokens")
+                        .HasColumnType("int")
+                        .HasColumnName("cached_prompt_tokens");
+
                     b.Property<int?>("CandidateTokens")
                         .HasColumnType("int")
                         .HasColumnName("candidate_tokens");
@@ -879,6 +956,97 @@ namespace Glosify.Migrations
                     b.ToTable("assistant_model_invocations");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantPart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CallId")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)")
+                        .HasColumnName("call_id");
+
+                    b.Property<DateTime?>("CompactedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("compacted_at");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("InputJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("input_json");
+
+                    b.Property<Guid>("MessageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("message_id");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("metadata_json");
+
+                    b.Property<string>("Output")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("output");
+
+                    b.Property<string>("ProviderJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("provider_json");
+
+                    b.Property<Guid?>("RunId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("run_id");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int")
+                        .HasColumnName("sequence");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("state");
+
+                    b.Property<int>("Step")
+                        .HasColumnType("int")
+                        .HasColumnName("step");
+
+                    b.Property<string>("Text")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("text");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("ToolName")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("tool_name");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("RunId", "Step");
+
+                    b.ToTable("assistant_parts");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.AssistantPendingChange", b =>
                 {
                     b.Property<Guid>("Id")
@@ -943,207 +1111,162 @@ namespace Glosify.Migrations
                     b.ToTable("assistant_pending_changes");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTask", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantRun", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
 
                     b.Property<string>("ActiveUserId")
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("active_user_id");
 
-                    b.Property<bool>("ApprovalGranted")
-                        .HasColumnType("bit");
+                    b.Property<long>("CachedInputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("cached_input_tokens");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("completed_at");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CurrentMessageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("current_message_id");
 
                     b.Property<int>("Failures")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("failures");
 
                     b.Property<string>("IdempotencyKey")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<long>("InputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("input_tokens");
 
                     b.Property<Guid?>("LeaseId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("lease_id");
 
                     b.Property<DateTime>("LeaseUntil")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("lease_until");
 
-                    b.Property<bool>("ManualApproval")
-                        .HasColumnType("bit");
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasColumnName("mode");
 
-                    b.Property<int>("ModelCalls")
-                        .HasColumnType("int");
+                    b.Property<long>("OutputTokens")
+                        .HasColumnType("bigint")
+                        .HasColumnName("output_tokens");
+
+                    b.Property<string>("PlanJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("plan_json");
 
                     b.Property<string>("Reason")
                         .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("reason");
 
                     b.Property<string>("RequestHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("request_hash");
 
                     b.Property<string>("RequestJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResultJson")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("request_json");
 
                     b.Property<DateTime?>("RetryAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("retry_at");
 
                     b.Property<long>("Revision")
                         .IsConcurrencyToken()
-                        .HasColumnType("bigint");
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
 
                     b.Property<int>("SavedChanges")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("saved_changes");
 
                     b.Property<string>("StateJson")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("state_json");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("status");
 
-                    b.Property<string>("SteeringJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Steps")
+                        .HasColumnType("int")
+                        .HasColumnName("steps");
 
                     b.Property<Guid>("ThreadId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("thread_id");
 
-                    b.Property<int>("Tokens")
-                        .HasColumnType("int");
+                    b.Property<int>("TotalSteps")
+                        .HasColumnType("int")
+                        .HasColumnName("total_steps");
+
+                    b.Property<Guid>("TurnId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("turn_id");
+
+                    b.Property<DateTime?>("UndoneAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("undone_at");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(450)")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("UserMessageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_message_id");
 
                     b.Property<DateTime>("WindowStartedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("window_started_at");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ActiveUserId")
                         .IsUnique()
-                        .HasFilter("[ActiveUserId] IS NOT NULL");
+                        .HasFilter("[active_user_id] IS NOT NULL");
 
-                    b.HasIndex("ThreadId");
+                    b.HasIndex("ThreadId", "CreatedAt");
 
                     b.HasIndex("UserId", "IdempotencyKey")
                         .IsUnique();
 
                     b.HasIndex("Status", "RetryAt", "LeaseUntil");
 
-                    b.ToTable("AssistantTasks");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTaskAttempt", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ErrorCategory")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("RequestJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ResponseJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaskId", "StartedAt");
-
-                    b.ToTable("AssistantTaskAttempts");
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTaskCall", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ArgumentsJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EvaluationJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("EvaluationStatus")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<string>("ResultJson")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SnapshotHash")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("SnapshotJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ToolName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TaskId", "Sequence")
-                        .IsUnique();
-
-                    b.ToTable("AssistantTaskCalls");
+                    b.ToTable("assistant_runs");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantTelemetryDeletionRequest", b =>
@@ -1232,6 +1355,10 @@ namespace Glosify.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("active_turn_id");
 
+                    b.Property<string>("ApprovalRules")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("approval_rules");
+
                     b.Property<Guid?>("ContextBookDocumentId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("context_book_document_id");
@@ -1291,6 +1418,68 @@ namespace Glosify.Migrations
                     b.HasIndex("UserId", "QuizId", "Language");
 
                     b.ToTable("assistant_threads");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantToolEvaluation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EvaluationJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("evaluation_json");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("part_id");
+
+                    b.Property<string>("ResultJson")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("result_json");
+
+                    b.Property<Guid>("RunId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("run_id");
+
+                    b.Property<string>("SnapshotHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("snapshot_hash");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("snapshot_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("ToolName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)")
+                        .HasColumnName("tool_name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartId")
+                        .IsUnique();
+
+                    b.HasIndex("RunId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("assistant_tool_evaluations");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantToolExecution", b =>
@@ -2858,6 +3047,16 @@ namespace Glosify.Migrations
                     b.Navigation("Collection");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantChange", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AssistantRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AssistantChanges_AssistantRuns_RunId");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.AssistantFeedback", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.AssistantTurn", null)
@@ -2912,6 +3111,16 @@ namespace Glosify.Migrations
                         .HasConstraintName("FK_AssistantModelInvocations_AssistantTurns_TurnId");
                 });
 
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantPart", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AssistantMessage", null)
+                        .WithMany()
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AssistantParts_AssistantMessages_MessageId");
+                });
+
             modelBuilder.Entity("Glosify.Models.Entities.AssistantPendingChange", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.Quiz", null)
@@ -2921,31 +3130,14 @@ namespace Glosify.Migrations
                         .HasConstraintName("FK_AssistantPendingChanges_Quizzes_ContextQuizId");
                 });
 
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTask", b =>
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantRun", b =>
                 {
                     b.HasOne("Glosify.Models.Entities.AssistantThread", null)
                         .WithMany()
                         .HasForeignKey("ThreadId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTaskAttempt", b =>
-                {
-                    b.HasOne("Glosify.Models.Entities.AssistantTask", null)
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Glosify.Models.Entities.AssistantTaskCall", b =>
-                {
-                    b.HasOne("Glosify.Models.Entities.AssistantTask", null)
-                        .WithMany()
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_AssistantRuns_AssistantThreads_ThreadId");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantThread", b =>
@@ -2980,6 +3172,16 @@ namespace Glosify.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired()
                         .HasConstraintName("FK_AssistantThreads_AspNetUsers_UserId");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantToolEvaluation", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AssistantRun", null)
+                        .WithMany()
+                        .HasForeignKey("RunId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_AssistantToolEvaluations_AssistantRuns_RunId");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantToolExecution", b =>

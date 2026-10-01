@@ -176,12 +176,22 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         AiUsageContext usageContext,
         CancellationToken cancellationToken = default)
     {
-        var declarations = AgentToolFilter.Narrow(
-            request.Tools,
-            request.AllowedToolNames);
+        // The full tool list is always sent so it stays part of the cached prompt prefix. A
+        // narrower set is enforced with allowed_tools rather than by removing definitions.
+        var declarations = request.Tools;
         var outputReserve = _usageOptions.GetOutputReserve(usageContext.Feature);
         if (request.MaxOutputTokens is int maximum) outputReserve = Math.Min(outputReserve, maximum);
         var openAiRequest = CreateRequest(usageContext, outputReserve);
+        // The assistant's output reserve is for credit/resource accounting, not a
+        // generation cap. Let the model enforce its own output limit by default.
+        if (usageContext.Feature == AiUsageFeatures.Assistant)
+        {
+            openAiRequest.MaxOutputTokenCount = request.MaxOutputTokens;
+            // The installed SDK has no typed Fast service-tier option yet.
+#pragma warning disable SCME0001
+            openAiRequest.Patch.Set("$.service_tier"u8, "fast");
+#pragma warning restore SCME0001
+        }
         if (request.DurableExecution) openAiRequest.Metadata["assistant_runtime"] = "durable";
         openAiRequest.Instructions = string.IsNullOrWhiteSpace(request.SystemInstruction)
             ? "Help the user with their language-learning request."
@@ -191,13 +201,34 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
             openAiRequest.Instructions += "\n\n" + request.ContextInstruction;
         }
         OpenAiMessageMapper.AddHistory(openAiRequest.InputItems, request.History);
+        if (!string.IsNullOrWhiteSpace(request.TrailingInstruction))
+        {
+            openAiRequest.InputItems.Add(ResponseItem.CreateDeveloperMessageItem(request.TrailingInstruction));
+        }
+
         foreach (var declaration in declarations)
         {
             openAiRequest.Tools.Add(OpenAiMessageMapper.MapTool(declaration));
         }
 
+        if (declarations.Count > 0)
+        {
+            if (request.ToolChoice == AgentToolChoice.None)
+            {
+                openAiRequest.ToolChoice = ResponseToolChoice.CreateNoneChoice();
+            }
+            else if (request.AllowedToolNames is { } allowed)
+            {
+#pragma warning disable SCME0001
+                openAiRequest.Patch.Set("$.tool_choice"u8, BinaryData.FromString(OpenAiMessageMapper.AllowedTools(
+                    declarations.Where(declaration => allowed.Contains(declaration.Name)).Select(declaration => declaration.Name))));
+#pragma warning restore SCME0001
+            }
+        }
+
         var estimatedPromptTokens =
             EstimateTokens(openAiRequest.Instructions)
+            + EstimateTokens(request.TrailingInstruction)
             + EstimateTokens(JsonSerializer.Serialize(request.History, JsonOptions))
             + EstimateTokens(JsonSerializer.Serialize(declarations, JsonOptions));
         var response = await ExecuteChargedAsync(
@@ -237,6 +268,8 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
                     {
                         instructions = openAiRequest.Instructions,
                         history = request.History,
+                        trailing = request.TrailingInstruction,
+                        tool_choice = request.ToolChoice.ToString(),
                         tools = declarations,
                         model = OpenAiModels.Luna,
                         profile = request.Profile.ToString(),
@@ -499,24 +532,12 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         }
     }
 
-    private static string ValidateToolArguments(string json)
-    {
-        try
-        {
-            using var document = JsonDocument.Parse(json);
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                throw new JsonException("Function arguments must be a JSON object.");
-            }
-            return document.RootElement.GetRawText();
-        }
-        catch (JsonException ex)
-        {
-            throw new GenerativeAiStructuredOutputException(
-                "The assistant could not finish preparing that action. Please try again.",
-                ex);
-        }
-    }
+    /// <summary>
+    /// Passes arguments through unchanged. Malformed arguments are answered by the runtime as
+    /// a correctable tool error for that one call, instead of failing the whole response.
+    /// </summary>
+    private static string ValidateToolArguments(string json) =>
+        string.IsNullOrWhiteSpace(json) ? "{}" : json;
 
     private static void ValidateModel(string? model)
     {

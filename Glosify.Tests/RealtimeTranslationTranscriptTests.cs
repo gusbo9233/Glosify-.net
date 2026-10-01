@@ -2,6 +2,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -53,11 +54,12 @@ public sealed class RealtimeTranslationTranscriptTests
         AddTranscript(context, foreignId, "user-2", "Private", "Secret");
         await context.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(context);
-        var toolContext = new AgentToolContext
+        var toolContext = new ToolContext
         {
+            Mode = AssistantMode.Language,
             UserId = "user-1",
             TranscriptId = ownId,
-            CurrentLanguageCode = "pl",
+            TargetLanguageCode = "pl",
         };
 
         var own = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -134,11 +136,12 @@ public sealed class RealtimeTranslationTranscriptTests
         });
         await context.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(context);
-        var toolContext = new AgentToolContext
+        var toolContext = new ToolContext
         {
+            Mode = AssistantMode.Language,
             UserId = "user-1",
             TranscriptId = transcriptId,
-            CurrentLanguageCode = "pl",
+            TargetLanguageCode = "pl",
         };
 
         var fallback = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
@@ -455,16 +458,17 @@ public sealed class RealtimeTranslationTranscriptTests
 
     private static IMemoryCache Cache() => new MemoryCache(new MemoryCacheOptions());
 
-    private static AgentToolContext Context(Guid transcriptId) => new()
+    private static ToolContext Context(Guid transcriptId) => new()
     {
+        Mode = AssistantMode.Language,
         UserId = "user-1",
         TranscriptId = transcriptId,
-        CurrentLanguageCode = "pl",
+        TargetLanguageCode = "pl",
     };
 
     private static async Task<JsonElement> ReadAsync(
-        IAssistantTools tools,
-        AgentToolContext context,
+        AssistantTestTools tools,
+        ToolContext context,
         object args) =>
         JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
             "get_saved_transcript",

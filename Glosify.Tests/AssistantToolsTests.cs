@@ -1,1755 +1,384 @@
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Globalization;
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
-using Glosify.Services;
+using Glosify.Models.Library;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Tools;
-using Glosify.Services.Ai.Generation;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace Glosify.Tests;
 
-public class AssistantToolsTests
+public sealed class AssistantToolsTests
 {
-    [Fact]
-    public void Optional_integer_tool_arguments_use_invariant_machine_format()
-    {
-        var originalCulture = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar");
-            using var document = JsonDocument.Parse("""{"offset":"+1"}""");
+    private static readonly Guid QuizId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-            Assert.Equal(1, ToolArguments.GetOptionalInt(document.RootElement, "offset"));
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = originalCulture;
-        }
-    }
-
-    [Fact]
-    public void Declarations_ExposeStandardQuizCreationOnly()
+    [Theory]
+    [InlineData(AssistantMode.Language)]
+    [InlineData(AssistantMode.Freestyle)]
+    public void Every_schema_is_strict_and_the_list_is_stable(AssistantMode mode)
     {
         using var db = CreateContext();
-        var names = AssistantToolFactory.Create(db).GlobalDeclarations.Select(tool => tool.Name).ToList();
+        var toolbox = AssistantToolFactory.Create(db).Toolbox;
 
-        Assert.Contains("create_vocabulary_quiz", names);
-        Assert.DoesNotContain(names, name => name.Contains("custom_quiz", StringComparison.Ordinal));
-        Assert.DoesNotContain("add_choice", names);
-        Assert.DoesNotContain("add_text_input", names);
-        Assert.DoesNotContain("create_quiz", names);
-        Assert.Contains("list_saved_translation_sessions", names);
-        Assert.Contains("get_saved_translation_session", names);
+        var declarations = toolbox.Declarations(mode);
+
+        Assert.Equal(declarations.Select(tool => tool.Name).Distinct(), declarations.Select(tool => tool.Name));
+        Assert.Equal(JsonSerializer.Serialize(declarations), JsonSerializer.Serialize(toolbox.Declarations(mode)));
+        Assert.All(declarations, tool =>
+        {
+            Assert.True(tool.Strict);
+            Assert.False(string.IsNullOrWhiteSpace(tool.Description));
+            var schema = JsonSerializer.SerializeToElement(tool.ParametersJsonSchema);
+            Assert.DoesNotContain("$ref", schema.GetRawText());
+            AssertStrict(schema, tool.Name);
+        });
     }
 
     [Fact]
-    public async Task SavedTranslationTools_ListAndReadOnlyOwnedSessions()
+    public void Freestyle_mode_offers_items_and_no_language_material()
     {
-        await using var db = CreateContext();
-        var ownedSession = new SavedTranslationSession
-        {
-            UserId = "user-1",
-            ClientSessionId = Guid.NewGuid(),
-            LanguageCode = "sv",
-            Title = "Travel phrases",
-        };
-        var foreignSession = new SavedTranslationSession
-        {
-            UserId = "user-2",
-            ClientSessionId = Guid.NewGuid(),
-            LanguageCode = "sv",
-            Title = "Private session",
-        };
-        var otherLanguageSession = new SavedTranslationSession
-        {
-            UserId = "user-1",
-            ClientSessionId = Guid.NewGuid(),
-            LanguageCode = "en",
-            Title = "English phrases",
-        };
-        db.SavedTranslationSessions.AddRange(ownedSession, foreignSession, otherLanguageSession);
-        db.SavedTranslations.AddRange(
-            new SavedTranslation
-            {
-                Session = ownedSession,
-                UserId = "user-1",
-                RequestId = Guid.NewGuid(),
-                SourceLanguage = "en",
-                DetectedSourceLanguage = "en",
-                TargetLanguage = "sv",
-                SourceText = "Where is the station?",
-                TranslatedText = "Var ligger stationen?",
-            },
-            new SavedTranslation
-            {
-                Session = foreignSession,
-                UserId = "user-2",
-                RequestId = Guid.NewGuid(),
-                SourceLanguage = "en",
-                TargetLanguage = "sv",
-                SourceText = "Secret",
-                TranslatedText = "Hemligt",
-            },
-            new SavedTranslation
-            {
-                Session = otherLanguageSession,
-                UserId = "user-1",
-                RequestId = Guid.NewGuid(),
-                SourceLanguage = "sv",
-                TargetLanguage = "en",
-                SourceText = "Hej",
-                TranslatedText = "Hello",
-            });
-        await db.SaveChangesAsync();
+        using var db = CreateContext();
+        var toolbox = AssistantToolFactory.Create(db).Toolbox;
+
+        var freestyle = toolbox.Declarations(AssistantMode.Freestyle);
+        var add = JsonSerializer.SerializeToElement(freestyle.Single(tool => tool.Name == "add_items").ParametersJsonSchema);
+
+        Assert.DoesNotContain(freestyle, tool => tool.Name is "list_saved_transcripts" or "get_saved_transcript");
+        Assert.True(add.GetProperty("properties").TryGetProperty("items", out _));
+        Assert.False(add.GetProperty("properties").TryGetProperty("sentences", out _));
+    }
+
+    [Fact]
+    public async Task Add_items_cleans_the_batch_and_keeps_text_sent_as_both_a_sentence()
+    {
+        await using var db = await SeedAsync();
         var tools = AssistantToolFactory.Create(db);
 
-        var list = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "list_saved_translation_sessions",
-            "{}",
-            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
-            CancellationToken.None));
-        var listed = Assert.Single(list.GetProperty("sessions").EnumerateArray());
-        Assert.Equal(ownedSession.Id, listed.GetProperty("id").GetGuid());
-        Assert.Equal("sv", listed.GetProperty("learning_language").GetString());
-        Assert.Equal(1, listed.GetProperty("translation_count").GetInt32());
+        var result = await tools.RunAsync("add_items", Json(new
+        {
+            words = new[]
+            {
+                new { word = "dom", translation = "house" },
+                new { word = "Dom ", translation = "home" },
+                new { word = "To jest dom", translation = "This is a house" },
+                new { word = " ", translation = "blank" },
+            },
+            sentences = new[] { new { text = "To jest dom.", translation = "This is a house." } },
+        }), Context());
 
-        var read = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_saved_translation_session",
-            $$"""{"session_id":"{{ownedSession.Id}}"}""",
-            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
-            CancellationToken.None));
-        var translation = Assert.Single(read.GetProperty("translations").EnumerateArray());
-        Assert.Equal("Where is the station?", translation.GetProperty("source_text").GetString());
-        Assert.Equal("Var ligger stationen?", translation.GetProperty("translated_text").GetString());
+        Assert.False(result.IsError);
+        Assert.Equal(QuizId, result.QuizId);
+        Assert.Equal("Add 1 word and 1 sentence to “Polish basics”", result.Title);
+        Assert.Equal([PendingChangeKinds.AddSentence, PendingChangeKinds.AddWord], result.Changes.Select(change => change.Kind));
+        Assert.Equal(2, JsonSerializer.SerializeToElement(result.Output).GetProperty("skipped").GetArrayLength());
+    }
 
-        var rejected = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_saved_translation_session",
-            $$"""{"session_id":"{{foreignSession.Id}}"}""",
-            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
-            CancellationToken.None));
-        Assert.Equal("Saved translation session not found.", rejected.GetProperty("error").GetString());
+    [Fact]
+    public async Task Add_items_accepts_at_most_a_hundred_of_each_and_reports_the_rest()
+    {
+        await using var db = await SeedAsync();
+        var tools = AssistantToolFactory.Create(db);
 
-        var wrongLanguage = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_saved_translation_session",
-            $$"""{"session_id":"{{otherLanguageSession.Id}}"}""",
-            new AgentToolContext { UserId = "user-1", CurrentLanguageCode = "sv" },
-            CancellationToken.None));
-        Assert.Equal("Saved translation session not found.", wrongLanguage.GetProperty("error").GetString());
+        var result = await tools.RunAsync("add_items", Json(new
+        {
+            words = Enumerable.Range(0, 105).Select(index => new { word = $"słowo{index}", translation = $"word {index}" }),
+        }), Context());
+
+        Assert.Equal(100, result.Changes.Count);
+        Assert.Equal(5, JsonSerializer.SerializeToElement(result.Output).GetProperty("skipped").GetArrayLength());
     }
 
     [Theory]
-    [InlineData("null")]
-    [InlineData("[]")]
-    [InlineData("\"text\"")]
-    [InlineData("{not-json")]
-    public async Task CreateVocabularyQuiz_TreatsNonObjectArgumentsAsMissingFields(string argsJson)
+    [InlineData(AssistantContentKind.Sentences, true)]
+    [InlineData(AssistantContentKind.Words, false)]
+    public async Task Add_items_refuses_the_content_type_the_user_did_not_ask_for(AssistantContentKind requested, bool sendWords)
     {
-        await using var db = CreateContext();
+        await using var db = await SeedAsync();
         var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
 
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            argsJson,
-            context,
-            CancellationToken.None));
+        var result = await tools.RunAsync("add_items", Json(sendWords
+            ? new { words = new[] { new { word = "To jest dom.", translation = "This is a house." } } }
+            : (object)new { sentences = new[] { new { text = "dom", translation = "house" } } }),
+            Context() with { RequestedContentKind = requested });
 
-        Assert.Equal("name and source_language are required.", result.GetProperty("error").GetString());
-        Assert.Empty(context.PendingChanges);
+        Assert.True(result.IsError);
+        Assert.Empty(result.Changes);
     }
 
     [Fact]
-    public async Task CreateQuiz_QueuesPendingChangeWithCurrentLanguageDefault()
+    public async Task Content_tools_refuse_a_missing_or_foreign_quiz()
     {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Spanish"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "create_quiz",
-            """{"name":"Travel Basics","source_language":"English"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Single(context.PendingChanges);
-        Assert.Equal(PendingChangeKinds.CreateQuiz, context.PendingChanges[0].Kind);
-        Assert.Contains("queued", JsonSerializer.Serialize(result));
-
-        var payload = context.PendingChanges[0].Payload;
-        Assert.Equal("Travel Basics", payload.GetProperty("name").GetString());
-        Assert.Equal("English", payload.GetProperty("source_language").GetString());
-        Assert.Equal("Spanish", payload.GetProperty("target_language").GetString());
-    }
-
-    [Fact]
-    public async Task CreateQuiz_FallsBackToCurrentLanguageWhenTargetLanguageIsBlank()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Spanish"
-        };
-
-        await tools.ExecuteAsync(
-            "create_quiz",
-            """{"name":"Travel Basics","source_language":"English","target_language":""}""",
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Equal("Spanish", payload.GetProperty("target_language").GetString());
-    }
-
-    [Fact]
-    public async Task CreateVocabularyQuiz_QueuesStarterWordsAndSentencesSeparately()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "words":[{"word":"pociag","translation":"train"}],
-             "sentences":[{"text":"Pociag odjezdza o osmej.","translation":"The train leaves at eight."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
-        Assert.Equal("pociag", word.GetProperty("word").GetString());
-        var sentence = Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
-        Assert.Equal("Pociag odjezdza o osmej.", sentence.GetProperty("text").GetString());
-        Assert.Equal("The train leaves at eight.", sentence.GetProperty("translation").GetString());
-    }
-
-    [Fact]
-    public async Task CreateVocabularyQuiz_AllowsWordOnlyPayload()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """{"name":"Travel Polish","source_language":"English","words":[{"word":"dom","translation":"house"}]}""",
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
-        Assert.Empty(payload.GetProperty("sentences").EnumerateArray().ToArray());
-    }
-
-    // "a quiz with words and example sentences" resolves to Both, which legitimately permits
-    // either kind, so the content guard cannot catch a sentence sent in both arrays. Without
-    // the cross-check it was stored twice: once as vocabulary, once as a sentence.
-    [Fact]
-    public async Task CreateVocabularyQuiz_DoesNotStoreASentenceAsVocabularyToo()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Polish",
-            RequestedContentKind = AssistantContentKind.Both,
-        };
-
-        var result = await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "words":[{"word":"dom","translation":"house"},
-                      {"word":"To jest  moj dom","translation":"This is my house."}],
-             "sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
-        Assert.Equal("dom", word.GetProperty("word").GetString());
-        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
-        Assert.Contains("skipped_words", JsonSerializer.Serialize(result));
-    }
-
-    // The cross-check matches text exactly. It must not start removing multiword vocabulary
-    // that merely resembles the sentences alongside it.
-    [Fact]
-    public async Task CreateVocabularyQuiz_KeepsPhrasesThatAreNotAlsoSentences()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "words":[{"word":"by the way","translation":"nawiasem mowiac"}],
-             "sentences":[{"text":"By the way, I am late.","translation":"Nawiasem mowiac, jestem spozniony."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        var word = Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
-        Assert.Equal("by the way", word.GetProperty("word").GetString());
-    }
-
-    // Parse failures and cap overflow both report positions in the request array. Building the
-    // source map from a list that the cap had already appended to mixed two coordinate systems
-    // and named an unrelated word.
-    [Fact]
-    public async Task CreateVocabularyQuiz_ReportsEverySkipAgainstTheRequestIndex()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-        // One invalid entry, then 101 valid words: request indexes 1..101. The duplicate is
-        // request index 50, and the 101st valid word overflows the 100-item cap.
-        var words = new List<string> { """{"word":"","translation":"invalid"}""" };
-        for (var i = 1; i <= 101; i++)
-        {
-            words.Add($$"""{"word":"w{{i}}","translation":"t{{i}}"}""");
-        }
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            $$"""
-            {"name":"Big","source_language":"English",
-             "words":[{{string.Join(",", words)}}],
-             "sentences":[{"text":"w50","translation":"fiftieth"}]}
-            """,
-            context,
-            CancellationToken.None));
-
-        var skipped = result.GetProperty("skipped_words").EnumerateArray()
-            .Select(item => item.GetProperty("Index").GetInt32())
-            .ToArray();
-        // 0 = the invalid entry, 101 = the capped overflow word, 50 = the duplicate.
-        Assert.Equal([0, 101, 50], skipped);
-    }
-
-    [Fact]
-    public async Task CreateVocabularyQuiz_SkipsInvalidStarterSentences()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        var result = await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "sentences":[{"text":"To jest dom.","translation":"This is a house."},
-                          {"text":"Brakuje tlumaczenia."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
-        Assert.Contains("skipped_sentences", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task CreateVocabularyQuiz_DefaultsSourceLanguageFromContext()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Polish",
-            SourceLanguage = "English",
-        };
-
-        await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """{"name":"Travel Polish"}""",
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Equal("English", payload.GetProperty("source_language").GetString());
-    }
-
-    [Fact]
-    public async Task CreateVocabularyQuiz_StillRequiresASourceLanguageFromSomewhere()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        var result = await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """{"name":"Travel Polish"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("source_language", JsonSerializer.Serialize(result));
-    }
-
-    // Creation carries both content types at once, so it needs the guard the add tools have.
-    [Fact]
-    public async Task WordIntent_RejectsStarterSentencesOnCreation()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Polish",
-            RequestedContentKind = AssistantContentKind.Words,
-        };
-
-        var result = await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "words":[{"word":"dom","translation":"house"}],
-             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("word", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task BothIntent_AllowsStarterWordsAndSentencesOnCreation()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Polish",
-            RequestedContentKind = AssistantContentKind.Both,
-        };
-
-        await tools.ExecuteAsync(
-            "create_vocabulary_quiz",
-            """
-            {"name":"Travel Polish","source_language":"English",
-             "words":[{"word":"dom","translation":"house"}],
-             "sentences":[{"text":"To jest dom.","translation":"This is a house."}]}
-            """,
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Single(payload.GetProperty("words").EnumerateArray().ToArray());
-        Assert.Single(payload.GetProperty("sentences").EnumerateArray().ToArray());
-    }
-
-    [Fact]
-    public async Task AddWords_DoesNotQueueAWordAlreadyProposedAsASentence()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
+        await using var db = await SeedAsync();
+        var foreign = Guid.NewGuid();
+        db.Quizzes.Add(new Quiz { Id = foreign, UserId = "other", Name = "Theirs", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" });
         await db.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
+        var words = new[] { new { word = "dom", translation = "house" } };
 
-        await tools.ExecuteAsync(
-            "add_sentences",
-            """{"sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}""",
-            context,
-            CancellationToken.None);
-        var result = await tools.ExecuteAsync(
-            "add_words",
-            """
-            {"words":[{"word":"dom","translation":"house"},
-                      {"word":"To jest  moj dom","translation":"This is my house."}]}
-            """,
-            context,
-            CancellationToken.None);
+        var none = await tools.RunAsync("add_items", Json(new { words }), Context() with { QuizId = null });
+        var theirs = await tools.RunAsync("add_items", Json(new { quiz_id = foreign, words }), Context());
 
-        var kinds = context.PendingChanges.Select(change => change.Kind).ToArray();
-        Assert.Equal([PendingChangeKinds.AddSentence, PendingChangeKinds.AddWord], kinds);
-        Assert.Equal(
-            "dom",
-            context.PendingChanges[1].Payload.GetProperty("word").GetString());
-        Assert.Contains("already proposed as a sentence", JsonSerializer.Serialize(result));
-    }
-
-    // The skipped list mixes parse failures and duplicate drops, so both must index the
-    // request the model sent rather than the compacted list of valid drafts.
-    [Fact]
-    public async Task AddWords_ReportsSkippedDuplicatesAgainstTheRequestIndex()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
-
-        await tools.ExecuteAsync(
-            "add_sentences",
-            """{"sentences":[{"text":"To jest moj dom.","translation":"This is my house."}]}""",
-            context,
-            CancellationToken.None);
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "add_words",
-            """
-            {"words":[{"word":"","translation":"invalid, dropped by parsing"},
-                      {"word":"To jest moj dom.","translation":"This is my house."},
-                      {"word":"dom","translation":"house"}]}
-            """,
-            context,
-            CancellationToken.None));
-
-        var skipped = result.GetProperty("skipped").EnumerateArray().ToArray();
-        Assert.Equal(2, skipped.Length);
-        Assert.Equal(0, skipped[0].GetProperty("Index").GetInt32());
-        // The duplicate is item 1 of the request, not item 0 of the compacted valid list.
-        Assert.Equal(1, skipped[1].GetProperty("Index").GetInt32());
+        Assert.Contains("No quiz is selected", Error(none));
+        Assert.Contains("not found", Error(theirs));
     }
 
     [Fact]
-    public async Task AddWord_RefusesASingleWordAlreadyProposedAsASentence()
+    public async Task Edit_items_reads_originals_skips_unknown_ids_and_respects_the_focused_word()
     {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
+        await using var db = await SeedAsync(words: [("w1", "dom", "house"), ("w2", "kot", "cat")]);
         var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", QuizId = quizId };
 
-        await tools.ExecuteAsync(
-            "add_sentence",
-            """{"text":"To jest moj dom.","translation":"This is my house."}""",
-            context,
-            CancellationToken.None);
-        var result = await tools.ExecuteAsync(
-            "add_word",
-            """{"word":"To jest moj dom.","translation":"This is my house."}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Single(context.PendingChanges);
-        Assert.Contains("already proposed as a sentence", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task SentenceIntent_RejectsWordStorageAtTheExecutionBoundary()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
+        var edit = await tools.RunAsync("edit_items", Json(new
         {
-            UserId = "user-1",
-            QuizId = quizId,
-            RequestedContentKind = AssistantContentKind.Sentences,
-        };
-
-        var single = await tools.ExecuteAsync(
-            "add_word",
-            """{"word":"To jest moj dom.","translation":"This is my house."}""",
-            context,
-            CancellationToken.None);
-        var batch = await tools.ExecuteAsync(
-            "add_words",
-            """{"words":[{"word":"To jest moj dom.","translation":"This is my house."}]}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("sentence", JsonSerializer.Serialize(single), StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("sentence", JsonSerializer.Serialize(batch), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task WordIntent_RejectsSentenceStorageAtTheExecutionBoundary()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            QuizId = quizId,
-            RequestedContentKind = AssistantContentKind.Words,
-        };
-
-        var result = await tools.ExecuteAsync(
-            "add_sentences",
-            """{"sentences":[{"text":"To jest dom.","translation":"This is a house."}]}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("word", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task BothIntent_AllowsWordsAndSentencesTogether()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            QuizId = quizId,
-            RequestedContentKind = AssistantContentKind.Both,
-        };
-
-        await tools.ExecuteAsync(
-            "add_word",
-            """{"word":"dom","translation":"house"}""",
-            context,
-            CancellationToken.None);
-        await tools.ExecuteAsync(
-            "add_sentence",
-            """{"text":"To jest dom.","translation":"This is a house."}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Equal(
-            [PendingChangeKinds.AddWord, PendingChangeKinds.AddSentence],
-            context.PendingChanges.Select(change => change.Kind));
-    }
-
-    [Fact]
-    public async Task MultiwordPhrase_IsStillStoredAsAWord()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(CreateQuiz(quizId, "user-1"));
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            QuizId = quizId,
-            RequestedContentKind = AssistantContentKind.Words,
-        };
-
-        await tools.ExecuteAsync(
-            "add_word",
-            """{"word":"by the way","translation":"nawiasem mowiac"}""",
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Equal("by the way", payload.GetProperty("word").GetString());
-    }
-
-    [Fact]
-    public async Task CreateCollection_QueuesPendingChangeWithCurrentLanguageDefault()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "French"
-        };
-
-        await tools.ExecuteAsync(
-            "create_collection",
-            """{"name":"Food"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Single(context.PendingChanges);
-        Assert.Equal(PendingChangeKinds.CreateCollection, context.PendingChanges[0].Kind);
-
-        var payload = context.PendingChanges[0].Payload;
-        Assert.Equal("Food", payload.GetProperty("name").GetString());
-        Assert.Equal("French", payload.GetProperty("language").GetString());
-    }
-
-    [Fact]
-    public async Task CreateCollection_RejectsInvalidParentCollectionId()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "French"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "create_collection",
-            """{"name":"Food","parent_collection_id":"not-a-guid"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("parent_collection_id must be a valid id", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task AddWord_RequiresQuizContext()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            UserId = "user-1",
-            CurrentLanguage = "Spanish"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "add_word",
-            """{"word":"casa","translation":"house"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("Choose a quiz", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task AddWords_QueuesOnePendingChangePerWord()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            QuizId = Guid.NewGuid(),
-            UserId = "user-1",
-            CurrentLanguage = "Polish"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "add_words",
-            """
+            words = new object[]
             {
-              "words": [
-                { "word": "iść", "translation": "to go" },
-                { "word": "robić", "translation": "to do" }
-              ]
-            }
-            """,
-            context,
-            CancellationToken.None);
-
-        Assert.Equal(2, context.PendingChanges.Count);
-        Assert.All(context.PendingChanges, change => Assert.Equal(PendingChangeKinds.AddWord, change.Kind));
-        Assert.Contains("\"count\":2", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task EditWords_QueuesOnePendingChangePerEdit()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            QuizId = Guid.NewGuid(),
-            UserId = "user-1",
-            CurrentLanguage = "Polish"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "edit_words",
-            """
-            {
-              "changes": [
-                { "word_id": "word-1", "word": "idę" },
-                { "word_id": "word-2", "word": "robię", "translation": "I do" }
-              ]
-            }
-            """,
-            context,
-            CancellationToken.None);
-
-        Assert.Equal(2, context.PendingChanges.Count);
-        Assert.All(context.PendingChanges, change => Assert.Equal(PendingChangeKinds.EditWord, change.Kind));
-        Assert.Equal("word-1", context.PendingChanges[0].Payload.GetProperty("word_id").GetString());
-        Assert.Equal("idę", context.PendingChanges[0].Payload.GetProperty("word").GetString());
-        Assert.Contains("\"count\":2", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task EditWords_IncludesOriginalWordValuesWhenAvailable()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(new Quiz
-        {
-            Id = quizId,
-            UserId = "user-1",
-            Name = "Polish verbs",
-            SourceLanguage = "English",
-            TargetLanguage = "Polish",
-            Language = "Polish",
-        });
-        db.Words.Add(new Word
-        {
-            Id = "word-1",
-            QuizId = quizId,
-            Lemma = "robić",
-            Translation = "to do / to make",
-        });
-        await db.SaveChangesAsync();
-
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            QuizId = quizId,
-            UserId = "user-1",
-            CurrentLanguage = "Polish"
-        };
-
-        await tools.ExecuteAsync(
-            "edit_words",
-            """{"changes":[{"word_id":"word-1","word":"robię","translation":"I do / I make"}]}""",
-            context,
-            CancellationToken.None);
-
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Equal("robić", payload.GetProperty("original_word").GetString());
-        Assert.Equal("to do / to make", payload.GetProperty("original_translation").GetString());
-        Assert.Equal("robię", payload.GetProperty("word").GetString());
-        Assert.Equal("I do / I make", payload.GetProperty("translation").GetString());
-    }
-
-    [Fact]
-    public async Task AddWords_ReportsSkippedItemsWithReasons()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            QuizId = Guid.NewGuid(),
-            UserId = "user-1",
-            CurrentLanguage = "Polish"
-        };
-
-        var result = await tools.ExecuteAsync(
-            "add_words",
-            """
-            {
-              "words": [
-                { "word": "iść", "translation": "to go" },
-                { "word": "robić" },
-                { "translation": "to have" }
-              ]
-            }
-            """,
-            context,
-            CancellationToken.None);
-
-        Assert.Single(context.PendingChanges);
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("\"count\":1", json);
-        Assert.Contains("\"Index\":1", json);
-        Assert.Contains("\"Index\":2", json);
-    }
-
-    [Fact]
-    public async Task ListWords_PagesResultsAndReportsTotalCount()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Words.AddRange(
-            new Word { Id = "w1", QuizId = quizId, Lemma = "a", Translation = "1" },
-            new Word { Id = "w2", QuizId = quizId, Lemma = "b", Translation = "2" },
-            new Word { Id = "w3", QuizId = quizId, Lemma = "c", Translation = "3" });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync("list_words", """{"offset":1}""", context, CancellationToken.None);
-
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("\"total_count\":3", json);
-        Assert.Contains("\"offset\":1", json);
-        Assert.Contains("\"has_more\":false", json);
-        Assert.DoesNotContain("\"word\":\"a\"", json);
-        Assert.Contains("\"word\":\"b\"", json);
-    }
-
-    [Fact]
-    public async Task FreestyleItemAliases_MapPromptAndAnswerToExistingStorageContracts()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Words.Add(new Word { Id = "item-1", QuizId = quizId, Lemma = "What is preload?", Translation = "Ventricular stretch before contraction." });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1", IsFreestyle = true };
-
-        var listed = await tools.ExecuteAsync("list_items", "{}", context, CancellationToken.None);
-        var added = await tools.ExecuteAsync(
-            "add_items",
-            """{"items":[{"prompt":"What is afterload?","answer":"The resistance the ventricle must overcome."}]}""",
-            context,
-            CancellationToken.None);
-
-        var listedJson = JsonSerializer.Serialize(listed);
-        Assert.Contains("\"prompt\":\"What is preload?\"", listedJson);
-        Assert.Contains("\"answer\":\"Ventricular stretch before contraction.\"", listedJson);
-        Assert.DoesNotContain("\"word\"", listedJson);
-        Assert.Contains("queued", JsonSerializer.Serialize(added));
-        var payload = Assert.Single(context.PendingChanges).Payload;
-        Assert.Contains("What is afterload?", payload.GetRawText());
-        Assert.Contains("The resistance the ventricle must overcome.", payload.GetRawText());
-    }
-
-    [Fact]
-    public async Task ListSentences_ReturnsQuizSentences()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.QuizSentences.Add(new QuizSentence
-        {
-            Id = Guid.NewGuid(),
-            QuizId = quizId,
-            Text = "Idę do domu.",
-            Translation = "I am going home.",
-            CreatedAt = DateTimeOffset.UtcNow,
-        });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync("list_sentences", "{}", context, CancellationToken.None);
-
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("I am going home.", json);
-        Assert.Contains("\"total_count\":1", json);
-    }
-
-    [Fact]
-    public async Task DeleteSentence_QueuesPendingChangeWithSentenceText()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        var sentenceId = Guid.NewGuid();
-        db.QuizSentences.Add(new QuizSentence
-        {
-            Id = sentenceId,
-            QuizId = quizId,
-            Text = "Idę do domu.",
-            Translation = "I am going home.",
-            CreatedAt = DateTimeOffset.UtcNow,
-        });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync(
-            "delete_sentence",
-            $$"""{"sentence_id":"{{sentenceId}}"}""",
-            context,
-            CancellationToken.None);
-
-        var change = Assert.Single(context.PendingChanges);
-        Assert.Equal(PendingChangeKinds.DeleteSentence, change.Kind);
-        Assert.Equal(sentenceId, change.Payload.GetProperty("sentence_id").GetGuid());
-        Assert.Equal("Idę do domu.", change.Payload.GetProperty("text").GetString());
-        Assert.Contains("queued", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task DeleteSentence_UnknownIdReturnsError()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = Guid.NewGuid(), UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync(
-            "delete_sentence",
-            $$"""{"sentence_id":"{{Guid.NewGuid()}}"}""",
-            context,
-            CancellationToken.None);
-
-        Assert.Empty(context.PendingChanges);
-        Assert.Contains("not found", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task AddSentences_QueuesOnePendingChangePerSentence()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext
-        {
-            QuizId = Guid.NewGuid(),
-            UserId = "user-1",
-        };
-
-        var result = await tools.ExecuteAsync(
-            "add_sentences",
-            """
-            {
-              "sentences": [
-                { "text": "Idę do domu.", "translation": "I am going home." },
-                { "text": "Ona czyta książkę.", "translation": "She is reading a book." }
-              ]
-            }
-            """,
-            context,
-            CancellationToken.None);
-
-        Assert.Equal(2, context.PendingChanges.Count);
-        Assert.All(context.PendingChanges, change => Assert.Equal(PendingChangeKinds.AddSentence, change.Kind));
-        Assert.Contains("\"count\":2", JsonSerializer.Serialize(result));
-    }
-
-    [Fact]
-    public async Task EditSentences_QueuesExistingSentencesAndReportsMissingOnes()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        var sentenceId = Guid.NewGuid();
-        db.QuizSentences.Add(new QuizSentence
-        {
-            Id = sentenceId,
-            QuizId = quizId,
-            Text = "Idę dom.",
-            Translation = "I go home.",
-        });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-        var missingId = Guid.NewGuid();
-
-        var result = await tools.ExecuteAsync(
-            "edit_sentences",
-            $$"""
-            {
-              "changes": [
-                { "sentence_id": "{{sentenceId}}", "text": "Idę do domu." },
-                { "sentence_id": "{{missingId}}", "translation": "Missing." }
-              ]
-            }
-            """,
-            context,
-            CancellationToken.None);
-
-        var change = Assert.Single(context.PendingChanges);
-        Assert.Equal(PendingChangeKinds.EditSentence, change.Kind);
-        Assert.Equal("Idę dom.", change.Payload.GetProperty("original_text").GetString());
-        Assert.Equal("Idę do domu.", change.Payload.GetProperty("text").GetString());
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("\"count\":1", json);
-        Assert.Contains("not found", json, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task SearchWords_ReturnsOnlyMatchingWordsFromOwnedQuiz()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(new Quiz
-        {
-            Id = quizId,
-            UserId = "user-1",
-            Name = "German",
-            SourceLanguage = "English",
-            TargetLanguage = "German",
-            Language = "German",
-        });
-        db.Words.AddRange(
-            new Word { Id = "w1", QuizId = quizId, Lemma = "Haus", Translation = "house" },
-            new Word { Id = "w2", QuizId = quizId, Lemma = "Baum", Translation = "tree" });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync(
-            "search_words",
-            """{"query":"house"}""",
-            context,
-            CancellationToken.None);
-
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("\"word\":\"Haus\"", json);
-        Assert.DoesNotContain("\"word\":\"Baum\"", json);
-        Assert.Contains("\"total_count\":1", json);
-    }
-
-    [Fact]
-    public async Task SearchWords_IsOrdinalIgnoreCaseUnderTurkishRequestCulture()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        db.Quizzes.Add(new Quiz
-        {
-            Id = quizId,
-            UserId = "user-1",
-            Name = "English",
-            SourceLanguage = "Polish",
-            TargetLanguage = "English",
-            Language = "English",
-        });
-        db.Words.Add(new Word { Id = "w-index", QuizId = quizId, Lemma = "INDEX", Translation = "entry" });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-        var originalCulture = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
-
-            var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-                "search_words",
-                """{"query":"index"}""",
-                context,
-                CancellationToken.None));
-
-            Assert.Equal(1, result.GetProperty("total_count").GetInt32());
-            Assert.Equal("INDEX", Assert.Single(result.GetProperty("words").EnumerateArray())
-                .GetProperty("word").GetString());
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = originalCulture;
-        }
-    }
-
-    [Fact]
-    public void Assistant_search_filters_translate_with_a_pinned_sql_server_collation()
-    {
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseSqlServer("Server=localhost;Database=translation-only;User Id=sa;Password=unused;TrustServerCertificate=True")
-            .Options;
-        using var db = new GlosifyContext(options);
-
-        var pageSql = AssistantSearchQuery
-            .WherePageContains(db.BookPages, "index", db.Database)
-            .ToQueryString();
-        var wordSql = AssistantSearchQuery
-            .WhereWordContains(db.Words, "index", db.Database)
-            .ToQueryString();
-
-        Assert.Contains("COLLATE Latin1_General_100_CI_AS_SC", pageSql, StringComparison.Ordinal);
-        Assert.Contains("COLLATE Latin1_General_100_CI_AS_SC", wordSql, StringComparison.Ordinal);
-        Assert.DoesNotContain("LOWER(", pageSql, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("LOWER(", wordSql, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void Assistant_search_rejects_unsupported_relational_providers_before_execution()
-    {
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-        using var db = new GlosifyContext(options);
-
-        var pageError = Assert.Throws<NotSupportedException>(() =>
-            AssistantSearchQuery.WherePageContains(db.BookPages, "index", db.Database));
-        var wordError = Assert.Throws<NotSupportedException>(() =>
-            AssistantSearchQuery.WhereWordContains(db.Words, "index", db.Database));
-
-        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", pageError.Message, StringComparison.Ordinal);
-        Assert.Contains("Microsoft.EntityFrameworkCore.Sqlite", wordError.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task GetQuizSummary_ReturnsMetadataAndContentCounts()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        var collectionId = Guid.NewGuid();
-        db.Collections.Add(new Collection
-        {
-            Id = collectionId,
-            UserId = "user-1",
-            Name = "Travel",
-            Language = "Spanish",
-        });
-        db.Quizzes.Add(new Quiz
-        {
-            Id = quizId,
-            UserId = "user-1",
-            Name = "At the station",
-            SourceLanguage = "English",
-            TargetLanguage = "Spanish",
-            Language = "Spanish",
-            CollectionId = collectionId,
-            IsPublic = true,
-        });
-        db.Words.Add(new Word { Id = "w1", QuizId = quizId, Lemma = "tren", Translation = "train" });
-        db.QuizSentences.Add(new QuizSentence
-        {
-            Id = Guid.NewGuid(),
-            QuizId = quizId,
-            Text = "El tren llega pronto.",
-            Translation = "The train arrives soon.",
-        });
-        await db.SaveChangesAsync();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { QuizId = quizId, UserId = "user-1" };
-
-        var result = await tools.ExecuteAsync("get_quiz_summary", "{}", context, CancellationToken.None);
-
-        var json = JsonSerializer.Serialize(result);
-        Assert.Contains("\"name\":\"At the station\"", json);
-        Assert.Contains("\"collection_name\":\"Travel\"", json);
-        Assert.Contains("\"word_count\":1", json);
-        Assert.Contains("\"sentence_count\":1", json);
-        Assert.Contains("\"is_public\":true", json);
-    }
-
-    [Fact]
-    public async Task LibraryOrganizationTools_QueueValidatedChanges()
-    {
-        await using var db = CreateContext();
-        var quizId = Guid.NewGuid();
-        var sourceId = Guid.NewGuid();
-        var destinationId = Guid.NewGuid();
-        db.Collections.AddRange(
-            new Collection
-            {
-                Id = sourceId,
-                UserId = "user-1",
-                Name = "Basics",
-                Language = "French",
+                new { id = "w1", translation = "home" },
+                new { id = "w2", word = "kot", translation = "cat" },
+                new { id = "missing", translation = "x" },
             },
-            new Collection
-            {
-                Id = destinationId,
-                UserId = "user-1",
-                Name = "Course",
-                Language = "French",
-            });
-        db.Quizzes.Add(new Quiz
-        {
-            Id = quizId,
-            UserId = "user-1",
-            Name = "Greetings",
-            SourceLanguage = "English",
-            TargetLanguage = "French",
-            Language = "French",
-            CollectionId = sourceId,
-        });
+        }), Context());
+        var focused = await tools.RunAsync("edit_items", Json(new { words = new[] { new { id = "w2", translation = "kitty" } } }),
+            Context() with { FocusedWordId = "w1", FocusedWordLabel = "dom" });
+
+        var change = Assert.Single(edit.Changes);
+        Assert.Equal("house", change.Payload.GetProperty("original_translation").GetString());
+        Assert.Equal("home", change.Payload.GetProperty("translation").GetString());
+        Assert.Equal(2, JsonSerializer.SerializeToElement(edit.Output).GetProperty("skipped").GetArrayLength());
+        Assert.True(focused.IsError);
+        Assert.Contains("focused on dom", Error(focused));
+    }
+
+    [Fact]
+    public async Task Delete_items_labels_what_it_removes_and_skips_unknown_ids()
+    {
+        await using var db = await SeedAsync(words: [("w1", "dom", "house")]);
+        var tools = AssistantToolFactory.Create(db);
+
+        var result = await tools.RunAsync("delete_items", Json(new { word_ids = new[] { "w1", "missing" } }), Context());
+
+        var change = Assert.Single(result.Changes);
+        Assert.Equal(PendingChangeKinds.DeleteWord, change.Kind);
+        Assert.Equal("dom", change.Payload.GetProperty("word").GetString());
+        Assert.Equal("Remove 1 word from “Polish basics”", result.Title);
+    }
+
+    [Fact]
+    public async Task Create_quiz_fills_known_languages_and_validates_the_collection()
+    {
+        await using var db = await SeedAsync();
+        var tools = AssistantToolFactory.Create(db);
+
+        var created = await tools.RunAsync("create_quiz", Json(new { name = "Travel", words = new[] { new { word = "pociąg", translation = "train" } } }), Context());
+        var badCollection = await tools.RunAsync("create_quiz", Json(new { name = "Travel", collection_id = Guid.NewGuid() }), Context());
+        var noLanguage = await tools.RunAsync("create_quiz", Json(new { name = "Travel" }), Context() with { TargetLanguage = null });
+
+        var payload = Assert.Single(created.Changes).Payload;
+        Assert.Equal("Polish", payload.GetProperty("target_language").GetString());
+        Assert.Equal("English", payload.GetProperty("source_language").GetString());
+        Assert.Equal(1, payload.GetProperty("words").GetArrayLength());
+        Assert.Contains("collection was not found", Error(badCollection));
+        Assert.Contains("target_language is required", Error(noLanguage));
+    }
+
+    [Fact]
+    public async Task Creation_keeps_the_practice_language_and_accepts_inferred_translations()
+    {
+        await using var db = await SeedAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var context = Context() with { SourceLanguage = "German" };
+        var swedish = await tools.RunAsync("create_quiz", Json(new { name = "Resor", source_language = "Swedish",
+            words = new[] { new { word = "pociąg", translation = "tåg" } } }), context);
+        var fallback = await tools.RunAsync("create_quiz", Json(new { name = "Travel" }), context);
+        var reversed = await tools.RunAsync("create_quiz", Json(new { name = "Travel", target_language = "English", source_language = "Polish" }), context);
+        var missing = await tools.RunAsync("create_quiz", Json(new { name = "Travel", target_language = "Polish" }), context with { TargetLanguage = null });
+
+        var payload = Assert.Single(swedish.Changes).Payload;
+        Assert.Equal("Polish", payload.GetProperty("target_language").GetString());
+        Assert.Equal("Swedish", payload.GetProperty("source_language").GetString());
+        Assert.Equal("pociąg", payload.GetProperty("words")[0].GetProperty("word").GetString());
+        Assert.Equal("tåg", payload.GetProperty("words")[0].GetProperty("translation").GetString());
+        Assert.Equal("English", Assert.Single(fallback.Changes).Payload.GetProperty("source_language").GetString());
+        Assert.True(reversed.IsError);
+        Assert.Empty(reversed.Changes);
+        Assert.True(missing.IsError);
+        Assert.Empty(missing.Changes);
+    }
+
+    [Fact]
+    public async Task Freestyle_quizzes_take_items_and_ignore_languages()
+    {
+        await using var db = await SeedAsync();
+        var tools = AssistantToolFactory.Create(db);
+
+        var result = await tools.RunAsync("create_quiz", Json(new { name = "Biology", items = new[] { new { prompt = "Cell unit?", answer = "The cell" } } }),
+            Context() with { Mode = AssistantMode.Freestyle, TargetLanguage = "Freestyle" });
+
+        var payload = Assert.Single(result.Changes).Payload;
+        Assert.Equal("Freestyle", payload.GetProperty("target_language").GetString());
+        Assert.Equal("Cell unit?", payload.GetProperty("words")[0].GetProperty("word").GetString());
+    }
+
+    [Fact]
+    public async Task Collections_cannot_move_into_their_own_descendants_or_clash_on_names()
+    {
+        await using var db = await SeedAsync();
+        var parent = new Collection { Id = Guid.NewGuid(), UserId = "user", Name = "Parent", Language = "Polish" };
+        var child = new Collection { Id = Guid.NewGuid(), UserId = "user", Name = "Child", Language = "Polish", ParentCollectionId = parent.Id };
+        var sibling = new Collection { Id = Guid.NewGuid(), UserId = "user", Name = "Sibling", Language = "Polish" };
+        db.Collections.AddRange(parent, child, sibling);
         await db.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "French" };
 
-        await tools.ExecuteAsync(
-            "move_quiz",
-            $$"""{"quiz_id":"{{quizId}}","collection_id":"{{destinationId}}"}""",
-            context,
-            CancellationToken.None);
-        await tools.ExecuteAsync(
-            "rename_collection",
-            $$"""{"collection_id":"{{sourceId}}","name":"Foundations"}""",
-            context,
-            CancellationToken.None);
-        await tools.ExecuteAsync(
-            "move_collection",
-            $$"""{"collection_id":"{{sourceId}}","parent_collection_id":"{{destinationId}}"}""",
-            context,
-            CancellationToken.None);
+        var cycle = await tools.RunAsync("move_collection", Json(new { collection_id = parent.Id, parent_collection_id = child.Id }), Context());
+        var clash = await tools.RunAsync("rename_collection", Json(new { collection_id = sibling.Id, name = "Parent" }), Context());
+        var move = await tools.RunAsync("move_collection", Json(new { collection_id = sibling.Id, parent_collection_id = parent.Id }), Context());
 
-        Assert.Collection(
-            context.PendingChanges,
-            change => Assert.Equal(PendingChangeKinds.MoveQuiz, change.Kind),
-            change => Assert.Equal(PendingChangeKinds.RenameCollection, change.Kind),
-            change => Assert.Equal(PendingChangeKinds.MoveCollection, change.Kind));
+        Assert.Contains("inside itself", Error(cycle));
+        Assert.Contains("already exists", Error(clash));
+        Assert.Equal(PendingChangeKinds.MoveCollection, Assert.Single(move.Changes).Kind);
     }
 
     [Fact]
-    public async Task GetBookPages_ReadsARunOfPagesInOrderFromTheSelectedBook()
+    public async Task Search_items_finds_words_and_sentences_regardless_of_case()
     {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 6);
+        await using var db = await SeedAsync(words: [("w1", "Dom", "house"), ("w2", "kot", "cat")]);
+        db.QuizSentences.Add(new QuizSentence { Id = Guid.NewGuid(), QuizId = QuizId, Text = "Mój dom jest duży.", Translation = "My house is big." });
+        await db.SaveChangesAsync();
         var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
 
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_book_pages", """{"from_page":2,"limit":3}""", context, CancellationToken.None));
+        var output = JsonSerializer.SerializeToElement(await tools.ExecuteAsync("search_items", Json(new { query = "HOUSE" }), Context()));
 
-        var pages = result.GetProperty("pages").EnumerateArray().ToList();
-        Assert.Equal([2, 3, 4], pages.Select(page => page.GetProperty("page_number").GetInt32()));
-        Assert.Equal("Page 2 text.", pages[0].GetProperty("text").GetString());
-        Assert.True(result.GetProperty("has_more").GetBoolean());
-        Assert.Equal(5, result.GetProperty("next_page").GetInt32());
+        Assert.Equal("Dom", output.GetProperty("words")[0].GetProperty("word").GetString());
+        Assert.Equal("Mój dom jest duży.", output.GetProperty("sentences")[0].GetProperty("text").GetString());
     }
 
     [Fact]
-    public async Task GetBookPages_ReportsNoMoreOnTheLastPage()
+    public async Task A_book_search_miss_says_which_term_is_absent()
     {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 3);
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_book_pages", """{"from_page":3}""", context, CancellationToken.None));
-
-        Assert.Single(result.GetProperty("pages").EnumerateArray());
-        Assert.False(result.GetProperty("has_more").GetBoolean());
-    }
-
-    [Fact]
-    public async Task GetBookPages_RejectsAnotherUsersBook()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "owner", pageCount: 2);
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "intruder", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_book_pages", "{}", context, CancellationToken.None));
-
-        Assert.Equal("Book not found.", result.GetProperty("error").GetString());
-    }
-
-    [Fact]
-    public async Task GetBookPages_NeedsABookIdWhenNoneIsSelected()
-    {
-        await using var db = CreateContext();
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1" };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_book_pages", "{}", context, CancellationToken.None));
-
-        Assert.Equal("Choose a book first or provide a valid book_id.", result.GetProperty("error").GetString());
-    }
-
-    // A single call must not be able to fill the context window, however long the pages
-    // are. The first page always comes back so the model never gets an empty answer.
-    [Fact]
-    public async Task GetBookPages_StopsAtTheCharacterBudget()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 4, pageText: new string('a', 7_000));
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "get_book_pages", """{"from_page":1,"limit":4}""", context, CancellationToken.None));
-
-        Assert.Single(result.GetProperty("pages").EnumerateArray());
-        Assert.Equal(2, result.GetProperty("next_page").GetInt32());
-        Assert.True(result.GetProperty("has_more").GetBoolean());
-    }
-
-    // The reason this tool exists: a book runs to hundreds of pages, so the model has to be
-    // able to find page 140 without paging there three pages at a time from page 1.
-    [Fact]
-    public async Task SearchBookPages_FindsMatchesDeepInTheBook()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 200);
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"Page 140"}""", context, CancellationToken.None));
-
-        var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
-        Assert.Equal(140, match.GetProperty("page_number").GetInt32());
-        Assert.Contains("Page 140 text.", match.GetProperty("snippet").GetString());
-        Assert.Equal(1, result.GetProperty("match_count").GetInt32());
-        Assert.False(result.GetProperty("has_more").GetBoolean());
-    }
-
-    [Fact]
-    public async Task SearchBookPages_IsOrdinalIgnoreCaseUnderTurkishRequestCulture()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "The INDEX is on this page.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-        var originalCulture = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
-
-            var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-                "search_book_pages",
-                """{"query":"index"}""",
-                context,
-                CancellationToken.None));
-
-            var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
-            Assert.Equal(1, match.GetProperty("page_number").GetInt32());
-            Assert.Equal(1, match.GetProperty("hits").GetInt32());
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = originalCulture;
-        }
-    }
-
-    // Several words are an AND, so a page holding only one of them is not a match.
-    [Fact]
-    public async Task SearchBookPages_RequiresEveryTermOnTheSamePage()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1",
-            "Odmiana czasownika w czasie przyszłym.",
-            "Odmiana rzeczownika.",
-            "Czasownik nieregularny.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"odmiana czasownika"}""", context, CancellationToken.None));
-
-        var match = Assert.Single(result.GetProperty("matches").EnumerateArray());
-        Assert.Equal(1, match.GetProperty("page_number").GetInt32());
-    }
-
-    [Fact]
-    public async Task SearchBookPages_CapsMatchesAndReportsMore()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 30, pageText: "shared text");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"shared","limit":5}""", context, CancellationToken.None));
-
-        Assert.Equal(5, result.GetProperty("matches").GetArrayLength());
-        Assert.Equal(30, result.GetProperty("match_count").GetInt32());
-        Assert.True(result.GetProperty("has_more").GetBoolean());
-    }
-
-    // The whole point of ranking: a page late in the book that is really about the term
-    // must outrank earlier pages that mention it once, or the tool reintroduces the
-    // "assistant only sees the beginning" bug one layer up.
-    [Fact]
-    public async Task SearchBookPages_RanksDenselyMatchingPagesAboveEarlierOnes()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1",
-            "A passing mention of aspekt here.",
-            "Another passing mention of aspekt.",
-            "Aspekt dokonany i aspekt niedokonany. Aspekt decyduje o znaczeniu, a aspekt jest kluczowy.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"aspekt"}""", context, CancellationToken.None));
-
-        var matches = result.GetProperty("matches").EnumerateArray().ToList();
-        Assert.Equal(3, matches[0].GetProperty("page_number").GetInt32());
-        Assert.Equal(4, matches[0].GetProperty("hits").GetInt32());
-        Assert.Equal([3, 1, 2], matches.Select(match => match.GetProperty("page_number").GetInt32()));
-    }
-
-    // A miss has to teach the model what to try next, which is what keeps it searching
-    // instead of announcing that the book does not cover the topic.
-    [Fact]
-    public async Task SearchBookPages_ReportsWhichTermFailedWhenNothingMatches()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1",
-            "Odmiana czasownika w czasie przeszłym.",
-            "Odmiana rzeczownika.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"odmiana gerund"}""", context, CancellationToken.None));
-
-        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
-        var termPages = result.GetProperty("term_pages").EnumerateArray().ToList();
-        Assert.Equal(2, termPages.Single(term => term.GetProperty("term").GetString() == "odmiana")
-            .GetProperty("page_count").GetInt32());
-        Assert.Equal(0, termPages.Single(term => term.GetProperty("term").GetString() == "gerund")
-            .GetProperty("page_count").GetInt32());
-        Assert.Contains("gerund", result.GetProperty("hint").GetString());
-    }
-
-    // A term that exists only before from_page must never be reported as absent: "this
-    // word is nowhere in the book" is what would let the assistant tell a learner their
-    // textbook does not cover something it covers on page 2.
-    [Fact]
-    public async Task SearchBookPages_CountsTermsOverTheWholeBookNotOnlyFromThePageSearched()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1",
-            "Aspekt czasownika.",
-            "Nic tutaj.",
-            "Nic tutaj tez.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"aspekt","from_page":2}""", context, CancellationToken.None));
-
-        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
-        var term = Assert.Single(result.GetProperty("term_pages").EnumerateArray());
-        Assert.Equal(1, term.GetProperty("page_count").GetInt32());
-        Assert.DoesNotContain("nowhere in the book", result.GetProperty("hint").GetString());
-    }
-
-    // Dropping the surplus keeps a long query useful, but the model has to be told which
-    // words the AND it got was actually built from.
-    [Fact]
-    public async Task SearchBookPages_ReportsTermsDroppedBeyondTheCap()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "alfa beta gamma delta epsilon.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages",
-            """{"query":"alfa beta gamma delta epsilon"}""",
-            context,
-            CancellationToken.None));
-
-        Assert.Equal(4, result.GetProperty("terms").GetArrayLength());
-        Assert.Equal(
-            ["epsilon"],
-            result.GetProperty("ignored_terms").EnumerateArray().Select(term => term.GetString()));
-        Assert.Equal(1, result.GetProperty("match_count").GetInt32());
-    }
-
-    [Fact]
-    public async Task SearchBookPages_SaysSoWhenTermsExistButNeverShareAPage()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "Tylko odmiana.", "Tylko czasownik.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"odmiana czasownik"}""", context, CancellationToken.None));
-
-        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
-        Assert.Contains("never together", result.GetProperty("hint").GetString());
-    }
-
-    [Fact]
-    public async Task SearchBookPages_SaysTheBookNeverUsesAnyOfTheTerms()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "Odmiana czasownika.", "Odmiana rzeczownika.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"conjugation tense"}""", context, CancellationToken.None));
-
-        Assert.Equal(0, result.GetProperty("match_count").GetInt32());
-        Assert.Contains("another language", result.GetProperty("hint").GetString());
-    }
-
-    // The metrics that decide whether retrieval is working have to survive
-    // AssistantAnalytics:CaptureContent being off. It is on by default now, but it is a
-    // switch: these are span tags rather than stored tool arguments precisely so the
-    // retrieval numbers do not depend on which way it is set.
-    [Fact]
-    public async Task SearchBookPages_RecordsMatchCountsOnTheToolSpan()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "Aspekt i aspekt.", "Nic tutaj.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-        using var listener = ListenToAssistantSpans(out var stopped);
-        var turnId = Guid.NewGuid();
-        var invocationId = Guid.NewGuid();
-
-        using (StartToolSpan(turnId, invocationId))
-        {
-            await tools.ExecuteAsync(
-                "search_book_pages", """{"query":"aspekt"}""", context, CancellationToken.None);
-        }
-
-        var span = Assert.Single(
-            stopped,
-            activity => (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString()
-                && (string?)activity.GetTagItem("assistant.invocation.id") == invocationId.ToString());
-        Assert.Equal(1, span.GetTagItem("assistant.search.term_count"));
-        Assert.Equal(1, span.GetTagItem("assistant.search.match_count"));
-        Assert.Equal(1, span.GetTagItem("assistant.search.returned_count"));
-        Assert.Equal(0, span.GetTagItem("assistant.search.zero_page_terms"));
-        Assert.Equal(2, span.GetTagItem("assistant.search.top_page_hits"));
-    }
-
-    [Fact]
-    public async Task SearchBookPages_RecordsAMissAndWhichTermsWereAbsent()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedPagesAsync(db, "user-1", "Odmiana czasownika.", "Odmiana rzeczownika.");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-        using var listener = ListenToAssistantSpans(out var stopped);
-        var turnId = Guid.NewGuid();
-        var invocationId = Guid.NewGuid();
-
-        using (StartToolSpan(turnId, invocationId))
-        {
-            await tools.ExecuteAsync(
-                "search_book_pages", """{"query":"odmiana gerund"}""", context, CancellationToken.None);
-        }
-
-        var span = Assert.Single(
-            stopped,
-            activity => (string?)activity.GetTagItem("assistant.turn.id") == turnId.ToString()
-                && (string?)activity.GetTagItem("assistant.invocation.id") == invocationId.ToString());
-        Assert.Equal(2, span.GetTagItem("assistant.search.term_count"));
-        Assert.Equal(0, span.GetTagItem("assistant.search.match_count"));
-        Assert.Equal(1, span.GetTagItem("assistant.search.zero_page_terms"));
-    }
-
-    private static ActivityListener ListenToAssistantSpans(out ConcurrentQueue<Activity> stopped)
-    {
-        var captured = new ConcurrentQueue<Activity>();
-        stopped = captured;
-        var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == GenerativeAiTelemetry.ActivitySourceName,
-            Sample = static (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = captured.Enqueue,
-        };
-        ActivitySource.AddActivityListener(listener);
-        return listener;
-    }
-
-    /// <summary>The span the turn runner has open while a tool executes.</summary>
-    private static Activity? StartToolSpan(Guid turnId, Guid invocationId) =>
-        AssistantAnalyticsTelemetry.StartTool(turnId, invocationId, "search_book_pages");
-
-    [Fact]
-    public async Task SearchBookPages_RejectsAnotherUsersBook()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "owner", pageCount: 2);
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "intruder", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"page"}""", context, CancellationToken.None));
-
-        Assert.Equal("Book not found.", result.GetProperty("error").GetString());
-    }
-
-    [Fact]
-    public async Task SearchBookPages_NeedsAQuery()
-    {
-        await using var db = CreateContext();
-        var bookId = await SeedBookAsync(db, "user-1", pageCount: 2);
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", BookDocumentId = bookId };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "search_book_pages", """{"query":"   "}""", context, CancellationToken.None));
-
-        Assert.Equal("query is required.", result.GetProperty("error").GetString());
-    }
-
-    [Fact]
-    public async Task ListBooks_ReturnsOnlyTheCurrentLanguagesBooks()
-    {
-        await using var db = CreateContext();
-        await SeedBookAsync(db, "user-1", pageCount: 1, title: "Polish Reader", language: "Polish");
-        await SeedBookAsync(db, "user-1", pageCount: 1, title: "German Reader", language: "German");
-        await SeedBookAsync(db, "user-2", pageCount: 1, title: "Someone else's", language: "Polish");
-        var tools = AssistantToolFactory.Create(db);
-        var context = new AgentToolContext { UserId = "user-1", CurrentLanguage = "Polish" };
-
-        var result = JsonSerializer.SerializeToElement(await tools.ExecuteAsync(
-            "list_books", "{}", context, CancellationToken.None));
-
-        var book = Assert.Single(result.GetProperty("books").EnumerateArray());
-        Assert.Equal("Polish Reader", book.GetProperty("title").GetString());
-        Assert.Equal(1, result.GetProperty("total_count").GetInt32());
-    }
-
-    private static async Task<Guid> SeedBookAsync(
-        GlosifyContext db,
-        string userId,
-        int pageCount,
-        string title = "Polish Reader",
-        string language = "Polish",
-        string? pageText = null)
-    {
+        await using var db = await SeedAsync();
         var bookId = Guid.NewGuid();
-        db.BookDocuments.Add(new Glosify.Models.Library.BookDocument
+        db.BookDocuments.Add(new BookDocument { Id = bookId, UserId = "user", Title = "Course book", PageCount = 1, BlobName = "b", OriginalFileName = "b.pdf" });
+        db.BookPages.Add(new BookPage { Id = Guid.NewGuid(), BookDocumentId = bookId, PageNumber = 1, Text = "Rozdział pierwszy: dom i rodzina." });
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+
+        var output = JsonSerializer.SerializeToElement(await tools.ExecuteAsync("search_book_pages", Json(new { query = "dom samochód", book_id = bookId }), Context()));
+
+        Assert.Equal(0, output.GetProperty("match_count").GetInt32());
+        Assert.Contains("samochód appear nowhere", output.GetProperty("hint").GetString());
+    }
+
+    [Fact]
+    public async Task Read_source_returns_numbered_lines_within_bounds()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+        var context = Context() with { Source = new SourceText(string.Join("\n", Enumerable.Range(1, 10).Select(line => $"line {line}"))) };
+
+        var read = await tools.RunAsync("read_source", Json(new { from_line = 3, to_line = 4 }), context);
+        var beyond = await tools.RunAsync("read_source", Json(new { from_line = 11 }), context);
+        var none = await tools.RunAsync("read_source", Json(new { from_line = 1 }), Context());
+
+        Assert.Equal("3: line 3\n4: line 4\n", JsonSerializer.SerializeToElement(read.Output).GetProperty("lines").GetString()!.ReplaceLineEndings("\n"));
+        Assert.Equal(new ReadSourceEffect(3, 4), read.Effect);
+        Assert.Contains("between 1 and 10", Error(beyond));
+        Assert.Contains("no stored source text", Error(none));
+    }
+
+    [Fact]
+    public async Task Plan_and_question_tools_describe_their_effect()
+    {
+        await using var db = CreateContext();
+        var tools = AssistantToolFactory.Create(db);
+
+        var plan = await tools.RunAsync("update_plan", Json(new { items = new object[] { new { text = "Read", status = "completed" }, new { text = "Add", status = "in_progress" } } }), Context());
+        var ask = await tools.RunAsync("ask_user", Json(new { question = "Which topic?", options = new[] { "Food", "food", "Travel" }, multiple = true }), Context());
+        var single = await tools.RunAsync("ask_user", Json(new { question = "Which topic?", options = new[] { "Food" }, multiple = true }), Context());
+
+        Assert.Equal("Updated the plan (1/2 done)", plan.Title);
+        Assert.Equal("in_progress", Assert.IsType<UpdatePlanEffect>(plan.Effect).Items[1].Status);
+        var question = Assert.IsType<AskUserEffect>(ask.Effect);
+        Assert.Equal(["Food", "Travel"], question.Options);
+        Assert.True(question.Multiple);
+        Assert.False(Assert.IsType<AskUserEffect>(single.Effect).Multiple);
+    }
+
+    [Fact]
+    public async Task Invalid_arguments_come_back_as_a_correctable_error()
+    {
+        await using var db = await SeedAsync();
+        var tools = AssistantToolFactory.Create(db);
+
+        var missing = await tools.RunAsync("search_items", "{}", Context());
+        var malformed = await tools.RunAsync("search_items", "{\"query\":", Context());
+        var unknown = await tools.RunAsync("search_items", Json(new { query = "dom", extra = 1 }), Context());
+
+        Assert.All([missing, malformed, unknown], result =>
         {
-            Id = bookId,
-            UserId = userId,
-            Title = title,
-            OriginalFileName = "reader.pdf",
-            BlobName = $"books/{bookId}.pdf",
-            Language = language,
-            PageCount = pageCount,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow,
+            Assert.True(result.IsError);
+            Assert.Contains("Rewrite the call", Error(result));
         });
-        for (var pageNumber = 1; pageNumber <= pageCount; pageNumber++)
+    }
+
+    private static void AssertStrict(JsonElement schema, string tool)
+    {
+        if (schema.ValueKind != JsonValueKind.Object)
         {
-            db.BookPages.Add(new Glosify.Models.Library.BookPage
+            return;
+        }
+
+        if (schema.TryGetProperty("enum", out _))
+        {
+            Assert.True(schema.TryGetProperty("type", out _), $"{tool}: an enum without a type");
+        }
+
+        if (schema.TryGetProperty("properties", out var properties))
+        {
+            var names = properties.EnumerateObject().Select(property => property.Name).Order().ToArray();
+            var required = schema.GetProperty("required").EnumerateArray().Select(name => name.GetString()!).Order().ToArray();
+            Assert.Equal(names, required);
+            Assert.False(schema.GetProperty("additionalProperties").GetBoolean(), $"{tool}: additional properties allowed");
+            foreach (var property in properties.EnumerateObject())
             {
-                Id = Guid.NewGuid(),
-                BookDocumentId = bookId,
-                PageNumber = pageNumber,
-                Text = pageText ?? $"Page {pageNumber} text.",
-            });
+                AssertStrict(property.Value, tool);
+            }
         }
-        await db.SaveChangesAsync();
-        return bookId;
-    }
 
-    /// <summary>Seeds a book whose pages have distinct text, one string per page.</summary>
-    private static async Task<Guid> SeedPagesAsync(
-        GlosifyContext db,
-        string userId,
-        params string[] pageTexts)
-    {
-        var bookId = await SeedBookAsync(db, userId, pageCount: pageTexts.Length);
-        var pages = await db.BookPages
-            .Where(page => page.BookDocumentId == bookId)
-            .ToListAsync();
-        foreach (var page in pages)
+        if (schema.TryGetProperty("items", out var items))
         {
-            page.Text = pageTexts[page.PageNumber - 1];
+            AssertStrict(items, tool);
         }
-        await db.SaveChangesAsync();
-        return bookId;
     }
 
-    private static GlosifyContext CreateContext()
+    private static ToolContext Context() => new()
     {
-        var options = new DbContextOptionsBuilder<GlosifyContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString("N"))
-            .Options;
-        return new GlosifyContext(options);
-    }
-
-    private static Quiz CreateQuiz(Guid id, string userId) => new()
-    {
-        Id = id,
-        UserId = userId,
-        Name = "Polish",
-        SourceLanguage = "English",
+        UserId = "user",
+        Mode = AssistantMode.Language,
+        QuizId = QuizId,
         TargetLanguage = "Polish",
-        Language = "Polish",
-        CreatedAt = DateTimeOffset.UtcNow,
+        TargetLanguageCode = "pl",
+        SourceLanguage = "English",
     };
+
+    private static string Json(object value) => JsonSerializer.Serialize(value);
+
+    private static string Error(ToolResult result) =>
+        JsonSerializer.SerializeToElement(result.Output).GetProperty("error").GetString()!;
+
+    private static GlosifyContext CreateContext() =>
+        new(new DbContextOptionsBuilder<GlosifyContext>().UseInMemoryDatabase(Guid.NewGuid().ToString("N")).Options);
+
+    private static async Task<GlosifyContext> SeedAsync(params (string Id, string Word, string Translation)[] words)
+    {
+        var db = CreateContext();
+        db.Quizzes.Add(new Quiz { Id = QuizId, UserId = "user", Name = "Polish basics", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" });
+        foreach (var (id, word, translation) in words)
+        {
+            db.Words.Add(new Word { Id = id, QuizId = QuizId, Lemma = word, Translation = translation });
+        }
+
+        await db.SaveChangesAsync();
+        return db;
+    }
 }

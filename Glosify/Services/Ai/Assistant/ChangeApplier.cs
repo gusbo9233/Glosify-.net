@@ -85,53 +85,57 @@ public sealed class ChangeApplier : IChangeApplier
             throw new InvalidOperationException("This proposal contains a retired custom quiz change and can no longer be applied.");
         }
 
-        Quiz? quiz = null;
-        QuizContentBatch batch = QuizContentBatch.Empty;
-        if (changes.Any(RequiresQuizContext))
+        // New proposals carry their own quiz_id; older saved proposals use the message's
+        // context. Validate every target before applying any changes and keep one batch per
+        // quiz so duplicate handling and application order remain unchanged.
+        var targets = new Dictionary<Guid, (Quiz Quiz, QuizContentBatch Batch)>();
+        Guid? Target(PendingChange change) => GetNullableGuid(change.Payload, "quiz_id") ?? quizId;
+        foreach (var group in changes.Where(RequiresQuizContext).GroupBy(Target))
         {
-            if (!quizId.HasValue)
+            if (group.Key is not Guid target)
             {
                 throw new QuizNotFoundException("Choose a quiz before applying quiz content changes.");
             }
 
-            quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == quizId.Value && q.UserId == userId, cancellationToken)
+            var quiz = await _context.Quizzes.FirstOrDefaultAsync(q => q.Id == target && q.UserId == userId, cancellationToken)
                 ?? throw new QuizNotFoundException();
-
-            // Bulk applies used to issue one lookup/duplicate-check query per change;
-            // pre-loading the touched content keeps this at a fixed handful of queries.
-            batch = await LoadQuizContentAsync(quiz.Id, changes, cancellationToken);
+            targets[target] = (quiz, await LoadQuizContentAsync(target, group.ToList(), cancellationToken));
         }
 
         var applied = 0;
+        var journal = new List<AppliedChange>();
         Guid? createdQuizId = null;
         AssistantCreatedQuizSummary? createdQuiz = null;
         Guid? createdCollectionId = null;
 
         foreach (var change in changes)
         {
+            var (quiz, batch) = RequiresQuizContext(change)
+                ? targets[Target(change)!.Value]
+                : (null, QuizContentBatch.Empty);
             switch (change.Kind)
             {
                 case PendingChangeKinds.AddWord:
-                    applied += ApplyAddWord(change.Payload, quiz!, batch) ? 1 : 0;
+                    applied += ApplyAddWord(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.AddSentence:
-                    applied += ApplyAddSentence(change.Payload, quiz!, batch) ? 1 : 0;
+                    applied += ApplyAddSentence(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.EditWord:
-                    applied += ApplyEditWord(change.Payload, batch) ? 1 : 0;
+                    applied += ApplyEditWord(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.EditSentence:
-                    applied += ApplyEditSentence(change.Payload, batch) ? 1 : 0;
+                    applied += ApplyEditSentence(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.DeleteWord:
-                    applied += ApplyDeleteWord(change.Payload, batch) ? 1 : 0;
+                    applied += ApplyDeleteWord(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.DeleteSentence:
-                    applied += ApplyDeleteSentence(change.Payload, batch) ? 1 : 0;
+                    applied += ApplyDeleteSentence(change.Payload, quiz!, batch, journal) ? 1 : 0;
                     break;
                 case PendingChangeKinds.CreateQuiz:
                     {
-                        var created = await ApplyCreateQuizAsync(change.Payload, userId, cancellationToken);
+                        var created = await ApplyCreateQuizAsync(change.Payload, userId, journal, cancellationToken);
                         if (created != null)
                         {
                             applied++;
@@ -146,7 +150,7 @@ public sealed class ChangeApplier : IChangeApplier
                     }
                 case PendingChangeKinds.CreateCollection:
                     {
-                        var created = await ApplyCreateCollectionAsync(change.Payload, userId, cancellationToken);
+                        var created = await ApplyCreateCollectionAsync(change.Payload, userId, journal, cancellationToken);
                         if (created.HasValue)
                         {
                             applied++;
@@ -155,13 +159,13 @@ public sealed class ChangeApplier : IChangeApplier
                         break;
                     }
                 case PendingChangeKinds.MoveQuiz:
-                    applied += await ApplyMoveQuizAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    applied += await ApplyMoveQuizAsync(change.Payload, userId, journal, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.RenameCollection:
-                    applied += await ApplyRenameCollectionAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    applied += await ApplyRenameCollectionAsync(change.Payload, userId, journal, cancellationToken) ? 1 : 0;
                     break;
                 case PendingChangeKinds.MoveCollection:
-                    applied += await ApplyMoveCollectionAsync(change.Payload, userId, cancellationToken) ? 1 : 0;
+                    applied += await ApplyMoveCollectionAsync(change.Payload, userId, journal, cancellationToken) ? 1 : 0;
                     break;
                 default:
                     _logger.LogWarning("Unknown pending change kind {Kind}; skipping.", change.Kind);
@@ -170,13 +174,16 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        if (quiz is not null)
-            await _ankiCollections.SyncQuizAsync(quiz.Id, cancellationToken);
+        foreach (var target in targets.Keys)
+            await _ankiCollections.SyncQuizAsync(target, cancellationToken);
         return new AssistantApplyResult(
             applied,
             createdQuizId,
             createdCollectionId,
-            createdQuiz);
+            createdQuiz)
+        {
+            Journal = journal,
+        };
     }
 
     private static bool RequiresQuizContext(PendingChange change)
@@ -372,7 +379,7 @@ public sealed class ChangeApplier : IChangeApplier
 
         foreach (var text in projected.Values.Concat(added))
         {
-            var key = Tools.ToolArguments.NormalizeForDuplicateMatch(text);
+            var key = Tools.QuizContent.NormalizeForDuplicateMatch(text);
             if (!string.IsNullOrWhiteSpace(key))
             {
                 batch.SentenceMatchKeys.Add(key);
@@ -380,7 +387,7 @@ public sealed class ChangeApplier : IChangeApplier
         }
     }
 
-    private bool ApplyAddWord(JsonElement payload, Quiz quiz, QuizContentBatch batch)
+    private bool ApplyAddWord(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var newWord = GetString(payload, "word");
         var translation = GetString(payload, "translation");
@@ -389,7 +396,7 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        if (batch.SentenceMatchKeys.Contains(Tools.ToolArguments.NormalizeForDuplicateMatch(newWord)))
+        if (batch.SentenceMatchKeys.Contains(Tools.QuizContent.NormalizeForDuplicateMatch(newWord)))
         {
             return false;
         }
@@ -399,18 +406,21 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        _context.Words.Add(new Word
+        var word = new Word
         {
             Id = Guid.NewGuid().ToString("N"),
             QuizId = quiz.Id,
             Lemma = newWord,
             Translation = translation,
-        });
+        };
+        _context.Words.Add(word);
+        journal.Add(new AppliedChange(PendingChangeKinds.AddWord, AppliedEntityTypes.Word, word.Id, quiz.Id,
+            null, new { word = word.Lemma, translation = word.Translation }));
 
         return true;
     }
 
-    private bool ApplyAddSentence(JsonElement payload, Quiz quiz, QuizContentBatch batch)
+    private bool ApplyAddSentence(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var text = GetString(payload, "text").Trim();
         var translation = GetString(payload, "translation");
@@ -427,18 +437,21 @@ public sealed class ChangeApplier : IChangeApplier
         // Staged rows are not in batch.Sentences, so a later delete or edit has to be told
         // about them or it would release a text this insert still needs.
         batch.StagedSentenceTexts.Add(text);
-        _context.QuizSentences.Add(new QuizSentence
+        var sentence = new QuizSentence
         {
             Id = Guid.NewGuid(),
             QuizId = quiz.Id,
             Text = text,
             Translation = translation.Trim(),
             CreatedAt = DateTimeOffset.UtcNow
-        });
+        };
+        _context.QuizSentences.Add(sentence);
+        journal.Add(new AppliedChange(PendingChangeKinds.AddSentence, AppliedEntityTypes.Sentence, sentence.Id.ToString(), quiz.Id,
+            null, new { text = sentence.Text, translation = sentence.Translation }));
         return true;
     }
 
-    private bool ApplyEditWord(JsonElement payload, QuizContentBatch batch)
+    private bool ApplyEditWord(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var wordId = GetString(payload, "word_id");
         if (string.IsNullOrWhiteSpace(wordId) || !batch.WordsById.TryGetValue(wordId, out var word))
@@ -448,6 +461,7 @@ public sealed class ChangeApplier : IChangeApplier
 
         var newWord = GetString(payload, "word");
         var newTranslation = GetString(payload, "translation");
+        var before = new { word = word.Lemma, translation = word.Translation };
         if (!string.IsNullOrWhiteSpace(newWord))
         {
             var replaced = word.Lemma;
@@ -456,10 +470,12 @@ public sealed class ChangeApplier : IChangeApplier
             batch.ReleaseWordLemma(replaced);
         }
         if (!string.IsNullOrWhiteSpace(newTranslation)) word.Translation = newTranslation;
+        journal.Add(new AppliedChange(PendingChangeKinds.EditWord, AppliedEntityTypes.Word, word.Id, quiz.Id,
+            before, new { word = word.Lemma, translation = word.Translation }));
         return true;
     }
 
-    private bool ApplyEditSentence(JsonElement payload, QuizContentBatch batch)
+    private bool ApplyEditSentence(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var sentenceId = GetNullableGuid(payload, "sentence_id");
         if (!sentenceId.HasValue || !batch.SentencesById.TryGetValue(sentenceId.Value, out var sentence))
@@ -474,6 +490,7 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
+        var before = new { text = sentence.Text, translation = sentence.Translation };
         if (!string.IsNullOrWhiteSpace(newText))
         {
             var replaced = sentence.Text;
@@ -487,10 +504,12 @@ public sealed class ChangeApplier : IChangeApplier
         {
             sentence.Translation = newTranslation.Trim();
         }
+        journal.Add(new AppliedChange(PendingChangeKinds.EditSentence, AppliedEntityTypes.Sentence, sentence.Id.ToString(), quiz.Id,
+            before, new { text = sentence.Text, translation = sentence.Translation }));
         return true;
     }
 
-    private bool ApplyDeleteWord(JsonElement payload, QuizContentBatch batch)
+    private bool ApplyDeleteWord(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var wordId = GetString(payload, "word_id");
         if (string.IsNullOrWhiteSpace(wordId) || !batch.WordsById.TryGetValue(wordId, out var word))
@@ -502,6 +521,8 @@ public sealed class ChangeApplier : IChangeApplier
         batch.DeletedWordIds.Add(wordId);
         batch.ReleaseWordLemma(word.Lemma);
         _context.Words.Remove(word);
+        journal.Add(new AppliedChange(PendingChangeKinds.DeleteWord, AppliedEntityTypes.Word, word.Id, quiz.Id,
+            new { word = word.Lemma, translation = word.Translation }, null));
         return true;
     }
 
@@ -529,7 +550,7 @@ public sealed class ChangeApplier : IChangeApplier
         }
     }
 
-    private bool ApplyDeleteSentence(JsonElement payload, QuizContentBatch batch)
+    private bool ApplyDeleteSentence(JsonElement payload, Quiz quiz, QuizContentBatch batch, List<AppliedChange> journal)
     {
         var sentenceId = GetNullableGuid(payload, "sentence_id");
         if (!sentenceId.HasValue || !batch.SentencesById.TryGetValue(sentenceId.Value, out var sentence))
@@ -545,10 +566,12 @@ public sealed class ChangeApplier : IChangeApplier
         // altogether.
         ReleaseSentenceText(batch, sentence.Text);
         _context.QuizSentences.Remove(sentence);
+        journal.Add(new AppliedChange(PendingChangeKinds.DeleteSentence, AppliedEntityTypes.Sentence, sentence.Id.ToString(), quiz.Id,
+            new { text = sentence.Text, translation = sentence.Translation, created_at = sentence.CreatedAt }, null));
         return true;
     }
 
-    private async Task<CreatedQuizResult?> ApplyCreateQuizAsync(JsonElement payload, string userId, CancellationToken ct)
+    private async Task<CreatedQuizResult?> ApplyCreateQuizAsync(JsonElement payload, string userId, List<AppliedChange> journal, CancellationToken ct)
     {
         var name = GetString(payload, "name");
         var sourceLanguage = GetString(payload, "source_language");
@@ -569,8 +592,10 @@ public sealed class ChangeApplier : IChangeApplier
             userId,
             collectionId, cancellationToken: ct);
 
-        AddStarterWords(payload, quiz);
-        AddStarterSentences(payload, quiz);
+        journal.Add(new AppliedChange(PendingChangeKinds.CreateQuiz, AppliedEntityTypes.Quiz, quiz.Id.ToString(), quiz.Id,
+            null, new { name = quiz.Name, collection_id = quiz.CollectionId }));
+        AddStarterWords(payload, quiz, journal);
+        AddStarterSentences(payload, quiz, journal);
         return new CreatedQuizResult(
             quiz.Id,
             quiz.Name,
@@ -578,7 +603,7 @@ public sealed class ChangeApplier : IChangeApplier
             quiz.TargetLanguage);
     }
 
-    private async Task<Guid?> ApplyCreateCollectionAsync(JsonElement payload, string userId, CancellationToken ct)
+    private async Task<Guid?> ApplyCreateCollectionAsync(JsonElement payload, string userId, List<AppliedChange> journal, CancellationToken ct)
     {
         var name = GetString(payload, "name");
         var language = GetString(payload, "language");
@@ -594,10 +619,12 @@ public sealed class ChangeApplier : IChangeApplier
             language.Trim(),
             userId,
             parentCollectionId, cancellationToken: ct);
+        journal.Add(new AppliedChange(PendingChangeKinds.CreateCollection, AppliedEntityTypes.Collection, collection.Id.ToString(), null,
+            null, new { name = collection.Name }));
         return collection.Id;
     }
 
-    private async Task<bool> ApplyMoveQuizAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
+    private async Task<bool> ApplyMoveQuizAsync(JsonElement payload, string userId, List<AppliedChange> journal, CancellationToken cancellationToken = default)
     {
         var quizId = GetNullableGuid(payload, "quiz_id");
         if (!quizId.HasValue)
@@ -606,10 +633,21 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         var collectionId = GetNullableGuid(payload, "collection_id");
-        return await _collectionService.MoveQuizToCollectionAsync(quizId.Value, collectionId, userId, cancellationToken: cancellationToken);
+        var before = await _context.Quizzes
+            .Where(quiz => quiz.Id == quizId.Value && quiz.UserId == userId)
+            .Select(quiz => new { quiz.CollectionId })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!await _collectionService.MoveQuizToCollectionAsync(quizId.Value, collectionId, userId, cancellationToken: cancellationToken))
+        {
+            return false;
+        }
+
+        journal.Add(new AppliedChange(PendingChangeKinds.MoveQuiz, AppliedEntityTypes.Quiz, quizId.Value.ToString(), quizId.Value,
+            new { collection_id = before?.CollectionId }, new { collection_id = collectionId }));
+        return true;
     }
 
-    private async Task<bool> ApplyRenameCollectionAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
+    private async Task<bool> ApplyRenameCollectionAsync(JsonElement payload, string userId, List<AppliedChange> journal, CancellationToken cancellationToken = default)
     {
         var collectionId = GetNullableGuid(payload, "collection_id");
         var name = GetString(payload, "name");
@@ -618,10 +656,21 @@ public sealed class ChangeApplier : IChangeApplier
             return false;
         }
 
-        return await _collectionService.RenameCollectionAsync(collectionId.Value, name.Trim(), userId, cancellationToken: cancellationToken);
+        var before = await _context.Collections
+            .Where(collection => collection.Id == collectionId.Value && collection.UserId == userId)
+            .Select(collection => collection.Name)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!await _collectionService.RenameCollectionAsync(collectionId.Value, name.Trim(), userId, cancellationToken: cancellationToken))
+        {
+            return false;
+        }
+
+        journal.Add(new AppliedChange(PendingChangeKinds.RenameCollection, AppliedEntityTypes.Collection, collectionId.Value.ToString(), null,
+            new { name = before }, new { name = name.Trim() }));
+        return true;
     }
 
-    private async Task<bool> ApplyMoveCollectionAsync(JsonElement payload, string userId, CancellationToken cancellationToken = default)
+    private async Task<bool> ApplyMoveCollectionAsync(JsonElement payload, string userId, List<AppliedChange> journal, CancellationToken cancellationToken = default)
     {
         var collectionId = GetNullableGuid(payload, "collection_id");
         if (!collectionId.HasValue)
@@ -630,7 +679,18 @@ public sealed class ChangeApplier : IChangeApplier
         }
 
         var parentCollectionId = GetNullableGuid(payload, "parent_collection_id");
-        return await _collectionService.MoveCollectionAsync(collectionId.Value, parentCollectionId, userId, cancellationToken: cancellationToken);
+        var before = await _context.Collections
+            .Where(collection => collection.Id == collectionId.Value && collection.UserId == userId)
+            .Select(collection => new { collection.ParentCollectionId })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (!await _collectionService.MoveCollectionAsync(collectionId.Value, parentCollectionId, userId, cancellationToken: cancellationToken))
+        {
+            return false;
+        }
+
+        journal.Add(new AppliedChange(PendingChangeKinds.MoveCollection, AppliedEntityTypes.Collection, collectionId.Value.ToString(), null,
+            new { parent_collection_id = before?.ParentCollectionId }, new { parent_collection_id = parentCollectionId }));
+        return true;
     }
 
     private static string GetString(JsonElement element, string property)
@@ -645,7 +705,7 @@ public sealed class ChangeApplier : IChangeApplier
         return Guid.TryParse(value, out var parsed) ? parsed : null;
     }
 
-    private void AddStarterWords(JsonElement payload, Quiz quiz)
+    private void AddStarterWords(JsonElement payload, Quiz quiz, List<AppliedChange> journal)
     {
         if (!payload.TryGetProperty("words", out var wordsElement)
             || wordsElement.ValueKind != JsonValueKind.Array)
@@ -666,7 +726,7 @@ public sealed class ChangeApplier : IChangeApplier
             }
 
             var word = GetString(item, "word").Trim();
-            if (sentenceTexts.Contains(Tools.ToolArguments.NormalizeForDuplicateMatch(word)))
+            if (sentenceTexts.Contains(Tools.QuizContent.NormalizeForDuplicateMatch(word)))
             {
                 continue;
             }
@@ -686,6 +746,8 @@ public sealed class ChangeApplier : IChangeApplier
                 Lemma = word,
                 Translation = translation,
             });
+            journal.Add(new AppliedChange(PendingChangeKinds.AddWord, AppliedEntityTypes.Word, id, quiz.Id,
+                null, new { word, translation }));
         }
     }
 
@@ -709,7 +771,7 @@ public sealed class ChangeApplier : IChangeApplier
             // Only sentences that will actually be stored may displace a word. A sentence
             // missing its translation is skipped below, so counting it here would drop the
             // matching word and store neither: the content would vanish entirely.
-            var text = Tools.ToolArguments.NormalizeForDuplicateMatch(GetString(item, "text"));
+            var text = Tools.QuizContent.NormalizeForDuplicateMatch(GetString(item, "text"));
             var translation = GetString(item, "translation").Trim();
             if (!string.IsNullOrWhiteSpace(text) && !string.IsNullOrWhiteSpace(translation))
             {
@@ -728,7 +790,7 @@ public sealed class ChangeApplier : IChangeApplier
     /// vocabulary is the bug this exists to prevent. Like <see cref="AddStarterWords"/> this
     /// only stages the rows — the caller's transaction owns when they become durable.
     /// </remarks>
-    private void AddStarterSentences(JsonElement payload, Quiz quiz)
+    private void AddStarterSentences(JsonElement payload, Quiz quiz, List<AppliedChange> journal)
     {
         if (!payload.TryGetProperty("sentences", out var sentencesElement)
             || sentencesElement.ValueKind != JsonValueKind.Array)
@@ -753,14 +815,17 @@ public sealed class ChangeApplier : IChangeApplier
                 continue;
             }
 
-            _context.QuizSentences.Add(new QuizSentence
+            var sentence = new QuizSentence
             {
                 Id = Guid.NewGuid(),
                 QuizId = quiz.Id,
                 Text = text,
                 Translation = translation,
                 CreatedAt = DateTimeOffset.UtcNow,
-            });
+            };
+            _context.QuizSentences.Add(sentence);
+            journal.Add(new AppliedChange(PendingChangeKinds.AddSentence, AppliedEntityTypes.Sentence, sentence.Id.ToString(), quiz.Id,
+                null, new { text, translation }));
         }
     }
 

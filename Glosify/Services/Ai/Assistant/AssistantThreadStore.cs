@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
+using Glosify.Services.Ai.Assistant.Runtime;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant;
@@ -360,6 +361,33 @@ internal sealed class AssistantThreadStore(
         var parsed = messages
             .Select(message => (Message: message, Changes: presenter.ParseStoredChanges(message.PendingChangesJson)))
             .ToList();
+        var messageIds = messages.Select(message => message.Id).ToList();
+        var partsByMessage = messageIds.Count == 0
+            ? new Dictionary<Guid, List<AssistantPart>>()
+            : (await context.AssistantParts
+                .AsNoTracking()
+                .Where(part => messageIds.Contains(part.MessageId)
+                    && (part.Type == AssistantPartTypes.Text || part.Type == AssistantPartTypes.Tool || part.Type == AssistantPartTypes.QuizLink))
+                .OrderBy(part => part.Sequence)
+                .ToListAsync(cancellationToken))
+                .GroupBy(part => part.MessageId)
+                .ToDictionary(group => group.Key, group => group.ToList());
+        var runs = turnIds.Count == 0
+            ? new Dictionary<Guid, AssistantRun>()
+            : await context.AssistantRuns
+                .AsNoTracking()
+                .Where(run => turnIds.Contains(run.TurnId))
+                .ToDictionaryAsync(run => run.TurnId, cancellationToken);
+        var runIds = runs.Values.Select(run => run.Id).ToList();
+        var undoable = runIds.Count == 0
+            ? new HashSet<Guid>()
+            : (await context.AssistantChanges
+                .AsNoTracking()
+                .Where(change => runIds.Contains(change.RunId) && change.Status == AssistantChangeStatus.Applied)
+                .Select(change => change.RunId)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
 
         // Batch labels once per context quiz instead of issuing a query for each message.
         var emptyLabels = (IReadOnlyDictionary<string, AssistantWordLabel>)new Dictionary<string, AssistantWordLabel>();
@@ -380,12 +408,24 @@ internal sealed class AssistantThreadStore(
                 var wordLabels = entry.Message.ContextQuizId.HasValue
                     ? labelsByQuiz.GetValueOrDefault(entry.Message.ContextQuizId.Value, emptyLabels)
                     : emptyLabels;
+                var run = entry.Message.TurnId is Guid turn ? runs.GetValueOrDefault(turn) : null;
+                var parts = partsByMessage.GetValueOrDefault(entry.Message.Id);
+                // A reply saved by the run runtime shows its own parts; its text is every text
+                // part, not only the final one kept in the message content for previews.
+                var text = parts is { Count: > 0 }
+                    ? string.Join("\n\n", parts.Where(part => part.Type == AssistantPartTypes.Text).Select(part => part.Text))
+                    : presenter.ExtractVisibleText(entry.Message);
+                var isFinal = run is not null && run.CurrentMessageId == entry.Message.Id;
                 return new AssistantMessageView(
                     entry.Message.Id,
                     entry.Message.TurnId,
                     entry.Message.Role,
-                    presenter.ExtractVisibleText(entry.Message),
-                    [],
+                    text,
+                    parts is null
+                        ? []
+                        : parts.Where(part => part.Type == AssistantPartTypes.Tool)
+                            .Select(part => new AssistantToolEvent(part.ToolName ?? "tool", "{}", part.Title ?? string.Empty))
+                            .ToList(),
                     entry.Changes
                         .Select(change => presenter.PresentPendingChange(change, wordLabels))
                         .ToList(),
@@ -396,7 +436,13 @@ internal sealed class AssistantThreadStore(
                         && IsFinalTurnMessage(entry.Message, finalMessageByTurn)
                         && feedbackByTurn.TryGetValue(turnId, out var feedback)
                             ? AssistantFeedbackService.Map(feedback)
-                            : null);
+                            : null,
+                    run?.Id,
+                    entry.Message.Role == AssistantMessageRole.Model && parts is not null
+                        ? parts.Select(part => AssistantRunStore.PartView(part)).ToList()
+                        : null,
+                    isFinal && AssistantRunStatus.IsTerminal(run!.Status) && run.UndoneAt is null && undoable.Contains(run.Id),
+                    isFinal && run!.UndoneAt is not null);
             })
             .ToList();
     }

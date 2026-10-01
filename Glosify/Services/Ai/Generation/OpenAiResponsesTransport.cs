@@ -77,7 +77,8 @@ public sealed class OpenAiResponsesTransport : IOpenAiResponsesTransport
                     ToInt(response.Usage.OutputTokenCount),
                     ToInt(response.Usage.OutputTokenDetails?.ReasoningTokenCount),
                     0,
-                    ToInt(response.Usage.TotalTokenCount));
+                    ToInt(response.Usage.TotalTokenCount),
+                    ToInt(response.Usage.InputTokenDetails?.CachedTokenCount));
             var status = response.Status?.ToString() ?? string.Empty;
             var text = response.GetOutputText() ?? string.Empty;
             var hasRefusal = response.OutputItems

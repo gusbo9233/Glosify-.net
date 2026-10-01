@@ -90,6 +90,87 @@ public sealed class OpenAiGenerativeAiTests
         Assert.Contains(OpenAiModels.Luna, requestJson, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1234)]
+    public async Task Assistant_output_reserve_does_not_cap_model_generation(int? explicitLimit)
+    {
+        var transport = new RecordingTransport();
+        var credits = new RecordingCredits();
+        var client = CreateClient(transport, credits);
+        var request = new AgentRequest("Help.", [], [], MaxOutputTokens: explicitLimit);
+
+        await client.RunAgentTurnAsync(request, Usage(AiUsageFeatures.Assistant));
+
+        var sent = Assert.Single(transport.Requests);
+        Assert.Equal(explicitLimit, sent.MaxOutputTokenCount);
+        var json = SerializeRequest(sent);
+        Assert.Equal("fast", json.GetProperty("service_tier").GetString());
+        Assert.Equal("medium", json.GetProperty("reasoning").GetProperty("effort").GetString());
+        if (explicitLimit is int limit)
+            Assert.Equal(limit, json.GetProperty("max_output_tokens").GetInt32());
+        else
+            Assert.False(json.TryGetProperty("max_output_tokens", out _));
+        Assert.Single(credits.Reservations);
+        Assert.Single(credits.Commits);
+    }
+
+    [Fact]
+    public async Task Agent_turn_keeps_every_tool_declared_and_narrows_with_allowed_tools()
+    {
+        var transport = new RecordingTransport();
+        var client = CreateClient(transport, new RecordingCredits());
+        var request = new AgentRequest("Help.", [], [Tool("lookup"), Tool("add")], AllowedToolNames: new HashSet<string> { "lookup" });
+
+        await client.RunAgentTurnAsync(request, Usage(AiUsageFeatures.Assistant));
+
+        var json = SerializeRequest(Assert.Single(transport.Requests));
+        Assert.Equal(["lookup", "add"], json.GetProperty("tools").EnumerateArray().Select(tool => tool.GetProperty("name").GetString()));
+        var choice = json.GetProperty("tool_choice");
+        Assert.Equal("allowed_tools", choice.GetProperty("type").GetString());
+        Assert.Equal("auto", choice.GetProperty("mode").GetString());
+        Assert.Equal(["lookup"], choice.GetProperty("tools").EnumerateArray().Select(tool => tool.GetProperty("name").GetString()));
+    }
+
+    [Fact]
+    public async Task Agent_turn_sends_trailing_notes_last_and_can_disable_tool_calls()
+    {
+        var transport = new RecordingTransport();
+        var client = CreateClient(transport, new RecordingCredits());
+        var request = new AgentRequest("Static instructions.", [new AgentTurn("user", Content(new { kind = "text", text = "Hello" }))], [Tool("lookup")])
+        {
+            TrailingInstruction = "Run state: 2 of 3 done.",
+            ToolChoice = AgentToolChoice.None,
+        };
+
+        await client.RunAgentTurnAsync(request, Usage(AiUsageFeatures.Assistant));
+
+        var json = SerializeRequest(Assert.Single(transport.Requests));
+        Assert.Equal("Static instructions.", json.GetProperty("instructions").GetString());
+        var last = json.GetProperty("input").EnumerateArray().Last();
+        Assert.Equal("developer", last.GetProperty("role").GetString());
+        Assert.Contains("Run state: 2 of 3 done.", last.GetRawText());
+        Assert.Equal("none", json.GetProperty("tool_choice").GetString());
+        Assert.Single(json.GetProperty("tools").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task Malformed_tool_arguments_reach_the_runtime_instead_of_failing_the_turn()
+    {
+        var transport = new RecordingTransport { Response = Envelope(string.Empty, [new OpenAiFunctionCall("call-1", "lookup", "{\"word\":")]) };
+        var client = CreateClient(transport, new RecordingCredits());
+
+        var result = await client.RunAgentTurnAsync(new AgentRequest("Help.", [], [Tool("lookup")]), Usage(AiUsageFeatures.Assistant));
+
+        Assert.Equal("{\"word\":", Assert.Single(result.FunctionCalls).ArgsJson);
+    }
+
+    private static AgentToolDeclaration Tool(string name) => new(
+        name,
+        $"The {name} tool.",
+        new { type = "object", properties = new { word = new { type = "string" } }, required = new[] { "word" }, additionalProperties = false },
+        Strict: true);
+
     [Fact]
     public async Task Agent_turn_replays_manual_history_and_preserves_function_call_ids()
     {
