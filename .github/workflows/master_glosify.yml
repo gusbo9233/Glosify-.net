@@ -94,6 +94,7 @@ jobs:
 
       - name: Test browser extension JavaScript
         run: |
+          node --test scripts/upload-chrome-web-store.test.mjs
           npm test --prefix Glosify.LiveSubtitles.Extension
           npm test --prefix Glosify.Translator.Extension
 
