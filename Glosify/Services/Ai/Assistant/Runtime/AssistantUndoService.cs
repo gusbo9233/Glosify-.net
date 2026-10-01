@@ -231,7 +231,7 @@ internal sealed class AssistantUndoService(
                 }
 
                 var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == quizId && candidate.UserId == userId, cancellationToken);
-                if (quiz is null || !Matches(after, "name", quiz.Name) || quiz.CollectionId != IdOf(after, "collection_id"))
+                if (quiz is null || !Matches(after, "name", quiz.Name) || !MatchesVisibility(after, quiz.IsPublic) || quiz.CollectionId != IdOf(after, "collection_id"))
                 {
                     return false;
                 }
@@ -250,7 +250,7 @@ internal sealed class AssistantUndoService(
                 }
 
                 var collection = await OwnedCollectionAsync(change, userId, cancellationToken);
-                if (collection is null || !Matches(after, "name", collection.Name)
+                if (collection is null || !Matches(after, "name", collection.Name) || !MatchesVisibility(after, collection.IsPublic)
                     || collection.ParentCollectionId != IdOf(after, "parent_collection_id"))
                 {
                     return false;
@@ -335,6 +335,11 @@ internal sealed class AssistantUndoService(
 
     private static Guid? IdOf(JsonElement? element, string property) =>
         Guid.TryParse(Value(element, property), out var id) ? id : null;
+
+    private static bool MatchesVisibility(JsonElement? element, bool current) =>
+        element?.TryGetProperty("is_public", out var value) == true
+            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+            && value.GetBoolean() == current;
 
     private static bool Matches(JsonElement? element, string property, string current) =>
         string.Equals(Value(element, property), current, StringComparison.Ordinal);

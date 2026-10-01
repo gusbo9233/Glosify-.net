@@ -593,7 +593,7 @@ public sealed class ChangeApplier : IChangeApplier
             collectionId, cancellationToken: ct);
 
         journal.Add(new AppliedChange(PendingChangeKinds.CreateQuiz, AppliedEntityTypes.Quiz, quiz.Id.ToString(), quiz.Id,
-            null, new { name = quiz.Name, collection_id = quiz.CollectionId }));
+            null, new { name = quiz.Name, collection_id = quiz.CollectionId, is_public = quiz.IsPublic }));
         AddStarterWords(payload, quiz, journal);
         AddStarterSentences(payload, quiz, journal);
         return new CreatedQuizResult(
@@ -620,7 +620,7 @@ public sealed class ChangeApplier : IChangeApplier
             userId,
             parentCollectionId, cancellationToken: ct);
         journal.Add(new AppliedChange(PendingChangeKinds.CreateCollection, AppliedEntityTypes.Collection, collection.Id.ToString(), null,
-            null, new { name = collection.Name, parent_collection_id = collection.ParentCollectionId }));
+            null, new { name = collection.Name, parent_collection_id = collection.ParentCollectionId, is_public = collection.IsPublic }));
         return collection.Id;
     }
 

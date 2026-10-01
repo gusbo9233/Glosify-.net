@@ -1007,13 +1007,13 @@ import {
         failed: () => t('Client.AssistantRunFailed', 'Could not finish'),
     };
 
-    const button = (label, className, onClick) => {
+    const button = (label, className, onClick, disableOnClick = true) => {
         const element = document.createElement('button');
         element.type = 'button';
         element.className = className;
         element.textContent = label;
         element.addEventListener('click', async () => {
-            element.disabled = true;
+            if (disableOnClick) element.disabled = true;
             try {
                 await onClick();
             } catch (error) {
@@ -1083,8 +1083,7 @@ import {
                     if (chosen.has(option)) chosen.delete(option);
                     else chosen.add(option);
                     choice.setAttribute('aria-pressed', String(chosen.has(option)));
-                    choice.disabled = false;
-                });
+                }, !run.question.multiple);
                 if (run.question.multiple) choice.setAttribute('aria-pressed', 'false');
                 options.appendChild(choice);
             }

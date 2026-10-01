@@ -616,9 +616,11 @@ public sealed class AssistantRunTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Undo_keeps_a_created_container_renamed_by_the_user(bool collection)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task Undo_keeps_a_created_container_changed_by_the_user(bool collection, bool visibility)
     {
         await using var h = await AssistantHarness.CreateAsync();
         if (collection) h.Model.ThenCall("create_collection", new { name = "Travel", parent_collection_id = (string?)null });
@@ -627,15 +629,25 @@ public sealed class AssistantRunTests
         var run = await h.RunAsync("Create Travel", quizId: Guid.Empty);
         await using (var db = h.Db())
         {
-            if (collection) (await db.Collections.SingleAsync()).Name = "My travel";
-            else (await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel")).Name = "My travel";
+            if (collection)
+            {
+                var item = await db.Collections.SingleAsync();
+                if (visibility) item.IsPublic = true;
+                else item.Name = "My travel";
+            }
+            else
+            {
+                var item = await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel");
+                if (visibility) item.IsPublic = true;
+                else item.Name = "My travel";
+            }
             await db.SaveChangesAsync();
         }
         Assert.Equal(new AssistantUndoResult(0, 1), await h.UndoAsync(run.Id));
         await using var after = h.Db();
         Assert.True(collection
-            ? await after.Collections.AnyAsync(item => item.Name == "My travel")
-            : await after.Quizzes.AnyAsync(item => item.Name == "My travel"));
+            ? await after.Collections.AnyAsync(item => visibility ? item.IsPublic : item.Name == "My travel")
+            : await after.Quizzes.AnyAsync(item => visibility ? item.IsPublic : item.Name == "My travel"));
     }
 
     [Fact]
