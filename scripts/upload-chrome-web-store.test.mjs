@@ -72,3 +72,54 @@ test("HTTP errors do not expose response bodies or credentials", async () => {
     request: async () => ({ ok: false, status: 401, json: async () => { throw new Error("secret"); } }),
   }), error => error.message.includes("HTTP 401") && !error.message.includes("secret"));
 });
+
+test("Store validation errors retain the actionable reason and redact credentials", async () => {
+  let calls = 0;
+  await assert.rejects(uploadDraft(Buffer.alloc(0), env, {
+    request: async () => ++calls === 1
+      ? { ok: true, json: async () => ({ access_token: "access-token-value" }) }
+      : { ok: false, status: 400, json: async () => ({ error: {
+        message: "Version must increase.\nclient secret refresh access-token-value",
+      } }) },
+  }), error => {
+    assert.equal(error.message, "Store upload failed (HTTP 400); Version must increase. [redacted] [redacted] [redacted] [redacted]");
+    return true;
+  });
+});
+
+test("non-JSON Store failures retain the HTTP status", async () => {
+  let calls = 0;
+  await assert.rejects(uploadDraft(Buffer.alloc(0), env, {
+    request: async () => ++calls === 1
+      ? { ok: true, json: async () => ({ access_token: "access" }) }
+      : { ok: false, status: 502, json: async () => { throw new Error("invalid JSON"); } },
+  }), /Store upload failed \(HTTP 502\)/);
+});
+
+test("redacts longer credentials before overlapping shorter values", async () => {
+  let calls = 0;
+  await assert.rejects(uploadDraft(Buffer.alloc(0), {
+    ...env, CWS_CLIENT_SECRET: "client-secret", CWS_REFRESH_TOKEN: "client-secret-refresh",
+  }, {
+    request: async () => ++calls === 1
+      ? { ok: true, json: async () => ({ access_token: "client-secret-refresh-access" }) }
+      : { ok: false, status: 400, json: async () => ({ error: {
+        message: "client-secret-refresh-access client-secret-refresh client-secret client",
+      } }) },
+  }), error => {
+    assert.equal(error.message, "Store upload failed (HTTP 400); [redacted] [redacted] [redacted] [redacted]");
+    return true;
+  });
+});
+
+test("connection check refreshes credentials and only reads Store status", async () => {
+  const status = { lastAsyncUploadState: "SUCCEEDED", submittedItemRevisionStatus: { state: "PENDING_REVIEW" } };
+  const api = mock([{ access_token: "access", refresh_token_expires_in: 600000 }, status]);
+  const result = await uploadDraft(null, env, { ...api, statusOnly: true });
+  assert.equal(api.calls.length, 2);
+  assert.ok(api.calls[1].url.endsWith(":fetchStatus"));
+  assert.equal(api.calls[1].options.body, undefined);
+  assert.equal(api.calls[1].options.method, undefined);
+  assert.equal(result.status, status);
+  assert.equal(result.refreshTokenExpiresIn, 600000);
+});

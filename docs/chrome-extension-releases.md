@@ -42,6 +42,23 @@ records the source run, commit, manifest version, and ZIP SHA-256.
 5. Merge the workflow and upload script into `master` to make the manual workflow
    available in Actions.
 
+## Verify authentication without a browser
+
+Run the workflow on `master` with `operation=check` and `extension=live-subtitles`.
+It refreshes the access token from GitHub environment secrets and reads Store status.
+It does not upload, publish, or cancel a submission, and needs no source run ID.
+
+```sh
+gh workflow run chrome-web-store.yml --ref master -f extension=live-subtitles -f operation=check
+```
+
+An OAuth app in Testing issues refresh tokens that expire after seven days. For
+ongoing automation, move the Google Auth Platform audience to Production and
+obtain a replacement refresh token after that change. Store the replacement in
+`CWS_REFRESH_TOKEN`. This is a one-time setup; normal workflow runs refresh access
+tokens automatically. The connection check reports a remaining token lifetime
+when Google returns one. No token value is logged.
+
 ## Release an extension
 
 1. Increase `version` in the extension's `manifest.base.json` above the version
@@ -54,13 +71,21 @@ records the source run, commit, manifest version, and ZIP SHA-256.
 3. Copy the numeric run ID from its URL:
    `https://github.com/<owner>/<repo>/actions/runs/<run-id>`.
 4. In Actions, select **Upload Chrome Web Store draft → Run workflow**, choose
-   `master`, select `live-subtitles` or `translator`, and enter that run ID.
+   `master`, select `live-subtitles` or `translator`, choose `operation=upload`, and enter that run ID.
 5. After the upload succeeds, open the Store dashboard, review the package and
    disclosures, and submit for review/publication. Google review still applies.
 
 The workflow accepts existing versioned artifact names matching
 `glosify-<extension>-*-beta` and requires exactly one ZIP. If artifacts have expired,
 produce a new successful CI run. It never falls back to a local or untested build.
+
+Before uploading, inspect Greptile and Copilot feedback for the exact source
+revision and resolve valid findings. Record an unavailable review explicitly.
+The workflow does not treat its connection check as approval to release.
+
+Google rejects uploads while an item is in review. The workflow reports the
+Store error and never cancels review automatically. Finish code review and all
+fixes before submitting the Store draft for review.
 
 If uploading fails or times out, inspect the Store dashboard before retrying;
 the upload may have reached Google even when the network response was lost.
