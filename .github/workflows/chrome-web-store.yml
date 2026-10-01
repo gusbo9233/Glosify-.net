@@ -1,0 +1,82 @@
+name: Upload Chrome Web Store draft
+
+on:
+  workflow_dispatch:
+    inputs:
+      extension:
+        description: Extension to release
+        type: choice
+        required: true
+        options:
+          - live-subtitles
+          - translator
+      run_id:
+        description: Successful master push run ID from Build, migrate, and deploy Glosify
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: chrome-web-store-${{ inputs.extension }}
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: chrome-web-store-${{ inputs.extension }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+
+      - name: Verify source CI run and download its tested package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.run_id }}
+          EXTENSION: ${{ inputs.extension }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || { echo 'Invalid run ID'; exit 1; }
+          case "$EXTENSION" in live-subtitles|translator) ;; *) exit 1 ;; esac
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID" > "$RUNNER_TEMP/source-run.json"
+          jq -e --arg repo "$GITHUB_REPOSITORY" '
+            .status == "completed" and .conclusion == "success" and
+            .event == "push" and .head_branch == "master" and
+            .path == ".github/workflows/master_glosify.yml" and
+            .head_repository.full_name == $repo
+          ' "$RUNNER_TEMP/source-run.json" > /dev/null
+          gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "glosify-$EXTENSION-*-beta" --dir release
+          mapfile -t archives < <(find release -type f -name '*.zip')
+          [[ ${#archives[@]} -eq 1 ]] || { echo 'Expected exactly one extension ZIP'; exit 1; }
+          cp "${archives[0]}" "$RUNNER_TEMP/extension.zip"
+          unzip -p "$RUNNER_TEMP/extension.zip" manifest.json | jq -e '.version' > "$RUNNER_TEMP/extension-version.txt"
+          {
+            echo "Extension: $EXTENSION"
+            echo "Source run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID"
+            echo "Commit: $(jq -r .head_sha "$RUNNER_TEMP/source-run.json")"
+            echo "Manifest version: $(cat "$RUNNER_TEMP/extension-version.txt")"
+            echo "SHA-256: $(sha256sum "$RUNNER_TEMP/extension.zip" | cut -d ' ' -f 1)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload draft to Chrome Web Store
+        env:
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: node scripts/upload-chrome-web-store.mjs "$RUNNER_TEMP/extension.zip"
+
+      - name: Record completed upload
+        run: echo 'Draft upload succeeded. Review and publish in the Chrome Web Store dashboard.' >> "$GITHUB_STEP_SUMMARY"
