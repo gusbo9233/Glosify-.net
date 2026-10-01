@@ -1083,6 +1083,7 @@ import {
                     if (chosen.has(option)) chosen.delete(option);
                     else chosen.add(option);
                     choice.setAttribute('aria-pressed', String(chosen.has(option)));
+                    choice.disabled = false;
                 });
                 if (run.question.multiple) choice.setAttribute('aria-pressed', 'false');
                 options.appendChild(choice);

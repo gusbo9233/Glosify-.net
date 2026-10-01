@@ -131,10 +131,18 @@ export function createAssistantRuns({
             const fingerprint = JSON.stringify({ threadId, input });
             const key = submissions.get(fingerprint) ?? newKey();
             submissions.set(fingerprint, key);
-            const run = await request(`${base}/chats/${threadId}`, {
-                method: 'POST',
-                body: JSON.stringify({ idempotencyKey: key, request: input }),
-            });
+            let run;
+            try {
+                run = await request(`${base}/chats/${threadId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ idempotencyKey: key, request: input }),
+                });
+            } catch (error) {
+                // Client rejection means this start was not accepted. Keep the key only when
+                // the outcome is uncertain (network/server failure or request timeout).
+                if (error.status >= 400 && error.status < 500 && error.status !== 408) submissions.delete(fingerprint);
+                throw error;
+            }
             submissions.delete(fingerprint);
             publish(run);
             watch(run);

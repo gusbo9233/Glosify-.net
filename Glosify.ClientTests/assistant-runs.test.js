@@ -162,3 +162,17 @@ test('a lost start response discovered as active is retried instead of steered',
         ['/Assistant/Runs/chats/chat-1', 'key-1'], ['/Assistant/Runs/chats/chat-1', 'key-1'],
     ]);
 });
+
+test('a rejected start can steer the discovered active run with the unchanged message', async () => {
+    const { runs, calls } = harness({
+        'POST /Assistant/Runs/chats/chat-1': () => { throw Object.assign(new Error('Already working'), { status: 409 }); },
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+        'POST /Assistant/Runs/run-1/steer': () => run({ revision: 2 }),
+    });
+    const input = { message: 'Also add dom' };
+    await assert.rejects(runs.send('chat-1', input));
+    await runs.discover('chat-1');
+    await runs.send('chat-1', input);
+    assert.equal(calls.at(-1).url, '/Assistant/Runs/run-1/steer');
+    assert.equal(calls.at(-1).body.message, input.message);
+});
