@@ -10,10 +10,24 @@ export async function uploadDraft(archive, env, { request = fetch, wait = delay 
   if (!/^[a-p]{32}$/.test(env.CWS_EXTENSION_ID)) throw new Error("Invalid CWS_EXTENSION_ID");
   if (!/^[a-zA-Z0-9_-]+$/.test(env.CWS_PUBLISHER_ID)) throw new Error("Invalid CWS_PUBLISHER_ID");
 
+  let accessToken = "";
   async function json(url, options, label) {
     const response = await request(url, { ...options, redirect: "error", signal: AbortSignal.timeout(120_000) });
-    // Never print response bodies: OAuth errors may contain credential material.
-    if (!response.ok) throw new Error(`${label} failed (HTTP ${response.status}); check credentials and the Store dashboard`);
+    if (!response.ok) {
+      let detail = "check credentials and the Store dashboard";
+      // Only expose the Store's validation message, never OAuth response bodies.
+      if (label.startsWith("Store ")) {
+        const body = await response.json().catch(() => null);
+        if (typeof body?.error?.message === "string") {
+          detail = body.error.message;
+          for (const credential of [env.CWS_CLIENT_ID, env.CWS_CLIENT_SECRET, env.CWS_REFRESH_TOKEN, accessToken]) {
+            if (credential) detail = detail.replaceAll(credential, "[redacted]");
+          }
+          detail = detail.replace(/[\r\n]+/g, " ").slice(0, 2000);
+        }
+      }
+      throw new Error(`${label} failed (HTTP ${response.status}); ${detail}`);
+    }
     return response.json();
   }
 
@@ -27,6 +41,7 @@ export async function uploadDraft(archive, env, { request = fetch, wait = delay 
     }),
   }, "OAuth token exchange");
   if (typeof token.access_token !== "string" || !token.access_token) throw new Error("OAuth response has no access token");
+  accessToken = token.access_token;
 
   const name = `publishers/${env.CWS_PUBLISHER_ID}/items/${env.CWS_EXTENSION_ID}`;
   const headers = { Authorization: `Bearer ${token.access_token}` };

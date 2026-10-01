@@ -72,3 +72,26 @@ test("HTTP errors do not expose response bodies or credentials", async () => {
     request: async () => ({ ok: false, status: 401, json: async () => { throw new Error("secret"); } }),
   }), error => error.message.includes("HTTP 401") && !error.message.includes("secret"));
 });
+
+test("Store validation errors retain the actionable reason and redact credentials", async () => {
+  let calls = 0;
+  await assert.rejects(uploadDraft(Buffer.alloc(0), env, {
+    request: async () => ++calls === 1
+      ? { ok: true, json: async () => ({ access_token: "access-token-value" }) }
+      : { ok: false, status: 400, json: async () => ({ error: {
+        message: "Version must increase.\nclient secret refresh access-token-value",
+      } }) },
+  }), error => {
+    assert.equal(error.message, "Store upload failed (HTTP 400); Version must increase. [redacted] [redacted] [redacted] [redacted]");
+    return true;
+  });
+});
+
+test("non-JSON Store failures retain the HTTP status", async () => {
+  let calls = 0;
+  await assert.rejects(uploadDraft(Buffer.alloc(0), env, {
+    request: async () => ++calls === 1
+      ? { ok: true, json: async () => ({ access_token: "access" }) }
+      : { ok: false, status: 502, json: async () => { throw new Error("invalid JSON"); } },
+  }), /Store upload failed \(HTTP 502\)/);
+});
