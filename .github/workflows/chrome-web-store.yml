@@ -47,6 +47,7 @@ jobs:
           node-version: 24.x
 
       - name: Verify Chrome Web Store authentication and access
+        if: inputs.operation == 'check'
         env:
           CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
           CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
