@@ -282,8 +282,9 @@
       }
       .panel.transparent:not(:hover):not(:focus-within) .message {
         border-color: transparent;
-        background: transparent;
-        box-shadow: none;
+        border-radius: 8px;
+        background: rgba(5, 12, 20, .76);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
       }
       .panel.transparent:not(:hover):not(:focus-within) .translation {
         text-shadow: 0 1px 3px rgba(0, 0, 0, .95), 0 0 8px rgba(0, 0, 0, .72);
@@ -403,14 +404,14 @@
     }
   }
 
-  function clearTranscript() {
-    chat.clear();
+  function clearTranscript(options) {
+    chat.clear(options);
     history.replaceChildren();
     renderChat();
   }
 
   function clearAndHide() {
-    clearTranscript();
+    clearTranscript({ resetStream: true });
     statusText.textContent = "";
     panel.classList.add("hidden");
   }
@@ -533,7 +534,7 @@
     return Math.min(Math.max(value, minimum), maximum);
   }
 
-  clearButton.addEventListener("click", clearTranscript);
+  clearButton.addEventListener("click", () => clearTranscript());
   stopButton.addEventListener("click", stopSubtitles);
   minimizeButton.addEventListener("click", toggleMinimized);
   header.addEventListener("pointerdown", beginDrag);

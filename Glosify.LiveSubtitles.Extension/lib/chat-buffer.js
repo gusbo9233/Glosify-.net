@@ -13,6 +13,8 @@
       this.replacementSequence = null;
       this.previousReplacementSentences = [];
       this.committedReplacementSentences = 0;
+      this.latestSequence = -Infinity;
+      this.clearedThroughSequence = -Infinity;
     }
 
     get liveBubbles() {
@@ -22,6 +24,15 @@
     apply(event) {
       if (!event || event.stream !== "translation") {
         return { changed: false, committed: false };
+      }
+
+      // Replacements contain the entire utterance, including text cleared while
+      // audio was playing. Keep that utterance (and delayed older ones) hidden.
+      if (Number.isFinite(event.sequence)) {
+        if (event.sequence <= this.clearedThroughSequence) {
+          return { changed: false, committed: false };
+        }
+        this.latestSequence = Math.max(this.latestSequence, event.sequence);
       }
 
       const timestamp = Number.isFinite(event.clientTimestamp)
@@ -166,7 +177,11 @@
       this.committedReplacementSentences = 0;
     }
 
-    clear() {
+    clear({ resetStream = false } = {}) {
+      this.clearedThroughSequence = resetStream ? -Infinity : this.latestSequence;
+      if (resetStream) {
+        this.latestSequence = -Infinity;
+      }
       this.messages.length = 0;
       this.translation = "";
       this.resetReplacement();

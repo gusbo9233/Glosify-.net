@@ -7,7 +7,7 @@ The source directory is intentionally not a loadable unpacked extension. Build o
 - `npm run build:store-local` produces `artifacts/store` with the Chrome Web Store public key and localhost permissions, connects to `https://localhost:7032`, and is intended only for unpacked local testing.
 - `npm run build:test` produces the localhost-only profile used by persistent Chromium tests.
 - `npm run test:browser` builds that profile and exercises the MV3 worker, offscreen audio, mock HTTP/WebSocket relay, concurrency, and navigation shutdown.
-- `npm run package:store` rebuilds, validates, and creates `artifacts/package/glosify-live-subtitles-0.5.2-beta.zip` with `manifest.json` at its root.
+- `npm run package:store` rebuilds, validates, and creates `artifacts/package/glosify-live-subtitles-0.5.3-beta.zip` with `manifest.json` at its root.
 
 Development and test builds pin a public key so their unpacked extension ID
 stays stable. The Store build deliberately omits `key` so Chrome Web Store can

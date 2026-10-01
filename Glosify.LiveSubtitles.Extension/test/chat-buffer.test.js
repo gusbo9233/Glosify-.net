@@ -317,3 +317,36 @@ test("clear removes finalized and partial transcript text", () => {
   assert.equal(chat.translation, "");
   assert.deepEqual(chat.messages, []);
 });
+
+for (const serverFinalized of [false, true]) {
+  test(`clear hides ongoing and delayed replacement segments (server bubbles: ${serverFinalized})`, () => {
+    const chat = new ChatBuffer();
+    const event = (sequence, text, isFinal = false) => ({
+      stream: "translation", sequence, delta: text, replace: true, isFinal,
+      ...(serverFinalized ? {
+        committedBubbles: isFinal ? [text] : [],
+        pendingText: isFinal ? "" : text,
+      } : {}),
+    });
+    chat.apply(event(4, "Already visible."));
+    chat.clear();
+    chat.clear(); // Clearing twice must retain the same boundary.
+    assert.deepEqual(chat.apply(event(4, "Already visible. More words.")), {
+      changed: false, committed: false,
+    });
+    chat.apply(event(4, "Already visible. More words.", true));
+    assert.equal(chat.translation, "");
+    assert.deepEqual(chat.messages, []);
+
+    chat.apply(event(5, "New speech."));
+    assert.equal(chat.translation, "New speech.");
+    chat.apply(event(3, "Delayed old speech.", true));
+    assert.equal(chat.translation, "New speech.");
+    chat.apply(event(5, "New speech.", true));
+    assert.deepEqual(chat.messages.map(item => item.text), ["New speech."]);
+
+    chat.clear({ resetStream: true });
+    chat.apply(event(1, "A new session.", true));
+    assert.deepEqual(chat.messages.map(item => item.text), ["A new session."]);
+  });
+}
