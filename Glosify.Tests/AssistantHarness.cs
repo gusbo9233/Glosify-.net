@@ -103,6 +103,11 @@ internal sealed class AssistantHarness : IAsyncDisposable
             word.Entity.QuizId = harness.QuizId;
         }
 
+        foreach (var sentence in db.ChangeTracker.Entries<QuizSentence>().Where(entry => entry.Entity.QuizId == Guid.Empty))
+        {
+            sentence.Entity.QuizId = harness.QuizId;
+        }
+
         foreach (var thread in db.ChangeTracker.Entries<AssistantThread>().Where(entry => entry.Entity.QuizId == Guid.Empty))
         {
             thread.Entity.QuizId = harness.QuizId;

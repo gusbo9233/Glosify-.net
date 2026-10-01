@@ -144,3 +144,21 @@ test('undo publishes the run it returns', async () => {
     assert.equal(result.kept, 1);
     assert.equal(updates.at(-1).undone, true);
 });
+
+test('a lost start response discovered as active is retried instead of steered', async () => {
+    let attempts = 0;
+    const { runs, calls } = harness({
+        'POST /Assistant/Runs/chats/chat-1': () => {
+            if (++attempts === 1) throw new TypeError('Failed to fetch');
+            return run();
+        },
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+    });
+    const input = { message: 'Add dom' };
+    await assert.rejects(runs.send('chat-1', input));
+    await runs.discover('chat-1');
+    await runs.send('chat-1', input);
+    assert.deepEqual(calls.filter(call => call.method === 'POST').map(call => [call.url, call.body.idempotencyKey]), [
+        ['/Assistant/Runs/chats/chat-1', 'key-1'], ['/Assistant/Runs/chats/chat-1', 'key-1'],
+    ]);
+});

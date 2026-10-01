@@ -1075,13 +1075,17 @@ import {
             options.className = 'assistant-question-options';
             const chosen = new Set();
             for (const option of run.question.options) {
-                options.appendChild(button(option, 'btn-secondary', async () => {
+                const choice = button(option, 'btn-secondary', async () => {
                     if (!run.question.multiple) {
                         await runs.answer(run.threadId, [option]);
                         return;
                     }
-                    chosen.add(option);
-                }));
+                    if (chosen.has(option)) chosen.delete(option);
+                    else chosen.add(option);
+                    choice.setAttribute('aria-pressed', String(chosen.has(option)));
+                });
+                if (run.question.multiple) choice.setAttribute('aria-pressed', 'false');
+                options.appendChild(choice);
             }
             card.appendChild(options);
             if (run.question.multiple) {

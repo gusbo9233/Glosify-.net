@@ -620,7 +620,7 @@ public sealed class ChangeApplier : IChangeApplier
             userId,
             parentCollectionId, cancellationToken: ct);
         journal.Add(new AppliedChange(PendingChangeKinds.CreateCollection, AppliedEntityTypes.Collection, collection.Id.ToString(), null,
-            null, new { name = collection.Name }));
+            null, new { name = collection.Name, parent_collection_id = collection.ParentCollectionId }));
         return collection.Id;
     }
 

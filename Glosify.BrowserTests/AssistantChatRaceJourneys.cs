@@ -848,6 +848,34 @@ public sealed partial class PortfolioJourneys
     private ILocator RaceTranscript => Page.Locator("[data-assistant-transcript]");
     private ILocator RaceSubmit => Page.Locator("[data-assistant-submit]");
 
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AssistantQuestion_MultipleChoicesExposeSelectionAndCanBeDeselected()
+    {
+        await SetupChatRaceAsync(route => FulfillHistoryAsync(route, "History"));
+        var runId = Guid.NewGuid();
+        await RouteRunStartsAsync(route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new { id = runId, threadId = "chat-a", status = "awaiting_input", revision = 1,
+                turnId = Guid.NewGuid(), savedChanges = 0, parts = Array.Empty<object>(), plan = Array.Empty<object>(),
+                question = new { question = "Choose topics", options = new[] { "Travel", "Food" }, multiple = true } }),
+        }));
+        await Page.RouteAsync($"**/Assistant/Runs/{runId}/events", route => route.FulfillAsync(new()
+        {
+            ContentType = "text/event-stream", Body = ": waiting\n\n",
+        }));
+        await OpenRaceAssistantAsync();
+        await SendRaceMessageAsync("Ask me for topics");
+        var travel = Page.Locator(".assistant-question-options button").Filter(new() { HasText = "Travel" });
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "false");
+        await travel.FocusAsync();
+        await Page.Keyboard.PressAsync("Space");
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "true");
+        await Page.Keyboard.PressAsync("Space");
+        await Expect(travel).ToHaveAttributeAsync("aria-pressed", "false");
+    }
+
     private async Task SetupChatRaceAsync(Func<IRoute, Task> history)
     {
         await Page.RouteAsync("**/Assistant/Chats", route => route.FulfillAsync(new()

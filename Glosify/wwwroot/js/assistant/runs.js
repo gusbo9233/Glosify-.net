@@ -142,6 +142,8 @@ export function createAssistantRuns({
         },
 
         send(threadId, input) {
+            // Discovery after a lost start response must not turn its retry into steering.
+            if (submissions.has(JSON.stringify({ threadId, input }))) return this.start(threadId, input);
             const run = runs.get(threadId);
             switch (sendAction(run)) {
                 case 'answer': return command(threadId, 'answer', { message: input.message });

@@ -615,6 +615,70 @@ public sealed class AssistantRunTests
         Assert.Empty(await db.QuizSentences.ToListAsync());
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Undo_keeps_a_created_container_renamed_by_the_user(bool collection)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        if (collection) h.Model.ThenCall("create_collection", new { name = "Travel", parent_collection_id = (string?)null });
+        else h.Model.ThenCall("create_quiz", new { name = "Travel", source_language = (string?)null, target_language = (string?)null, collection_id = (string?)null, words = (object?)null, sentences = (object?)null });
+        h.Model.ThenText("Created.");
+        var run = await h.RunAsync("Create Travel", quizId: Guid.Empty);
+        await using (var db = h.Db())
+        {
+            if (collection) (await db.Collections.SingleAsync()).Name = "My travel";
+            else (await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel")).Name = "My travel";
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal(new AssistantUndoResult(0, 1), await h.UndoAsync(run.Id));
+        await using var after = h.Db();
+        Assert.True(collection
+            ? await after.Collections.AnyAsync(item => item.Name == "My travel")
+            : await after.Quizzes.AnyAsync(item => item.Name == "My travel"));
+    }
+
+    [Fact]
+    public async Task Undo_does_not_restore_edits_over_new_duplicate_items()
+    {
+        var sentenceId = Guid.NewGuid();
+        await using var h = await AssistantHarness.CreateAsync(db =>
+        {
+            db.Words.Add(new Word { Id = "w1", QuizId = Guid.Empty, Lemma = "dom", Translation = "house" });
+            db.QuizSentences.Add(new QuizSentence { Id = sentenceId, QuizId = Guid.Empty, Text = "To dom.", Translation = "A house." });
+        });
+        h.Model.ThenCall("edit_items", new { quiz_id = (string?)null,
+            words = new[] { new { id = "w1", word = "domy", translation = "houses" } },
+            sentences = new[] { new { id = sentenceId.ToString(), text = "To domy.", translation = "Houses." } } }).ThenText("Edited.");
+        var run = await h.RunAsync("Make them plural");
+        Assert.Equal(2, run.SavedChanges);
+        await using (var db = h.Db())
+        {
+            db.Words.Add(new Word { Id = "new", QuizId = h.QuizId, Lemma = "dom", Translation = "my house" });
+            db.QuizSentences.Add(new QuizSentence { Id = Guid.NewGuid(), QuizId = h.QuizId, Text = "To dom.", Translation = "My house." });
+            await db.SaveChangesAsync();
+        }
+        Assert.Equal(new AssistantUndoResult(0, 2), await h.UndoAsync(run.Id));
+        await using var after = h.Db();
+        Assert.Equal("domy", (await after.Words.SingleAsync(item => item.Id == "w1")).Lemma);
+        Assert.Equal("To domy.", (await after.QuizSentences.SingleAsync(item => item.Id == sentenceId)).Text);
+        Assert.Equal(1, await after.Words.CountAsync(item => item.Lemma == "dom"));
+        Assert.Equal(1, await after.QuizSentences.CountAsync(item => item.Text == "To dom."));
+    }
+
+    [Fact]
+    public async Task A_single_line_source_is_bounded_in_the_preview_and_remains_readable()
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        var text = new string('x', 49_990) + "ENDSOURCE";
+        h.Model.ThenCall("read_source", new { from_line = 330, to_line = (int?)null }).ThenText("Read the end.");
+        await h.RunAsync(text);
+        var first = AssistantHarness.Transcript(h.Model.Requests[0]);
+        Assert.DoesNotContain("ENDSOURCE", first);
+        Assert.DoesNotContain(new string('x', 151), first);
+        Assert.Contains("ENDSOURCE", AssistantHarness.Transcript(h.Model.Requests[1]));
+    }
+
     [Fact]
     public async Task A_sync_run_proposes_approval_changes_for_the_classic_apply_button()
     {

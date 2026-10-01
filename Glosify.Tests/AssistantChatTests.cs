@@ -51,6 +51,10 @@ public sealed class AssistantChatTests
         Assert.Equal("Added dom.", response.AssistantText);
         Assert.Equal(h.ThreadId, response.ThreadId);
         Assert.Equal("add_items", Assert.Single(response.ToolEvents).Name);
+        Assert.Contains("dom", Assert.Single(response.ToolEvents).ArgsJson);
+        var history = await h.OrchestrateAsync(chats => chats.GetChatHistoryAsync(h.ThreadId, AssistantHarness.UserId));
+        Assert.Equal(Assert.Single(response.ToolEvents).ArgsJson,
+            Assert.Single(history.Messages.SelectMany(message => message.ToolEvents)).ArgsJson);
         Assert.Empty(response.PendingChanges);
         await using var db = h.Db();
         Assert.Equal("Add dom", (await db.AssistantThreads.SingleAsync()).Title);

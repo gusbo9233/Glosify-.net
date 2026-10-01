@@ -186,7 +186,21 @@ internal sealed class SourceText
 
     public SourceText(string text)
     {
-        _lines = text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        // Use the same bounded logical lines in previews, source catalogs, and read_source.
+        // This also pages pasted prose that contains no physical line breaks.
+        var lines = new List<string>();
+        foreach (var line in text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n'))
+        {
+            if (line.Length == 0) lines.Add(string.Empty);
+            for (var start = 0; start < line.Length;)
+            {
+                var length = Math.Min(150, line.Length - start);
+                if (start + length < line.Length && char.IsHighSurrogate(line[start + length - 1])) length--;
+                lines.Add(line.Substring(start, length));
+                start += length;
+            }
+        }
+        _lines = lines.ToArray();
     }
 
     public int LineCount => _lines.Length;

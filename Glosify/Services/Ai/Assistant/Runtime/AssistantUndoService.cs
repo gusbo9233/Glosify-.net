@@ -145,7 +145,13 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
-                word.Lemma = Value(before, "word") ?? word.Lemma;
+                var original = Value(before, "word") ?? word.Lemma;
+                if (await db.Words.AnyAsync(other => other.QuizId == word.QuizId && other.Id != word.Id && other.Lemma == original, cancellationToken))
+                {
+                    return false;
+                }
+
+                word.Lemma = original;
                 word.Translation = Value(before, "translation") ?? word.Translation;
                 return true;
             }
@@ -158,7 +164,13 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
-                sentence.Text = Value(before, "text") ?? sentence.Text;
+                var original = Value(before, "text") ?? sentence.Text;
+                if (await db.QuizSentences.AnyAsync(other => other.QuizId == sentence.QuizId && other.Id != sentence.Id && other.Text == original, cancellationToken))
+                {
+                    return false;
+                }
+
+                sentence.Text = original;
                 sentence.Translation = Value(before, "translation") ?? sentence.Translation;
                 return true;
             }
@@ -218,6 +230,12 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
+                var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == quizId && candidate.UserId == userId, cancellationToken);
+                if (quiz is null || !Matches(after, "name", quiz.Name) || quiz.CollectionId != IdOf(after, "collection_id"))
+                {
+                    return false;
+                }
+
                 await db.SaveChangesAsync(cancellationToken);
                 return await quizzes.DeleteQuizAsync(quizId, userId, cancellationToken) is not null;
             }
@@ -227,6 +245,13 @@ internal sealed class AssistantUndoService(
                 if (!Guid.TryParse(change.EntityId, out var collectionId)
                     || await db.Quizzes.AnyAsync(quiz => quiz.CollectionId == collectionId, cancellationToken)
                     || await db.Collections.AnyAsync(collection => collection.ParentCollectionId == collectionId, cancellationToken))
+                {
+                    return false;
+                }
+
+                var collection = await OwnedCollectionAsync(change, userId, cancellationToken);
+                if (collection is null || !Matches(after, "name", collection.Name)
+                    || collection.ParentCollectionId != IdOf(after, "parent_collection_id"))
                 {
                     return false;
                 }

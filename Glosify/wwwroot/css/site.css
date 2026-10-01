@@ -6791,3 +6791,9 @@ input, select, textarea { accent-color: var(--primary); }
     .app-topbar .credit-pill { padding-inline: 10px; }
 }
 .explore-hero-feature[aria-hidden="true"] { display: none; }
+
+.assistant-question-options button[aria-pressed="true"] {
+    background: var(--primary, #53e076);
+    color: var(--on-primary, #003913);
+    border-color: var(--primary, #53e076);
+}

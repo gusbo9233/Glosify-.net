@@ -424,7 +424,7 @@ internal sealed class AssistantThreadStore(
                     parts is null
                         ? []
                         : parts.Where(part => part.Type == AssistantPartTypes.Tool)
-                            .Select(part => new AssistantToolEvent(part.ToolName ?? "tool", "{}", part.Title ?? string.Empty))
+                            .Select(part => new AssistantToolEvent(part.ToolName ?? "tool", part.InputJson ?? "{}", part.Title ?? string.Empty))
                             .ToList(),
                     entry.Changes
                         .Select(change => presenter.PresentPendingChange(change, wordLabels))

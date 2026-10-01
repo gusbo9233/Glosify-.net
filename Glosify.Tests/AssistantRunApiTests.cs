@@ -88,6 +88,39 @@ public sealed class AssistantRunApiTests
         Assert.Equal(HttpStatusCode.Accepted, maximum.StatusCode);
     }
 
+    [Theory]
+    [InlineData("cancel")]
+    [InlineData("approve")]
+    [InlineData("undo")]
+    public async Task Cookie_commands_require_antiforgery(string command)
+    {
+        using var factory = new RunFactory();
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var start = await client.PostAsJsonAsync($"/api/assistant/runs/chats/{factory.ThreadId}", new AssistantRunStartInput("csrf", new AssistantRunInput("Hello")));
+        var run = (await start.Content.ReadFromJsonAsync<AssistantRunView>(Web))!;
+        var response = await client.PostAsJsonAsync($"/Assistant/Runs/{run.Id}/{command}", new AssistantRunCommand(run.Revision));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var unchanged = await client.GetFromJsonAsync<AssistantRunView>($"/api/assistant/runs/{run.Id}", Web);
+        Assert.Equal(run.Revision, unchanged!.Revision);
+        Assert.Equal(AssistantRunStatus.Queued, unchanged.Status);
+    }
+
+    [Theory]
+    [InlineData("/api/assistant/runs/")]
+    [InlineData("/Assistant/Runs/")]
+    public async Task Missing_run_uses_shared_problem_details(string route)
+    {
+        using var factory = new RunFactory();
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var response = await client.GetAsync(route + Guid.NewGuid());
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(404, json.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("Request not found.", json.RootElement.GetProperty("detail").GetString());
+        Assert.Equal(json.RootElement.GetProperty("detail").GetString(), json.RootElement.GetProperty("error").GetString());
+    }
+
     [Fact]
     public async Task Events_stream_the_run_as_server_sent_events_with_its_revision_as_the_id()
     {

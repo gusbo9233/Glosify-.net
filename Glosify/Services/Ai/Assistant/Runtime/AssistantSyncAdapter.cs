@@ -63,7 +63,7 @@ internal sealed class AssistantSyncAdapter(
             .Where(part => part.RunId == view.Id && part.Type == AssistantPartTypes.Tool)
             .OrderBy(part => part.Step)
             .ThenBy(part => part.Sequence)
-            .Select(part => new AssistantToolEvent(part.ToolName ?? "tool", "{}", part.Title ?? string.Empty))
+            .Select(part => new AssistantToolEvent(part.ToolName ?? "tool", part.InputJson ?? "{}", part.Title ?? string.Empty))
             .ToListAsync(cancellationToken);
         return new AssistantTurnResponse(
             view.ThreadId,
