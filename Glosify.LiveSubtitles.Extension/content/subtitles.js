@@ -546,6 +546,10 @@
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message?.type) {
       case "overlay:bind-session":
+        if (activeSessionId !== (message.sessionId ?? null)) {
+          chat.resetStream();
+          renderChat();
+        }
         activeSessionId = message.sessionId ?? null;
         sendResponse({ activeSessionId });
         break;

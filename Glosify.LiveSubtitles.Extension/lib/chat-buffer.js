@@ -177,6 +177,13 @@
       this.committedReplacementSentences = 0;
     }
 
+    resetStream() {
+      this.latestSequence = -Infinity;
+      this.clearedThroughSequence = -Infinity;
+      this.translation = "";
+      this.resetReplacement();
+    }
+
     clear({ resetStream = false } = {}) {
       this.clearedThroughSequence = resetStream ? -Infinity : this.latestSequence;
       if (resetStream) {
