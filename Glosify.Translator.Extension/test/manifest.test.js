@@ -14,6 +14,6 @@ test("base manifest has the minimal translator permissions", async () => {
 
 test("store manifest has production-only host access", async () => {
   const manifest = JSON.parse(await readFile(new URL("../manifest.store.json", import.meta.url)));
-  assert.deepEqual(manifest.host_permissions, ["https://glosify.se/*"]);
+  assert.deepEqual(manifest.host_permissions, ["https://globeglotter.app/*"]);
   assert.equal(manifest.key, undefined);
 });

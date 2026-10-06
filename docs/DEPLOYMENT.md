@@ -41,8 +41,9 @@ job. Keep the existing migration and readiness safeguards in place.
 
 ## Custom domains
 
-`glosify.se` remains the canonical production origin. `globeglotter.app` and
-`www.globeglotter.app` are interim aliases: the application permanently redirects
+`glosify.se` remains canonical until `GlobeGlotter__CanonicalEnabled=true` is applied.
+See [the coordinated migration runbook](globeglotter-migration.md) before enabling it. `globeglotter.app` and
+`www.globeglotter.app` are interim aliases: the application temporarily redirects
 every request on either hostname to the same path and query on
 `https://glosify.se`. Do not change Stripe return URLs, OAuth registrations, SEO
 canonicals, sitemap origins, or extension hosts until the separate primary-domain

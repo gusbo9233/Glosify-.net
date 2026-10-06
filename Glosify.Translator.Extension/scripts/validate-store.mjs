@@ -10,8 +10,8 @@ export async function validateStore(directory) {
   if (JSON.stringify([...manifest.permissions].sort()) !== JSON.stringify(expectedPermissions)) {
     throw new Error(`Unexpected permissions: ${manifest.permissions.join(", ")}`);
   }
-  if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(["https://glosify.se/*"])) {
-    throw new Error("Store build may access only https://glosify.se/*.");
+  if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(["https://globeglotter.app/*"])) {
+    throw new Error("Store build may access only https://globeglotter.app/*.");
   }
   if ("key" in manifest) throw new Error("The Store manifest must not contain a development key.");
   const allowedManifestKeys = ["manifest_version", "name", "description", "version", "minimum_chrome_version",
@@ -20,13 +20,13 @@ export async function validateStore(directory) {
   if (Object.keys(manifest).some(key => !allowedManifestKeys.includes(key))) {
     throw new Error("Store manifest contains an unreviewed capability or field.");
   }
-  const policy = "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; connect-src https://glosify.se";
+  const policy = "default-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; connect-src https://globeglotter.app";
   if (manifest.content_security_policy?.extension_pages !== policy
     || Object.keys(manifest.content_security_policy).length !== 1) {
     throw new Error("Store CSP must allow only packaged code and the production API.");
   }
   const config = await readFile(path.join(directory, "config.js"), "utf8");
-  if (config.replace(/\s/gu, "") !== 'exportconstCONFIG=Object.freeze({glosifyBaseUrl:"https://glosify.se",testHooksEnabled:false,});') {
+  if (config.replace(/\s/gu, "") !== 'exportconstCONFIG=Object.freeze({glosifyBaseUrl:"https://globeglotter.app",testHooksEnabled:false,});') {
     throw new Error("Store config must target production with test hooks disabled.");
   }
   if (JSON.stringify(manifest.web_accessible_resources) !== JSON.stringify([{

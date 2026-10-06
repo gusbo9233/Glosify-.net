@@ -29,9 +29,9 @@ export async function validateStore(directory) {
   }
 
   if (manifest) {
-    if (manifest.version !== "0.5.3") failures.push("manifest version must be 0.5.3");
+    if (manifest.version !== "0.5.4") failures.push("manifest version must be 0.5.4");
     if ("key" in manifest) failures.push("Store manifest must not contain a pinned development key");
-    if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(["https://glosify.se/*"])) failures.push("Store host permissions must contain only https://glosify.se/*");
+    if (JSON.stringify(manifest.host_permissions) !== JSON.stringify(["https://globeglotter.app/*"])) failures.push("Store host permissions must contain only https://globeglotter.app/*");
   }
 
   try {

@@ -51,7 +51,7 @@ test("popup renders sign-in errors and unknown balances without inventing an acc
     assert.equal(elements.error.classList.contains("hidden"), false);
     assert.equal(elements["signed-out"].classList.contains("hidden"), false);
     assert.equal(elements["signed-in"].classList.contains("hidden"), true);
-    assert.equal(elements.server.textContent, "glosify.se");
+    assert.equal(elements.server.textContent, "globeglotter.app");
     onState({ target: "popup", type: "state:update", state: { signedIn: true, availableCredits: null } });
     assert.equal(elements.email.textContent, "Account details unavailable");
     assert.equal(elements.credits.textContent, "Credits unavailable");

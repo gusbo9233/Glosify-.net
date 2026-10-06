@@ -6,14 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace Glosify.Controllers;
 
 [AllowAnonymous]
-public sealed class SitemapController(IWebHostEnvironment hostEnvironment) : Controller
+public sealed class SitemapController(IWebHostEnvironment hostEnvironment, IConfiguration configuration) : Controller
 {
     [HttpGet("/sitemap.xml")]
     [ResponseCache(Duration = 3600, Location = ResponseCacheLocation.Any)]
     public IActionResult Index()
     {
         var origin = hostEnvironment.IsProduction()
-            ? "https://glosify.se"
+            ? (configuration.GetValue<bool>("GlobeGlotter:CanonicalEnabled") ? "https://globeglotter.app" : "https://glosify.se")
             : $"{Request.Scheme}://{Request.Host}{Request.PathBase}";
         var paths = new List<string> { "/", "/privacy/english", "/terms/english", "/support/english" };
         foreach (var culture in DisplayCultureCatalog.LocalizedPublicCultures)

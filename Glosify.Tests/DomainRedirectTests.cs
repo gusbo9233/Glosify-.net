@@ -16,13 +16,13 @@ public sealed class DomainRedirectTests : IClassFixture<WebApplicationFactory<Pr
     [Theory]
     [InlineData("globeglotter.app")]
     [InlineData("www.globeglotter.app")]
-    public async Task GlobeGlotterHostsPermanentlyRedirectToGlosify(string host)
+    public async Task GlobeGlotterHostsTemporarilyRedirectBeforeCutover(string host)
     {
         using var client = CreateClient(host);
 
         var response = await client.GetAsync("/sv/terms?source=domain%20preview&mode=1");
 
-        Assert.Equal(HttpStatusCode.PermanentRedirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.TemporaryRedirect, response.StatusCode);
         Assert.Equal(
             "https://glosify.se/sv/terms?source=domain%20preview&mode=1",
             response.Headers.Location?.AbsoluteUri);
@@ -50,6 +50,106 @@ public sealed class DomainRedirectTests : IClassFixture<WebApplicationFactory<Pr
         var response = await client.GetAsync("/");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("glosify.se")]
+    [InlineData("www.glosify.se")]
+    [InlineData("www.globeglotter.app")]
+    public async Task CutoverRedirectsBrowserPagesToApex(string host)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.UseSetting("GlobeGlotter:CanonicalEnabled", "true"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri($"https://{host}") });
+        var response = await client.GetAsync("/privacy/english?source=old");
+        Assert.Equal(HttpStatusCode.PermanentRedirect, response.StatusCode);
+        Assert.Equal("https://globeglotter.app/privacy/english?source=old&__gg=20261006", response.Headers.Location?.AbsoluteUri);
+    }
+
+    [Theory]
+    [InlineData("/api/missing")]
+    [InlineData("/extension/missing")]
+    [InlineData("/webhooks/missing")]
+    public async Task CutoverPreservesLegacyIntegrationRoutes(string path)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.UseSetting("GlobeGlotter:CanonicalEnabled", "true"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        var response = await client.GetAsync(path);
+        Assert.NotEqual(HttpStatusCode.PermanentRedirect, response.StatusCode);
+        Assert.DoesNotContain("globeglotter.app", response.Headers.Location?.OriginalString ?? "");
+        var post = await client.PostAsync("/Account/Login", new StringContent(""));
+        Assert.NotEqual(HttpStatusCode.PermanentRedirect, post.StatusCode);
+    }
+
+    [Fact]
+    public async Task CachedPreCutoverRedirectCanReachNewOriginWithoutLooping()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.UseSetting("GlobeGlotter:CanonicalEnabled", "true"));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        var cachedSource = new Uri("https://globeglotter.app/privacy/english");
+        // Emulate a browser that already cached the old 308 for this exact URL.
+        var cachedDestination = new Uri("https://glosify.se/privacy/english");
+        var response = await client.GetAsync(cachedDestination);
+        Assert.NotEqual(cachedSource, response.Headers.Location);
+        Assert.Equal("globeglotter.app", response.Headers.Location!.Host);
+        var recovered = await client.GetAsync(response.Headers.Location);
+        Assert.Equal(HttpStatusCode.OK, recovered.StatusCode);
+        Assert.Null(recovered.Headers.Location);
+    }
+
+    [Theory]
+    [InlineData("POST", "/login")]
+    [InlineData("POST", "/Account/Login")]
+    [InlineData("POST", "/Account/ExternalLogin")]
+    [InlineData("POST", "/Identity/Account/LoginWith2fa")]
+    [InlineData("GET", "/signin-google?code=old-code&state=old-state")]
+    [InlineData("GET", "/signin-microsoft?code=old-code")]
+    [InlineData("GET", "/Account/ExternalLoginCallback")]
+    public async Task OldOriginSignInRestartsBeforeProcessingCredentials(string method, string path)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("GlobeGlotter:CanonicalEnabled", "true")
+            .UseSetting("SharedAuth:Enabled", "true")
+            .UseSetting("SharedAuth:LocalKeyPath", Path.Combine(Path.GetTempPath(), "globe-redirect-test")));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        using var request = new HttpRequestMessage(new HttpMethod(method), path);
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
+        Assert.Equal("https://globeglotter.app/login?__gg=20261006", response.Headers.Location?.AbsoluteUri);
+        Assert.True(response.Headers.CacheControl?.NoStore);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+    }
+
+    [Theory]
+    [InlineData("/sso/game", true)]
+    [InlineData("/ExtensionAuth/Authorize?state=test", true)]
+    [InlineData("https://evil.example/", false)]
+    [InlineData("//evil.example/", false)]
+    [InlineData("/\\evil.example/", false)]
+    public async Task OldSignInPreservesOnlyLocalReturnUrls(string returnUrl, bool local)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("GlobeGlotter:CanonicalEnabled", "true").UseSetting("SharedAuth:Enabled", "true")
+            .UseSetting("SharedAuth:LocalKeyPath", Path.Combine(Path.GetTempPath(), "globe-redirect-test")));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        var response = await client.PostAsync("/Account/ExternalLogin", new FormUrlEncodedContent(new Dictionary<string,string> { ["returnUrl"] = returnUrl }));
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(response.Headers.Location!.Query);
+        query.TryGetValue("returnUrl", out var preserved);
+        Assert.Equal(local ? returnUrl : null, preserved.FirstOrDefault());
+        Assert.Equal("globeglotter.app", response.Headers.Location.Host);
+    }
+
+    [Theory]
+    [InlineData("/Account/Logout")]
+    [InlineData("/Identity/Account/Logout")]
+    public async Task OldLogoutContinuesAtNewOriginLogoutConfirmation(string path)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("GlobeGlotter:CanonicalEnabled", "true").UseSetting("SharedAuth:Enabled", "true")
+            .UseSetting("SharedAuth:LocalKeyPath", Path.Combine(Path.GetTempPath(), "globe-redirect-test")));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        var response = await client.PostAsync(path, new StringContent(""));
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
+        Assert.Equal("https://globeglotter.app/Identity/Account/Logout?__gg=20261006", response.Headers.Location?.AbsoluteUri);
     }
 
     private HttpClient CreateClient(string host) => _factory.CreateClient(new WebApplicationFactoryClientOptions

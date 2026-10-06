@@ -54,7 +54,7 @@ test("test hooks and audio capture mode are independent profile settings", async
     allowInsecureRelay: false,
   });
   assert.deepEqual(await readConfig("store"), {
-    glosifyBaseUrl: "https://glosify.se",
+    glosifyBaseUrl: "https://globeglotter.app",
     testHooksEnabled: false,
     captureMode: "tab",
     allowInsecureRelay: false,

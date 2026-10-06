@@ -1,4 +1,4 @@
-# Chrome Web Store submission — 0.5.3 BETA
+# Chrome Web Store submission — 0.5.4 BETA
 
 ## Publishing settings
 
@@ -83,7 +83,7 @@ The screenshots are deterministic frames around the actual extension screenshots
 
 ## Manual dashboard checklist
 
-- Upload only `artifacts/package/glosify-live-subtitles-0.5.3-beta.zip`.
+- Upload only `artifacts/package/glosify-live-subtitles-0.5.4-beta.zip`.
 - Enter the temporary reviewer credentials only in the dashboard reviewer field.
 - Confirm data-use declarations match the answers above.
 - Confirm Public visibility, BETA branding, and deferred publishing before submitting.
