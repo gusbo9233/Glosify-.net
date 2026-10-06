@@ -1,4 +1,5 @@
 using Glosify.Models.Entities;
+using Glosify.Infrastructure.Api;
 using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -21,12 +22,15 @@ public sealed class GameAccessController(SignInManager<ApplicationUser> signInMa
     [HttpGet("/api/game/access")]
     public async Task<IActionResult> Access()
     {
-        if (!configuration.GetValue<bool>("SharedAuth:Enabled")) return NotFound();
+        if (!configuration.GetValue<bool>("SharedAuth:Enabled")) return AccessError(404);
         var user = await ValidUser();
-        if (user is null) return Unauthorized();
-        if (!administrators.IsAdminUser(user.Id)) return StatusCode(StatusCodes.Status403Forbidden);
+        if (user is null) return AccessError(401);
+        if (!administrators.IsAdminUser(user.Id)) return AccessError(403);
         return Json(new { userId = user.Id });
     }
+
+    private IActionResult AccessError(int status) => GlosifyProblemDetails.Result(
+        HttpContext, status, GlosifyProblemDetails.CodeForStatus(status));
 
     [HttpGet("/sso/game")]
     public async Task<IActionResult> Game()

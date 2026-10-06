@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Infrastructure.Api;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Localization;
@@ -80,13 +81,20 @@ public static class AuthenticationExtensions
             options.Events.OnRedirectToLogin = context =>
             {
                 if (context.Request.Path.StartsWithSegments("/api/game"))
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                else return defaultLoginRedirect(context);
-                return Task.CompletedTask;
+                {
+                    context.Response.Headers.CacheControl = "no-store";
+                    return GlosifyProblemDetails.WriteAsync(context.HttpContext, 401, ApiErrorCodes.Unauthorized, "Sign in to access the game.");
+                }
+                return defaultLoginRedirect(context);
             };
             options.Events.OnRedirectToAccessDenied = context =>
             {
-                if (context.Request.Path.StartsWithSegments("/api/game") || context.Request.Path == "/sso/game")
+                if (context.Request.Path.StartsWithSegments("/api/game"))
+                {
+                    context.Response.Headers.CacheControl = "no-store";
+                    return GlosifyProblemDetails.WriteAsync(context.HttpContext, 403, ApiErrorCodes.Forbidden, "Game access requires an administrator.");
+                }
+                if (context.Request.Path == "/sso/game")
                     context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 else return defaultAccessDeniedRedirect(context);
                 return Task.CompletedTask;

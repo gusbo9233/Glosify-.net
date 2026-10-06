@@ -1,5 +1,6 @@
 using Azure.Identity;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Glosify.Extensions;
 
@@ -36,7 +37,20 @@ public static class GlobeGlotterExtensions
         var globe = host is "globeglotter.app" or "www.globeglotter.app";
         var old = host is "glosify.se" or "www.glosify.se";
         var path = context.Request.Path;
-        // Preserve integrations and in-flight callbacks; never redirect a legacy POST.
+        // An old-origin sign-in cannot issue the new parent-domain cookie. Restart before
+        // processing credentials or provider codes, rather than reporting a lost sign-in.
+        if (old && migrated && configuration.GetValue<bool>("SharedAuth:Enabled")
+            && (path.StartsWithSegments("/signin-google") || path.StartsWithSegments("/signin-microsoft")
+                || path.StartsWithSegments("/Account/ExternalLoginCallback")
+                || (HttpMethods.IsPost(context.Request.Method) && (path.StartsWithSegments("/Account")
+                    || path.StartsWithSegments("/Identity/Account") || path.StartsWithSegments("/login")))))
+        {
+            context.Response.StatusCode = StatusCodes.Status303SeeOther;
+            context.Response.Headers.Location = "https://globeglotter.app/login?__gg=20261006";
+            context.Response.Headers.CacheControl = "no-store";
+            return;
+        }
+        // Preserve API/webhook traffic; never replay legacy form POSTs on another origin.
         var compatibility = path.StartsWithSegments("/api") || path.StartsWithSegments("/extension")
             || path.StartsWithSegments("/ExtensionAuth") || path.StartsWithSegments("/signin-google")
             || path.StartsWithSegments("/signin-microsoft") || path.StartsWithSegments("/Account/ExternalLoginCallback")
@@ -47,8 +61,12 @@ public static class GlobeGlotterExtensions
             || (old && !compatibility && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method))))))
         {
             var origin = migrated ? "https://globeglotter.app" : "https://glosify.se";
-            context.Response.Redirect(origin + context.Request.PathBase + path + context.Request.QueryString,
-                permanent: migrated, preserveMethod: true);
+            var destination = origin + context.Request.PathBase + path + context.Request.QueryString;
+            // The previous site permanently redirected the new hostname to the old one.
+            // A fresh query key bypasses that browser cache entry without needing user action.
+            if (migrated && !context.Request.Query.ContainsKey("__gg"))
+                destination = QueryHelpers.AddQueryString(destination, "__gg", "20261006");
+            context.Response.Redirect(destination, permanent: migrated, preserveMethod: true);
             return;
         }
         // Old-origin OAuth/bootstrap traffic may finish, but must never emit a parent-domain cookie.

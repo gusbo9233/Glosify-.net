@@ -39,10 +39,19 @@ private Blob key ring and Key Vault encryption key. Development requires an expl
 ## Compatibility and rollback
 
 The canonical switch removes the previous duplicate redirect middleware. Browser GET/HEAD pages
-on the old host redirect to the new apex. API, extension, callback and webhook routes are retained;
-legacy POSTs are not blanket-redirected. Responses from the old hostname never issue the new
+on the old host redirect to the new apex. API, extension and webhook routes are retained. Old-origin browser sign-in POSTs and OAuth
+callbacks restart with a 303 to the new login page before processing credentials/codes;
+unrelated legacy POSTs are not blanket-redirected. New-origin redirects include a stable
+`__gg` query marker to bypass previously cached permanent redirects back to the old domain. Responses from the old hostname never issue the new
 parent-domain application cookie. Account management and POST/antiforgery logout remain here.
 
 Stop the game first if necessary. Restore coordinated artifact/settings for an auth rollback;
 DNS alone cannot restore cookies. Retain all old Data Protection/Key Vault key versions and domain
 certificates. No database migrations are introduced by this change.
+
+## Review record
+
+Greptile reviewed the initial revision on October 6, 2026. Its three findings were confirmed
+and addressed: cached redirect recovery, explicit old-origin sign-in restart, and standard
+Problem Details for game API errors. Regression tests cover each. No Copilot review was
+available for that revision; absence is not treated as a clean review.

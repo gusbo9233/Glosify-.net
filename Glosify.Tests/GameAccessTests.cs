@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
@@ -40,13 +41,14 @@ public sealed class GameAccessTests
         Assert.Equal(expected,(int)response.StatusCode);
         Assert.Null(response.Headers.Location);
         if(expected==200)Assert.Equal("{\"userId\":\"admin\"}",await response.Content.ReadAsStringAsync());
+        else await AssertProblem(response, expected);
     }
 
     [Fact]
     public async Task AnonymousApiReturns401WhileHandoffUsesLocalLoginReturnUrl()
     {
         using var fixture=new Fixture();using var client=fixture.Client();
-        Assert.Equal(HttpStatusCode.Unauthorized,(await client.GetAsync("/api/game/access")).StatusCode);
+        await AssertProblem(await client.GetAsync("/api/game/access"), 401);
         var response=await client.GetAsync("/sso/game");
         Assert.Equal(HttpStatusCode.Redirect,response.StatusCode);
         Assert.Contains("ReturnUrl=%2Fsso%2Fgame",response.Headers.Location!.OriginalString);
@@ -63,6 +65,17 @@ public sealed class GameAccessTests
         }
         fixture.SignIn(client,"admin","stamp");
         Assert.Equal("https://game.globeglotter.app/",(await client.GetAsync("/sso/game?returnUrl=https://evil.example/")).Headers.Location?.AbsoluteUri);
+    }
+
+    private static async Task AssertProblem(HttpResponseMessage response, int status)
+    {
+        Assert.Equal(status, (int)response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+        Assert.Equal(status, body.GetProperty("status").GetInt32());
+        Assert.Equal(status == 401 ? "unauthorized" : status == 403 ? "forbidden" : "not_found", body.GetProperty("code").GetString());
+        Assert.False(string.IsNullOrEmpty(body.GetProperty("error").GetString()));
+        Assert.True(response.Headers.CacheControl?.NoStore);
     }
 
     private sealed class Fixture : IDisposable
