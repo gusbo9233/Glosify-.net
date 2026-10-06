@@ -1,4 +1,4 @@
 export const CONFIG = Object.freeze({
-  glosifyBaseUrl: "https://glosify.se",
+  glosifyBaseUrl: "https://globeglotter.app",
   testHooksEnabled: false,
 });

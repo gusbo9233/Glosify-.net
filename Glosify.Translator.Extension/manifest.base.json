@@ -4,7 +4,7 @@
   "description": "Translate text in a movable box using your GlobeGlotter account.",
   "version": "0.1.0",
   "minimum_chrome_version": "116",
-  "homepage_url": "https://glosify.se",
+  "homepage_url": "https://globeglotter.app",
   "permissions": ["activeTab", "identity", "scripting", "storage", "clipboardWrite"],
   "web_accessible_resources": [{
     "resources": ["overlay/translator.html"],

@@ -48,6 +48,8 @@ public static class AuthenticationExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
+        services.AddGlobeGlotterSharedAuth(configuration, environment);
+
         // Add Identity
         services.AddDefaultIdentity<ApplicationUser>(options =>
         {
@@ -67,6 +69,28 @@ public static class AuthenticationExtensions
         services.ConfigureApplicationCookie(options =>
         {
             options.LoginPath = "/login";
+            if (configuration.GetValue<bool>("SharedAuth:Enabled"))
+            {
+                options.Cookie.Name = ".GlobeGlotter.Auth";
+                options.Cookie.Domain = environment.IsDevelopment() ? null : ".globeglotter.app";
+                options.Cookie.Path = "/";
+            }
+            var defaultLoginRedirect = options.Events.OnRedirectToLogin;
+            var defaultAccessDeniedRedirect = options.Events.OnRedirectToAccessDenied;
+            options.Events.OnRedirectToLogin = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api/game"))
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                else return defaultLoginRedirect(context);
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api/game") || context.Request.Path == "/sso/game")
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                else return defaultAccessDeniedRedirect(context);
+                return Task.CompletedTask;
+            };
             options.AccessDeniedPath = "/Home/Error";
             // Stated rather than inherited. The defaults happen to be safe in production because
             // UseHttpsRedirection plus the forwarded X-Forwarded-Proto make every request HTTPS,
