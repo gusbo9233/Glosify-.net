@@ -41,7 +41,10 @@ private Blob key ring and Key Vault encryption key. Development requires an expl
 The canonical switch removes the previous duplicate redirect middleware. Browser GET/HEAD pages
 on the old host redirect to the new apex. API, extension and webhook routes are retained. Old-origin browser sign-in POSTs and OAuth
 callbacks restart with a 303 to the new login page before processing credentials/codes;
-unrelated legacy POSTs are not blanket-redirected. New-origin redirects include a stable
+validated local return URLs survive the restart. Old-page logout continues at the new
+origin’s existing logout confirmation form because only that origin can delete its cookie.
+Logout still requires an antiforgery-protected POST. Unrelated account-management and legacy
+POSTs are not blanket-redirected. New-origin redirects include a stable
 `__gg` query marker to bypass previously cached permanent redirects back to the old domain. Responses from the old hostname never issue the new
 parent-domain application cookie. Account management and POST/antiforgery logout remain here.
 
@@ -53,5 +56,5 @@ certificates. No database migrations are introduced by this change.
 
 Greptile reviewed the initial revision on October 6, 2026. Its three findings were confirmed
 and addressed: cached redirect recovery, explicit old-origin sign-in restart, and standard
-Problem Details for game API errors. Regression tests cover each. No Copilot review was
+Problem Details for game API errors. Regression tests cover each, including a subsequent review’s logout-continuation and local-return-URL findings. The real Identity logout form is tested for antiforgery enforcement and shared-cookie deletion. No Copilot review was
 available for that revision; absence is not treated as a clean review.

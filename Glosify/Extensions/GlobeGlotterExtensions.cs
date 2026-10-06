@@ -1,6 +1,9 @@
 using Azure.Identity;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Glosify.Extensions;
 
@@ -37,18 +40,40 @@ public static class GlobeGlotterExtensions
         var globe = host is "globeglotter.app" or "www.globeglotter.app";
         var old = host is "glosify.se" or "www.glosify.se";
         var path = context.Request.Path;
-        // An old-origin sign-in cannot issue the new parent-domain cookie. Restart before
-        // processing credentials or provider codes, rather than reporting a lost sign-in.
-        if (old && migrated && configuration.GetValue<bool>("SharedAuth:Enabled")
-            && (path.StartsWithSegments("/signin-google") || path.StartsWithSegments("/signin-microsoft")
-                || path.StartsWithSegments("/Account/ExternalLoginCallback")
-                || (HttpMethods.IsPost(context.Request.Method) && (path.StartsWithSegments("/Account")
-                    || path.StartsWithSegments("/Identity/Account") || path.StartsWithSegments("/login")))))
+        if (old && migrated && configuration.GetValue<bool>("SharedAuth:Enabled"))
         {
-            context.Response.StatusCode = StatusCodes.Status303SeeOther;
-            context.Response.Headers.Location = "https://globeglotter.app/login?__gg=20261006";
-            context.Response.Headers.CacheControl = "no-store";
-            return;
+            // Only the new origin can delete its cookie. Continue an old-page logout on
+            // Identity's existing confirmation form, retaining its antiforgery-protected POST.
+            if (HttpMethods.IsPost(context.Request.Method)
+                && (path == "/Account/Logout" || path == "/Identity/Account/Logout"))
+            {
+                context.Response.StatusCode = StatusCodes.Status303SeeOther;
+                context.Response.Headers.Location = "https://globeglotter.app/Identity/Account/Logout?__gg=20261006";
+                context.Response.Headers.CacheControl = "no-store";
+                return;
+            }
+            // Restart sign-in before processing credentials or provider codes. Do not
+            // intercept unrelated account-management POSTs or replay a POST cross-origin.
+            var signInPost = HttpMethods.IsPost(context.Request.Method)
+                && (path == "/login" || path == "/Account/Login" || path == "/Account/Register"
+                    || path == "/Account/ExternalLogin" || path == "/Identity/Account/Login"
+                    || path == "/Identity/Account/LoginWith2fa" || path == "/Identity/Account/LoginWithRecoveryCode"
+                    || path == "/Identity/Account/Register" || path == "/Identity/Account/ExternalLogin");
+            if (signInPost || path.StartsWithSegments("/signin-google") || path.StartsWithSegments("/signin-microsoft")
+                || path == "/Account/ExternalLoginCallback")
+            {
+                var returnUrl = context.Request.Query["returnUrl"].FirstOrDefault();
+                if (returnUrl is null && context.Request.HasFormContentType)
+                    returnUrl = (await context.Request.ReadFormAsync(context.RequestAborted))["returnUrl"].FirstOrDefault();
+                var urls = context.RequestServices.GetRequiredService<IUrlHelperFactory>()
+                    .GetUrlHelper(new ActionContext(context, new RouteData(), new ActionDescriptor()));
+                var destination = "https://globeglotter.app/login?__gg=20261006";
+                if (urls.IsLocalUrl(returnUrl)) destination = QueryHelpers.AddQueryString(destination, "returnUrl", returnUrl);
+                context.Response.StatusCode = StatusCodes.Status303SeeOther;
+                context.Response.Headers.Location = destination;
+                context.Response.Headers.CacheControl = "no-store";
+                return;
+            }
         }
         // Preserve API/webhook traffic; never replay legacy form POSTs on another origin.
         var compatibility = path.StartsWithSegments("/api") || path.StartsWithSegments("/extension")

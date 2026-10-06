@@ -119,6 +119,39 @@ public sealed class DomainRedirectTests : IClassFixture<WebApplicationFactory<Pr
         Assert.False(response.Headers.Contains("Set-Cookie"));
     }
 
+    [Theory]
+    [InlineData("/sso/game", true)]
+    [InlineData("/ExtensionAuth/Authorize?state=test", true)]
+    [InlineData("https://evil.example/", false)]
+    [InlineData("//evil.example/", false)]
+    [InlineData("/\\evil.example/", false)]
+    public async Task OldSignInPreservesOnlyLocalReturnUrls(string returnUrl, bool local)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("GlobeGlotter:CanonicalEnabled", "true").UseSetting("SharedAuth:Enabled", "true")
+            .UseSetting("SharedAuth:LocalKeyPath", Path.Combine(Path.GetTempPath(), "globe-redirect-test")));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        var response = await client.PostAsync("/Account/ExternalLogin", new FormUrlEncodedContent(new Dictionary<string,string> { ["returnUrl"] = returnUrl }));
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(response.Headers.Location!.Query);
+        query.TryGetValue("returnUrl", out var preserved);
+        Assert.Equal(local ? returnUrl : null, preserved.FirstOrDefault());
+        Assert.Equal("globeglotter.app", response.Headers.Location.Host);
+    }
+
+    [Theory]
+    [InlineData("/Account/Logout")]
+    [InlineData("/Identity/Account/Logout")]
+    public async Task OldLogoutContinuesAtNewOriginLogoutConfirmation(string path)
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("GlobeGlotter:CanonicalEnabled", "true").UseSetting("SharedAuth:Enabled", "true")
+            .UseSetting("SharedAuth:LocalKeyPath", Path.Combine(Path.GetTempPath(), "globe-redirect-test")));
+        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false, BaseAddress = new Uri("https://glosify.se") });
+        var response = await client.PostAsync(path, new StringContent(""));
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
+        Assert.Equal("https://globeglotter.app/Identity/Account/Logout?__gg=20261006", response.Headers.Location?.AbsoluteUri);
+    }
+
     private HttpClient CreateClient(string host) => _factory.CreateClient(new WebApplicationFactoryClientOptions
     {
         AllowAutoRedirect = false,

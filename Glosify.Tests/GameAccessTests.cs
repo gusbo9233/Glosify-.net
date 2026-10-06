@@ -1,4 +1,5 @@
 using System.Net;
+using AngleSharp.Html.Parser;
 using System.Security.Claims;
 using System.Text.Json;
 using Glosify.Data;
@@ -65,6 +66,30 @@ public sealed class GameAccessTests
         }
         fixture.SignIn(client,"admin","stamp");
         Assert.Equal("https://game.globeglotter.app/",(await client.GetAsync("/sso/game?returnUrl=https://evil.example/")).Headers.Location?.AbsoluteUri);
+    }
+
+    [Fact]
+    public async Task LogoutConfirmationRequiresAntiforgeryAndDeletesSharedCookie()
+    {
+        using var fixture = new Fixture(); using var client = fixture.Client();
+        using (var scope = fixture.App.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            db.Users.Add(new ApplicationUser { Id = "admin", UserName = "admin@example.test", SecurityStamp = "stamp" });
+            await db.SaveChangesAsync();
+        }
+        fixture.SignIn(client, "admin", "stamp");
+        var page = await client.GetAsync("/Identity/Account/Logout?__gg=20261006");
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        var document = new HtmlParser().ParseDocument(await page.Content.ReadAsStringAsync());
+        var token = document.QuerySelector("input[name='__RequestVerificationToken']")!.GetAttribute("value")!;
+        var cookies = client.DefaultRequestHeaders.GetValues("Cookie").Single() + "; "
+            + string.Join("; ", page.Headers.GetValues("Set-Cookie").Select(c => c.Split(';')[0]));
+        client.DefaultRequestHeaders.Remove("Cookie"); client.DefaultRequestHeaders.Add("Cookie", cookies);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsync("/Identity/Account/Logout", new FormUrlEncodedContent([]))).StatusCode);
+        var response = await client.PostAsync("/Identity/Account/Logout", new FormUrlEncodedContent(new Dictionary<string,string> { ["__RequestVerificationToken"] = token }));
+        Assert.True(response.IsSuccessStatusCode || response.StatusCode == HttpStatusCode.Redirect);
+        Assert.Contains(response.Headers.GetValues("Set-Cookie"), cookie => cookie.StartsWith(".GlobeGlotter.Auth=;", StringComparison.Ordinal) && cookie.Contains("expires=", StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task AssertProblem(HttpResponseMessage response, int status)
