@@ -19,7 +19,7 @@ npm audit
 npm run package:store
 ```
 
-Upload `artifacts/package/glosify-translator-0.1.0-beta.zip` as a new draft in
+Upload `artifacts/package/glosify-translator-0.1.1-beta.zip` as a new draft in
 the Chrome Web Store developer dashboard. Do not submit for review yet. Never
 upload `artifacts/development`, `artifacts/test`, a browser profile, credentials,
 or a private signing key. The Store package has no pinned development key.

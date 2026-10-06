@@ -45,7 +45,7 @@ npm run test:browser
 npm run package:store
 ```
 
-The deterministic package is written to `artifacts/package/glosify-translator-0.1.0-beta.zip`.
+The deterministic package is written to `artifacts/package/glosify-translator-0.1.1-beta.zip`.
 The build validates its exact file inventory, permissions, production-only API
 configuration, disabled test hooks and packaged-code-only content security policy.
 API calls never follow redirects or send website cookies. The popup identifies
