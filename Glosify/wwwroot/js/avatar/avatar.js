@@ -24,7 +24,7 @@ function transcript(speaker, text) {
     el('transcript').append(item);
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
 }
-function refreshStart() { el('start').disabled = !config?.available || !modelReady || !!sessionId || !!audio; }
+function refreshStart() { el('start').disabled = !config?.available || !config?.language || !modelReady || !!sessionId || !!audio; }
 async function api(path, body) {
     const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) });
     if (!response.ok) { const problem = await response.json().catch(() => ({})); throw new Error(problem.detail || problem.title || 'The conversation could not start.'); }
@@ -120,7 +120,7 @@ async function start() {
         await nextAudio.open(frame);
         if (generation !== epoch) { await nextAudio.close(); return; }
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { language: el('language').value, quizId: el('quiz').value || null });
+        const result = await api('/api/avatar/sessions', { quizId: el('quiz').value || null });
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -131,7 +131,7 @@ async function start() {
         };
         socket.onclose = () => { if (generation === epoch) { notice('Conversation ended. Start again whenever you like.'); void end(); } };
         socket.onerror = () => { if (generation === epoch) notice('Voice connection failed. Please start again.'); };
-        el('quiz').disabled = true; el('language').disabled = true; el('end').disabled = false;
+        el('quiz').disabled = true; el('end').disabled = false;
         el('hint').textContent = mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.';
     } catch (error) {
         notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
@@ -154,7 +154,7 @@ async function end() {
             await new Promise(resolve => setTimeout(resolve, 500));
         }
     }
-    el('quiz').disabled = false; el('language').disabled = !!el('quiz').value;
+    el('quiz').disabled = false;
     el('end').disabled = true; el('mute').disabled = true; el('mute').textContent = 'Mute'; el('mute').setAttribute('aria-pressed', 'false');
     el('hint').textContent = 'Your microphone is off.';
     setState('off'); refreshStart();
@@ -200,14 +200,6 @@ document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.ad
     el('hint').textContent = ready ? mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.' : 'Your microphone stays off until you start.';
     setState(state);
 }));
-el('quiz').addEventListener('change', () => {
-    const quiz = config.quizzes.find(item => item.id === el('quiz').value);
-    if (quiz) {
-        const language = config.languages.find(x => x.name === quiz.targetLanguage || x.code === quiz.targetLanguage);
-        if (language) el('language').value = language.code;
-    }
-    el('language').disabled = !!quiz;
-});
 window.addEventListener('pagehide', () => { void end(); visual?.dispose(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
 
@@ -216,13 +208,13 @@ async function initialize() {
         const response = await fetch('/api/avatar/config', { credentials: 'same-origin' });
         if (!response.ok) throw new Error('Conversation settings could not load. Refresh the page to retry.');
         config = await response.json();
-        for (const language of config.languages) el('language').add(new Option(language.name, language.code));
-        el('language').value = config.languages.some(x => x.code === config.language) ? config.language : 'en';
+        el('language').textContent = config.languageName ? `Practicing ${config.languageName}` : 'Choose a learning language in the sidebar.';
         for (const quiz of config.quizzes) el('quiz').add(new Option(quiz.name, quiz.id));
         const r = config.rates;
         el('rates').textContent = `Listening ${number(r.recognitionPerMinute)} / min · Replies ${number(r.replyPerThousandTokens)} / 1k tokens · Speech ${number(r.speechPerThousandCharacters)} / 1k characters`;
         el('balance').textContent = number(config.balance);
-        if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
+        if (!config.language) notice('Choose a learning language in the sidebar to start a conversation.');
+        else if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
         refreshStart();
     } catch (error) { notice(error.message); }
 }

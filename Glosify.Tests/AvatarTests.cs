@@ -65,7 +65,6 @@ public sealed class AvatarTests
         await app.Antiforgery(client);
         Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = foreign })).StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = empty })).StatusCode);
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, (await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "free" })).StatusCode);
         var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var session = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
@@ -76,7 +75,7 @@ public sealed class AvatarTests
     }
 
     [Fact]
-    public async Task QuizSetsLanguageAndWebSocketRejectsForeignOrigin()
+    public async Task CurrentLanguageQuizProvidesPracticeAndWebSocketRejectsForeignOrigin()
     {
         using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
         var quiz = Guid.NewGuid();
@@ -100,9 +99,14 @@ public sealed class AvatarTests
     [Theory]
     [InlineData("zh-Hans", "Chinese", "zho")]
     [InlineData("nb", "Norwegian", "nor")]
-    public async Task CatalogLanguagesSupportFreeConversationAndQuizPractice(string code, string name, string scribe)
+    [InlineData("cs", "Czech", "ces")]
+    [InlineData("el", "Greek", "ell")]
+    [InlineData("hi", "Hindi", "hin")]
+    [InlineData("yue", "Cantonese", "yue")]
+    [InlineData("sr-Latn", "Serbian", "srp")]
+    public async Task CurrentCatalogLanguageDrivesFreeConversationAndQuizPractice(string code, string name, string scribe)
     {
-        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var app = new AvatarFixture(); using var client = await app.Client("admin", name); await app.Antiforgery(client);
         var quiz = Guid.NewGuid();
         await app.Seed(async db =>
         {
@@ -111,11 +115,12 @@ public sealed class AvatarTests
             await db.SaveChangesAsync();
         });
         using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
-        Assert.Contains(config.RootElement.GetProperty("languages").EnumerateArray(), x => x.GetProperty("code").GetString() == code);
+        Assert.Equal(code, config.RootElement.GetProperty("language").GetString());
+        Assert.Equal(code, Assert.Single(config.RootElement.GetProperty("languages").EnumerateArray()).GetProperty("code").GetString());
         Assert.Contains(config.RootElement.GetProperty("quizzes").EnumerateArray(), x => x.GetProperty("id").GetGuid() == quiz);
         foreach (Guid? quizId in new Guid?[] { null, quiz })
         {
-            using var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = quizId is null ? code : "en", quizId });
+            using var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId });
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             Assert.Equal(code, payload.RootElement.GetProperty("language").GetString());
@@ -123,6 +128,66 @@ public sealed class AvatarTests
             Assert.Equal(scribe, app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").Language.ScribeCode);
             Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{id}/end", new { })).StatusCode);
         }
+    }
+
+    [Fact]
+    public async Task QuizChoicesAndSessionStartStayWithinTheCurrentLanguage()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin", "Chinese"); await app.Antiforgery(client);
+        var current = Guid.NewGuid(); var legacy = Guid.NewGuid(); var other = Guid.NewGuid(); var foreign = Guid.NewGuid();
+        await app.Seed(async db =>
+        {
+            db.Quizzes.AddRange(
+                new Quiz { Id = current, UserId = "admin", Name = "Current", TargetLanguage = "zh-Hans" },
+                new Quiz { Id = legacy, UserId = "admin", Name = "Legacy", Language = "Mandarin" },
+                new Quiz { Id = other, UserId = "admin", Name = "Other language", TargetLanguage = "Swedish" },
+                new Quiz { Id = foreign, UserId = "learner", Name = "Private", TargetLanguage = "Chinese" });
+            foreach (var id in new[] { current, legacy, other, foreign })
+                db.Words.Add(new Word { Id = id.ToString(), QuizId = id, Lemma = "hello", Translation = "greeting" });
+            await db.SaveChangesAsync();
+        });
+        using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
+        Assert.Equal(new[] { current, legacy }, config.RootElement.GetProperty("quizzes").EnumerateArray().Select(x => x.GetProperty("id").GetGuid()));
+        foreach (var id in new[] { other, foreign })
+            Assert.Equal(HttpStatusCode.NotFound, (await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = id, language = "sv" })).StatusCode);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = legacy, language = "sv" });
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        using var payload = JsonDocument.Parse(await start.Content.ReadAsStringAsync());
+        Assert.Equal("zh-Hans", payload.RootElement.GetProperty("language").GetString());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        Assert.Contains("hello", session.Practice);
+    }
+
+    [Fact]
+    public async Task StartUsesLatestWorkingLanguageAndIgnoresClientLanguageOverride()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin", "Swedish"); await app.Antiforgery(client);
+        using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
+        Assert.Equal("sv", config.RootElement.GetProperty("language").GetString());
+        AvatarFixture.SetLanguage(client, "Polish");
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "en" });
+        Assert.Equal(HttpStatusCode.OK, start.StatusCode);
+        using var payload = JsonDocument.Parse(await start.Content.ReadAsStringAsync());
+        Assert.Equal("pl", payload.RootElement.GetProperty("language").GetString());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        Assert.Equal("Polish", session.Language.Name);
+        Assert.Equal("pol", session.Language.ScribeCode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Freestyle")]
+    [InlineData("invalid")]
+    public async Task MissingLearningLanguageCannotSilentlyStartInEnglish(string? language)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin", language); await app.Antiforgery(client);
+        using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
+        Assert.Equal(JsonValueKind.Null, config.RootElement.GetProperty("language").ValueKind);
+        Assert.Empty(config.RootElement.GetProperty("quizzes").EnumerateArray());
+        using var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "en" });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        Assert.Contains("Choose a learning language", await response.Content.ReadAsStringAsync());
     }
 
     [Fact]
@@ -134,6 +199,9 @@ public sealed class AvatarTests
         Assert.Contains("microphone=(self)", page.Headers.GetValues("Permissions-Policy").Single());
         var html = await page.Content.ReadAsStringAsync();
         Assert.Contains("href=\"/Avatar\"", html);
+        var doc = new HtmlParser().ParseDocument(html);
+        Assert.Null(doc.QuerySelector("select#avatar-language"));
+        Assert.NotNull(doc.QuerySelector("p#avatar-language"));
         Assert.Equal(HttpStatusCode.Forbidden, (await learner.GetAsync("/Avatar")).StatusCode);
         var response = await learner.GetAsync("/Quiz");
         Assert.DoesNotContain("href=\"/Avatar\"", await response.Content.ReadAsStringAsync());
@@ -185,7 +253,7 @@ internal sealed class AvatarFixture : WebApplicationFactory<Program>
         db.AccountingBypass = true;
         await seed(db);
     }
-    public async Task<HttpClient> Client(string? user)
+    public async Task<HttpClient> Client(string? user, string? language = "Swedish")
     {
         var client = CreateClient(new() { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false, HandleCookies = false });
         if (user is null) return client;
@@ -204,7 +272,16 @@ internal sealed class AvatarFixture : WebApplicationFactory<Program>
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, user), new Claim("AspNet.Identity.SecurityStamp", "stamp")], "Identity.Application"));
         var ticket = new AuthenticationTicket(principal, new AuthenticationProperties { IssuedUtc = DateTimeOffset.UtcNow, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1) }, "Identity.Application");
         client.DefaultRequestHeaders.Add("Cookie", options.Cookie.Name + "=" + options.TicketDataFormat.Protect(ticket));
+        SetLanguage(client, language);
         return client;
+    }
+    public static void SetLanguage(HttpClient client, string? language)
+    {
+        var cookies = client.DefaultRequestHeaders.GetValues("Cookie").Single().Split("; ")
+            .Where(cookie => !cookie.StartsWith("glosify.language=", StringComparison.Ordinal)).ToList();
+        if (language is not null) cookies.Add("glosify.language=" + Uri.EscapeDataString(language));
+        client.DefaultRequestHeaders.Remove("Cookie");
+        client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", cookies));
     }
     public async Task Antiforgery(HttpClient client)
     {

@@ -38,7 +38,12 @@ seconds of microphone input during recognition setup, including a release before
 setup completes; longer setup delays stop with a retry message. Turn deadlines
 also report an explicit retry without closing the conversation.
 
-The first version supports the language intersection declared in `AvatarController`.
+Conversations use the current learning language from the app’s language context;
+there is no separate avatar language picker or fixed preview allowlist. The server
+resolves the language again when starting a session and ignores any client language
+override. Quiz choices and practice are limited to owned quizzes in that language,
+including aliases and legacy quiz language fields. With no selected learning language
+(or in Freestyle), choose a language through the existing sidebar selector first.
 Quiz practice uses up to 40 words and 20 sentences from an owned quiz, without
 changing quiz attempts or study progress. Interrupted replies are omitted from
 conversation memory until playback is acknowledged. No conversation transcript or

@@ -7,13 +7,15 @@ const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', im
 function setup(mode = 'push-to-talk') {
     const elements = new Map(), sent = [], listeners = {};
     const element = id => {
-        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', addEventListener() {}, setAttribute() {} });
+        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], add(option) { this.options.push(option); }, replaceChildren() {}, addEventListener() {}, setAttribute() {} });
         return elements.get(id);
     };
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? { value: mode } : { value: 'csrf' },
             querySelectorAll: () => [], addEventListener: (name, action) => { listeners[name] = action; } },
-        window: { addEventListener() {} }, WebSocket: { OPEN: 1 }, Intl, console,
+        window: { addEventListener() {} }, WebSocket: { OPEN: 1 }, Intl, console, URL,
+        location: { href: 'https://localhost/Avatar', protocol: 'https:' },
+        Option: class { constructor(text, value) { this.text = text; this.value = value; } },
         createAvatar: () => new Promise(() => {}), fetch: () => new Promise(() => {}),
         wire: value => sent.push(value),
     });
@@ -70,4 +72,45 @@ test('Ready during a pending microphone flush preserves its final frame before c
     h.frame(2); h.run('finishFlush()'); await released;
     assert.deepEqual(h.binary(), [1, 2]);
     assert.equal(h.commands().at(-1), 'commit');
+});
+
+
+test('current learning language is a label and starting only submits the chosen quiz', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; modelReady = true;
+        fetch = async () => ({ ok: true, json: async () => ({
+            available: true, language: 'pl', languageName: 'Polish', balance: 100,
+            quizzes: [{ id: 'polish-quiz', name: 'Polish words' }],
+            rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18.2258 }
+        }) });
+        AvatarAudio = class { async open() {} async close() {} };
+        WebSocket = class { constructor(url) { wire({ socketUrl: String(url) }); } };
+        api = async (path, body) => { wire({ path, body }); return { sessionId: 'session', connectUrl: '/api/avatar/sessions/session/voice' }; };
+    `);
+    await h.run('initialize()');
+    assert.equal(h.elements.get('avatar-language').textContent, 'Practicing Polish');
+    assert.equal(h.elements.get('avatar-language').options.length, 0);
+    assert.equal(h.elements.get('avatar-start').disabled, false);
+    h.elements.get('avatar-quiz').value = 'polish-quiz';
+    await h.run('start()');
+    const request = h.sent.find(x => x.path === '/api/avatar/sessions');
+    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz' });
+    assert.equal(h.sent.at(-1).socketUrl, 'wss://localhost/api/avatar/sessions/session/voice');
+    assert.equal(h.elements.get('avatar-quiz').disabled, true);
+});
+
+test('no current learning language keeps Start disabled and explains how to choose one', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; modelReady = true;
+        fetch = async () => ({ ok: true, json: async () => ({
+            available: true, language: null, languageName: null, balance: 100, quizzes: [],
+            rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18.2258 }
+        }) });
+    `);
+    await h.run('initialize()');
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    assert.match(h.elements.get('avatar-notice').textContent, /Choose a learning language in the sidebar/);
+    assert.equal(h.elements.get('avatar-language').options.length, 0);
 });

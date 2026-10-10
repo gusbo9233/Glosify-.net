@@ -22,7 +22,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     AvatarConversation conversation, AvatarBilling billing, GlosifyContext db, IAiCreditService credits, ILanguageContext languageContext,
     SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users) : Controller
 {
-    internal static readonly HashSet<string> SupportedCodes = ["en", "sv", "es", "fr", "de", "it", "pt", "ja", "ko", "zh-Hans", "ar", "nl", "pl", "uk", "tr", "fi", "da", "nb"];
+    private QuizLanguage? CurrentLanguage => QuizLanguageCatalog.Find(languageContext.CurrentLanguage) is { IsLanguageLearning: true } language ? language : null;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     [HttpGet("/Avatar")]
@@ -37,13 +37,15 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     public async Task<IActionResult> Config(CancellationToken ct)
     {
         if (await Access() is { } failure) return failure;
-        var quizzes = await db.Quizzes.AsNoTracking().Where(x => x.UserId == UserId).OrderBy(x => x.Name)
+        var language = CurrentLanguage;
+        var quizzes = await db.Quizzes.AsNoTracking().Where(x => x.UserId == UserId)
+            .WhereTargetLanguage(language?.Code).OrderBy(x => x.Name)
             .Select(x => new { x.Id, x.Name, x.TargetLanguage }).ToListAsync(ct);
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         return Json(new { available = pricing.Available, rates = pricing.Rates, balance = account.AvailableCredits,
-            language = QuizLanguageCatalog.Find(languageContext.CurrentLanguage)?.Code ?? "en",
-            languages = QuizLanguageCatalog.LanguageLearning.Where(x => SupportedCodes.Contains(x.Code)).Select(x => new { x.Code, x.Name }),
-            quizzes = quizzes.Where(x => SupportedCodes.Contains(QuizLanguageCatalog.Find(x.TargetLanguage)?.Code ?? "")) });
+            language = language?.Code, languageName = language?.Name,
+            languages = QuizLanguageCatalog.LanguageLearning.Where(x => x.Code == language?.Code).Select(x => new { x.Code, x.Name }),
+            quizzes });
     }
 
     [HttpPost("/api/avatar/sessions"), ValidateAntiForgeryToken]
@@ -51,13 +53,14 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     {
         if (await Access() is { } failure) return failure;
         if (!pricing.Available) return ProblemResult(503, "Voice is not configured. Ask an administrator to configure the provider keys.");
-        var language = QuizLanguageCatalog.Find(request.Language);
+        var language = CurrentLanguage;
+        if (language is null) return ProblemResult(422, "Choose a learning language in the sidebar to start a conversation.");
         var practice = "Free conversation. Follow the user's interests.";
         if (request.QuizId is { } id)
         {
-            var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.UserId == UserId, ct);
+            var quiz = await db.Quizzes.AsNoTracking().WhereTargetLanguage(language.Code)
+                .SingleOrDefaultAsync(x => x.Id == id && x.UserId == UserId, ct);
             if (quiz is null) return ProblemResult(404, "Quiz not found.");
-            language = QuizLanguageCatalog.Find(quiz.TargetLanguage);
             var words = await db.Words.AsNoTracking().Where(x => x.QuizId == id).OrderBy(x => x.CreatedAt).Take(40)
                 .Select(x => new { Text = x.Lemma, x.Translation }).ToListAsync(ct);
             var sentences = await db.QuizSentences.AsNoTracking().Where(x => x.QuizId == id).OrderBy(x => x.CreatedAt).Take(20)
@@ -67,7 +70,6 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
             practice = JsonSerializer.Serialize(new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
                 sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) });
         }
-        if (language is null || !SupportedCodes.Contains(language.Code)) return ProblemResult(422, "Choose one of the supported conversation languages.");
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         // Recognition reserves the maximum 45-second utterance. Replies and speech
         // reserve separately at the point of use, with rates displayed before Start.
@@ -132,4 +134,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(string? Language, Guid? QuizId);
+public sealed record AvatarStartRequest(Guid? QuizId);
