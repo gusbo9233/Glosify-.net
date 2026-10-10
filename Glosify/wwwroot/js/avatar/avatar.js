@@ -3,7 +3,7 @@ import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
 const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
-let characterId = 'rain', characterLoading = false, pageLeaving = false;
+let characterId = 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
@@ -52,12 +52,13 @@ function refreshStart() {
     el('character').disabled = characterLoading || !!sessionId || !!audio;
 }
 async function chooseCharacter() {
-    if (audio || sessionId || characterLoading || el('character').disabled) {
+    if (pageLeaving || audio || sessionId || characterLoading || el('character').disabled) {
         el('character').value = characterId; return;
     }
     const selected = el('character').value;
     characterId = Object.hasOwn(characters, selected) ? selected : 'rain';
     el('character').value = characterId;
+    const generation = ++modelEpoch;
     characterLoading = true; modelReady = false; refreshStart();
     visual?.dispose(); visual = null;
     caption('');
@@ -69,13 +70,14 @@ async function chooseCharacter() {
     el('status').textContent = 'Getting ready';
     try {
         const next = await createAvatar(el('canvas'), characterId);
-        if (pageLeaving) { next.dispose(); return; }
+        if (pageLeaving || generation !== modelEpoch) { next.dispose(); return; }
         visual = next; modelReady = true; el('render-status').hidden = true; setState('off');
     } catch {
+        if (generation !== modelEpoch) return;
         el('render-status').textContent = `${character().name} could not load. Choose another partner or refresh to retry.`;
         el('status').textContent = 'Could not load';
     } finally {
-        characterLoading = false; refreshStart();
+        if (generation === modelEpoch) { characterLoading = false; refreshStart(); }
     }
 }
 el('character').addEventListener('change', () => { void chooseCharacter(); });
@@ -256,7 +258,19 @@ document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.ad
     el('hint').textContent = ready ? mode() === 'hands-free' ? `Microphone is on. You can interrupt ${character().name}.` : 'Hold Space or the talk button. Release to send.' : 'Your microphone stays off until you start.';
     setState(state);
 }));
-window.addEventListener('pagehide', () => { pageLeaving = true; void end(); visual?.dispose(); });
+window.addEventListener('pagehide', () => {
+    pageLeaving = true; ++modelEpoch; modelReady = false; characterLoading = false; config = null;
+    pageCleanup = end().catch(() => {});
+    visual?.dispose(); visual = null; refreshStart();
+});
+window.addEventListener('pageshow', async event => {
+    if (!event.persisted) return;
+    const generation = modelEpoch;
+    await pageCleanup;
+    if (generation !== modelEpoch) return;
+    pageLeaving = false; el('character').value = characterId;
+    void initialize(); void chooseCharacter();
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
 
 async function initialize() {

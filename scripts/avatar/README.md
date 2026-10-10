@@ -105,7 +105,10 @@ underneath, with a dark necktie and gold GG shield on the coat chest.
 The character chooser swaps the model and pins the character name and matching voice
 for the conversation; it is locked while a model loads or a conversation is active.
 Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
-and page credits include attribution and the source link. The core CC0 dedication
+and page credits include attribution and the source link.
+Restoring the page through browser Back/Forward reloads the selected model and current
+configuration without restarting the microphone. Late model loads from the previous
+page visit are discarded. The core CC0 dedication
 does not apply to this hair. Asset attribution and license are distributed
 with the model. `human-source.json` pins the upstream revision, download URLs and hashes.
 Prepare the listed files into an external source directory (archive files under `system/`):
@@ -138,7 +141,9 @@ units in `face-poses.json`, whose source revision is recorded alongside the pose
 `Glosify/wwwroot/js/avatar/performance.js` drives these morphs and is bundled into
 `scene.min.js`. Mouth shapes come from the reply audio's spectrum: loudness and energy
 near 1 kHz open the jaw, 2–3 kHz energy spreads the lips, its absence rounds them and
-hiss parts them. This is approximate, not phoneme-exact lip sync. Both characters also hold eye
+hiss parts them. This is approximate, not phoneme-exact lip sync. When texture morphs are unavailable,
+the renderer budgets vertex attributes and keeps a stable reduced set, prioritizing
+speech, blinking and symmetric smiles rather than dropping arbitrary movements. Both characters also hold eye
 contact with small saccades and occasional glances, blink irregularly (sometimes twice),
 nod on speech emphasis, give small nods when the learner pauses, look away while
 thinking, raise their brows after asking a question, and breathe. With reduced motion,
@@ -203,7 +208,7 @@ mobile layout and reduced motion. Screenshots go in `output/playwright/`.
 ## Deployment verification
 
 On `codex/avatar-current-language`, Release verification passed: 1,253 .NET tests
-(40 opt-in skips), all 142 client tests, the live catalogue check for every
+(40 opt-in skips), all 145 client tests, the live catalogue check for every
 assignment, and six short live synthesis checks. The Release publish artifact
 contains both models, their attribution, the viewer, library background and all
 voice mappings. Production uses the same ElevenLabs key and already enables the

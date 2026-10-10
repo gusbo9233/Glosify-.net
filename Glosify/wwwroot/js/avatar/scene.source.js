@@ -10,6 +10,7 @@ import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import '@babylonjs/loaders/glTF';
 import { createPerformance } from './performance.js';
+import { bindMorphTargets } from './morphs.js';
 
 export async function createAvatar(canvas, character = 'rain') {
     const model = { rain: '/models/avatar/rain-realistic.glb?v=academia-1', rowan: '/models/avatar/rowan-realistic.glb?v=academia-3' }[character];
@@ -31,18 +32,7 @@ export async function createAvatar(canvas, character = 'rain') {
     catch (error) { scene.dispose(); engine.dispose(); throw error; }
     const root = new TransformNode('breathing', scene); root.rotation.y = Math.PI;
     for (const mesh of loaded.meshes) if (!mesh.parent) mesh.parent = root;
-    const targets = {};
-    for (const mesh of loaded.meshes) {
-        const manager = mesh.morphTargetManager;
-        if (!manager) continue;
-        for (let i = 0; i < manager.numTargets; i++) {
-            const target = manager.getTarget(i); (targets[target.name] ||= []).push(target);
-        }
-        // Many units cross zero every frame; a fixed influencer count avoids a shader
-        // variant per active-target count. Vertex-attribute mode supports only eight.
-        if (manager.isUsingTextureForTargets) manager.numMaxInfluencers = manager.numTargets;
-    }
-    const set = (name, value) => { for (const target of targets[name] || []) target.influence = value; };
+    const applyWeights = bindMorphTargets(loaded.meshes);
     const rain = createPerformance();
     let analyser = null, spectrum = null, wave = null, last = performance.now();
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -57,7 +47,7 @@ export async function createAvatar(canvas, character = 'rain') {
             audio = { spectrum, sampleRate: analyser.context.sampleRate, level: Math.sqrt(wave.reduce((sum, value) => sum + value * value, 0) / wave.length) };
         }
         const { weights, posture } = rain.update(elapsed, audio, reduced.matches);
-        for (const name in weights) set(name, weights[name]);
+        applyWeights(weights);
         // A slight lean towards the viewer, weight shift and breathing rise.
         root.position.set(0, posture.rise, -posture.lean);
         root.rotation.set(0, Math.PI + posture.yaw, posture.sway);

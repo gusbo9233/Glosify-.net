@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', import.meta.url), 'utf8');
 function setup(mode = 'push-to-talk') {
-    const elements = new Map(), sent = [], listeners = {};
+    const elements = new Map(), sent = [], listeners = {}, windowListeners = {};
     const element = id => {
         if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren() {}, addEventListener() {}, setAttribute() {} });
         return elements.get(id);
@@ -13,7 +13,7 @@ function setup(mode = 'push-to-talk') {
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? { value: mode } : { value: 'csrf' },
             querySelectorAll: () => [], addEventListener: (name, action) => { listeners[name] = action; } },
-        window: { addEventListener() {} }, WebSocket: { OPEN: 1 }, Intl, console, URL,
+        window: { addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL,
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
         Option: class { constructor(text, value) { this.text = text; this.value = value; } },
         createAvatar: () => new Promise(() => {}), fetch: () => new Promise(() => {}),
@@ -21,7 +21,7 @@ function setup(mode = 'push-to-talk') {
     });
     vm.runInContext(source.replace(/^import .*;\n/gm, ''), context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
-    return { sent, elements, run: code => vm.runInContext(code, context),
+    return { sent, elements, windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => typeof x !== 'string').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
@@ -162,6 +162,39 @@ test('character loading blocks start and overlapping changes, then a failure all
     assert.equal(h.elements.get('avatar-start').disabled, true);
     assert.equal(h.elements.get('avatar-character').disabled, false);
     assert.match(h.elements.get('avatar-render-status').textContent, /Rowan could not load/);
+    h.run('createAvatar = async () => ({ setState() {}, dispose() {} })');
+    h.elements.get('avatar-character').value = 'rain';
+    await h.run('chooseCharacter()');
+    assert.equal(h.elements.get('avatar-name').textContent, 'Rain');
+    assert.equal(h.elements.get('avatar-start').disabled, false);
+});
+
+
+test('Back restoration rebuilds the selected partner and ignores an obsolete model load', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; socket = null; config = { available: true, language: 'sv' };
+        fetch = async () => ({ ok: true, json: async () => ({ available: true, language: 'sv',
+            languageName: 'Swedish', balance: 100, quizzes: [],
+            rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18 } }) });
+        let finishOld, finishNew;
+        createAvatar = () => new Promise(resolve => { finishOld = resolve; });
+    `);
+    h.elements.get('avatar-character').value = 'rowan';
+    const oldLoad = h.run('chooseCharacter()');
+    h.windowEvent('pagehide');
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    h.run('createAvatar = () => new Promise(resolve => { finishNew = resolve; })');
+    await h.windowEvent('pageshow', { persisted: true });
+    h.run('finishOld({ dispose() { wire({ disposed: "obsolete" }); } })');
+    await oldLoad;
+    assert.equal(h.sent.filter(x => x.disposed === 'obsolete').length, 1);
+    assert.equal(h.elements.get('avatar-character').disabled, true);
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    h.run('finishNew({ setState() {}, dispose() {} })');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.elements.get('avatar-name').textContent, 'Rowan');
+    assert.equal(h.elements.get('avatar-start').disabled, false);
     h.run('createAvatar = async () => ({ setState() {}, dispose() {} })');
     h.elements.get('avatar-character').value = 'rain';
     await h.run('chooseCharacter()');
