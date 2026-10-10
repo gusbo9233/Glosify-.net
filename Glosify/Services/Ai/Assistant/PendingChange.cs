@@ -6,6 +6,9 @@ public sealed record PendingChange(string Kind, JsonElement Payload);
 
 public static class PendingChangeKinds
 {
+    public const string CreateAnkiCollection = "create_anki_collection";
+    public const string AddAnkiItems = "add_anki_items";
+    public const string LinkAnkiQuiz = "link_anki_quiz";
     public const string AddWord = "add_word";
     public const string AddSentence = "add_sentence";
     public const string EditWord = "edit_word";

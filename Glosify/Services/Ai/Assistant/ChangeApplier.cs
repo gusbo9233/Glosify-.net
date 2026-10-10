@@ -107,6 +107,11 @@ public sealed class ChangeApplier : IChangeApplier
         Guid? createdQuizId = null;
         AssistantCreatedQuizSummary? createdQuiz = null;
         Guid? createdCollectionId = null;
+        Guid? ankiCollectionId = null;
+        var ankiSelectedItems = 0;
+        var ankiCardsAdded = 0;
+        var ankiAlreadyIncluded = 0;
+        var ankiExcludedCards = 0;
 
         foreach (var change in changes)
         {
@@ -167,6 +172,37 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.MoveCollection:
                     applied += await ApplyMoveCollectionAsync(change.Payload, userId, journal, cancellationToken) ? 1 : 0;
                     break;
+                case PendingChangeKinds.CreateAnkiCollection:
+                {
+                    var sourceId = GetNullableGuid(change.Payload, "quiz_id") ?? throw new QuizNotFoundException();
+                    var source = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == sourceId && q.UserId == userId, cancellationToken)
+                        ?? throw new QuizNotFoundException();
+                    var created = await _ankiCollections.CreateAsync(new(GetString(change.Payload, "name") ?? string.Empty,
+                        source.SourceLanguage, source.TargetLanguage, "UTC"), userId, cancellationToken);
+                    ankiCollectionId = created.Id;
+                    journal.Add(new(change.Kind, AppliedEntityTypes.AnkiCollection, created.Id.ToString(), null, null, AnkiCollectionState.From(created)));
+                    applied++;
+                    break;
+                }
+                case PendingChangeKinds.AddAnkiItems:
+                case PendingChangeKinds.LinkAnkiQuiz:
+                {
+                    var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+                    var result = change.Kind == PendingChangeKinds.AddAnkiItems
+                        ? await _ankiCollections.AddItemsAsync(change.Payload.Deserialize<AddAnkiItemsInput>(options)!, userId, cancellationToken)
+                        : await _ankiCollections.LinkQuizAdditiveAsync(change.Payload.Deserialize<AddAnkiQuizInput>(options)!, userId, cancellationToken);
+                    ankiCollectionId = result.CollectionId;
+                    ankiSelectedItems += result.SelectedItems;
+                    ankiCardsAdded += result.CardsAdded;
+                    ankiAlreadyIncluded += result.AlreadyIncluded;
+                    ankiExcludedCards += result.ExcludedCards;
+                    foreach (var card in result.Cards)
+                        journal.Add(new(change.Kind, AppliedEntityTypes.AnkiCard, card.After.Id.ToString(), null, card.Before, card.After));
+                    if (result.Link is { } link)
+                        journal.Add(new(change.Kind, AppliedEntityTypes.AnkiQuizLink, link.After.Link!.Id.ToString(), null, link.Before, link.After));
+                    applied += result.Cards.Count + (result.Link is null ? 0 : 1);
+                    break;
+                }
                 default:
                     _logger.LogWarning("Unknown pending change kind {Kind}; skipping.", change.Kind);
                     break;
@@ -183,6 +219,11 @@ public sealed class ChangeApplier : IChangeApplier
             createdQuiz)
         {
             Journal = journal,
+            AnkiCollectionId = ankiCollectionId,
+            AnkiSelectedItems = ankiSelectedItems,
+            AnkiCardsAdded = ankiCardsAdded,
+            AnkiAlreadyIncluded = ankiAlreadyIncluded,
+            AnkiExcludedCards = ankiExcludedCards,
         };
     }
 

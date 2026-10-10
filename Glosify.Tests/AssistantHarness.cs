@@ -437,6 +437,7 @@ internal static class AssistantToolFactory
         new(new ServiceCollection()
             .AddSingleton(context)
             .AddSingleton<AssistantMessagePresenter>()
+            .AddSingleton<IAnkiCollectionService, AnkiCollectionService>()
             .AddMemoryCache()
             .AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
             .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()

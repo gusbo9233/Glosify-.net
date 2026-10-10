@@ -69,6 +69,13 @@ public sealed record AddAnkiItemInput(
 
 public interface IAnkiCollectionService
 {
+    Task<AnkiPage<AnkiCollectionSummary>> BrowseAsync(string userId, int offset, CancellationToken cancellationToken = default);
+    Task<AnkiInspection?> InspectAsync(Guid collectionId, string userId, int cardOffset, int linkOffset, CancellationToken cancellationToken = default);
+    Task<AnkiAdditionResult> AddItemsAsync(AddAnkiItemsInput input, string userId, CancellationToken cancellationToken = default);
+    Task<AnkiAdditionResult> LinkQuizAdditiveAsync(AddAnkiQuizInput input, string userId, CancellationToken cancellationToken = default);
+    Task<bool> UndoCardAdditionAsync(AnkiCardChange change, string userId, CancellationToken cancellationToken = default);
+    Task<bool> UndoQuizLinkAsync(AnkiLinkChange change, string userId, CancellationToken cancellationToken = default);
+    Task<bool> UndoCollectionCreationAsync(AnkiCollectionState state, string userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(string userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AnkiCollectionSummary>> ListForLanguageAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default);
     Task<bool> IsOwnedByLanguageAsync(Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default);
