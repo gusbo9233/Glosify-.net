@@ -3,7 +3,7 @@ import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
 const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
-let characterId = 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, pageCleanup = Promise.resolve();
+let characterId = 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
@@ -259,7 +259,7 @@ document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.ad
     setState(state);
 }));
 window.addEventListener('pagehide', () => {
-    pageLeaving = true; ++modelEpoch; modelReady = false; characterLoading = false; config = null;
+    pageLeaving = true; ++modelEpoch; ++configEpoch; modelReady = false; characterLoading = false; config = null;
     pageCleanup = end().catch(() => {});
     visual?.dispose(); visual = null; refreshStart();
 });
@@ -274,19 +274,25 @@ window.addEventListener('pageshow', async event => {
 document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
 
 async function initialize() {
+    const generation = ++configEpoch;
     try {
         const response = await fetch('/api/avatar/config', { credentials: 'same-origin' });
         if (!response.ok) throw new Error('Conversation settings could not load. Refresh the page to retry.');
-        config = await response.json();
+        const next = await response.json();
+        if (pageLeaving || generation !== configEpoch) return;
+        config = next;
         el('language').textContent = config.languageName ? `Practicing ${config.languageName}` : 'Choose a learning language in the sidebar.';
+        const selectedQuiz = el('quiz').value;
+        el('quiz').replaceChildren(new Option('Just a conversation', ''));
         for (const quiz of config.quizzes) el('quiz').add(new Option(quiz.name, quiz.id));
+        el('quiz').value = config.quizzes.some(quiz => quiz.id === selectedQuiz) ? selectedQuiz : '';
         const r = config.rates;
         el('rates').textContent = `Listening ${number(r.recognitionPerMinute)} / min · Replies ${number(r.replyPerThousandTokens)} / 1k tokens · Speech ${number(r.speechPerThousandCharacters)} / 1k characters`;
         el('balance').textContent = number(config.balance);
         if (!config.language) notice('Choose a learning language in the sidebar to start a conversation.');
         else if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
         refreshStart();
-    } catch (error) { notice(error.message); }
+    } catch (error) { if (!pageLeaving && generation === configEpoch) notice(error.message); }
 }
 void initialize();
 void chooseCharacter();

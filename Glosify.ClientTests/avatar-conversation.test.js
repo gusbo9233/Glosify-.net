@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', im
 function setup(mode = 'push-to-talk') {
     const elements = new Map(), sent = [], listeners = {}, windowListeners = {};
     const element = id => {
-        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren() {}, addEventListener() {}, setAttribute() {} });
+        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener() {}, setAttribute() {} });
         return elements.get(id);
     };
     const context = vm.createContext({
@@ -200,4 +200,45 @@ test('Back restoration rebuilds the selected partner and ignores an obsolete mod
     await h.run('chooseCharacter()');
     assert.equal(h.elements.get('avatar-name').textContent, 'Rain');
     assert.equal(h.elements.get('avatar-start').disabled, false);
+});
+
+
+test('configuration refresh replaces quizzes and preserves only a still-available selection', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; modelReady = true;
+        let quizzes = [{ id: 'current', name: 'Current quiz' }, { id: 'deleted', name: 'Old quiz' }];
+        fetch = async () => ({ ok: true, json: async () => ({ available: true, language: 'sv', languageName: 'Swedish',
+            quizzes, balance: 100, rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18 } }) });
+    `);
+    await h.run('initialize()');
+    h.elements.get('avatar-quiz').value = 'current';
+    await h.run('initialize()');
+    assert.deepEqual(h.elements.get('avatar-quiz').options.map(q => q.value), ['', 'current', 'deleted']);
+    assert.equal(h.elements.get('avatar-quiz').value, 'current');
+    h.run("quizzes = [{ id: 'new-language', name: 'New language quiz' }]");
+    await h.run('initialize()');
+    assert.deepEqual(h.elements.get('avatar-quiz').options.map(q => q.value), ['', 'new-language']);
+    assert.equal(h.elements.get('avatar-quiz').value, '');
+});
+
+test('an older configuration response cannot overwrite the restored page language or quizzes', async () => {
+    const h = setup();
+    h.run(`
+        let oldResponse;
+        fetch = () => new Promise(resolve => { oldResponse = resolve; });
+    `);
+    const oldRequest = h.run('initialize()');
+    h.run(`
+        fetch = async () => ({ ok: true, json: async () => ({ available: true, language: 'sv', languageName: 'Swedish',
+            quizzes: [{ id: 'swedish', name: 'Swedish quiz' }], balance: 100,
+            rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18 } }) });
+    `);
+    await h.run('initialize()');
+    h.run(`oldResponse({ ok: true, json: async () => ({ available: true, language: 'en', languageName: 'English',
+        quizzes: [{ id: 'english', name: 'English quiz' }], balance: 100,
+        rates: { recognitionPerMinute: 5, replyPerThousandTokens: .08, speechPerThousandCharacters: 18 } }) })`);
+    await oldRequest;
+    assert.equal(h.elements.get('avatar-language').textContent, 'Practicing Swedish');
+    assert.deepEqual(h.elements.get('avatar-quiz').options.map(q => q.value), ['', 'swedish']);
 });

@@ -208,7 +208,7 @@ mobile layout and reduced motion. Screenshots go in `output/playwright/`.
 ## Deployment verification
 
 On `codex/avatar-current-language`, Release verification passed: 1,253 .NET tests
-(40 opt-in skips), all 145 client tests, the live catalogue check for every
+(40 opt-in skips), all 147 client tests, the live catalogue check for every
 assignment, and six short live synthesis checks. The Release publish artifact
 contains both models, their attribution, the viewer, library background and all
 voice mappings. Production uses the same ElevenLabs key and already enables the
