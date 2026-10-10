@@ -33,7 +33,7 @@ public sealed class GameAccessController(SignInManager<ApplicationUser> signInMa
         HttpContext, status, GlosifyProblemDetails.CodeForStatus(status));
 
     [HttpGet("/sso/game")]
-    public async Task<IActionResult> Game()
+    public async Task<IActionResult> Game(Guid? quizId, [FromServices] Glosify.Data.GlosifyContext db)
     {
         if (!configuration.GetValue<bool>("SharedAuth:Enabled")) return NotFound();
         var user = await ValidUser();
@@ -43,6 +43,8 @@ public sealed class GameAccessController(SignInManager<ApplicationUser> signInMa
             return Redirect("/login?returnUrl=%2Fsso%2Fgame");
         }
         if (!administrators.IsAdminUser(user.Id)) return StatusCode(StatusCodes.Status403Forbidden);
-        return Redirect("https://game.globeglotter.app/");
+        if (quizId is { } id && !await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.AnyAsync(db.Quizzes, q => q.Id == id && q.UserId == user.Id, HttpContext.RequestAborted))
+            return AccessError(404);
+        return Redirect("https://game.globeglotter.app/" + (quizId is { } selected ? "?quizId=" + selected.ToString("D") : ""));
     }
 }

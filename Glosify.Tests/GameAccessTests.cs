@@ -103,7 +103,7 @@ public sealed class GameAccessTests
         Assert.True(response.Headers.CacheControl?.NoStore);
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly string _keys=Path.Combine(Path.GetTempPath(),"globe-auth-"+Guid.NewGuid());
         public WebApplicationFactory<Program> App {get;}
@@ -113,7 +113,7 @@ public sealed class GameAccessTests
             App=new WebApplicationFactory<Program>().WithWebHostBuilder(builder=>
             {
                 builder.UseSetting("SharedAuth:Enabled","true").UseSetting("SharedAuth:LocalKeyPath",_keys);
-                builder.ConfigureAppConfiguration((_,configuration)=>configuration.AddInMemoryCollection(new Dictionary<string,string?>{["Admin:UserIds:0"]="admin"}));
+                builder.ConfigureAppConfiguration((_,configuration)=>configuration.AddInMemoryCollection(new Dictionary<string,string?>{["Admin:UserIds:0"]="admin",["GameIntegration:ServiceKey"]=new string('x',40)}));
                 builder.ConfigureTestServices(services=>
                 {
                     foreach(var item in services.Where(s=>s.ServiceType==typeof(Microsoft.Extensions.Hosting.IHostedService)).ToArray())services.Remove(item);

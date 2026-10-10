@@ -415,3 +415,13 @@ supported v3 languages. Other languages expose the browser speech option.
 See [abuse controls and ElevenLabs rollout](ABUSE-PROTECTION.md) for required
 pricing, voice validation, durable quotas, migration/backfill, retention and the
 separate retired blob-cache cleanup command.
+
+## Admin game geometry release
+
+The companion game host publishes the current geometry preview while the next bake is pending. `/sso/game?quizId=<owned-id>` hands administrators to the game with their quiz selected. `/api/game/quizzes` and `/api/game/profile` use the shared Identity cookie, current security stamp and immutable admin IDs. Profile writes additionally require the game service credential; direct browser writes go through the game's antiforgery-protected proxy.
+
+Apply the additive `GameProfilesAndUsage` migration through this workflow before deploying the integrated game. Configure an identical random `GameIntegration__ServiceKey` of at least 32 characters on Glosify and the game. Store it as an App Service secret or Key Vault reference. Never send it to the browser. The game retries usage from persistent `/home/data/game-usage`; deployment must preserve that directory.
+
+`/Admin/GameUsage` reports game-only provider estimates, quantities, failed/pending/unpriced calls, active time, session IDs and provider/model/operation breakdowns. It does not deduct AI credits. Bundled public list rates were verified on 2026-10-10; allowances and promotional discounts are excluded. Override with `GameIntegration:Rates` entries matching Provider, Model, Endpoint and ServiceTier, with EffectiveFrom at or after the bundled date. Rates support InputPerMillion, CachedInputPerMillion, CacheWritePerMillion, OutputPerMillion, AudioPerHour, CharactersPerThousand, Multiplier and Source. Each priced event stores the applied rate snapshot.
+
+Release verification: non-admin and signed-out access denied; owned-quiz launch and content; account save/reload and stale-save conflict; confirmed Decisions arrival; one voice exchange with GPT/ElevenLabs records in the dashboard; ingestion retry without duplicate cost or credit changes. A previous compatible Glosify artifact can run with these additive tables retained. Disable game voice with `Game__VoiceEnabled=false` if needed while retaining admin geometry access.
