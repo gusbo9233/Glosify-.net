@@ -91,13 +91,16 @@ public sealed partial class PortfolioJourneys
         Assert.Equal(2, applied.AnkiCardsAdded);
         var now = DateTime.UtcNow;
         var runId = Guid.NewGuid();
+        var turnId = Guid.NewGuid();
         var messageId = Guid.NewGuid();
         var partId = Guid.NewGuid();
         var text = $"Added 2 cards to [Assistant Revision](/Anki/Collection/{collection.Id}).";
         var sequence = (await db.AssistantMessages.Where(m => m.ThreadId == threadId).MaxAsync(m => (int?)m.Sequence) ?? -1) + 1;
-        db.AssistantMessages.Add(new AssistantMessage { Id = messageId, ThreadId = threadId, Sequence = sequence,
+        db.AssistantTurns.Add(new AssistantTurn { Id = turnId, ThreadId = threadId, Profile = "QuizAssistant",
+            Status = AssistantTurnStatus.Completed, StartedAt = now, CompletedAt = now, FinalMessageId = messageId });
+        db.AssistantMessages.Add(new AssistantMessage { Id = messageId, ThreadId = threadId, TurnId = turnId, Sequence = sequence,
             Role = AssistantMessageRole.Model, ContentJson = JsonSerializer.Serialize(new { parts = new[] { new { kind = "text", text } } }), CreatedAt = now });
-        db.AssistantRuns.Add(new AssistantRun { Id = runId, ThreadId = threadId, UserId = thread.UserId,
+        db.AssistantRuns.Add(new AssistantRun { Id = runId, ThreadId = threadId, TurnId = turnId, UserId = thread.UserId,
             IdempotencyKey = Guid.NewGuid().ToString("N"), Status = AssistantRunStatus.Completed, CurrentMessageId = messageId,
             CreatedAt = now, UpdatedAt = now, CompletedAt = now, Revision = 1, SavedChanges = applied.Journal.Count });
         db.AssistantParts.Add(new AssistantPart { Id = partId, MessageId = messageId, RunId = runId,
