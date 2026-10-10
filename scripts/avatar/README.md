@@ -1,25 +1,34 @@
 # Avatar assets and verification
 
 The admin-only `/Avatar` page is implemented inside the Glosify MVC application.
-Enable `Avatar:Enabled` after applying `AddAvatarUsageOperations`. The existing
+It ships with `Avatar:Enabled=true`; apply `AddAvatarUsageOperations` through the normal deployment migration bundle before serving traffic. The existing
 `Admin:UserIds` allowlist controls the page, HTTP API, and WebSocket. No shared game
 authentication or separate game deployment is required.
 
 ## Providers and prices
 
+See [the Rain/Rowan casting sheet](voice-casting.md) for the researched 69-language
+voice pairings, provider previews, and age/pronunciation caveats. Both 69-language
+mappings ship in `Glosify/appsettings.json`. All 137 unique voices were verified in
+the deployment account on 2026-10-10 after adding 92 missing library voices.
+
 Reuse `OPENAI_SECRET_KEY` and the existing ElevenLabs key configuration
 (`RealtimeTranslation:ElevenLabs:ApiKey` or legacy `Elevenlabs_key`; `Speech:ApiKey`
 is also bound by the speech options). The key also needs read access to the voices catalogue.
-The avatar selects an available adult female voice using native-language labels first,
-then verified languages, then a multilingual female fallback. Saved voice names never
+Choose Rain or Rowan before starting a conversation. Rain uses a youthful female voice (teenage tones are allowed);
+Rowan uses an adult male voice. Selection uses native-language labels first, then
+verified languages, then a multilingual fallback of the chosen gender. Saved voice names never
 establish language support. Catalogue pagination is followed and results are cached for
-one hour; selection is pinned before the session begins and before any paid provider work.
+one hour in separate gender caches; selection is pinned before the session begins and before any paid provider work.
 Custom-rate and live-moderated voices are excluded. The UI identifies a multilingual
 fallback when there is no native-labelled match; native accent quality still needs listening
-review. No voices are automatically added to the provider account.
+review. No voices are automatically added at runtime. The Georgian pair is a multilingual
+fallback; PCM synthesis passed, but native pronunciation still needs listening review.
 
-Optional `Avatar:VoiceIds:<catalog-language-code>` overrides choose a specific available
-female voice for one language. The previous global `Avatar:VoiceId` and the book reader's
+The shipped `Avatar:VoiceIds:<catalog-language-code>` mappings choose a specific available
+female voice for one language; `Avatar:MaleVoiceIds:<catalog-language-code>` does the
+same for Rowan. An unavailable matching voice prevents the session from starting.
+The previous global `Avatar:VoiceId` and the book reader's
 `Speech:DefaultVoiceId` no longer control avatar speech. Synthesis explicitly sends the
 current language (including `zh-Hans` → `zh` and `nb` → `no`). The server uses Scribe v2
 Realtime, the existing OpenAI client/model, and Eleven v4 Turbo.
@@ -61,7 +70,10 @@ conversation memory until playback is acknowledged. No conversation transcript o
 audio is persisted by GlobeGlotter.
 
 The conversation settings use the app theme and can be collapsed with the side
-arrow. On phones they open as a scrollable side drawer; Escape closes the drawer
+arrow. The page expands up to 1800px on wide screens, with a 300–360px settings
+panel and a landscape library backdrop; closing settings gives the scene the full
+width. Captions stay within a readable 48rem measure. At 1100px and below, settings
+open as a scrollable side drawer; Escape closes the drawer
 and returns focus to the arrow. Notices reopen settings so connection errors remain
 visible. The portrait has no idle caption; captions appear only for conversation text.
 
@@ -77,10 +89,22 @@ Commit `scene.min.js` and `scene.min.js.LEGAL.txt` with source changes. Dependen
 in the lockfile; the generated bundle is loaded only on the avatar page. Babylon.js
 is Apache-2.0 licensed; linked license comments accompany the bundle.
 
-## Rebuild Rain
+## Rebuild the characters
 
-Rain uses CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
-portrait styling. Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
+Both characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
+portrait styling. `academia_outfit.py` adds an ivory pointed collar, forest-green
+woven-check vest, black ribbon tie and an antique-gold embroidered GG chest patch.
+The outfit combines the green vest/ivory shirt and ribbon/check details from the
+user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in the
+main working tree); no photo pixels are included in the shipped assets. The patch
+is intentionally partly covered by her hair. Garments inherit the blouse's skin
+weights before morph baking, including breathing and shoulder movement.
+Rowan has male anatomy, short CC0 MakeHuman hair, and an open, oversized dark wool overcoat with fuller sleeves, a straight drape,
+a longer hem and notched lapels. A full ivory shirt with a button placket shows
+underneath, with a dark necktie and gold GG shield on the coat chest.
+The character chooser swaps the model and pins the character name and matching voice
+for the conversation; it is locked while a model loads or a conversation is active.
+Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
 and page credits include attribution and the source link. The core CC0 dedication
 does not apply to this hair. Asset attribution and license are distributed
 with the model. `human-source.json` pins the upstream revision, download URLs and hashes.
@@ -90,6 +114,8 @@ Prepare the listed files into an external source directory (archive files under 
 python3 scripts/avatar/prepare-human.py /tmp/avatar-human-source
 blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
   /tmp/avatar-human-source Glosify/wwwroot/models/avatar/rain-realistic.glb
+blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
+  /tmp/avatar-human-source Glosify/wwwroot/models/avatar/rowan-realistic.glb --character rowan
 ```
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
@@ -112,17 +138,21 @@ units in `face-poses.json`, whose source revision is recorded alongside the pose
 `Glosify/wwwroot/js/avatar/performance.js` drives these morphs and is bundled into
 `scene.min.js`. Mouth shapes come from the reply audio's spectrum: loudness and energy
 near 1 kHz open the jaw, 2–3 kHz energy spreads the lips, its absence rounds them and
-hiss parts them. This is approximate, not phoneme-exact lip sync. Rain also holds eye
-contact with small saccades and occasional glances, blinks irregularly (sometimes twice),
-nods on speech emphasis, gives small nods when the learner pauses, looks away while
-thinking, raises her brows after asking a question, and breathes. With reduced motion,
+hiss parts them. This is approximate, not phoneme-exact lip sync. Both characters also hold eye
+contact with small saccades and occasional glances, blink irregularly (sometimes twice),
+nod on speech emphasis, give small nods when the learner pauses, look away while
+thinking, raise their brows after asking a question, and breathe. With reduced motion,
 blinks, gaze, head and posture movement stop; the mouth still follows speech.
 
 ## Rebuild the library background
 
 `wwwroot/images/avatar/library.jpg` is rendered in Blender: walnut bookcases filled with
-generated books, deep green drapes around an arched window, and an antique floor globe
-beside a reading chair, softly out of focus behind Rain. Furniture, chandelier, lamp,
+generated books, tobacco-olive plaster, deep green drapes around an arched window,
+and an antique floor globe
+beside a reading chair, softly out of focus behind the character. The 2560 × 1440 landscape
+render combines subdued cool window light with warm amber practicals for a dark
+academia room; portrait screens crop the same room around its central window.
+Furniture, chandelier, lamp,
 clock, books and wood textures are CC0 Poly Haven assets; the globe restyles the public
 domain NASA Blue Marble land map (credit: Reto Stöckli, NASA Goddard Space Flight Center).
 `library-source.json` pins every download and its hash; the build fetches and verifies
@@ -134,7 +164,9 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 ```
 
 Optional arguments after the output set the resolution percentage and sample count for
-quick previews. The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
+quick previews. The background and Rain model carry an `academia-1` cache revision; Rowan uses
+`academia-3`. Bump the relevant revision and rebuild the viewer when replacing an asset.
+The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,
 jasmine, olive foliage and terracotta planters, soft Tuscan garden, late afternoon
@@ -168,8 +200,28 @@ scripts/avatar/browser-review.js`. It exercises the real browser/server WebSocke
 including microphone capture, PTT, playback acknowledgement, hands-free, mute, end,
 mobile layout and reduced motion. Screenshots go in `output/playwright/`.
 
-No deployment, remote configuration, or production account changes are part of
-this feature branch. `codex/talking-avatar-pr` is based on master (`ff7a1f8`)
-and contains only the avatar implementation and review fixes. The original
-`codex/talking-avatar` branch remains available with its isolated snapshot baseline;
-do not use that original branch for a PR to master.
+## Deployment verification
+
+On `codex/avatar-current-language`, Release verification passed: 1,253 .NET tests
+(40 opt-in skips), all 142 client tests, the live catalogue check for every
+assignment, and six short live synthesis checks. The Release publish artifact
+contains both models, their attribution, the viewer, library background and all
+voice mappings. Production uses the same ElevenLabs key and already enables the
+avatar; no host settings were changed and no application deployment was made.
+
+To recheck a different provider account, supply its key through the normal secret
+configuration and run the read-only catalogue check. The synthesis check spends a
+small amount of real provider credit and uses only an isolated test ledger:
+
+```sh
+RUN_AVATAR_CATALOGUE_SMOKE=true dotnet test Glosify.Tests -c Release \
+  --filter 'FullyQualifiedName~AvatarCastingSmokeTests.EveryShippedVoice'
+RUN_AVATAR_CASTING_SMOKE=true dotnet test Glosify.Tests -c Release \
+  --filter 'FullyQualifiedName~AvatarCastingSmokeTests.SelectedVoiceProducesPcm'
+dotnet publish Glosify/Glosify.csproj -c Release --output /tmp/glosify-avatar-publish
+```
+
+If the provider account changes, add the missing selections before rollout; the
+casting JSON includes their library links. Host-level dictionary entries override
+the shipped IDs. Roll back access with `Avatar__Enabled=false`. Keep the existing
+single-instance deployment rule and admin allowlist.

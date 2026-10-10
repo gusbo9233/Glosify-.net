@@ -55,6 +55,8 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         if (!pricing.Available) return ProblemResult(503, "Voice is not configured. Ask an administrator to configure the provider keys.");
         var language = CurrentLanguage;
         if (language is null) return ProblemResult(422, "Choose a learning language in the sidebar to start a conversation.");
+        var character = AvatarCharacter.Find(request.CharacterId);
+        if (character is null) return ProblemResult(422, "Choose an available conversation partner.");
         var practice = "Free conversation. Follow the user's interests.";
         if (request.QuizId is { } id)
         {
@@ -77,9 +79,9 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         if (account.AvailableCredits < required) throw new InsufficientAiCreditsException(account.AvailableCredits, required);
         try
         {
-            var voice = await voices.ResolveAsync(language, ct);
-            var session = sessions.Create(UserId, language, practice, voice);
-            return Json(new { sessionId = session.Id, language = language.Code, voiceName = voice.Name,
+            var voice = await voices.ResolveAsync(language, ct, character);
+            var session = sessions.Create(UserId, language, practice, voice, character);
+            return Json(new { sessionId = session.Id, characterId = character.Id, language = language.Code, voiceName = voice.Name,
                 nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
         }
         catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
@@ -136,4 +138,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(Guid? QuizId);
+public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null);

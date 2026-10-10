@@ -333,6 +333,51 @@
       "path": "mouth-upperlip-height-incr.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-upperlip-height-incr.target",
       "sha256": "4eed688bb333c53b579e06bc1c555a5d01a61dbe3f9702aa4e1340384c597c49"
+    },
+    {
+      "path": "caucasian-male-young.target",
+      "sha256": "70e228ba7164737dae664454394536fc5935fa48d333c1a97d77e2dc6eacc5f5",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-male-young.target"
+    },
+    {
+      "path": "universal-male-young-averagemuscle-averageweight.target",
+      "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-male-young-averagemuscle-averageweight.target"
+    },
+    {
+      "path": "system/hair/short02/short02.mhmat",
+      "sha256": "2ed04c8aad9c1a35d858ca72091525d32b1da3b61b5a031634dd528fd8530f6d",
+      "archivePath": "hair/short02/short02.mhmat"
+    },
+    {
+      "path": "system/hair/short02/short02.mhclo",
+      "sha256": "625736cdb73e6d094df6e5a2df18f371781f1d2cd37b0ae15795c5d7051c3ec2",
+      "archivePath": "hair/short02/short02.mhclo"
+    },
+    {
+      "path": "system/hair/short02/short02_diffuse.png",
+      "sha256": "47fe33831a3929567c733356dd66243116e05df2ace1f884ddca0080b728229f",
+      "archivePath": "hair/short02/short02_diffuse.png"
+    },
+    {
+      "path": "system/hair/short02/short02.obj",
+      "sha256": "48f979114adfa712165a69cc55c45a70831af1fb3cba8e2a89120f0c87407b64",
+      "archivePath": "hair/short02/short02.obj"
+    },
+    {
+      "path": "system/hair/short02/short02_normal.png",
+      "sha256": "2cfac7619f8eec77dd90df979d912415058f4f0fc16940cba40a8eb1ae6d74b5",
+      "archivePath": "hair/short02/short02_normal.png"
+    },
+    {
+      "path": "system/skins/young_caucasian_male/young_caucasian_male.mhmat",
+      "sha256": "6eda60b07ff2afbde078a2535ef3913593d84e9de92b2eb76c30f396a181fe2e",
+      "archivePath": "skins/young_caucasian_male/young_caucasian_male.mhmat"
+    },
+    {
+      "path": "system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png",
+      "sha256": "862a26e335e958b70534cb5f0d7c47ef30ab148a56c42b3e9da969cf76f12963",
+      "archivePath": "skins/young_caucasian_male/young_lightskinned_male_diffuse.png"
     }
   ],
   "additionalPacks": [

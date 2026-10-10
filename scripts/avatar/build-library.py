@@ -69,9 +69,9 @@ def bar(name, a, b, radius, mat, vertices=16):
     obj.rotation_euler = (b - a).to_track_quat('Z', 'Y').to_euler(); obj.data.materials.append(mat)
     bpy.ops.object.shade_smooth(); return obj
 
-paint = material('Ivory paint', (.80, .73, .60), .82)
-trim = material('Ivory trim', (.86, .80, .68), .45)
-walnut = textured('Walnut', 'textures/dark_wood', 1.4, (.48, .32, .23))
+paint = material('Tobacco olive plaster', (.10, .115, .085), .82)
+trim = material('Aged oak trim', (.20, .14, .08), .45)
+walnut = textured('Walnut', 'textures/dark_wood', 1.4, (.26, .17, .11))
 floor_wood = textured('Parquet', 'textures/diagonal_parquet', .5, (.34, .27, .22), .6)
 brass = material('Brass', (.78, .56, .26), .28, **{'Metallic': 1})
 velvet = material('Green velvet', (.012, .045, .03), .7, **{'Sheen Weight': .35, 'Sheen Tint': (.5, .75, .6, 1)})
@@ -107,7 +107,7 @@ view_mat = bpy.data.materials.new('Courtyard view'); view_mat.use_nodes = True
 nodes, links = view_mat.node_tree.nodes, view_mat.node_tree.links
 for n in list(nodes): nodes.remove(n)
 tex = nodes.new('ShaderNodeTexImage'); tex.image = bpy.data.images.load(str(courtyard))
-emit = nodes.new('ShaderNodeEmission'); emit.inputs['Strength'].default_value = 3.2
+emit = nodes.new('ShaderNodeEmission'); emit.inputs['Strength'].default_value = .65
 outn = nodes.new('ShaderNodeOutputMaterial'); links.new(tex.outputs['Color'], emit.inputs['Color']); links.new(emit.outputs['Emission'], outn.inputs['Surface'])
 bpy.ops.mesh.primitive_plane_add(size=1, location=(0, 11.5, 2.2), rotation=(math.pi / 2, 0, 0))
 view = bpy.context.object; view.scale = (4.4, 5.86, 1); view.data.materials.append(view_mat)
@@ -290,22 +290,22 @@ for k in range(4):
 for a, b in ((0, 2), (1, 3)):
     lift = Vector((0, 0, .22)); bar('Stretcher', feet[a].lerp(Vector((GX, GY, 0)), .25) + lift, feet[b].lerp(Vector((GX, GY, 0)), .25) + lift, .014, stand_wood, 10)
 
-# Daylight from the window, warm interior practicals and a soft fill from the viewer.
-sun = bpy.data.lights.new('Afternoon sun', 'SUN'); sun.energy = 3.2; sun.color = (1, .86, .66); sun.angle = math.radians(2)
+# Cool late daylight, warm interior practicals and a subdued amber viewer fill.
+sun = bpy.data.lights.new('Afternoon sun', 'SUN'); sun.energy = .65; sun.color = (.73, .81, 1); sun.angle = math.radians(2)
 sun_obj = bpy.data.objects.new('Afternoon sun', sun); scene.collection.objects.link(sun_obj)
 sun_obj.rotation_euler = (math.radians(-58), 0, math.radians(-8))
 area = bpy.data.lights.new('Window glow', 'AREA'); area.shape = 'RECTANGLE'; area.size, area.size_y = 1.6, 2.9
-area.energy = 650; area.color = (1, .92, .8)
+area.energy = 180; area.color = (.76, .83, 1)
 area_obj = bpy.data.objects.new('Window glow', area); scene.collection.objects.link(area_obj)
 area_obj.location = (0, BACK_Y + .3, 2.1); area_obj.rotation_euler = (math.radians(-90), 0, 0)
-fill = bpy.data.lights.new('Viewer fill', 'AREA'); fill.size = 4; fill.energy = 380; fill.color = (1, .87, .72)
+fill = bpy.data.lights.new('Viewer fill', 'AREA'); fill.size = 4; fill.energy = 95; fill.color = (1, .78, .52)
 fill_obj = bpy.data.objects.new('Viewer fill', fill); scene.collection.objects.link(fill_obj)
 fill_obj.location = (0, -.8, 2.6); fill_obj.rotation_euler = (math.radians(82), 0, 0)
 scene.world = bpy.data.worlds.new('Room'); scene.world.use_nodes = True
 scene.world.node_tree.nodes['Background'].inputs['Color'].default_value = (.06, .05, .04, 1)
 
-# Portrait camera focused where Rain stands, so the room falls softly out of focus.
-cam_data = bpy.data.cameras.new('Portrait lens'); cam_data.lens = 35; cam_data.sensor_width = 36
+# Landscape camera: preserve room height while revealing the side bookcases on wide screens.
+cam_data = bpy.data.cameras.new('Portrait lens'); cam_data.lens = 29; cam_data.sensor_width = 36; cam_data.sensor_fit = 'VERTICAL'; cam_data.sensor_height = 27
 cam_data.dof.use_dof = True; cam_data.dof.focus_distance = 1.7; cam_data.dof.aperture_fstop = 2.0
 cam = bpy.data.objects.new('Portrait lens', cam_data); scene.collection.objects.link(cam)
 cam.location = (0, 0, 1.5); cam.rotation_euler = (math.radians(91.5), 0, 0); scene.camera = cam
@@ -317,8 +317,8 @@ try:
     scene.cycles.device = 'GPU'
 except Exception as error: print('GPU unavailable', error)
 scene.cycles.samples = samples; scene.cycles.use_denoising = True
-scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 1800, 1350, percent
-scene.view_settings.exposure = .25
+scene.render.resolution_x, scene.render.resolution_y, scene.render.resolution_percentage = 2560, 1440, percent
+scene.view_settings.exposure = -.15
 settings = scene.render.image_settings
 if out.suffix.lower() in ('.jpg', '.jpeg'): settings.file_format = 'JPEG'; settings.quality = 82
 else: settings.file_format = 'PNG'

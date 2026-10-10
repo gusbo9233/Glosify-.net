@@ -11,10 +11,10 @@ namespace Glosify.Tests;
 
 public sealed class AvatarVoicesTests
 {
-    private static object Voice(string id, string language, string gender = "female", string[]? verified = null) => new
+    private static object Voice(string id, string language, string gender = "female", string[]? verified = null, string age = "young") => new
     {
         voice_id = id, name = "NPC Estonian", // Names are deliberately misleading.
-        labels = new { language, gender, age = "young" },
+        labels = new { language, gender, age },
         verified_languages = (verified ?? []).Select(x => new { language = x })
     };
 
@@ -85,6 +85,63 @@ public sealed class AvatarVoicesTests
         Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => service.ResolveAsync(language, default))).Status);
         Assert.Equal("correct", (await service.ResolveAsync(language, default)).Id);
         Assert.Equal(2, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task MaleAndFemaleCataloguesStaySeparateAndMatchNativeLanguage()
+    {
+        var handler = new CatalogueHandler(
+            new { voices = new[] { Voice("swedish-woman", "sv"), Voice("swedish-man", "sv", "male") }, has_more = false },
+            new { voices = new[] { Voice("swedish-woman", "sv"), Voice("english-man", "en", "male"), Voice("swedish-man", "sv", "male") }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = Service(handler, cache);
+        var language = QuizLanguageCatalog.Find("sv")!;
+        Assert.Equal("swedish-woman", (await service.ResolveAsync(language, default)).Id);
+        var male = await service.ResolveAsync(language, default, AvatarCharacter.Rowan);
+        Assert.Equal("swedish-man", male.Id); Assert.True(male.Native);
+        Assert.Equal(male, await service.ResolveAsync(language, default, AvatarCharacter.Rowan));
+        Assert.Equal("swedish-woman", (await service.ResolveAsync(language, default)).Id);
+        Assert.Equal(2, handler.Requests.Count);
+        Assert.Contains("gender=female", handler.Requests[0]);
+        Assert.Contains("gender=male", handler.Requests[1]);
+    }
+
+    [Fact]
+    public async Task MaleOverrideDoesNotReuseFemaleOverrideOrPermitFemaleVoice()
+    {
+        var handler = new CatalogueHandler(new { voices = new[] { Voice("woman", "sv"), Voice("native", "sv", "male"), Voice("override", "en", "male") }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var options = new AvatarOptions(); options.VoiceIds["sv"] = "woman";
+        var service = Service(handler, cache, options); var language = QuizLanguageCatalog.Find("sv")!;
+        Assert.Equal("native", (await service.ResolveAsync(language, default, AvatarCharacter.Rowan)).Id);
+        options.MaleVoiceIds["sv"] = "override";
+        Assert.Equal("override", (await service.ResolveAsync(language, default, AvatarCharacter.Rowan)).Id);
+        options.MaleVoiceIds["sv"] = "woman";
+        Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => service.ResolveAsync(language, default, AvatarCharacter.Rowan))).Status);
+    }
+
+    [Fact]
+    public async Task MissingMaleVoiceFailsRatherThanUsingFemaleVoice()
+    {
+        var handler = new CatalogueHandler(new { voices = new[] { Voice("woman", "sv") }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => Service(handler, cache).ResolveAsync(QuizLanguageCatalog.Find("sv")!, default, AvatarCharacter.Rowan))).Status);
+    }
+
+    [Theory]
+    [InlineData("teen", true)]
+    [InlineData("child", false)]
+    public async Task RainAllowsTeenageCastingButRejectsChildVoice(string age, bool allowed)
+    {
+        var handler = new CatalogueHandler(new { voices = new[] { Voice("cast", "en", age: age) }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var options = new AvatarOptions(); options.VoiceIds["en"] = "cast";
+        var service = Service(handler, cache, options);
+        var language = QuizLanguageCatalog.Find("en")!;
+        if (allowed)
+            Assert.Equal("cast", (await service.ResolveAsync(language, default)).Id);
+        else
+            Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => service.ResolveAsync(language, default))).Status);
     }
 
     [Theory]

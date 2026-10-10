@@ -210,15 +210,49 @@ public sealed class AvatarTests
         Assert.DoesNotContain("href=\"/Avatar\"", await response.Content.ReadAsStringAsync());
     }
 
-    [Fact]
-    public async Task VoiceSelectionFailureDoesNotStartOrChargeAConversation()
+    [Theory]
+    [InlineData(null, "rain", "female")]
+    [InlineData("rain", "rain", "female")]
+    [InlineData("rowan", "rowan", "male")]
+    public async Task SelectedPartnerPinsCharacterAndMatchingVoice(string? requested, string expected, string gender)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { characterId = requested });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(expected, payload.RootElement.GetProperty("characterId").GetString());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        Assert.Equal(expected, session.Character.Id);
+        Assert.Equal(gender, session.Character.VoiceGender);
+        Assert.Equal("test-" + gender + "-sv", session.Voice!.Id);
+    }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("")]
+    [InlineData("../../models/other.glb")]
+    public async Task UnknownCharacterIsRejectedWithoutCreatingASession(string character)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { characterId = character });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("Choose an available conversation partner.", problem.RootElement.GetProperty("detail").GetString());
+        // No session slot was consumed; the normal default can still start.
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/avatar/sessions", new { })).StatusCode);
+    }
+
+    [Theory]
+    [InlineData("rain")]
+    [InlineData("rowan")]
+    public async Task VoiceSelectionFailureDoesNotStartOrChargeAConversation(string characterId)
     {
         using var app = new AvatarFixture { Overrides = services =>
         {
             services.RemoveAll<IAvatarVoices>(); services.AddSingleton<IAvatarVoices, UnavailableVoices>();
         } };
         using var client = await app.Client("admin"); await app.Antiforgery(client);
-        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { characterId });
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal("Voice unavailable for test.", problem.RootElement.GetProperty("detail").GetString());
@@ -235,7 +269,7 @@ public sealed class AvatarTests
 
     private sealed class UnavailableVoices : IAvatarVoices
     {
-        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct) =>
+        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct, AvatarCharacter? character = null) =>
             throw new AvatarException(503, "Voice unavailable for test.");
     }
 
@@ -281,8 +315,8 @@ internal sealed class AvatarFixture : WebApplicationFactory<Program>
     }
     private sealed class TestVoices : IAvatarVoices
     {
-        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct) =>
-            Task.FromResult(new AvatarVoice("test-female-" + language.Code, "Test voice", true));
+        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct, AvatarCharacter? character = null) =>
+            Task.FromResult(new AvatarVoice("test-" + (character ?? AvatarCharacter.Rain).VoiceGender + "-" + language.Code, "Test voice", true));
     }
     public async Task Seed(Func<GlosifyContext, Task> seed)
     {

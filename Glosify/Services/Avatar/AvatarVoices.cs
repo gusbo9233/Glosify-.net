@@ -11,7 +11,7 @@ public sealed record AvatarVoice(string Id, string Name, bool Native);
 
 public interface IAvatarVoices
 {
-    Task<AvatarVoice> ResolveAsync(QuizLanguage language, CancellationToken ct);
+    Task<AvatarVoice> ResolveAsync(QuizLanguage language, CancellationToken ct, AvatarCharacter? character = null);
 }
 
 // Match provider metadata, never saved names (a renamed voice may name the wrong language).
@@ -19,20 +19,21 @@ public interface IAvatarVoices
 public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<SpeechOptions> speech,
     IOptions<AvatarOptions> options) : IAvatarVoices
 {
-    public async Task<AvatarVoice> ResolveAsync(QuizLanguage language, CancellationToken ct)
+    public async Task<AvatarVoice> ResolveAsync(QuizLanguage language, CancellationToken ct, AvatarCharacter? character = null)
     {
+        var gender = (character ?? AvatarCharacter.Rain).VoiceGender;
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
             timeout.CancelAfter(TimeSpan.FromSeconds(20));
-            var voices = await cache.GetOrCreateAsync("avatar:female-voices", async entry =>
+            var voices = await cache.GetOrCreateAsync($"avatar:{gender}-voices", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
                 var result = new List<ProviderVoice>();
                 string? next = null;
                 for (var page = 0; page < 20; page++)
                 {
-                    var url = "https://api.elevenlabs.io/v2/voices?gender=female&page_size=100&include_total_count=false&include_custom_rates=false&include_live_moderated=false";
+                    var url = $"https://api.elevenlabs.io/v2/voices?gender={gender}&page_size=100&include_total_count=false&include_custom_rates=false&include_live_moderated=false";
                     if (next is not null) url += "&next_page_token=" + Uri.EscapeDataString(next);
                     using var request = new HttpRequestMessage(HttpMethod.Get, url);
                     request.Headers.Add("xi-api-key", speech.Value.ApiKey);
@@ -41,7 +42,8 @@ public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<S
                     var data = await response.Content.ReadFromJsonAsync<VoicePage>(timeout.Token) ?? throw Unavailable();
                     if (data.Voices is null) throw Unavailable();
                     result.AddRange(data.Voices.Where(v => !string.IsNullOrWhiteSpace(v.Id)
-                        && Label(v, "gender") == "female" && Label(v, "age") is not ("child" or "teen")));
+                        && Label(v, "gender") == gender && Label(v, "age") != "child"
+                        && (gender == "female" || Label(v, "age") != "teen")));
                     if (!data.HasMore) return result;
                     if (string.IsNullOrEmpty(data.Next) || data.Next == next) throw Unavailable();
                     next = data.Next;
@@ -55,7 +57,8 @@ public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<S
                 .ThenBy(v => Label(v, "use_case") == "conversational" ? 0 : 1)
                 .ThenBy(v => v.Id == "EXAVITQu4vr4xnSDxMaL" ? 0 : 1)
                 .ThenBy(v => v.Id, StringComparer.Ordinal).FirstOrDefault();
-            if (options.Value.VoiceIds.TryGetValue(language.Code, out var configured))
+            var overrides = gender == "male" ? options.Value.MaleVoiceIds : options.Value.VoiceIds;
+            if (overrides.TryGetValue(language.Code, out var configured))
                 selected = voices.SingleOrDefault(v => v.Id == configured)
                     ?? throw new AvatarException(503, "The configured avatar voice is unavailable. Ask an administrator to check the voice for this language.");
             if (selected is null) throw Unavailable();

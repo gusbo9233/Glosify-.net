@@ -9,6 +9,7 @@ public sealed class AvatarOptions
 {
     public bool Enabled { get; set; }
     public Dictionary<string, string> VoiceIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, string> MaleVoiceIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     // Conservative cost ceiling for the provider budget, independent of customer rates.
     public decimal SynthesisSekPerMillionCharacters { get; set; } = 1928.29m;
     public const string SpeechModel = "eleven_v4_turbo";

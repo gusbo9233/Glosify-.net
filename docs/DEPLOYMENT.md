@@ -425,3 +425,24 @@ Apply the additive `GameProfilesAndUsage` migration through this workflow before
 `/Admin/GameUsage` reports game-only provider estimates, quantities, failed/pending/unpriced calls, active time, session IDs and provider/model/operation breakdowns. It does not deduct AI credits. Bundled public list rates were verified on 2026-10-10; allowances and promotional discounts are excluded. Override with `GameIntegration:Rates` entries matching Provider, Model, Endpoint and ServiceTier, with EffectiveFrom at or after the bundled date. Rates support InputPerMillion, CachedInputPerMillion, CacheWritePerMillion, OutputPerMillion, AudioPerHour, CharactersPerThousand, Multiplier and Source. Each priced event stores the applied rate snapshot.
 
 Release verification: non-admin and signed-out access denied; owned-quiz launch and content; account save/reload and stale-save conflict; confirmed Decisions arrival; one voice exchange with GPT/ElevenLabs records in the dashboard; ingestion retry without duplicate cost or credit changes. A previous compatible Glosify artifact can run with these additive tables retained. Disable game voice with `Game__VoiceEnabled=false` if needed while retaining admin geometry access.
+
+
+## Avatar characters and voice casting
+
+`codex/avatar-current-language` ships the widened dark-academia scene, selectable
+Rain/Rowan models, and pinned voices for all 69 learning languages. `Avatar:Enabled`
+is true in the shipped settings; the existing admin policy still protects the page,
+API and WebSocket. The normal migration bundle must apply `AddAvatarUsageOperations`
+before traffic reaches this revision.
+
+On 2026-10-10, all 138 assignments (137 unique voices) resolved in the ElevenLabs
+account used by production, after adding 92 library voices. Six short synthesis
+checks passed, including the explicitly multilingual Georgian pair. No deployment
+or host-setting mutation was performed. Subjective age/accent quality remains a
+listening-review item; Georgian is not claimed to have a native voice.
+
+See [avatar deployment checks](../scripts/avatar/README.md#deployment-verification)
+for repeatable catalogue and synthesis commands. Environment entries under
+`Avatar__VoiceIds__<language>` and `Avatar__MaleVoiceIds__<language>` override shipped
+selections. Check another account before switching credentials. Missing configured
+voices fail before paid work. Use `Avatar__Enabled=false` to disable access.

@@ -20,14 +20,14 @@ namespace Glosify.Tests;
 public sealed class AvatarVoiceTests
 {
     [Theory]
-    [InlineData("push-to-talk")]
-    [InlineData("hands-free")]
-    public async Task AudioProducesCaptionsAndReplyAndPlaybackAcknowledgementCommitsMemory(string mode)
+    [InlineData("push-to-talk", "rain", "Rain")]
+    [InlineData("hands-free", "rowan", "Rowan")]
+    public async Task AudioProducesCaptionsAndReplyAndPlaybackAcknowledgementCommitsMemory(string mode, string characterId, string name)
     {
         var ai = new Reply();
         using var app = App(ai);
         using var client = await app.Client("admin"); await app.Antiforgery(client);
-        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" });
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv", characterId });
         var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
         var ws = app.Server.CreateWebSocketClient();
         ws.ConfigureRequest = request =>
@@ -58,6 +58,7 @@ public sealed class AvatarVoiceTests
         await Until(socket, "idle", timeout.Token);
         Assert.Equal(2, session.History.Count);
         Assert.Contains("Swedish", ai.LastRequest!.SystemInstruction);
+        Assert.Contains("You are " + name + ",", ai.LastRequest.SystemInstruction);
         Assert.Empty(ai.LastRequest.Tools);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
         await socket.ReceiveAsync(new byte[4096], timeout.Token);

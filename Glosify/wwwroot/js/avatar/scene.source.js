@@ -11,7 +11,9 @@ import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imagePro
 import '@babylonjs/loaders/glTF';
 import { createPerformance } from './performance.js';
 
-export async function createAvatar(canvas) {
+export async function createAvatar(canvas, character = 'rain') {
+    const model = { rain: '/models/avatar/rain-realistic.glb?v=academia-1', rowan: '/models/avatar/rowan-realistic.glb?v=academia-3' }[character];
+    if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
     engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
     const scene = new Scene(engine); scene.clearColor = new Color4(0, 0, 0, 0);
@@ -25,7 +27,7 @@ export async function createAvatar(canvas) {
     const key = new DirectionalLight('key', new Vector3(.5, -1, 1), scene); key.intensity = 1.5; key.diffuse = new Color3(1, .89, .76);
     const rim = new DirectionalLight('rim', new Vector3(-.7, -.2, -.8), scene); rim.intensity = .9; rim.diffuse = new Color3(1, .92, .79);
     let loaded;
-    try { loaded = await ImportMeshAsync('/models/avatar/rain-realistic.glb', scene); }
+    try { loaded = await ImportMeshAsync(model, scene); }
     catch (error) { scene.dispose(); engine.dispose(); throw error; }
     const root = new TransformNode('breathing', scene); root.rotation.y = Math.PI;
     for (const mesh of loaded.meshes) if (!mesh.parent) mesh.parent = root;

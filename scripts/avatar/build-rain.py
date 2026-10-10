@@ -1,17 +1,23 @@
-"""Build Rain's realistic adult avatar from CC0 MakeHuman anatomy and attributed CC-BY hair.
+"""Build Rain or Rowan from MakeHuman anatomy, with character-specific clothing and hair.
 Blender -b --factory-startup -P build-rain.py -- SOURCE_DIRECTORY OUTPUT.glb
 See README.md for the pinned source manifest and asset preparation.
 """
 from pathlib import Path
-import sys, math, json, struct
+import sys, math, json, struct, argparse
 import numpy as np
 import bpy
+import bmesh
 from mathutils import Vector, Matrix, Quaternion
 sys.path.insert(0, str(Path(__file__).parent))
 import human_mesh as human
-args = sys.argv[sys.argv.index('--') + 1:]
-human.SOURCE = Path(args[0]).resolve()
-out = Path(args[1]).resolve()
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('source'); parser.add_argument('output'); parser.add_argument('portrait', nargs='?')
+parser.add_argument('--character', choices=['rain', 'rowan'], default='rain')
+settings = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
+male = settings.character == 'rowan'
+character_name = 'Rowan' if male else 'Rain'
+human.SOURCE = Path(settings.source).resolve()
+out = Path(settings.output).resolve()
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 sculpt = [
     ('caucasian-female-young.target', 1),
@@ -20,12 +26,14 @@ sculpt = [
     ('chin-height-decr.target', .22), ('chin-bones-decr.target', .3),
     ('mouth-upperlip-volume-incr.target', .32), ('mouth-upperlip-height-incr.target', .24), ('mouth-lowerlip-volume-incr.target', .2)
 ]
+if male:
+    sculpt = [('caucasian-male-young.target', 1), ('universal-male-young-averagemuscle-averageweight.target', 1), ('head-oval.target', .15)]
 for side in ['l', 'r']:
     sculpt += [(side+'-cheek-bones-incr.target', .15), (side+'-eye-scale-incr.target', .08)]
 rig = human.build_character(targets=sculpt,
-    height_metres=1.72, skin_path=human.SOURCE/'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png',
+    height_metres=1.72, skin_path=human.SOURCE/('system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png' if male else 'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png'),
     asset_specs=[('Ivory blouse', 'clothes/female_elegantsuit01', 'female_elegantsuit01', .75, False),
-                 ('Chestnut hair', 'hair/elvs_hazel_hair', 'elvs_hazel_hair', .5, True),
+                 ('Chestnut hair', 'hair/short02' if male else 'hair/elvs_hazel_hair', 'short02' if male else 'elvs_hazel_hair', .5, True),
                  ('Eyebrows', 'eyebrows/eyebrow001', 'eyebrow001', .85, True),
                  ('Eyelashes', 'eyelashes/eyelashes01', 'eyelashes01', .8, True),
                  ('Teeth', 'teeth/teeth_base', 'teeth_base', .4, False),
@@ -103,7 +111,38 @@ eye.inputs['Coat Roughness'].default_value=.08
 # A quiet ivory fabric keeps attention on the face; retain the authored cloth normal map.
 blouse=bpy.data.materials['Ivory blouse']; bsdf=blouse.node_tree.nodes.get('Principled BSDF')
 for link in list(bsdf.inputs['Base Color'].links): blouse.node_tree.links.remove(link)
-bsdf.inputs['Base Color'].default_value=(.70,.62,.49,1)
+bsdf.inputs['Base Color'].default_value=(.038,.031,.026,1) if male else (.78,.74,.64,1)
+
+if male:
+    # Give the coat room over the shirt: relaxed shoulders and sleeves, a straight
+    # waist, and a longer hem. Preserve its skin weights for all baked movement.
+    cloth=bpy.data.objects['Ivory blouse']
+    # Separate the two front panels so the coat hangs open over a real shirt layer.
+    bm=bmesh.new(); bm.from_mesh(cloth.data)
+    seam=[f for f in bm.faces if f.calc_center_median().y < -.025
+          and f.calc_center_median().z < 1.46
+          and min(v.co.x for v in f.verts) <= 0 <= max(v.co.x for v in f.verts)]
+    bmesh.ops.delete(bm,geom=seam,context='FACES'); bm.to_mesh(cloth.data); bm.free()
+    groups={g.index:g.name.lower() for g in cloth.vertex_groups}
+    for vertex in cloth.data.vertices:
+        x,y,z=vertex.co
+        arm=sum(g.weight for g in vertex.groups if any(part in groups[g.group] for part in ('arm','hand')))
+        neck=min(1,max(0,(1.52-z)/.09))
+        waist=max(0,1-abs(z-1.13)/.25)*(1-arm)
+        vertex.co.x *= 1+neck*(.22+.22*waist)
+        vertex.co.y *= 1+neck*.28
+        vertex.co += vertex.normal*.020*neck
+        vertex.co.z -= max(0,min(1,(1.15-z)/.14))*.18*(1-arm)
+        if y < -.025 and z < 1.47 and abs(x)<.23:
+            opening=float(np.interp(z,[.85,1.15,1.35,1.47],[.075,.072,.060,0]))
+            vertex.co.x += math.copysign(opening*(1-abs(x)/.23)**2,x)
+    cloth.data.update()
+    for node in blouse.node_tree.nodes:
+        if node.type=='NORMAL_MAP': node.inputs['Strength'].default_value=.3
+
+# Original layered outfit, fitted to the source blouse and included in every body morph.
+from academia_outfit import dress
+dress(bpy.data.objects['Ivory blouse'], rig, male=male)
 # Dark scalp below the transparent hair roots avoids a pale rim at the crown.
 body=bpy.data.objects['Face, neck and hands']
 scalp=bpy.data.materials.new('Hair roots');scalp.diffuse_color=(.055,.026,.012,1);scalp.use_nodes=True
@@ -121,7 +160,7 @@ bpy.context.view_layer.update(); deps=bpy.context.evaluated_depsgraph_get()
 exported=[]
 for obj in originals:
     mesh=bpy.data.meshes.new_from_object(obj.evaluated_get(deps),depsgraph=deps)
-    baked=bpy.data.objects.new('Rain '+obj.name,mesh); bpy.context.scene.collection.objects.link(baked)
+    baked=bpy.data.objects.new(character_name+' '+obj.name,mesh); bpy.context.scene.collection.objects.link(baked)
     baked.shape_key_add(name='Basis'); exported.append((obj,baked))
 
 # Expressions are baked from anatomical skin weights, preserving teeth, lids and hair.
@@ -171,7 +210,7 @@ bpy.context.view_layer.update()
 bpy.ops.object.select_all(action='DESELECT')
 for _,obj in exported:
     obj.select_set(True)
-    obj['source']='MakeHuman CC0 anatomy; Hazel Hair by Elvaerwyn (CC-BY); adapted for GlobeGlotter. See LICENSE.txt.'
+    obj['source']='MakeHuman CC0 anatomy and short hair; original GlobeGlotter outfit. See LICENSE.txt.' if male else 'MakeHuman CC0 anatomy; Hazel Hair by Elvaerwyn (CC-BY); adapted for GlobeGlotter. See LICENSE.txt.'
 bpy.context.view_layer.objects.active=exported[0][1]
 out.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=False,
@@ -183,6 +222,12 @@ def compact_morph_targets(path, tolerances={'POSITION':1e-5,'NORMAL':1e-3}):
     otherwise stores each of the many face units densely."""
     raw=path.read_bytes(); json_length=struct.unpack_from('<I',raw,12)[0]
     gltf=json.loads(raw[20:20+json_length]); binary=raw[28+json_length:28+json_length+struct.unpack_from('<I',raw,20+json_length)[0]]
+    if male:
+        # Short hair uses overlapping cards. Cutout depth avoids transparent-card
+        # sorting artifacts at the crown in the web renderer.
+        for material in gltf['materials']:
+            if material['name']=='Chestnut hair':
+                material['alphaMode']='MASK'; material['alphaCutoff']=.35
     old_views,views,out,kept=gltf['bufferViews'],[],bytearray(),{}
     kinds={5121:np.uint8,5123:np.uint16,5125:np.uint32}
     def read(view,dtype,count,offset=0):
@@ -239,7 +284,7 @@ def compact_morph_targets(path, tolerances={'POSITION':1e-5,'NORMAL':1e-3}):
         +struct.pack('<II',len(out),0x004E4942)+bytes(out))
 compact_morph_targets(out)
 # Optional reproducible portrait render for reviewing geometry and expressions.
-if len(args)>2:
+if settings.portrait:
     for original,_ in exported: original.hide_render=True
     camera_data=bpy.data.cameras.new('Portrait'); camera=bpy.data.objects.new('Portrait',camera_data); bpy.context.scene.collection.objects.link(camera)
     camera.location=(0,-2.5,1.47); target=Vector((0,-.015,1.40)); camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler(); camera_data.type='ORTHO'; camera_data.ortho_scale=.9
@@ -249,7 +294,7 @@ if len(args)>2:
         obj=bpy.data.objects.new(name,data);scene.collection.objects.link(obj);obj.location=location;obj.rotation_euler=(target-obj.location).to_track_quat('-Z','Y').to_euler()
     scene.world.color=(.18,.18,.18);scene.render.engine='CYCLES';scene.cycles.samples=32
     scene.render.resolution_x=900;scene.render.resolution_y=1000;scene.render.resolution_percentage=100
-    scene.render.image_settings.file_format='PNG';scene.render.filepath=args[2]
-    bpy.ops.wm.save_as_mainfile(filepath=str(Path(args[2]).with_suffix('.blend')))
+    scene.render.image_settings.file_format='PNG';scene.render.filepath=settings.portrait
+    bpy.ops.wm.save_as_mainfile(filepath=str(Path(settings.portrait).with_suffix('.blend')))
     bpy.ops.render.render(write_still=True)
 print('EXPORTED',out)

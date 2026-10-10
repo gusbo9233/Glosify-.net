@@ -20,7 +20,7 @@ function setup(mode = 'push-to-talk') {
         wire: value => sent.push(value),
     });
     vm.runInContext(source.replace(/^import .*;\n/gm, ''), context);
-    vm.runInContext("ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
+    vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
     return { sent, elements, run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => typeof x !== 'string').map(x => new Uint8Array(x)[0]),
@@ -75,7 +75,7 @@ test('Ready during a pending microphone flush preserves its final frame before c
 });
 
 
-test('current learning language is a label and starting only submits the chosen quiz', async () => {
+test('current learning language is a label and starting submits the chosen quiz and default partner without a language override', async () => {
     const h = setup();
     h.run(`
         audio = null; modelReady = true;
@@ -95,7 +95,7 @@ test('current learning language is a label and starting only submits the chosen 
     h.elements.get('avatar-quiz').value = 'polish-quiz';
     await h.run('start()');
     const request = h.sent.find(x => x.path === '/api/avatar/sessions');
-    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz' });
+    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz', characterId: 'rain' });
     assert.equal(h.sent.at(-1).socketUrl, 'wss://localhost/api/avatar/sessions/session/voice');
     assert.equal(h.elements.get('avatar-quiz').disabled, true);
 });
@@ -113,4 +113,58 @@ test('no current learning language keeps Start disabled and explains how to choo
     assert.equal(h.elements.get('avatar-start').disabled, true);
     assert.match(h.elements.get('avatar-notice').textContent, /Choose a learning language in the sidebar/);
     assert.equal(h.elements.get('avatar-language').options.length, 0);
+});
+
+
+test('choosing Rowan disposes the previous model and submits the chosen partner', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; config = { available: true, language: 'sv' };
+        visual = { dispose() { wire({ disposed: 'rain' }); } };
+        createAvatar = async (_, id) => { wire({ model: id }); return { setState() {}, setAnalyser() {}, dispose() {} }; };
+        AvatarAudio = class { async open() {} async close() {} };
+        WebSocket = class { constructor() {} };
+        api = async (path, body) => { wire({ path, body }); return { sessionId: 'session', voiceName: 'Male Swedish', nativeVoice: true, connectUrl: '/voice' }; };
+    `);
+    h.elements.get('avatar-character').value = 'rowan';
+    await h.run('chooseCharacter()');
+    assert.equal(h.sent.filter(x => x.disposed === 'rain').length, 1);
+    assert.equal(h.sent.filter(x => x.model === 'rowan').length, 1);
+    assert.equal(h.elements.get('avatar-name').textContent, 'Rowan');
+    assert.match(h.elements.get('avatar-voice').textContent, /male voice/);
+    assert.equal(h.elements.get('avatar-start').disabled, false);
+    await h.run('start()');
+    assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.characterId, 'rowan');
+    assert.equal(h.elements.get('avatar-character').disabled, true);
+    h.elements.get('avatar-character').value = 'rain';
+    await h.run('chooseCharacter()');
+    assert.equal(h.elements.get('avatar-character').value, 'rowan');
+    assert.equal(h.sent.filter(x => x.model).length, 1);
+});
+
+test('character loading blocks start and overlapping changes, then a failure allows another choice', async () => {
+    const h = setup();
+    h.run(`
+        audio = null; config = { available: true, language: 'sv' };
+        let failModel;
+        createAvatar = () => new Promise((_, reject) => { failModel = reject; });
+        AvatarAudio = class { constructor() { throw new Error('Microphone must stay off while loading'); } };
+    `);
+    h.elements.get('avatar-character').value = 'rowan';
+    const loading = h.run('chooseCharacter()');
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    assert.equal(h.elements.get('avatar-character').disabled, true);
+    await h.run('start()');
+    h.elements.get('avatar-character').value = 'rain';
+    await h.run('chooseCharacter()');
+    assert.equal(h.elements.get('avatar-character').value, 'rowan');
+    h.run("failModel(new Error('Failed model download'))"); await loading;
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    assert.equal(h.elements.get('avatar-character').disabled, false);
+    assert.match(h.elements.get('avatar-render-status').textContent, /Rowan could not load/);
+    h.run('createAvatar = async () => ({ setState() {}, dispose() {} })');
+    h.elements.get('avatar-character').value = 'rain';
+    await h.run('chooseCharacter()');
+    assert.equal(h.elements.get('avatar-name').textContent, 'Rain');
+    assert.equal(h.elements.get('avatar-start').disabled, false);
 });

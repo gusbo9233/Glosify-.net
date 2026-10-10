@@ -2,6 +2,9 @@ import { AvatarAudio } from './audio.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
+const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
+let characterId = 'rain', characterLoading = false, pageLeaving = false;
+const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
@@ -44,7 +47,38 @@ function transcript(speaker, text) {
     el('transcript').append(item);
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
 }
-function refreshStart() { el('start').disabled = !config?.available || !config?.language || !modelReady || !!sessionId || !!audio; }
+function refreshStart() {
+    el('start').disabled = !config?.available || !config?.language || !modelReady || !!sessionId || !!audio;
+    el('character').disabled = characterLoading || !!sessionId || !!audio;
+}
+async function chooseCharacter() {
+    if (audio || sessionId || characterLoading || el('character').disabled) {
+        el('character').value = characterId; return;
+    }
+    const selected = el('character').value;
+    characterId = Object.hasOwn(characters, selected) ? selected : 'rain';
+    el('character').value = characterId;
+    characterLoading = true; modelReady = false; refreshStart();
+    visual?.dispose(); visual = null;
+    caption('');
+    el('name').textContent = character().name;
+    el('canvas').setAttribute('aria-label', `${character().name}, your animated conversation partner`);
+    el('voice').textContent = `A ${character().gender} voice matched to your learning language.`;
+    el('render-status').hidden = false;
+    el('render-status').textContent = `Getting ${character().name} ready…`;
+    el('status').textContent = 'Getting ready';
+    try {
+        const next = await createAvatar(el('canvas'), characterId);
+        if (pageLeaving) { next.dispose(); return; }
+        visual = next; modelReady = true; el('render-status').hidden = true; setState('off');
+    } catch {
+        el('render-status').textContent = `${character().name} could not load. Choose another partner or refresh to retry.`;
+        el('status').textContent = 'Could not load';
+    } finally {
+        characterLoading = false; refreshStart();
+    }
+}
+el('character').addEventListener('change', () => { void chooseCharacter(); });
 async function api(path, body) {
     const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) });
     if (!response.ok) { const problem = await response.json().catch(() => ({})); throw new Error(problem.detail || problem.title || 'The conversation could not start.'); }
@@ -118,7 +152,7 @@ async function onMessage(message, generation) {
         case 'audio-end': {
             const id = turnId, text = currentReply;
             if (await audio.finished() && generation === epoch && id === turnId) {
-                transcript('Rain', text); send({ type: 'played', turnId: id });
+                transcript(character().name, text); send({ type: 'played', turnId: id });
             }
             break;
         }
@@ -133,15 +167,15 @@ async function onMessage(message, generation) {
     }
 }
 async function start() {
-    if (audio || sessionId) return;
+    if (audio || sessionId || !modelReady) return;
     const generation = ++epoch; notice(); caption(''); el('start').disabled = true; setState('connecting');
     el('transcript').replaceChildren(); el('spending').textContent = 'This conversation · 0 credits';
-    const nextAudio = new AvatarAudio(); audio = nextAudio;
+    const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
     try {
         await nextAudio.open(frame);
         if (generation !== epoch) { await nextAudio.close(); return; }
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { quizId: el('quiz').value || null });
+        const result = await api('/api/avatar/sessions', { quizId: el('quiz').value || null, characterId });
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
@@ -154,7 +188,7 @@ async function start() {
         socket.onclose = () => { if (generation === epoch) { notice('Conversation ended. Start again whenever you like.'); void end(); } };
         socket.onerror = () => { if (generation === epoch) notice('Voice connection failed. Please start again.'); };
         el('quiz').disabled = true; el('end').disabled = false;
-        el('hint').textContent = mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.';
+        el('hint').textContent = mode() === 'hands-free' ? `Microphone is on. You can interrupt ${character().name}.` : 'Hold Space or the talk button. Release to send.';
     } catch (error) {
         notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
         await end();
@@ -219,10 +253,10 @@ el('mute').addEventListener('click', () => {
 });
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
     if (ready) { interrupt(); if (mode() === 'hands-free' && !muted) listen(); }
-    el('hint').textContent = ready ? mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.' : 'Your microphone stays off until you start.';
+    el('hint').textContent = ready ? mode() === 'hands-free' ? `Microphone is on. You can interrupt ${character().name}.` : 'Hold Space or the talk button. Release to send.' : 'Your microphone stays off until you start.';
     setState(state);
 }));
-window.addEventListener('pagehide', () => { void end(); visual?.dispose(); });
+window.addEventListener('pagehide', () => { pageLeaving = true; void end(); visual?.dispose(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
 
 async function initialize() {
@@ -241,6 +275,4 @@ async function initialize() {
     } catch (error) { notice(error.message); }
 }
 void initialize();
-createAvatar(el('canvas')).then(value => {
-    visual = value; modelReady = true; el('render-status').hidden = true; setState('off'); refreshStart();
-}).catch(() => { el('render-status').textContent = 'Rain could not load. Refresh or try a browser with 3D support.'; });
+void chooseCharacter();
