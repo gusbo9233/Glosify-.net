@@ -60,7 +60,6 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
                 turnId = Guid.NewGuid().ToString("N");
                 input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32) { SingleReader = true, SingleWriter = true });
                 turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
-                turnCancellation.CancelAfter(TimeSpan.FromSeconds(120));
                 turn = Respond(input, turnId, mode, turnCancellation.Token);
             }
         }
@@ -77,7 +76,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             try { await monitor; } catch (OperationCanceledException) { }
             sessions.Remove(session);
             session.History.Clear();
-            if (socket.State == WebSocketState.Open)
+            if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
                 using var close = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                 try { await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Conversation ended", close.Token); }
@@ -85,8 +84,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             }
         }
 
-        async Task Respond(Channel<byte[]> channel, string id, string mode, CancellationToken ct)
+        async Task Respond(Channel<byte[]> channel, string id, string mode, CancellationToken stopToken)
         {
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(120), clock);
+            using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(stopToken, deadline.Token);
+            var ct = cancellation.Token;
             await using var scope = scopes.CreateAsyncScope();
             var speech = scope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
             var billing = scope.ServiceProvider.GetRequiredService<AvatarBilling>();
@@ -125,7 +127,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
                 pendingReply = reply;
                 await Send(new { type = "audio-end", turnId = id });
             }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (stopToken.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (deadline.IsCancellationRequested)
+            {
+                await Error(new AvatarException(504, "Rain took too long to respond. Please retry the microphone."));
+            }
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "Avatar turn failed for session {SessionId}", session.Id);
@@ -134,8 +140,13 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             finally
             {
                 listening = false; channel.Writer.TryComplete();
-                try { await Send(await billing.TotalsAsync(session.UserId, session.Id, CancellationToken.None)); }
-                catch (Exception ex) { logger.LogWarning(ex, "Could not send avatar usage totals for {SessionId}", session.Id); }
+                if (!lifetime.IsCancellationRequested && socket.State == WebSocketState.Open)
+                {
+                    try { await Send(await billing.TotalsAsync(session.UserId, session.Id, lifetime.Token)); }
+                    catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+                    catch (WebSocketException) { /* The peer can disconnect after the state check. */ }
+                    catch (Exception ex) { logger.LogWarning(ex, "Could not send avatar usage totals for {SessionId}", session.Id); }
+                }
             }
         }
         async Task StopTurn()

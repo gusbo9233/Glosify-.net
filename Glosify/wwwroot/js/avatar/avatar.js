@@ -4,7 +4,7 @@ import { createAvatar } from './scene.js';
 const el = name => document.getElementById('avatar-' + name);
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
-let preRoll = [], ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
+let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
 function send(value) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); }
@@ -37,12 +37,28 @@ function listen() {
 }
 function interrupt() {
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
+    awaitingCommit = false; preRoll = [];
     send({ type: 'interrupt' }); setState('idle');
 }
 function frame({ pcm, rms }) {
     if (!ready || muted) return;
-    preRoll.push(pcm); if (preRoll.length > 3) preRoll.shift();
-    if (state === 'listening') { socket.send(pcm); preRoll = []; return; }
+    if (state === 'listening') {
+        if (mode() !== 'push-to-talk' || holding || flushing) socket.send(pcm);
+        preRoll = []; return;
+    }
+    if (mode() === 'push-to-talk' && state === 'connecting') {
+        if (!holding && !flushing) return;
+        // Preserve the entire onset (up to five seconds), leaving room in the
+        // server's 32-frame queue for live frames and the commit marker.
+        if (preRoll.length >= 25) {
+            holding = false; interrupt(); setState('error');
+            notice('Voice is taking too long to connect. Please retry the microphone.');
+            return;
+        }
+        preRoll.push(pcm);
+    } else {
+        preRoll.push(pcm); if (preRoll.length > 3) preRoll.shift();
+    }
     if (mode() === 'hands-free' && (state === 'speaking' || state === 'thinking')) {
         // Browser echo cancellation plus two voiced frames prevents most playback
         // leakage from interrupting Rain. The retained onset is sent after Ready.
@@ -69,8 +85,10 @@ async function onMessage(message, generation) {
     switch (message.type) {
         case 'listening':
             setState('listening');
-            if (mode() === 'push-to-talk' && !holding) { interrupt(); break; }
-            for (const pcm of preRoll) socket.send(pcm); preRoll = []; break;
+            if (mode() === 'push-to-talk' && !holding && !awaitingCommit) { interrupt(); break; }
+            for (const pcm of preRoll) socket.send(pcm); preRoll = [];
+            if (awaitingCommit && !flushing) commit();
+            break;
         case 'partial': caption(message.text, 'user'); break;
         case 'transcript': caption(message.text, 'user'); transcript('You', message.text); break;
         case 'thinking': setState('thinking'); break;
@@ -121,7 +139,7 @@ async function start() {
     }
 }
 async function end() {
-    ++epoch; ready = false; holding = false; preRoll = []; speechFrames = 0; muted = false;
+    ++epoch; ready = false; holding = false; awaitingCommit = false; preRoll = []; speechFrames = 0; muted = false;
     const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
     if (socket) { send({ type: 'end' }); socket.onclose = null; socket.close(); socket = null; }
     visual?.setAnalyser(null); await oldAudio?.close();
@@ -146,16 +164,20 @@ function press(event) {
     event?.preventDefault(); notice();
     if (mode() === 'hands-free') { if (state === 'error' || state === 'idle') listen(); return; }
     if (holding) return;
-    holding = true; preRoll = []; listen();
+    holding = true; awaitingCommit = false; preRoll = []; listen();
+}
+function commit() {
+    awaitingCommit = false; send({ type: 'commit' }); setState('thinking');
 }
 async function release() {
     if (!holding) return;
-    holding = false;
-    if (state === 'listening') {
-        await audio?.flush();
-        if (ready && state === 'listening') { send({ type: 'commit' }); setState('thinking'); }
-    }
-    else if (state === 'connecting') interrupt();
+    holding = false; awaitingCommit = true; flushing = true;
+    const generation = epoch;
+    try { await audio?.flush(); }
+    finally { flushing = false; }
+    // A release during setup waits for Ready so the entire buffered utterance
+    // reaches recognition, followed by its commit, even for a short button press.
+    if (generation === epoch && ready && awaitingCommit && state === 'listening') commit();
 }
 el('start').addEventListener('click', start); el('end').addEventListener('click', end);
 el('talk').addEventListener('pointerdown', event => { el('talk').setPointerCapture(event.pointerId); press(event); });

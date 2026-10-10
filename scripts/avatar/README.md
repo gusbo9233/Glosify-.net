@@ -18,6 +18,8 @@ Scribe credits/minute divided by 60 for submitted audio seconds; Assistant token
 rate and model multiplier for replies; speech character rate for submitted text.
 Admins pay the same rates. Recognition reserves up to 45 seconds per utterance;
 unused credit is released. Speech reserves the generated reply before synthesis.
+Audio submission is recorded per frame under an operation-specific lock, shared
+with settlement. It does not lock other sessions or pre-charge unsent seconds.
 Only submitted provider inputs are charged after interruption; ambiguous network
 outcomes may include the last submitted input. Six-decimal ledger precision applies.
 The provider budget uses the configured Scribe cost and
@@ -31,7 +33,10 @@ Conversation context is process-local, capped at 24 messages/24,000 serialized
 characters. Sessions expire after 30 minutes; microphone turns after 45 seconds;
 unconnected sessions after 30 seconds; inactive sockets after 90 seconds. Switching
 away from the browser page ends capture. In hands-free mode, silence sent to
-recognition counts as usage. An utterance limit requires an explicit retry.
+recognition counts as usage. An utterance limit requires an explicit retry. Push-to-talk preserves up to five
+seconds of microphone input during recognition setup, including a release before
+setup completes; longer setup delays stop with a retry message. Turn deadlines
+also report an explicit retry without closing the conversation.
 
 The first version supports the language intersection declared in `AvatarController`.
 Quiz practice uses up to 40 words and 20 sentences from an owned quiz, without

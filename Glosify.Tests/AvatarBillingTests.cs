@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Services.Abuse;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
@@ -84,6 +85,43 @@ public sealed class AvatarBillingTests
         Assert.Equal(.4m, account.BalanceCredits); Assert.Equal(0, account.ReservedCredits);
         Assert.Single(await db.AiCreditTransactions.Where(x => x.Kind == AiCreditTransactionKinds.UsageDebit).ToListAsync());
         Assert.Equal(0, (await db.AiMonthlyBudgets.SingleAsync()).ReservedMicros);
+    });
+
+    [SqlServerFact]
+    public Task OperationLockProtectsSettlementWithoutBlockingOtherSessions() => SqlServerTestDatabase.RunAsync("avatar_locks", async db =>
+    {
+        db.Users.Add(new ApplicationUser { Id = "admin", UserName = "admin" });
+        db.AiCreditAccounts.Add(new AiCreditAccount { UserId = "admin", BalanceCredits = 10 });
+        await db.SaveChangesAsync();
+        var fixture = new BillingFixture(new Factory(db.Database.GetConnectionString()!));
+        var first = await fixture.Billing.ReserveAsync("admin", fixture.Session, "recognition", 10, default);
+        var second = await fixture.Billing.ReserveAsync("admin", Guid.NewGuid(), "recognition", 10, default);
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        // Simulate a slow operation, plus an older deployment still holding the
+        // former shared lock. Neither may delay another operation's audio frames.
+        await ResourceAccounting.LockAsync(db, "glosify:avatar-billing", default);
+        await ResourceAccounting.LockAsync(db, $"glosify:avatar-billing:{first:N}", default);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(4));
+        var submit = fixture.Billing.SubmittedAsync(first, 2, timeout.Token);
+        var settle = fixture.Billing.SettleAsync(first, timeout.Token);
+        await fixture.Billing.SubmittedAsync(second, 3, timeout.Token);
+        Assert.False(submit.IsCompleted);
+        Assert.False(settle.IsCompleted);
+        await transaction.CommitAsync();
+        // Either submission wins (exactly 2 s billed) or settlement wins (no
+        // submission is allowed afterwards). There must never be a lost debit.
+        try { await submit; } catch (InvalidOperationException) { }
+        await settle;
+        await fixture.Billing.SettleAsync(second, timeout.Token);
+        db.ChangeTracker.Clear();
+        var operation = await db.Set<AvatarUsageOperation>().SingleAsync(x => x.Id == first);
+        Assert.True(operation.Settled);
+        Assert.Contains(operation.SubmittedUnits, new[] { 0m, 2m });
+        var account = await db.AiCreditAccounts.SingleAsync();
+        Assert.Equal(10m - (operation.SubmittedUnits + 3m) * .05m, account.BalanceCredits);
+        Assert.Equal(0, account.ReservedCredits);
+        Assert.Equal(0, (await db.AiMonthlyBudgets.SingleAsync()).ReservedMicros);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Billing.SubmittedAsync(first, 3, default));
     });
 
     [Fact]

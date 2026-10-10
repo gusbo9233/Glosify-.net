@@ -57,7 +57,9 @@ public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, I
             await foreach (var chunk in audio.ReadAllAsync(timeout.Token))
             {
                 bytes += chunk.Length;
-                if (bytes > 45 * 32000) throw new AvatarException(400, "Please limit each turn to 45 seconds.");
+                if (bytes > 45 * 32000) throw new AvatarException(400, mode == "hands-free"
+                    ? "Listening paused after 45 seconds without a completed utterance. Please retry the microphone."
+                    : "Please limit each turn to 45 seconds.");
                 if (chunk.Length > 0) await billing.SubmittedAsync(reservation, bytes / 32000m, timeout.Token);
                 await AvatarWire.SendAsync(socket, new { message_type = "input_audio_chunk", audio_base_64 = Convert.ToBase64String(chunk), sample_rate = 16000, commit = chunk.Length == 0 }, timeout.Token);
                 if (chunk.Length == 0) break;

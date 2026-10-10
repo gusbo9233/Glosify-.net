@@ -15,7 +15,7 @@ public sealed class AvatarBilling(IDbContextFactory<GlosifyContext> factory, Ava
     {
         if (kind is not ("recognition" or "speech") || units <= 0 || units > 4000) throw new ArgumentOutOfRangeException(nameof(units));
         var id = Guid.NewGuid();
-        await WriteAsync(async db =>
+        await WriteAsync(id, async db =>
         {
             if (await db.Set<AvatarUsageOperation>().AnyAsync(x => x.Id == id, ct)) return;
             var now = clock.GetUtcNow();
@@ -49,7 +49,7 @@ public sealed class AvatarBilling(IDbContextFactory<GlosifyContext> factory, Ava
 
     // Persist before submission: an ambiguous network outcome is billed for submitted
     // input, never for an entire unused reservation. Repeated counters are harmless.
-    public Task SubmittedAsync(Guid id, decimal units, CancellationToken ct) => WriteAsync(async db =>
+    public Task SubmittedAsync(Guid id, decimal units, CancellationToken ct) => WriteAsync(id, async db =>
     {
         var op = await db.Set<AvatarUsageOperation>().SingleAsync(x => x.Id == id, ct);
         if (op.Settled || clock.GetUtcNow() >= op.ExpiresAt) throw new InvalidOperationException("Voice usage reservation expired.");
@@ -58,7 +58,7 @@ public sealed class AvatarBilling(IDbContextFactory<GlosifyContext> factory, Ava
         await db.SaveChangesAsync(ct);
     }, ct);
 
-    public Task SettleAsync(Guid id, CancellationToken ct) => WriteAsync(async db =>
+    public Task SettleAsync(Guid id, CancellationToken ct) => WriteAsync(id, async db =>
     {
         var op = await db.Set<AvatarUsageOperation>().SingleOrDefaultAsync(x => x.Id == id, ct);
         if (op is null || op.Settled) return;
@@ -113,7 +113,7 @@ public sealed class AvatarBilling(IDbContextFactory<GlosifyContext> factory, Ava
         Note = $"Submitted {op.SubmittedUnits} {(op.Kind == "speech" ? "characters" : "audio seconds")}", CreatedAt = now,
     };
 
-    private async Task WriteAsync(Func<GlosifyContext, Task> action, CancellationToken ct)
+    private async Task WriteAsync(Guid operationId, Func<GlosifyContext, Task> action, CancellationToken ct)
     {
         for (var attempt = 0; ; attempt++)
         {
@@ -123,7 +123,9 @@ public sealed class AvatarBilling(IDbContextFactory<GlosifyContext> factory, Ava
                 await ResourceAccounting.TransactionAsync(db, async () =>
                 {
                     db.ChangeTracker.Clear();
-                    await ResourceAccounting.LockAsync(db, "glosify:avatar-billing", ct);
+                    // Serialize submission and settlement only for this operation. Shared account
+                    // and budget changes remain protected by row versions and the retries below.
+                    await ResourceAccounting.LockAsync(db, $"glosify:avatar-billing:{operationId:N}", ct);
                     await action(db); return true;
                 }, ct);
                 return;
