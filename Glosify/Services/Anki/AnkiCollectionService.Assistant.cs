@@ -43,7 +43,16 @@ public sealed partial class AnkiCollectionService
     {
         var collection = await _context.AnkiCollections.AsNoTracking()
             .SingleOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
-        return collection is null ? null : await CountsAsync(collection, _timeProvider.GetUtcNow(), cancellationToken);
+        if (collection is null) return null;
+        var now = _timeProvider.GetUtcNow();
+        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, cancellationToken);
+        var cards = availability.Cards;
+        var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
+        var reviews = Math.Min(Math.Max(0, collection.MaximumReviewsPerDay - availability.ReviewsStudied),
+            cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
+        var newCards = Math.Min(Math.Max(0, collection.NewCardsPerDay - availability.NewStudied),
+            cards.Count(c => c.State == AnkiCardStates.New));
+        return new(learning + reviews, newCards, learning, cards.Count, availability.StudiedToday);
     }
 
     private async Task<AnkiCollectionSummary> SummaryAsync(AnkiCollection c, CancellationToken ct) =>

@@ -85,7 +85,7 @@ Additional requests supported by the language assistant:
 language by mistakes (quiz incorrect answers plus Anki Again ratings), then mistake
 rate, recency and stable IDs. It returns current text, translations, IDs and language
 pairs. Quizzes with an empty `TargetLanguage` retain the legacy `Language`
-fallback; a populated target language takes precedence. Defaults are 30 days and 20 items; windows are bounded to 365 days and pages
+fallback; a populated target language takes precedence. Catalog names, codes, native names and aliases are accepted. Defaults are 30 days and 20 items; windows are bounded to 365 days and pages
 to 100 items. Deleted items and unidentifiable legacy results are not selected.
 `create_quiz` and `add_items` provide focused quizzes and requested example
 sentences; selected Anki additions use the existing items directly.
@@ -100,7 +100,7 @@ All assistant statistics reads are observational and do not synchronize cards.
 `prepare_study_session` provides an owned local study link. Automatic selection
 prefers due Anki cards, then new cards, then the current quiz (or an owned quiz in
 the selected language). The time budget is an estimate at two items per minute,
-not a timer. Anki respects the normal daily limits. Typing and flashcard links
+not a timer. Anki suggestions exclude buried cards and reviewed siblings, cap new/review cards by remaining daily limits, and retain due learning/relearning cards. Availability reads share the study service’s eligibility rules and never synchronize cards. Typing and flashcard links
 can select exact words; sentence subsets require a focused quiz first.
 
 `rename_anki_collection` saves with Undo. `remove_anki_cards` and

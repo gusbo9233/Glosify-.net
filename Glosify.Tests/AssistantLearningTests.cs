@@ -75,7 +75,7 @@ public sealed class AssistantLearningTests
         var mistakes = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().MistakesAsync("user", "Polish", null, null, 30, 0, 20));
         Assert.Equal(1, mistakes.Items.Sum(i => i.AnkiLapses));
         await using var read = h.Db();
-        var tools = AssistantToolFactory.Create(read);
+        var tools = AssistantToolFactory.Create(read, h.Clock);
         var result = await tools.RunAsync("get_learning_progress", JsonSerializer.Serialize(new { collection_id = CollectionId }), Context(h));
         Assert.False(result.IsError);
         var output = JsonSerializer.SerializeToElement(result.Output);
@@ -463,6 +463,124 @@ public sealed class AssistantLearningTests
         Assert.Equal(1, (await after.AnkiCards.SingleAsync(c => c.Id == reviewed)).ReviewCount);
         Assert.Equal("house", (await after.Words.SingleAsync(w => w.Id == "w1")).Translation);
     }
+
+    [Theory]
+    [InlineData("buried")]
+    [InlineData("review-limit")]
+    [InlineData("new-limit")]
+    [InlineData("sibling")]
+    public async Task Study_suggestions_skip_collections_without_available_cards(string blockedBy)
+    {
+        await using var h = await SeedAsync();
+        await AddAsync(h);
+        var availableId = Guid.NewGuid();
+        await using (var db = h.Db())
+        {
+            db.AnkiCollections.Add(new() { Id = availableId, Name = "Available", UserId = "user", SourceLanguage = "English", TargetLanguage = "Polish" });
+            var collection = await db.AnkiCollections.SingleAsync(c => c.Id == CollectionId);
+            var card = await db.AnkiCards.SingleAsync();
+            card.State = blockedBy == "new-limit" ? AnkiCardStates.New : AnkiCardStates.Review;
+            card.DueAt = h.Clock.GetUtcNow().AddDays(-10);
+            if (blockedBy == "buried") card.BuriedUntil = h.Clock.GetUtcNow().AddHours(1);
+            if (blockedBy is "review-limit" or "new-limit")
+            {
+                collection.MaximumReviewsPerDay = 1; collection.NewCardsPerDay = 1;
+                var review = Review(h, card.Id, "good");
+                review.ReviewedAt = h.Clock.GetUtcNow();
+                review.PreviousState = card.State;
+                db.AnkiReviews.Add(review);
+            }
+            if (blockedBy == "sibling")
+            {
+                var sibling = new AnkiCard { Id = Guid.NewGuid(), AnkiNoteId = card.AnkiNoteId,
+                    Direction = PracticeDirection.TargetToSource, State = AnkiCardStates.Review,
+                    IsActive = true, DirectlyIncluded = true, DueAt = h.Clock.GetUtcNow().AddDays(1) };
+                db.AnkiCards.Add(sibling);
+                var review = Review(h, sibling.Id, "good"); review.ReviewedAt = h.Clock.GetUtcNow();
+                db.AnkiReviews.Add(review);
+            }
+            await db.SaveChangesAsync();
+        }
+        await h.WithAsync(sp => sp.GetRequiredService<IAnkiCollectionService>().AddItemsAsync(
+            new(availableId, h.QuizId, "words", ["w2"], true, false), "user"));
+        var counts = await h.WithAsync(sp => sp.GetRequiredService<IAnkiCollectionService>().ReadCountsAsync(CollectionId, "user"));
+        Assert.NotNull(counts); Assert.Equal(0, counts.Due); Assert.Equal(0, counts.New);
+        await using var read = h.Db();
+        var tools = AssistantToolFactory.Create(read, h.Clock);
+        var result = await tools.RunAsync("prepare_study_session", "{}", Context(h));
+        var output = JsonSerializer.SerializeToElement(result.Output);
+        Assert.Equal($"/Anki/Study/{availableId}", output.GetProperty("url").GetString());
+        Assert.Equal(1, output.GetProperty("suggested_items").GetInt32());
+        Assert.Empty(read.ChangeTracker.Entries());
+        var blockedStudy = await h.WithAsync(sp => sp.GetRequiredService<IAnkiStudyService>().GetNextAsync(CollectionId, "user"));
+        Assert.NotNull(blockedStudy); Assert.Null(blockedStudy.Card);
+        var availableStudy = await h.WithAsync(sp => sp.GetRequiredService<IAnkiStudyService>().GetNextAsync(availableId, "user"));
+        Assert.NotNull(availableStudy?.Card);
+    }
+
+    [Fact]
+    public async Task Study_suggestions_keep_due_learning_cards_when_daily_limits_are_exhausted()
+    {
+        await using var h = await SeedAsync();
+        await AddAsync(h);
+        await using (var db = h.Db())
+        {
+            var collection = await db.AnkiCollections.SingleAsync();
+            collection.NewCardsPerDay = 0; collection.MaximumReviewsPerDay = 0;
+            var card = await db.AnkiCards.SingleAsync();
+            card.State = AnkiCardStates.Relearning; card.DueAt = h.Clock.GetUtcNow();
+            await db.SaveChangesAsync();
+        }
+        var counts = await h.WithAsync(sp => sp.GetRequiredService<IAnkiCollectionService>().ReadCountsAsync(CollectionId, "user"));
+        Assert.NotNull(counts); Assert.Equal(1, counts.Due); Assert.Equal(0, counts.New);
+        var study = await h.WithAsync(sp => sp.GetRequiredService<IAnkiStudyService>().GetNextAsync(CollectionId, "user"));
+        Assert.NotNull(study?.Card);
+    }
+
+    [Theory]
+    [InlineData("pl", "English")]
+    [InlineData(" POL ", "English")]
+    [InlineData("Polski", "English")]
+    [InlineData("", "pl")]
+    public async Task History_and_study_accept_catalog_codes_and_native_names(string target, string legacy)
+    {
+        await using var h = await SeedAsync();
+        await using (var db = h.Db())
+        {
+            var quiz = await db.Quizzes.SingleAsync(); quiz.TargetLanguage = target; quiz.Language = legacy;
+            db.QuizAttempts.Add(Attempt(h, "w1", false)); await db.SaveChangesAsync();
+        }
+        var mistakes = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().MistakesAsync("user", "Polish", h.QuizId, "words", 30, 0, 20));
+        Assert.Equal("w1", Assert.Single(mistakes.Items).ItemId);
+        var progress = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().ProgressAsync("user", "Polish", h.QuizId, 30));
+        Assert.Equal(1, progress.Incorrect);
+        await using var read = h.Db();
+        var result = await AssistantToolFactory.Create(read).RunAsync("prepare_study_session", "{\"mode\":\"typing\"}", Context(h));
+        Assert.False(result.IsError);
+        Assert.Contains(h.QuizId.ToString(), JsonSerializer.SerializeToElement(result.Output).GetProperty("url").GetString());
+        Assert.Empty(read.ChangeTracker.Entries());
+    }
+
+    [SqlServerFact]
+    public Task SqlServer_learning_queries_accept_language_codes() =>
+        SqlServerTestDatabase.RunAsync("assistant_learning", async database =>
+        {
+            await using var h = await AssistantHarness.CreateSqlServerAsync(database.Database.GetConnectionString()!, db =>
+                db.Words.Add(new Word { Id = "w1", Lemma = "dom", Translation = "house" }));
+            await using (var db = h.Db())
+            {
+                (await db.Quizzes.SingleAsync()).TargetLanguage = "pl";
+                db.QuizAttempts.Add(Attempt(h, "w1", false)); await db.SaveChangesAsync();
+            }
+            var mistakes = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().MistakesAsync("user", "Polish", h.QuizId, "words", 30, 0, 20));
+            Assert.Equal("w1", Assert.Single(mistakes.Items).ItemId);
+            var progress = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().ProgressAsync("user", "Polish", h.QuizId, 30));
+            Assert.Equal(1, progress.Incorrect);
+            await using var read = h.Db();
+            var result = await AssistantToolFactory.Create(read, h.Clock).RunAsync("prepare_study_session", "{\"mode\":\"typing\"}", Context(h));
+            Assert.False(result.IsError);
+            Assert.Contains(h.QuizId.ToString(), JsonSerializer.SerializeToElement(result.Output).GetProperty("url").GetString());
+        });
 
     private static JsonElement Output(Glosify.Services.Ai.Generation.AgentRequest request)
     {

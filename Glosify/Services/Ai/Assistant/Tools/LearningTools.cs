@@ -105,8 +105,7 @@ internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiCollection
         }
         var sentences = args.Kind == QuizItemKind.Sentences;
         var quizId = args.QuizId ?? context.QuizId;
-        var quizzes = db.Quizzes.AsNoTracking().Where(q => q.UserId == context.UserId && (q.TargetLanguage == language
-            || ((q.TargetLanguage == null || q.TargetLanguage.Trim() == "") && q.Language == language)));
+        var quizzes = db.Quizzes.AsNoTracking().Where(q => q.UserId == context.UserId).WhereTargetLanguage(language);
         var quiz = quizId.HasValue ? await quizzes.SingleOrDefaultAsync(q => q.Id == quizId, ct)
             : await quizzes.Where(q => sentences
                 ? db.QuizSentences.Any(s => s.QuizId == q.Id)

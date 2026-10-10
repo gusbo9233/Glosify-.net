@@ -38,32 +38,10 @@ public sealed class AnkiStudyService : IAnkiStudyService
         await _collections.SyncCollectionAsync(collectionId, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
-        var dayStart = AnkiCollectionService.StartOfCollectionDay(collection.TimeZoneId, now);
-        var reviewQuery = _context.AnkiReviews.AsNoTracking()
-            .Where(review => review.AnkiCollectionId == collectionId)
-            .Select(review => new { review.AnkiCardId, review.Card.AnkiNoteId, review.PreviousState, review.ReviewedAt });
-        if (_context.Database.ProviderName?.Contains("Sqlite", StringComparison.Ordinal) != true)
-            reviewQuery = reviewQuery.Where(review => review.ReviewedAt >= dayStart);
-        var reviews = await reviewQuery
-            .ToListAsync(cancellationToken);
-        // Filter after the indexed collection query so relational providers without native
-        // DateTimeOffset ordering (notably SQLite in tests) preserve collection-day behavior.
-        var reviewedToday = reviews.Where(review => review.ReviewedAt >= dayStart).ToList();
-        var reviewedCardIds = reviewedToday.Select(review => review.AnkiCardId).ToHashSet();
-        var reviewedNoteIds = reviewedToday.Select(review => review.AnkiNoteId).ToHashSet();
-        var newStudied = reviewedToday.Count(review => review.PreviousState == AnkiCardStates.New);
-        var reviewsStudied = reviewedToday.Count(review => review.PreviousState == AnkiCardStates.Review);
-
-        var cards = await _context.AnkiCards
-            .AsNoTracking()
-            .Include(card => card.Note)
-            .Where(card => card.Note.AnkiCollectionId == collectionId
-                && card.IsActive)
-            .ToListAsync(cancellationToken);
-        cards = cards
-            .Where(card => !card.BuriedUntil.HasValue || card.BuriedUntil <= now)
-            .Where(card => !reviewedNoteIds.Contains(card.AnkiNoteId) || reviewedCardIds.Contains(card.Id))
-            .ToList();
+        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, cancellationToken);
+        var cards = availability.Cards;
+        var newStudied = availability.NewStudied;
+        var reviewsStudied = availability.ReviewsStudied;
 
         AnkiCard? selected = preferredCardId.HasValue
             ? cards.SingleOrDefault(card => card.Id == preferredCardId.Value)

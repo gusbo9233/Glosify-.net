@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Language;
@@ -149,6 +150,17 @@ public static class QuizLanguageCatalog
     {
         var value = string.IsNullOrWhiteSpace(targetLanguage) ? legacyLanguage : targetLanguage;
         return Find(value)?.Name ?? value;
+    }
+
+    internal static IQueryable<Quiz> WhereTargetLanguage(this IQueryable<Quiz> quizzes, string? language)
+    {
+        var selected = Find(language);
+        if (selected is null) return quizzes.Where(_ => false);
+        var names = new[] { selected.Code, selected.TranslatorCode, selected.ScribeCode, selected.Name, selected.NativeName }
+            .Concat(selected.Aliases).Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value.Trim().ToLowerInvariant()).Distinct().ToArray();
+        return quizzes.Where(q => names.Contains(
+            (q.TargetLanguage == null || q.TargetLanguage.Trim() == "" ? q.Language : q.TargetLanguage).Trim().ToLower()));
     }
 
     public static IReadOnlyList<QuizLanguage> All { get; } = Array.AsReadOnly(Languages);

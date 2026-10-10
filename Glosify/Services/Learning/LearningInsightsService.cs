@@ -67,7 +67,7 @@ public sealed class LearningInsightsService(GlosifyContext db, TimeProvider cloc
         string userId, string targetLanguage, Guid? quizId, int days, CancellationToken ct)
     {
         var language = QuizLanguageCatalog.Find(targetLanguage)?.Name ?? throw new ArgumentException("Select a learning language first.");
-        var quizzes = await db.Quizzes.AsNoTracking().Where(q => q.UserId == userId && (q.TargetLanguage == language || ((q.TargetLanguage == null || q.TargetLanguage.Trim() == "") && q.Language == language)) && (quizId == null || q.Id == quizId)).ToDictionaryAsync(q => q.Id, ct);
+        var quizzes = await db.Quizzes.AsNoTracking().Where(q => q.UserId == userId && (quizId == null || q.Id == quizId)).WhereTargetLanguage(language).ToDictionaryAsync(q => q.Id, ct);
         if (quizId.HasValue && quizzes.Count == 0) throw new ArgumentException("Quiz not found for the selected language.");
         var ids = quizzes.Keys.ToList();
         var now = clock.GetUtcNow();
