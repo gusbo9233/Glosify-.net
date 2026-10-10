@@ -269,6 +269,10 @@ internal sealed class AssistantHarness : IAsyncDisposable
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AiUsageOptions()));
         services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
         services.AddScoped<IAnkiCollectionService, AnkiCollectionService>();
+        services.AddScoped<IAnkiStatisticsService, AnkiStatisticsService>();
+        services.AddSingleton<IAnkiScheduler, Fsrs6AnkiScheduler>();
+        services.AddScoped<IAnkiStudyService, AnkiStudyService>();
+        services.AddScoped<Glosify.Services.Learning.ILearningInsightsService, Glosify.Services.Learning.LearningInsightsService>();
         services.AddScoped<IQuizService, QuizService>();
         services.AddScoped<ICollectionService, CollectionService>();
         services.AddScoped<IBookDocumentService>(provider => new BookDocumentService(
@@ -433,12 +437,15 @@ internal sealed class AssistantTestTools(AssistantToolbox toolbox)
 internal static class AssistantToolFactory
 {
     /// <summary>The app's tool registrations over one context.</summary>
-    public static AssistantTestTools Create(GlosifyContext context) =>
+    public static AssistantTestTools Create(GlosifyContext context, TimeProvider? clock = null) =>
         new(new ServiceCollection()
             .AddSingleton(context)
             .AddSingleton<AssistantMessagePresenter>()
+            .AddSingleton<IAnkiCollectionService, AnkiCollectionService>()
+            .AddSingleton<IAnkiStatisticsService, AnkiStatisticsService>()
+            .AddSingleton<Glosify.Services.Learning.ILearningInsightsService, Glosify.Services.Learning.LearningInsightsService>()
             .AddMemoryCache()
-            .AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
+            .AddSingleton<TimeProvider>(clock ?? new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
             .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()
             .AddAssistantTools()
             .BuildServiceProvider()

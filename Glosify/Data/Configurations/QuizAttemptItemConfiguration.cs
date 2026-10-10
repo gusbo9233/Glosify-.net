@@ -9,6 +9,7 @@ internal sealed class QuizAttemptItemConfiguration : IEntityTypeConfiguration<Qu
     public void Configure(EntityTypeBuilder<QuizAttemptItem> entity)
     {
         entity.HasKey(i => i.Id);
+        entity.Property(i => i.ItemId).HasMaxLength(450);
         entity.Property(i => i.Prompt).HasMaxLength(512).IsRequired();
         entity.Property(i => i.ExpectedAnswer).HasMaxLength(512).IsRequired();
         entity.Property(i => i.GivenAnswer).HasMaxLength(512);

@@ -4,10 +4,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant.Tools;
 
+internal enum QuizItemOrder { Alphabetical, Created }
+
 internal sealed record ListItemsArgs(
     [property: Description("Which content to list.")] QuizItemKind Kind,
     [property: Description("Quiz id. Null for the quiz this chat is attached to.")] string? QuizId = null,
-    [property: Description("Number of rows to skip for paging. Null for 0.")] int? Offset = null);
+    [property: Description("Number of rows to skip for paging. Null for 0.")] int? Offset = null,
+    [property: Description("Null preserves alphabetical word order. Use created for first N in quiz-page order, with an id tie-breaker.")] QuizItemOrder? Order = null);
 
 /// <summary>Pages through a quiz's words or sentences with their ids.</summary>
 internal sealed class ListItemsTool(GlosifyContext db) : AssistantTool<ListItemsArgs>
@@ -48,9 +51,10 @@ internal sealed class ListItemsTool(GlosifyContext db) : AssistantTool<ListItems
 
         var words = db.Words.AsNoTracking().Where(word => word.QuizId == quiz.Id);
         var wordTotal = await words.CountAsync(cancellationToken);
-        var wordRows = await words
-            .OrderBy(word => word.Lemma)
-            .ThenBy(word => word.Id)
+        var orderedWords = args.Order == QuizItemOrder.Created
+            ? words.OrderBy(word => word.CreatedAt).ThenBy(word => word.Id)
+            : words.OrderBy(word => word.Lemma).ThenBy(word => word.Id);
+        var wordRows = await orderedWords
             .Skip(offset)
             .Take(QuizContent.PageSize)
             .Select(word => new { id = word.Id, word = word.Lemma, translation = word.Translation })

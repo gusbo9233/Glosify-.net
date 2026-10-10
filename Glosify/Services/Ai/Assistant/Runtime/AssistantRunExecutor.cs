@@ -636,7 +636,12 @@ internal sealed class AssistantRunExecutor(
                     state.Fingerprints[touched] = await FingerprintAsync(touched, cancellationToken);
                 }
 
-                await SettleAsync(current, state, tracked, ToolResult.Ok(title, SavedOutput(changes, applied, toolOutput)), cancellationToken, progressed: applied.Journal.Count > 0);
+                var savedTitle = applied.AnkiCollectionId is not null && changes.Any(change =>
+                    change.Kind is PendingChangeKinds.AddAnkiItems or PendingChangeKinds.LinkAnkiQuiz)
+                    ? $"{applied.AnkiCardsAdded} Anki cards added · {applied.AnkiAlreadyIncluded} already included"
+                        + (changes.Any(change => change.Kind == PendingChangeKinds.LinkAnkiQuiz) ? " · quiz linked for future additions" : string.Empty)
+                    : title;
+                await SettleAsync(current, state, tracked, ToolResult.Ok(savedTitle, SavedOutput(changes, applied, toolOutput)), cancellationToken, progressed: applied.Journal.Count > 0);
             }, cancellationToken, isolation: IsolationLevel.Serializable);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or QuizNotFoundException
@@ -1536,6 +1541,14 @@ internal sealed class AssistantRunExecutor(
             quiz_id = applied.CreatedQuizId,
             collection_id = applied.CreatedCollectionId,
             next = applied.CreatedQuizId is not null ? "Add the rest of the content with add_items and this quiz_id." : null,
+            anki_collection_id = applied.AnkiCollectionId,
+            anki_url = applied.AnkiCollectionId is Guid ankiId ? AnkiTools.Url(ankiId) : null,
+            anki_cards_removed = applied.AnkiCardsRemoved,
+            anki_quiz_unlinked = applied.AnkiQuizUnlinked,
+            anki_selected_items = applied.AnkiSelectedItems,
+            anki_cards_added = applied.AnkiCardsAdded,
+            anki_already_included = applied.AnkiAlreadyIncluded,
+            anki_excluded_cards = applied.AnkiExcludedCards,
             details = toolOutput,
         };
 

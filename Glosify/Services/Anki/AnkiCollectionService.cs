@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
 
-public sealed class AnkiCollectionService : IAnkiCollectionService
+public sealed partial class AnkiCollectionService : IAnkiCollectionService
 {
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
@@ -773,21 +773,21 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         };
     }
 
-    private static void EnsureDirectCard(AnkiNote note, string direction)
+    private void EnsureDirectCard(AnkiNote note, string direction)
     {
         var card = EnsureCard(note, direction);
         card.DirectlyIncluded = true;
         card.IsActive = true;
     }
 
-    private static void EnsureLinkedCard(AnkiNote note, string direction)
+    private void EnsureLinkedCard(AnkiNote note, string direction)
     {
         var card = EnsureCard(note, direction);
         card.QuizLinkIncluded = true;
         card.IsActive = !card.ExcludedFromQuizLink || card.DirectlyIncluded;
     }
 
-    private static AnkiCard EnsureCard(AnkiNote note, string direction)
+    private AnkiCard EnsureCard(AnkiNote note, string direction)
     {
         var card = note.Cards.FirstOrDefault(item => item.Direction == direction);
         if (card is not null)
@@ -801,12 +801,15 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
             IsActive = true,
         };
         note.Cards.Add(card);
+        // A client-assigned GUID on a new child of an existing note must be explicitly
+        // Added; relationship discovery can otherwise treat it as an existing row.
+        _context.AnkiCards.Add(card);
         return card;
     }
 
     private static bool Matches(AnkiCollection collection, Quiz quiz) =>
         SameLanguage(collection.SourceLanguage, quiz.SourceLanguage)
-        && SameLanguage(collection.TargetLanguage, quiz.TargetLanguage);
+        && SameLanguage(collection.TargetLanguage, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language));
 
     private static bool SameLanguage(string left, string right)
     {

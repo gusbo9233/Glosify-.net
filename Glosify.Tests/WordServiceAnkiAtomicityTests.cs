@@ -107,6 +107,22 @@ public sealed class WordServiceAnkiAtomicityTests
 
     private sealed class ThrowingAnkiCollectionService : IAnkiCollectionService
     {
+        public Task<IReadOnlyList<AnkiCardState>> ReadCardStatesAsync(Guid collectionId, IReadOnlyList<Guid> cardIds, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiLinkSnapshot> ReadLinkStateAsync(Guid collectionId, Guid quizId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiRenameChange?> RenameWithUndoAsync(AnkiRenameInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<AnkiCardChange>> RemoveCardsWithUndoAsync(RemoveAnkiCardsInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiLinkChange> UnlinkWithUndoAsync(AnkiLinkSnapshot expected, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> UndoRenameAsync(AnkiRenameChange change, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task<AnkiCollectionCounts?> ReadCountsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiPage<AnkiCollectionSummary>> BrowseAsync(string userId, int offset, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiInspection?> InspectAsync(Guid collectionId, string userId, int cardOffset, int linkOffset, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiAdditionResult> AddItemsAsync(AddAnkiItemsInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiAdditionResult> LinkQuizAdditiveAsync(AddAnkiQuizInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> UndoCardAdditionAsync(AnkiCardChange change, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> UndoQuizLinkAsync(AnkiLinkChange change, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> UndoCollectionCreationAsync(AnkiCollectionState state, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
         public Task SyncQuizAsync(Guid quizId, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated Anki synchronization failure.");
 

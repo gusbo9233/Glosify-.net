@@ -37,8 +37,11 @@ public record FlashcardSessionData : Glosify.Services.Quizzes.IQuizSessionData
     public bool AttemptRecorded { get; set; }
     public IReadOnlyList<FlashcardCardData> Cards { get; init; } = [];
     public List<FlashcardCardData> AgainCards { get; init; } = [];
+    public List<FlashcardRatingData> Ratings { get; init; } = [];
 
 }
+
+public sealed record FlashcardRatingData(int Sequence, string Rating);
 
 public record FlashcardCardData
 {

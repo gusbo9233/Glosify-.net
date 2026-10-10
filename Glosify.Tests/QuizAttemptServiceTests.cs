@@ -78,9 +78,33 @@ public sealed class QuizAttemptServiceTests
         Assert.Equal(3, items.Count);
         Assert.True(items[0].IsCorrect);
         Assert.False(items[1].IsCorrect);
+        Assert.Equal("w2", items[1].ItemId);
+        Assert.False(items[1].IsSkipped);
         Assert.Equal("cat", items[1].Prompt);
         Assert.Equal("gato", items[1].ExpectedAnswer);
         Assert.True(items[2].IsCorrect);
+    }
+
+    [Fact]
+    public async Task Flashcard_ratings_record_identity_and_distinguish_again_from_skip()
+    {
+        await using var context = CreateContext();
+        var session = new FlashcardSessionData
+        {
+            UserId = UserId, QuizId = Guid.NewGuid(),
+            Cards = [new() { Id = "known" }, new() { Id = "weak" }, new() { Id = "skipped" }]
+        };
+        using var cache = new Microsoft.Extensions.Caching.Memory.MemoryCache(new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions());
+        var sessions = new FlashcardSessionService(cache, new QuizSessionRegistry(cache));
+        sessions.ApplyRating(session, "good");
+        sessions.ApplyRating(session, "again");
+        sessions.ApplyRating(session, "skip");
+        await new QuizAttemptService(context).RecordFlashcardAttemptAsync(session);
+        var items = await context.QuizAttemptItems.OrderBy(i => i.Sequence).ToListAsync();
+        Assert.Equal(new[] { "known", "weak", "skipped" }, items.Select(i => i.ItemId));
+        Assert.True(items[0].IsCorrect);
+        Assert.False(items[1].IsCorrect); Assert.False(items[1].IsSkipped);
+        Assert.True(items[2].IsSkipped); Assert.False(items[2].IsCorrect);
     }
 
     private static GlosifyContext CreateContext()
