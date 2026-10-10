@@ -9,10 +9,14 @@ import subprocess
 import sys
 import urllib.request
 
-base = 'https://glosify-app.azurewebsites.net'
 app = sys.argv[1]
 settings = {row['name']: row['value'] for row in json.loads(subprocess.check_output([
     'az', 'webapp', 'config', 'appsettings', 'list', '-g', 'glosify', '-n', 'glosify-app', '-o', 'json']))}
+# Shared sign-in cookies are scoped to .globeglotter.app. The Azure hostname
+# cannot accept them, even when login itself returns a successful response.
+base = ('https://globeglotter.app'
+        if settings.get('SharedAuth__Enabled', '').lower() == 'true'
+        else 'https://glosify-app.azurewebsites.net')
 if settings.get('Demo__Enabled', '').lower() != 'true':
     raise RuntimeError('Configure the existing deployment smoke account before release.')
 email = settings.get('Demo__Email', 'demo@glosify.se')
