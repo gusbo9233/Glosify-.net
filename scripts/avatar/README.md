@@ -90,12 +90,14 @@ blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
 The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
 The export bakes jaw, blink, smile, nod and turn into morph targets and embeds textures.
-Facial sculpt targets soften the jaw and lips. The hair is weighted to the head,
+Facial sculpt targets soften the jaw and define the upper lip. The resting smile
+has closed lips and no jaw-opening pose; the viewer keeps the extra smile morph
+at zero so speech always returns to this neutral expression. The hair is weighted to the head,
 avoiding shoulder-driven kinks during posing. The face retains all source bone weights
 before baking so facial expressions are not truncated to four influences.
 The resting smile, cheeks, eyebrows, eyelids and speaking mouth use the authored CC0 face pose
 units in `face-poses.json`, whose source revision is recorded alongside the poses. Runtime mouth
-movement follows output audio amplitude and spectrum; it is not phoneme-exact lip sync.
+movement follows output audio amplitude; it is not phoneme-exact lip sync.
 
 `wwwroot/images/avatar/courtyard.jpg` is an AI-generated, optimized background. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,

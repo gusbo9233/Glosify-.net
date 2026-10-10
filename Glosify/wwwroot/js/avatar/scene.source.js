@@ -37,21 +37,20 @@ export async function createAvatar(canvas) {
     }
     const set = (name, value) => { for (const target of targets[name] || []) target.influence = value; };
     let state = 'off', analyser = null, mouth = 0, blinkAt = 2.6, start = performance.now(), last = 0;
-    const spectrum = new Uint8Array(256), wave = new Uint8Array(512);
+    const wave = new Uint8Array(512);
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     engine.runRenderLoop(() => {
         if (document.hidden) return;
         const now = performance.now(), t = (now - start) / 1000;
         if (now - last < 1000 / 40) return;
         last = now;
-        let volume = 0, brightness = 0;
+        let volume = 0;
         if (analyser && state === 'speaking') {
-            analyser.getByteTimeDomainData(wave); analyser.getByteFrequencyData(spectrum);
+            analyser.getByteTimeDomainData(wave);
             volume = Math.sqrt(wave.reduce((sum, value) => sum + ((value - 128) / 128) ** 2, 0) / wave.length);
-            brightness = spectrum.slice(8, 32).reduce((sum, value) => sum + value, 0) / 24 / 255;
         }
         mouth += (Math.min(1, volume * 7) - mouth) * .55;
-        set('jawOpen', mouth); set('smile', .1 + brightness * .2);
+        set('jawOpen', mouth); set('smile', 0);
         if (!reduced.matches) {
             if (t > blinkAt + .18) blinkAt = t + 2.8 + Math.random() * 3;
             set('blink', t >= blinkAt ? Math.sin(Math.min(1, (t - blinkAt) / .18) * Math.PI) : 0);

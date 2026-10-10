@@ -17,7 +17,7 @@ sculpt = [
     ('universal-female-young-averagemuscle-averageweight.target', 1),
     ('head-oval.target', .65), ('chin-width-decr.target', .3),
     ('chin-height-decr.target', .22), ('chin-bones-decr.target', .3),
-    ('mouth-upperlip-volume-incr.target', .12), ('mouth-lowerlip-volume-incr.target', .2)
+    ('mouth-upperlip-volume-incr.target', .32), ('mouth-upperlip-height-incr.target', .24), ('mouth-lowerlip-volume-incr.target', .2)
 ]
 for side in ['l', 'r']:
     sculpt += [(side+'-cheek-bones-incr.target', .15), (side+'-eye-scale-incr.target', .08)]
@@ -61,15 +61,12 @@ def expression(name, weight=1):
         bone.matrix_basis=bone.matrix_basis @ (rest.inverted() @ rotation @ rest).to_4x4()
     bpy.context.view_layer.update()
 
+# Closed-mouth resting smile: opening the lips and jaw belongs only to speech.
 for side in ['Left','Right']:
-    expression('Mouth'+side+'PullUp',.70)
-    expression('Mouth'+side+'PullSide',.10)
-    expression(side+'CheekUp',.18)
+    expression('Mouth'+side+'PullUp',.28)
+    expression(side+'CheekUp',.08)
     expression(side+'InnerBrowUp',.08)
     expression(side+'OuterBrowUp',.12)
-expression('UpperLipUp',.40)
-expression('lowerLipDown',.22)
-expression('JawDrop',.10)
 rotate('head',(0,1,0),.025)
 
 # Keep high-resolution skin, soft highlights and textured chestnut hair.
