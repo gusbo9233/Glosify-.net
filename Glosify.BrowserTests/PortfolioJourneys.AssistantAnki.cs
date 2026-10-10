@@ -58,13 +58,13 @@ public sealed partial class PortfolioJourneys
 
         var collectionPage = await Page.Context.NewPageAsync();
         await collectionPage.GotoAsync(collectionUrl);
-        await Expect(collectionPage.GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("2");
+        await Expect(collectionPage.GetByLabel("Collection statistics").GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("2");
         await Expect(collectionPage.GetByText("No quizzes linked yet.", new() { Exact = true })).ToBeVisibleAsync();
         Page.Dialog += (_, dialog) => dialog.AcceptAsync();
         await undo.ClickAsync();
         await Expect(Page.Locator(".assistant-undo")).ToContainTextAsync("Changes undone");
         await collectionPage.ReloadAsync();
-        await Expect(collectionPage.GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("0");
+        await Expect(collectionPage.GetByLabel("Collection statistics").GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("0");
         await Expect(Page.Locator(".word-card")).ToHaveCountAsync(3);
         await collectionPage.CloseAsync();
         await AssertNoPageErrorsAsync();
