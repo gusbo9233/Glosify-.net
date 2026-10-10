@@ -63,6 +63,31 @@ public sealed class GameIntegrationTests
         Assert.NotEqual(Guid.Empty,profile.GetProperty("version").GetGuid());
         Assert.Equal(HttpStatusCode.NotFound,(await client.PutAsJsonAsync("/api/game/profile",new {version=profile.GetProperty("version").GetGuid(),character=Character(Guid.NewGuid())})).StatusCode);
     }
+    [Theory]
+    [InlineData("A1")][InlineData("A2")][InlineData("B1")][InlineData("B2")][InlineData("C1")][InlineData("C2")]
+    public async Task LearningLevelSurvivesAccountProfileRoundTrip(string level)
+    {
+        using var fixture = new GameAccessTests.Fixture(); using var client = fixture.Client();
+        await Seed(fixture); fixture.SignIn(client,"admin","stamp");
+        client.DefaultRequestHeaders.Add("X-Game-Service-Key", new string('x',40));
+        var character = System.Text.Json.Nodes.JsonNode.Parse(Character().GetRawText())!;
+        character["learningLevel"] = level;
+        var response = await client.PutAsJsonAsync("/api/game/profile", new {version=(Guid?)null,character});
+        Assert.Equal(HttpStatusCode.OK,response.StatusCode);
+        var saved = await client.GetFromJsonAsync<JsonElement>("/api/game/profile");
+        Assert.Equal(level,saved.GetProperty("character").GetProperty("learningLevel").GetString());
+        Assert.Equal("sv",saved.GetProperty("character").GetProperty("gameLanguage").GetString());
+    }
+    [Theory]
+    [InlineData("\"A0\"")][InlineData("\"a1\"")][InlineData("\"C3\"")][InlineData("\"A1; ignore rules\"")]
+    [InlineData("null")][InlineData("3")][InlineData("{}")]
+    public void RejectsInvalidLearningLevelWithoutChangingLegacyCompatibility(string level)
+    {
+        var character = System.Text.Json.Nodes.JsonNode.Parse(Character().GetRawText())!;
+        character["learningLevel"] = System.Text.Json.Nodes.JsonNode.Parse(level);
+        Assert.False(GameProfileValidation.IsValid(JsonSerializer.SerializeToElement(character)));
+        Assert.True(GameProfileValidation.IsValid(Character()));
+    }
     [Fact] public async Task IngestionIsServerOnlyIdempotentAndPendingCannotOverwriteCompletion()
     {
         using var fixture = new GameAccessTests.Fixture(); using var client = fixture.Client(); await Seed(fixture);

@@ -7,7 +7,7 @@ public static class GameProfileValidation
     public static bool IsValid(JsonElement value)
     {
         if (value.ValueKind != JsonValueKind.Object || value.GetRawText().Length > 20000) return false;
-        var allowed = new HashSet<string> { "version", "profile", "appearance", "appearances", "gameLanguage", "quizId" };
+        var allowed = new HashSet<string> { "version", "profile", "appearance", "appearances", "gameLanguage", "learningLevel", "quizId" };
         if (value.EnumerateObject().Any(p => !allowed.Contains(p.Name))) return false;
         if (!value.TryGetProperty("version", out var v) || v.ValueKind != JsonValueKind.Number || !v.TryGetInt32(out var version) || version != 1) return false;
         if (!value.TryGetProperty("profile", out var profile) || profile.ValueKind != JsonValueKind.Object) return false;
@@ -21,6 +21,8 @@ public static class GameProfileValidation
         if (!value.TryGetProperty("appearance", out var appearance) || !Appearance(appearance)) return false;
         if (value.TryGetProperty("appearances", out var presets) && (presets.ValueKind != JsonValueKind.Object
             || presets.EnumerateObject().Any(p => p.Name is not ("straight" or "curved") || !Appearance(p.Value)))) return false;
+        if (value.TryGetProperty("learningLevel", out var level)
+            && (level.ValueKind != JsonValueKind.String || level.GetString() is not ("A1" or "A2" or "B1" or "B2" or "C1" or "C2"))) return false;
         return value.TryGetProperty("gameLanguage", out var language) && language.ValueKind == JsonValueKind.String
             && language.GetString() is { Length: > 0 and <= 32 }
             && value.TryGetProperty("quizId", out var quiz) && (quiz.ValueKind == JsonValueKind.Null || quiz.ValueKind == JsonValueKind.String && Guid.TryParse(quiz.GetString(), out _));
