@@ -15,6 +15,7 @@ public static class ApiExceptionMapper
 {
     public static ApiError? Map(Exception exception) => exception switch
     {
+        Glosify.Services.Avatar.AvatarException avatar => new ApiError(avatar.Status, GlosifyProblemDetails.CodeForStatus(avatar.Status), avatar.Message),
         Glosify.Services.Abuse.ResourceQuotaException quota => new ApiError(quota.StatusCode, quota.Code,
             new Glosify.Localization.UiTextStringLocalizer()[quota.MessageKey].Value),
         Glosify.Services.Abuse.SignupLimitException => Error(429, ApiErrorCodes.RateLimited, exception),

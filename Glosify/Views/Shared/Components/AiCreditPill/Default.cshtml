@@ -5,7 +5,7 @@
     @if (GameConfiguration.GetValue<bool>("SharedAuth:Enabled")) { <a class="credit-pill" href="/sso/game">Game</a><a class="credit-pill" href="/Admin/GameUsage">Game usage</a> }
     <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="@Text["Payments.RoundedBalance"]">
         <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
-        <span>@Text["Payments.CreditCount", Model.AvailableCredits]</span>
+        <span data-credit-balance data-credit-label="@Text["Payments.CreditCount", "__COUNT__"]">@Text["Payments.CreditCount", Model.AvailableCredits]</span>
     </a>
     <a class="icon-button" asp-controller="Admin" asp-action="AiCredits" aria-label="@Text["Payments.AiCreditAdmin"]" title="@Text["Payments.AiCreditAdmin"]">
         <span class="material-symbols-outlined">settings</span>
@@ -15,6 +15,6 @@ else
 {
     <span class="credit-pill" title="@Text["Payments.RoundedBalance"]">
         <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
-        <span>@Text["Payments.CreditCount", Model.AvailableCredits]</span>
+        <span data-credit-balance data-credit-label="@Text["Payments.CreditCount", "__COUNT__"]">@Text["Payments.CreditCount", Model.AvailableCredits]</span>
     </span>
 }

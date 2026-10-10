@@ -1,0 +1,48 @@
+@{
+    ViewData["Title"] = "Talk with Rain";
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/avatar.css" asp-append-version="true" />
+}
+<section class="avatar-page" id="avatar-page">
+    @Html.AntiForgeryToken()
+    <header class="avatar-heading">
+        <div><p class="avatar-eyebrow">YOUR CONVERSATION SPACE <span>ADMIN PREVIEW</span></p><h1>A little conversation.<br />A lot of possibility.</h1></div>
+        <p>Find your words with Rain.<br />Talk about your day, follow a curiosity,<br />or bring a quiz to life.</p>
+    </header>
+    <div class="avatar-workspace">
+        <div class="avatar-stage">
+            <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
+            <div class="avatar-stage-top"><span class="avatar-name">Rain <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
+            <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
+            <div class="avatar-caption" id="avatar-caption" aria-live="polite">A conversation starts with hello.</div>
+            <div class="avatar-controls">
+                <button type="button" id="avatar-talk" disabled>Hold to talk <kbd>Space</kbd></button>
+                <button type="button" id="avatar-mute" disabled aria-pressed="false">Mute</button>
+                <button type="button" id="avatar-end" disabled>End</button>
+            </div>
+            <p class="avatar-listening-hint" id="avatar-hint">Your microphone stays off until you start.</p>
+        </div>
+        <aside class="avatar-settings" aria-label="Conversation settings">
+            <div class="avatar-settings-heading"><span class="avatar-step">01</span><h2>Make it your conversation</h2></div>
+            <label for="avatar-quiz">What brings you here?</label>
+            <select id="avatar-quiz"><option value="">Just a conversation</option></select>
+            <p class="avatar-help">Choose a quiz to practice its words and sentences naturally. No scores, no pressure.</p>
+            <label for="avatar-language">Conversation language</label><select id="avatar-language"></select>
+            <fieldset class="avatar-mode"><legend>How would you like to talk?</legend>
+                <label><input type="radio" name="avatar-mode" value="push-to-talk" checked /><span>Push to talk<small>Hold the button when you speak</small></span></label>
+                <label><input type="radio" name="avatar-mode" value="hands-free" /><span>Hands-free<small>Speak naturally, interrupt anytime</small></span></label>
+            </fieldset>
+            <div class="avatar-pricing"><h3>A little credit, as you go</h3><p id="avatar-rates">Loading your rates…</p><p class="avatar-help">Recognition, replies, and speech are charged by usage. Hands-free listening includes silence sent to recognition. Submitted usage still counts if you interrupt.</p><p class="avatar-balance">Available <strong id="avatar-balance">—</strong> credits</p></div>
+            <button class="avatar-start" id="avatar-start" type="button" disabled>Start a conversation <span aria-hidden="true">↗</span></button>
+            <p class="avatar-notice" id="avatar-notice" role="alert"></p>
+            <p class="avatar-privacy">A fresh start, every time. Conversations and audio aren’t saved in GlobeGlotter.</p>
+        </aside>
+    </div>
+    <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">This conversation · 0 credits</p><details><summary>Character credits</summary><p>Rain Rig (CC) Blender Foundation · <a href="https://studio.blender.org/characters/rain/v3/" target="_blank" rel="noopener">Blender Studio</a> · CC BY 4.0. Adapted for realtime web animation.</p></details></div>
+    <details class="avatar-transcript"><summary>Conversation captions</summary><ol id="avatar-transcript"></ol></details>
+</section>
+@section Scripts {
+    <script type="module" src="~/js/avatar/avatar.js" asp-append-version="true"></script>
+}

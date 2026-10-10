@@ -1,3 +1,5 @@
+@inject Glosify.Services.Auth.AdministratorAccess AvatarAdminAccess
+@inject Microsoft.Extensions.Options.IOptions<Glosify.Services.Avatar.AvatarOptions> AvatarSettings
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
 @inject IStripePaymentService StripePayments
@@ -155,6 +157,10 @@
             </div>
 
             <nav class="app-nav">
+                @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
+                {
+                    <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Avatar <small>Preview</small></a>
+                }
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
                     @(isFreestyle ? "Learning mode" : Text["Nav.LanguageSelector"])
@@ -263,6 +269,10 @@
         </main>
     </div>
     <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
+        @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
+        {
+            <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face")<span>Avatar</span></a>
+        }
         <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
             @NavIcon("language")
             <span>@(isFreestyle ? "Mode" : Text["Nav.Language"])</span>

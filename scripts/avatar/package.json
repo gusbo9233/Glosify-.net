@@ -1,0 +1,15 @@
+{
+  "name": "glosify-avatar-build",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.25.0",
+    "@babylonjs/loaders": "9.25.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}
