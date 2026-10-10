@@ -1,6 +1,8 @@
 @model Glosify.ViewComponents.AiCreditPillModel
+@inject Microsoft.Extensions.Configuration.IConfiguration GameConfiguration
 @if (Model.IsAdmin)
 {
+    @if (GameConfiguration.GetValue<bool>("SharedAuth:Enabled")) { <a class="credit-pill" href="/sso/game">Game</a><a class="credit-pill" href="/Admin/GameUsage">Game usage</a> }
     <a class="credit-pill" asp-controller="Admin" asp-action="AiCredits" title="@Text["Payments.RoundedBalance"]">
         <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
         <span>@Text["Payments.CreditCount", Model.AvailableCredits]</span>

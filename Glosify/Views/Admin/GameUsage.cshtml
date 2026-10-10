@@ -1,0 +1,25 @@
+@model IReadOnlyList<Glosify.Models.Entities.GameUsageEvent>
+@{ ViewData["Title"] = "Game usage"; }
+<h1>Game usage</h1>
+<p><a href="/sso/game">Open game</a> · <a href="/Admin/AiCredits">AI credits</a></p>
+<p>Estimated provider costs in USD. No Glosify credits are deducted. These estimates use public list rates unless account rates are configured; subscription allowances and temporary promotions are excluded.</p>
+<form method="get">
+    <label>From (UTC) <input name="from" type="datetime-local" value="@(((DateTimeOffset)ViewData["From"]!).UtcDateTime.ToString("yyyy-MM-ddTHH:mm"))" /></label>
+    <label>To (UTC) <input name="to" type="datetime-local" value="@(((DateTimeOffset)ViewData["To"]!).UtcDateTime.ToString("yyyy-MM-ddTHH:mm"))" /></label>
+    @foreach (var field in new[] { "admin", "provider", "model", "operation", "sessionId" })
+    { <label>@field <input name="@field" value="@Context.Request.Query[field]" /></label> }
+    <button type="submit">Filter</button>
+</form>
+<p><strong>Estimated total: $@(((decimal)ViewData["EstimatedUsd"]!).ToString("F6"))</strong> · @ViewData["Sessions"] sessions · @ViewData["ActiveSeconds"] active seconds</p>
+<p>@ViewData["Unpriced"] unpriced or incomplete calls · @ViewData["Pending"] pending calls. Latest received: @(ViewData["Latest"] ?? "No usage received"). Delivery can lag while the game reconnects.</p>
+<h2>Costs by provider, model and operation</h2>
+<table class="table"><thead><tr><th>Provider</th><th>Model</th><th>Operation</th><th>Calls</th><th>Unpriced</th><th>Estimated USD</th></tr></thead>
+<tbody>@foreach (var group in (IReadOnlyList<Glosify.Controllers.GameUsageBreakdown>)ViewData["Breakdown"]!) {
+<tr><td>@group.Provider</td><td>@group.Model</td><td>@group.Operation</td><td>@group.Calls</td><td>@group.Unpriced</td><td>@group.EstimatedUsd.ToString("F6")</td></tr>
+}</tbody></table>
+<p>Showing the latest 500 events; totals cover all matching events. Filter by session to inspect a launch and its calls.</p>
+<div style="overflow-x:auto"><table class="table">
+<thead><tr><th>Time (UTC)</th><th>Admin / session</th><th>Provider / model</th><th>Operation</th><th>Outcome</th><th>Input / cached / cache write / output tokens</th><th>Audio seconds / characters</th><th>Measurement</th><th>Estimated USD</th></tr></thead>
+<tbody>@foreach (var e in Model) {
+<tr><td>@e.StartedAt.UtcDateTime</td><td>@e.UserId<br /><a href="@Url.Action("Index", "GameUsageAdmin", new { sessionId = e.SessionId, from = ((DateTimeOffset)ViewData["From"]!).ToString("O"), to = ((DateTimeOffset)ViewData["To"]!).ToString("O") })">@e.SessionId</a></td><td>@e.Provider / @e.Model<br />@e.Endpoint · @e.ServiceTier</td><td>@e.Operation</td><td>@e.Outcome</td><td>@e.InputTokens / @e.CachedInputTokens / @e.CacheWriteTokens / @e.OutputTokens</td><td>@e.AudioSeconds / @e.Characters</td><td>@e.Measurement</td><td>@(e.EstimatedUsd?.ToString("F8") ?? "Unknown")</td></tr>
+}</tbody></table></div>
