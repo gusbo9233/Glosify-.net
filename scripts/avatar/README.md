@@ -74,8 +74,10 @@ is Apache-2.0 licensed; linked license comments accompany the bundle.
 
 ## Rebuild Rain
 
-Rain now uses realistic adult anatomy and CC0 MakeHuman skin, eyes, long hair and
-clothing, with original portrait styling. Asset attribution and license are distributed
+Rain uses CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
+portrait styling. Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
+and page credits include attribution and the source link. The core CC0 dedication
+does not apply to this hair. Asset attribution and license are distributed
 with the model. `human-source.json` pins the upstream revision, download URLs and hashes.
 Prepare the listed files into an external source directory (archive files under `system/`):
 
@@ -88,7 +90,10 @@ blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
 The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
 The export bakes jaw, blink, smile, nod and turn into morph targets and embeds textures.
-The resting smile, cheeks, eyelids and speaking mouth use the authored CC0 face pose
+Facial sculpt targets soften the jaw and lips. The hair is weighted to the head,
+avoiding shoulder-driven kinks during posing. The face retains all source bone weights
+before baking so facial expressions are not truncated to four influences.
+The resting smile, cheeks, eyebrows, eyelids and speaking mouth use the authored CC0 face pose
 units in `face-poses.json`, whose source revision is recorded alongside the poses. Runtime mouth
 movement follows output audio amplitude and spectrum; it is not phoneme-exact lip sync.
 

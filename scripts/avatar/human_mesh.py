@@ -111,9 +111,10 @@ def build_character(*, targets, height_metres, asset_specs, skin_path):
             w={};ids,factors,_=maps[index]
             for i,factor in zip(ids,factors):
                 for bone,value in weights[i].items(): w[bone]=w.get(bone,0)+value*factor
-            top=sorted(((n,v) for n,v in w.items() if v>0),key=lambda p:-p[1])[:4]
-            total=sum(v for _,v in top)
-            for bone,value in top: groups[bone].add([new],value/total,'REPLACE')
+            # Morphs are baked before export, so preserve every facial influence.
+            influences=[(n,v) for n,v in w.items() if v>0]
+            total=sum(v for _,v in influences)
+            for bone,value in influences: groups[bone].add([new],value/total,'REPLACE')
         modifier=ob.modifiers.new('Skin deformation','ARMATURE');modifier.object=rig
         return ob
     system=SOURCE/'system'

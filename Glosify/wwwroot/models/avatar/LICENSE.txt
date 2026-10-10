@@ -1,12 +1,20 @@
 Rain portrait for GlobeGlotter
 
-Anatomy, skin, eyes, hair, clothing and facial pose references: MakeHuman Community.
+Anatomy, skin, eyes, clothing and facial pose references: MakeHuman Community.
 CC0 1.0 Universal — see MAKEHUMAN-LICENSE.md.
-Pinned source provenance and hashes: scripts/avatar/human-source.json.
 https://www.makehumancommunity.org/
 
-Adaptations: portrait proportions, chestnut materials, ivory fabric, hair styling,
-relaxed posture, facial expression morphs and optimized web export.
+Hazel Hair (elvs_hazel_hair) by Elvaerwyn, licensed CC-BY by its author.
+Original asset: https://www.makehumancommunity.org/node/2816
+Source pack and license listing:
+https://static.makehumancommunity.org/assets/assetpacks/hair02.html
+Hair modifications: chestnut material, smoothed mesh and head attachment,
+portrait fitting, baked movement morphs, optimized glTF export.
+The CC0 dedication for MakeHuman core assets does not apply to this hair.
+
+Pinned source provenance and hashes: scripts/avatar/human-source.json.
+Other adaptations: portrait proportions, ivory fabric, relaxed posture,
+facial expression morphs and optimized web export.
 Original adaptation code: scripts/avatar/build-rain.py and human_mesh.py.
 
 Courtyard background: AI-generated for GlobeGlotter.

@@ -1,4 +1,4 @@
-"""Build Rain's realistic adult avatar from CC0 MakeHuman source assets.
+"""Build Rain's realistic adult avatar from CC0 MakeHuman anatomy and attributed CC-BY hair.
 Blender -b --factory-startup -P build-rain.py -- SOURCE_DIRECTORY OUTPUT.glb
 See README.md for the pinned source manifest and asset preparation.
 """
@@ -12,14 +12,28 @@ args = sys.argv[sys.argv.index('--') + 1:]
 human.SOURCE = Path(args[0]).resolve()
 out = Path(args[1]).resolve()
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
-rig = human.build_character(targets=['caucasian-female-young.target', 'universal-female-young-averagemuscle-averageweight.target'],
+sculpt = [
+    ('caucasian-female-young.target', 1),
+    ('universal-female-young-averagemuscle-averageweight.target', 1),
+    ('head-oval.target', .65), ('chin-width-decr.target', .3),
+    ('chin-height-decr.target', .22), ('chin-bones-decr.target', .3),
+    ('mouth-upperlip-volume-incr.target', .12), ('mouth-lowerlip-volume-incr.target', .2)
+]
+for side in ['l', 'r']:
+    sculpt += [(side+'-cheek-bones-incr.target', .15), (side+'-eye-scale-incr.target', .08)]
+rig = human.build_character(targets=sculpt,
     height_metres=1.72, skin_path=human.SOURCE/'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png',
     asset_specs=[('Ivory blouse', 'clothes/female_elegantsuit01', 'female_elegantsuit01', .75, False),
-                 ('Chestnut hair', 'hair/long01', 'long01', .5, True),
+                 ('Chestnut hair', 'hair/elvs_hazel_hair', 'elvs_hazel_hair', .5, True),
                  ('Eyebrows', 'eyebrows/eyebrow001', 'eyebrow001', .85, True),
                  ('Eyelashes', 'eyelashes/eyelashes01', 'eyelashes01', .8, True),
                  ('Teeth', 'teeth/teeth_base', 'teeth_base', .4, False),
                  ('Tongue', 'tongue/tongue01', 'tongue01', .65, False)])
+
+# Hair follows the head, not the shoulders sampled by generic clothing weights.
+hair = bpy.data.objects['Chestnut hair']
+hair.vertex_groups.clear()
+hair.vertex_groups.new(name='head').add(list(range(len(hair.data.vertices))), 1, 'REPLACE')
 
 def rotate(name, axis, angle):
     bone = rig.pose.bones[name]
@@ -48,27 +62,38 @@ def expression(name, weight=1):
     bpy.context.view_layer.update()
 
 for side in ['Left','Right']:
-    expression('Mouth'+side+'PullUp',.65)
-    expression(side+'CheekUp',.20)
-rotate('head',(0,1,0),.018)
-
-# Frame the face with long side locks falling over the shoulders.
-for vertex in bpy.data.objects['Chestnut hair'].data.vertices:
-    v=vertex.co
-    length=max(0,min(1,(1.62-v.z)/.20))
-    side=max(0,min(1,(abs(v.x)-.06)/.045))
-    v.y-=.34*length*side
-    v.x+=math.sin((v.z-1.05)*12+(0 if v.x>0 else .7))*.008*length*side
+    expression('Mouth'+side+'PullUp',.70)
+    expression('Mouth'+side+'PullSide',.10)
+    expression(side+'CheekUp',.18)
+    expression(side+'InnerBrowUp',.08)
+    expression(side+'OuterBrowUp',.12)
+expression('UpperLipUp',.40)
+expression('lowerLipDown',.22)
+expression('JawDrop',.10)
+rotate('head',(0,1,0),.025)
 
 # Keep high-resolution skin, soft highlights and textured chestnut hair.
-for name, tint in [('Skin', (.94,.86,.76)), ('Chestnut hair', (.95,.75,.55)), ('Eyebrows', (.24,.13,.065))]:
+for name, tint in [('Skin', (.94,.86,.76)), ('Eyebrows', (.42,.29,.19))]:
     mat = bpy.data.materials[name]; nodes=mat.node_tree.nodes; links=mat.node_tree.links
     bsdf=nodes.get('Principled BSDF'); tex=next(n for n in nodes if n.type=='TEX_IMAGE')
     mix=nodes.new('ShaderNodeMix'); mix.data_type='RGBA'; mix.blend_type='MULTIPLY'; mix.inputs['Factor'].default_value=1
     links.new(tex.outputs['Color'],mix.inputs[6]); mix.inputs[7].default_value=(*tint,1); links.new(mix.outputs[2],bsdf.inputs['Base Color'])
-    bsdf.inputs['Roughness'].default_value=.58 if name in ['Skin','Chestnut hair'] else .8
-    if name=='Chestnut hair': bsdf.inputs['Specular IOR Level'].default_value=.16
+    bsdf.inputs['Roughness'].default_value=.58 if name=='Skin' else .8
     if name=='Skin': bsdf.inputs['Subsurface Weight'].default_value=.06
+
+# Retain strand normal/alpha maps, with a uniform warm brown base instead of red dye.
+hair_material=bpy.data.materials['Chestnut hair']
+hair_shader=hair_material.node_tree.nodes.get('Principled BSDF')
+for link in list(hair_shader.inputs['Base Color'].links): hair_material.node_tree.links.remove(link)
+hair_shader.inputs['Base Color'].default_value=(.045,.022,.013,1)
+hair_shader.inputs['Specular IOR Level'].default_value=.3
+hair_shader.inputs['Roughness'].default_value=.46
+
+eye=bpy.data.materials['Brown eyes'].node_tree.nodes.get('Principled BSDF')
+eye.inputs['Roughness'].default_value=.14
+eye.inputs['Specular IOR Level'].default_value=.5
+eye.inputs['Coat Weight'].default_value=.45
+eye.inputs['Coat Roughness'].default_value=.08
 
 # A quiet ivory fabric keeps attention on the face; retain the authored cloth normal map.
 blouse=bpy.data.materials['Ivory blouse']; bsdf=blouse.node_tree.nodes.get('Principled BSDF')
@@ -121,7 +146,7 @@ bpy.context.view_layer.update()
 bpy.ops.object.select_all(action='DESELECT')
 for _,obj in exported:
     obj.select_set(True)
-    obj['source']='MakeHuman community CC0 assets; adult portrait adapted for GlobeGlotter'
+    obj['source']='MakeHuman CC0 anatomy; Hazel Hair by Elvaerwyn (CC-BY); adapted for GlobeGlotter. See LICENSE.txt.'
 bpy.context.view_layer.objects.active=exported[0][1]
 out.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=False,
@@ -132,7 +157,7 @@ if len(args)>2:
     camera_data=bpy.data.cameras.new('Portrait'); camera=bpy.data.objects.new('Portrait',camera_data); bpy.context.scene.collection.objects.link(camera)
     camera.location=(0,-2.5,1.47); target=Vector((0,-.015,1.40)); camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler(); camera_data.type='ORTHO'; camera_data.ortho_scale=.9
     scene=bpy.context.scene; scene.camera=camera
-    for name,location,energy,size,color in [('Key',(-1,-2,3),110,2.5,(1,.91,.81)),('Fill',(1,-1.5,2),60,2,(.85,.91,1)),('Rim',(0,1,2.3),90,1.5,(1,.88,.7))]:
+    for name,location,energy,size,color in [('Key',(-1,-2,3),110,2.5,(1,.91,.81)),('Fill',(1,-1.5,2),60,2,(.85,.91,1)),('Rim',(0,1,2.3),25,2.5,(1,.88,.7))]:
         data=bpy.data.lights.new(name,'AREA'); data.energy=energy; data.shape='DISK'; data.size=size; data.color=color
         obj=bpy.data.objects.new(name,data);scene.collection.objects.link(obj);obj.location=location;obj.rotation_euler=(target-obj.location).to_track_quat('-Z','Y').to_euler()
     scene.world.color=(.18,.18,.18);scene.render.engine='CYCLES';scene.cycles.samples=32

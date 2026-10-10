@@ -1,5 +1,5 @@
 {
-  "license": "CC0-1.0",
+  "license": "CC0-1.0 core assets; CC-BY hair by Elvaerwyn",
   "repositoryRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
   "packUrl": "https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
   "packSha256": "b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107",
@@ -68,26 +68,6 @@
       "path": "system/clothes/female_elegantsuit01/female_elegantsuit01_normal.png",
       "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01_normal.png",
       "sha256": "ae3650bce6678cd67d025ab70e68b22683176aeaabc06d8e5b2129af99c762e9"
-    },
-    {
-      "path": "system/hair/long01/long01.mhclo",
-      "archivePath": "hair/long01/long01.mhclo",
-      "sha256": "94ecbebfd834da2cbee2ce90b730972590eb22a252ecd9592038ea736e063646"
-    },
-    {
-      "path": "system/hair/long01/long01.mhmat",
-      "archivePath": "hair/long01/long01.mhmat",
-      "sha256": "74ec88267e679d316f8037a074511ffc887b27e198ea381d0ae4a3f180f96760"
-    },
-    {
-      "path": "system/hair/long01/long01.obj",
-      "archivePath": "hair/long01/long01.obj",
-      "sha256": "7f1d6dadbdf9e96435251955d6657e77ea5433c9bc7c85a5c5f5e4eae0cb9a8c"
-    },
-    {
-      "path": "system/hair/long01/long01_diffuse.png",
-      "archivePath": "hair/long01/long01_diffuse.png",
-      "sha256": "e8dc25d90f8f62467e8630420e1240a400d070054fb7c3f1d3f7bf3e457d6c2c"
     },
     {
       "path": "system/eyebrows/eyebrow001/eyebrow001.mhclo",
@@ -268,6 +248,96 @@
       "path": "system/eyes/materials/lightblue_eye.png",
       "archivePath": "eyes/materials/lightblue_eye.png",
       "sha256": "687c8f6d95a8550bcd4a34158f415d6bb376c0bb32e67d127bbb51e5fa469eef"
+    },
+    {
+      "path": "head-oval.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-oval.target",
+      "sha256": "a17cd3a600588a344babe520fbd4d4edcb096db3328051fe692dfb997a1a678d"
+    },
+    {
+      "path": "chin-width-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-width-decr.target",
+      "sha256": "ac081bd1652c203fc8973f20988a868a423a49f1fe6449cb974727fd46c26af1"
+    },
+    {
+      "path": "chin-height-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-height-decr.target",
+      "sha256": "acf83b5b7f2d6665f19d0d91205472878c23ab78b3f43d48420f75afe8e82818"
+    },
+    {
+      "path": "chin-bones-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-bones-decr.target",
+      "sha256": "fc54c1572b2562b095e5a5e48882bab16c1b24e64b106b2d54e6be64ce20121c"
+    },
+    {
+      "path": "mouth-upperlip-volume-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-upperlip-volume-incr.target",
+      "sha256": "b124cbd9b9be318264f61a143da603b42e0357ed92b4b6afd1b31a83daaf8568"
+    },
+    {
+      "path": "mouth-lowerlip-volume-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-lowerlip-volume-incr.target",
+      "sha256": "dbdaf045b00c67bf8672d53bc8cf94eb3e3dea316de6fe18a278f7080564c65d"
+    },
+    {
+      "path": "l-cheek-bones-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-bones-incr.target",
+      "sha256": "244ffa39d2d2db94ff15130719346b4cae2236bf2a309c5682eac352da06be50"
+    },
+    {
+      "path": "r-cheek-bones-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-bones-incr.target",
+      "sha256": "a393f67acce21568ab832091daadab267685d464492647cb0c4e8cb5af58c4c9"
+    },
+    {
+      "path": "l-eye-scale-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-scale-incr.target",
+      "sha256": "f35550dc3170ca1c0aacae0b598ca139e4f1f913f2ccea146ec6ea5b4e050dbb"
+    },
+    {
+      "path": "r-eye-scale-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-scale-incr.target",
+      "sha256": "e1f4cb48575b60a46589635b99a8b87587ba82d7524a8ac1445ace0ba002e918"
+    },
+    {
+      "path": "system/hair/elvs_hazel_hair/elvs_hazel_hair.mhclo",
+      "archivePath": "hair/elvs_hazel_hair/elvs_hazel_hair.mhclo",
+      "pack": "hazel-hair",
+      "sha256": "c15deca1de28d611c4df52f207a760da525377975f360d6d5aa47f003b2462af"
+    },
+    {
+      "path": "system/hair/elvs_hazel_hair/elvs_hazel_hair.mhmat",
+      "archivePath": "hair/elvs_hazel_hair/elvs_hazel_hair.mhmat",
+      "pack": "hazel-hair",
+      "sha256": "061b9436db7fd256f676f5de25590876f09719fd53dfa3156ff054a28fd26aca"
+    },
+    {
+      "path": "system/hair/elvs_hazel_hair/elvs_hazel_hair.obj",
+      "archivePath": "hair/elvs_hazel_hair/elvs_hazel_hair.obj",
+      "pack": "hazel-hair",
+      "sha256": "1b93d28a7e901638bf83eb765ac61993495ab42669cae37c09ae3c8ffe8eff12"
+    },
+    {
+      "path": "system/hair/elvs_hazel_hair/elvs_hazel_hair_diffuse.png",
+      "archivePath": "hair/elvs_hazel_hair/elvs_hazel_hair_diffuse.png",
+      "pack": "hazel-hair",
+      "sha256": "ce59988a3f6590ae04badffd45bc51cb853fadfbfdaeddb6c04bff95242e21cc"
+    },
+    {
+      "path": "system/hair/elvs_hazel_hair/elvs_hazel_hair_normal.png",
+      "archivePath": "hair/elvs_hazel_hair/elvs_hazel_hair_normal.png",
+      "pack": "hazel-hair",
+      "sha256": "9f2dea479cfb98e24015ad94e412ddccd197bc9d795a8b642bf501d7fc6ce903"
+    }
+  ],
+  "additionalPacks": [
+    {
+      "id": "hazel-hair",
+      "url": "https://files2.makehumancommunity.org/asset_packs/hair02/hair02_ccby.zip",
+      "sha256": "c681e5efd37df4007a52253a8d071aedbfe3b614f199d8dae4ae76d5bd7d95c9",
+      "license": "CC-BY",
+      "author": "Elvaerwyn",
+      "source": "https://www.makehumancommunity.org/node/2816"
     }
   ]
 }
