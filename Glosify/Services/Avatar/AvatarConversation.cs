@@ -108,7 +108,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
                 await Send(new { type = "thinking", turnId = id });
                 var ai = scope.ServiceProvider.GetRequiredService<IGenerativeAiClient>();
                 var prompt = $"""
-                    You are Rain, a warm, curious spoken conversation partner. Speak {session.Language.Name}.
+                    You are {session.Character.Name}, a warm, curious spoken conversation partner. Speak {session.Language.Name}.
                     Discuss the user's chosen topics naturally. Keep replies to 1–3 short sentences, under 600 characters,
                     with plain spoken text and no markdown. Adapt to the learner's ability. Never claim to be human.
                     In practice mode, weave the supplied vocabulary into natural questions and gently correct relevant mistakes.
@@ -131,7 +131,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             catch (OperationCanceledException) when (stopToken.IsCancellationRequested) { }
             catch (OperationCanceledException) when (deadline.IsCancellationRequested)
             {
-                await Error(new AvatarException(504, "Rain took too long to respond. Please retry the microphone."));
+                await Error(new AvatarException(504, $"{session.Character.Name} took too long to respond. Please retry the microphone."));
             }
             catch (Exception ex)
             {

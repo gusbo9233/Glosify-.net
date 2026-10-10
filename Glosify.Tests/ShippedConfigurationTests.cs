@@ -1,6 +1,8 @@
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Payments;
+using Glosify.Services.Avatar;
+using Glosify.Services.Language;
 using Glosify.Services.RealtimeTranslation;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +35,32 @@ public sealed class ShippedConfigurationTests
                 package, "standard", "1,000 credits", 1000, "price_1U4J8rISaVlY8AHnIK7euJCd", 10900),
             package => AssertPackage(
                 package, "value", "5,000 credits", 5000, "price_1U4J8uISaVlY8AHnN0SZZauF", 52900));
+    }
+
+    [Fact]
+    public void AvatarShipsCompleteCharacterCastingWithYoungerRain()
+    {
+        using var factory = new WebApplicationFactory<Program>();
+        var environment = factory.Services.GetRequiredService<IHostEnvironment>();
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile(Path.Combine(environment.ContentRootPath, "appsettings.json"))
+            .Build();
+        var options = configuration.GetSection("Avatar").Get<AvatarOptions>()!;
+        var languages = QuizLanguageCatalog.LanguageLearning.Select(x => x.Code).Order().ToArray();
+
+        Assert.True(options.Enabled);
+        Assert.Equal(languages, options.VoiceIds.Keys.Order().ToArray());
+        Assert.Equal(languages, options.MaleVoiceIds.Keys.Order().ToArray());
+        Assert.All(languages, code =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(options.VoiceIds[code]));
+            Assert.False(string.IsNullOrWhiteSpace(options.MaleVoiceIds[code]));
+            Assert.NotEqual(options.VoiceIds[code], options.MaleVoiceIds[code]);
+        });
+        Assert.Equal("RwZADRjd8b3vxKTsTtLP", options.VoiceIds["en"]); // Isabel, teen tone.
+        Assert.Equal("6awt6FKyZGV0HyQEwisX", options.VoiceIds["ja"]); // Suzu, teen tone.
+        Assert.Equal("cLAH1kXlkAivJHxCW601", options.VoiceIds["sv"]); // Olivia, youthful Swedish.
+        Assert.Equal("9IzcwKmvwJcw58h3KnlH", options.MaleVoiceIds["en"]);
     }
 
     [Fact]

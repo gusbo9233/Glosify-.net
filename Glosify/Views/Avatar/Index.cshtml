@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Talk with Rain";
+    ViewData["Title"] = "Avatar conversation";
     Layout = "~/Views/Shared/_AppLayout.cshtml";
 }
 @section Styles {
@@ -9,14 +9,14 @@
     @Html.AntiForgeryToken()
     <header class="avatar-heading">
         <div><p class="avatar-eyebrow">YOUR CONVERSATION SPACE <span>ADMIN PREVIEW</span></p><h1>A little conversation.<br />A lot of possibility.</h1></div>
-        <p>Find your words with Rain.<br />Talk about your day, follow a curiosity,<br />or bring a quiz to life.</p>
+        <p>Find your words together.<br />Talk about your day, follow a curiosity,<br />or bring a quiz to life.</p>
     </header>
-    <div class="avatar-workspace">
+    <div class="avatar-workspace" id="avatar-workspace">
         <div class="avatar-stage">
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
-            <div class="avatar-stage-top"><span class="avatar-name">Rain <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
+            <div class="avatar-stage-top"><span class="avatar-name"><span id="avatar-name">Rain</span> <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
-            <div class="avatar-caption" id="avatar-caption" aria-live="polite">A conversation starts with hello.</div>
+            <div class="avatar-caption" id="avatar-caption" aria-live="polite" hidden></div>
             <div class="avatar-controls">
                 <button type="button" id="avatar-talk" disabled>Hold to talk <kbd>Space</kbd></button>
                 <button type="button" id="avatar-mute" disabled aria-pressed="false">Mute</button>
@@ -24,12 +24,22 @@
             </div>
             <p class="avatar-listening-hint" id="avatar-hint">Your microphone stays off until you start.</p>
         </div>
-        <aside class="avatar-settings" aria-label="Conversation settings">
-            <div class="avatar-settings-heading"><span class="avatar-step">01</span><h2>Make it your conversation</h2></div>
+        <button class="avatar-settings-toggle" id="avatar-settings-toggle" type="button" aria-controls="avatar-settings" aria-expanded="true" aria-label="Close conversation settings" title="Close settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+        <aside class="avatar-settings" id="avatar-settings" aria-label="Conversation settings">
+            <div class="avatar-settings-heading"><span class="avatar-step">MAKE IT YOURS</span><h2>Conversation settings</h2></div>
+            <label for="avatar-character">Conversation partner</label>
+            <select id="avatar-character" aria-describedby="avatar-character-help">
+                <option value="rain">Rain · female voice</option>
+                <option value="rowan">Rowan · male voice</option>
+            </select>
+            <p class="avatar-help" id="avatar-character-help">Choose your partner before starting a conversation.</p>
             <label for="avatar-quiz">What brings you here?</label>
             <select id="avatar-quiz"><option value="">Just a conversation</option></select>
             <p class="avatar-help">Choose a quiz to practice its words and sentences naturally. No scores, no pressure.</p>
-            <label for="avatar-language">Conversation language</label><select id="avatar-language"></select>
+            <p class="avatar-help" id="avatar-language">Rain follows your current learning language.</p>
+            <p class="avatar-help avatar-voice" id="avatar-voice">A female voice matched to your learning language.</p>
             <fieldset class="avatar-mode"><legend>How would you like to talk?</legend>
                 <label><input type="radio" name="avatar-mode" value="push-to-talk" checked /><span>Push to talk<small>Hold the button when you speak</small></span></label>
                 <label><input type="radio" name="avatar-mode" value="hands-free" /><span>Hands-free<small>Speak naturally, interrupt anytime</small></span></label>
@@ -40,7 +50,7 @@
             <p class="avatar-privacy">A fresh start, every time. Conversations and audio aren’t saved in GlobeGlotter.</p>
         </aside>
     </div>
-    <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">This conversation · 0 credits</p><details><summary>Character credits</summary><p>Rain Rig (CC) Blender Foundation · <a href="https://studio.blender.org/characters/rain/v3/" target="_blank" rel="noopener">Blender Studio</a> · CC BY 4.0. Adapted for realtime web animation.</p></details></div>
+    <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">This conversation · 0 credits</p><details><summary>Character credits</summary><p>Characters adapted from <a href="https://www.makehumancommunity.org/" target="_blank" rel="noopener">MakeHuman Community</a> CC0 anatomy and Rowan’s short hair. Rain’s <a href="https://www.makehumancommunity.org/node/2816" target="_blank" rel="noopener">Hazel Hair by Elvaerwyn</a> (CC-BY), adapted for this portrait. Original GlobeGlotter styling and animation. Library rendered with <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> CC0 models and textures; globe map from NASA Blue Marble (Reto Stöckli, NASA Goddard Space Flight Center); AI-generated courtyard view.</p></details></div>
     <details class="avatar-transcript"><summary>Conversation captions</summary><ol id="avatar-transcript"></ol></details>
 </section>
 @section Scripts {

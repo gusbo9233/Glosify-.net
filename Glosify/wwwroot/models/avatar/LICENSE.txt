@@ -1,9 +1,27 @@
-Rain Rig (CC) Blender Foundation | https://studio.blender.org/characters/rain/v3/
-Source: Rain v3.3 (rain_v3.2.blend), Blender Studio, August 2025.
-License: Creative Commons Attribution 4.0 International
-https://creativecommons.org/licenses/by/4.0/
+Rain and Rowan portraits for GlobeGlotter
 
-Adapted for GlobeGlotter: evaluated mesh export, simplified PBR materials,
-compressed textures, and baked facial deformation poses. This adaptation is
-not endorsed by the original creators. The model remains available under
-CC BY 4.0. Attribution is also displayed on the Avatar page.
+Anatomy, skin, eyes, clothing and facial pose references: MakeHuman Community.
+CC0 1.0 Universal — see MAKEHUMAN-LICENSE.md.
+https://www.makehumancommunity.org/
+
+Rowan's short02 hair is a MakeHuman core asset under CC0.
+
+Rain's Hazel Hair (elvs_hazel_hair) by Elvaerwyn, licensed CC-BY by its author.
+Original asset: https://www.makehumancommunity.org/node/2816
+Source pack and license listing:
+https://static.makehumancommunity.org/assets/assetpacks/hair02.html
+Hair modifications: chestnut material, smoothed mesh and head attachment,
+portrait fitting, baked movement morphs, optimized glTF export.
+The CC0 dedication for MakeHuman core assets does not apply to this hair.
+
+Pinned source provenance and hashes: scripts/avatar/human-source.json.
+Other adaptations: portrait proportions, ivory fabric, relaxed posture,
+facial expression morphs and optimized web export.
+Forest-green vest, ivory collar, ribbon and embroidered GG patch: original
+GlobeGlotter geometry and fabric texture, fitted to the MakeHuman blouse.
+Rowan's notched coat lapels, shirt collar, necktie and GG shield embroidery:
+original GlobeGlotter geometry fitted to MakeHuman clothing.
+Original adaptation code: scripts/avatar/build-rain.py, human_mesh.py and
+academia_outfit.py.
+
+Courtyard background: AI-generated for GlobeGlotter.
