@@ -48,7 +48,7 @@ export class AvatarAudio {
     }
     stop() {
         this.generation++;
-        for (const source of this.sources) { try { source.stop(); } catch {} }
+        for (const source of this.sources) { try { source.stop(); } catch { /* Playback can already have ended. */ } }
         this.sources.clear(); this.endAt = 0;
     }
     async close() {

@@ -79,4 +79,4 @@
 #*.RTF   diff=astextplain
 
 # Generated Babylon viewer includes shader string literals; review scene.source.js.
-Glosify/wwwroot/js/avatar/scene.js linguist-generated=true -diff
+Glosify/wwwroot/js/avatar/scene.min.js linguist-generated=true -diff

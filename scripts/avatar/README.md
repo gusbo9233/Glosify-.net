@@ -52,7 +52,7 @@ npm ci --ignore-scripts
 npm run build
 ```
 
-Commit `scene.js` and `scene.js.LEGAL.txt` with source changes. Dependencies are pinned
+Commit `scene.min.js` and `scene.min.js.LEGAL.txt` with source changes. Dependencies are pinned
 in the lockfile; the generated bundle is loaded only on the avatar page. Babylon.js
 is Apache-2.0 licensed; linked license comments accompany the bundle.
 

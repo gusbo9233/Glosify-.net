@@ -1,3 +1,4 @@
+/* global AudioWorkletProcessor, sampleRate, registerProcessor */
 // Mono PCM16 at 16 kHz in 200 ms frames, independent of the hardware sample rate.
 class AvatarCapture extends AudioWorkletProcessor {
     constructor() {

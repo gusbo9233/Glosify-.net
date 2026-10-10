@@ -1,5 +1,5 @@
 import { AvatarAudio } from './audio.js';
-import { createAvatar } from './scene.js';
+import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
