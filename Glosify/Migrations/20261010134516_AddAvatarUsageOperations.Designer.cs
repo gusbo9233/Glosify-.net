@@ -4,6 +4,7 @@ using Glosify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Glosify.Migrations
 {
     [DbContext(typeof(GlosifyContext))]
-    partial class GlosifyContextModelSnapshot : ModelSnapshot
+    [Migration("20261010134516_AddAvatarUsageOperations")]
+    partial class AddAvatarUsageOperations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2025,13 +2028,6 @@ namespace Glosify.Migrations
 
                     b.Property<bool>("IsCorrect")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsSkipped")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ItemId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Prompt")
                         .IsRequired()

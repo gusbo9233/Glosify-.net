@@ -1,0 +1,9 @@
+Rain Rig (CC) Blender Foundation | https://studio.blender.org/characters/rain/v3/
+Source: Rain v3.3 (rain_v3.2.blend), Blender Studio, August 2025.
+License: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+
+Adapted for GlobeGlotter: evaluated mesh export, simplified PBR materials,
+compressed textures, and baked facial deformation poses. This adaptation is
+not endorsed by the original creators. The model remains available under
+CC BY 4.0. Attribution is also displayed on the Avatar page.

@@ -1,0 +1,210 @@
+import { AvatarAudio } from './audio.js';
+import { createAvatar } from './scene.js';
+
+const el = name => document.getElementById('avatar-' + name);
+const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
+let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
+let preRoll = [], ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
+const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
+const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
+function send(value) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); }
+function setState(value) {
+    state = value;
+    const labels = { off: 'Ready when you are', connecting: 'Connecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', idle: muted ? 'Microphone muted' : 'Your turn', error: 'Try again' };
+    el('status').textContent = labels[value] || value;
+    visual?.setState(value);
+    el('talk').disabled = !ready || muted;
+    el('talk').textContent = mode() === 'hands-free' ? (muted ? 'Microphone muted' : 'Hands-free is on') : holding ? 'Release to send' : 'Hold to talk · Space';
+}
+function notice(text = '') { el('notice').textContent = text; }
+function caption(text, speaker = 'assistant') { el('caption').textContent = text; el('caption').dataset.speaker = speaker; }
+function transcript(speaker, text) {
+    const item = document.createElement('li'), who = document.createElement('strong');
+    who.textContent = speaker + ' '; item.append(who, document.createTextNode(text));
+    el('transcript').append(item);
+    while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
+}
+function refreshStart() { el('start').disabled = !config?.available || !modelReady || !!sessionId || !!audio; }
+async function api(path, body) {
+    const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) });
+    if (!response.ok) { const problem = await response.json().catch(() => ({})); throw new Error(problem.detail || problem.title || 'The conversation could not start.'); }
+    return response.status === 204 ? null : response.json();
+}
+function listen() {
+    if (!ready || muted) return;
+    cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
+    setState('connecting'); send({ type: 'listen', mode: mode() });
+}
+function interrupt() {
+    cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
+    send({ type: 'interrupt' }); setState('idle');
+}
+function frame({ pcm, rms }) {
+    if (!ready || muted) return;
+    preRoll.push(pcm); if (preRoll.length > 3) preRoll.shift();
+    if (state === 'listening') { socket.send(pcm); preRoll = []; return; }
+    if (mode() === 'hands-free' && (state === 'speaking' || state === 'thinking')) {
+        // Browser echo cancellation plus two voiced frames prevents most playback
+        // leakage from interrupting Rain. The retained onset is sent after Ready.
+        speechFrames = rms > .045 ? speechFrames + 1 : 0;
+        if (speechFrames >= 2) { speechFrames = 0; listen(); }
+    }
+}
+async function onMessage(message, generation) {
+    if (generation !== epoch) return;
+    if (message.type === 'connected') {
+        ready = true; el('mute').disabled = false; setState('idle');
+        if (mode() === 'hands-free') listen(); return;
+    }
+    if (message.type === 'usage') {
+        el('balance').textContent = number(message.available);
+        el('spending').textContent = `This conversation · ${number(message.total)} credits · Listening ${number(message.recognition)} / Replies ${number(message.replies)} / Speech ${number(message.speech)}`;
+        document.querySelectorAll('[data-credit-balance]').forEach(span => {
+            span.textContent = span.dataset.creditLabel.replace('__COUNT__', number(Math.ceil(message.available)));
+        });
+        return;
+    }
+    if (message.type === 'connecting') { turnId = message.turnId; setState('connecting'); return; }
+    if (message.turnId && (message.turnId !== turnId || message.turnId === cancelledTurn)) return;
+    switch (message.type) {
+        case 'listening':
+            setState('listening');
+            if (mode() === 'push-to-talk' && !holding) { interrupt(); break; }
+            for (const pcm of preRoll) socket.send(pcm); preRoll = []; break;
+        case 'partial': caption(message.text, 'user'); break;
+        case 'transcript': caption(message.text, 'user'); transcript('You', message.text); break;
+        case 'thinking': setState('thinking'); break;
+        case 'reply': currentReply = message.text; caption(message.text); setState('speaking'); break;
+        case 'audio': audio?.play(message.pcm); break;
+        case 'audio-end': {
+            const id = turnId, text = currentReply;
+            if (await audio.finished() && generation === epoch && id === turnId) {
+                transcript('Rain', text); send({ type: 'played', turnId: id });
+            }
+            break;
+        }
+        case 'idle':
+            // An interrupt acknowledgement can arrive before the replacement turn.
+            if (state === 'connecting') break;
+            setState('idle'); if (mode() === 'hands-free' && !muted) listen(); break;
+        case 'error':
+            audio?.stop(); setState('error'); notice(message.detail);
+            // Explicit retry avoids an unattended loop of chargeable failed requests.
+            el('talk').textContent = 'Retry microphone'; break;
+    }
+}
+async function start() {
+    if (audio || sessionId) return;
+    const generation = ++epoch; notice(); el('start').disabled = true; setState('connecting');
+    el('transcript').replaceChildren(); el('spending').textContent = 'This conversation · 0 credits';
+    const nextAudio = new AvatarAudio(); audio = nextAudio;
+    try {
+        await nextAudio.open(frame);
+        if (generation !== epoch) { await nextAudio.close(); return; }
+        visual?.setAnalyser(nextAudio.analyser);
+        const result = await api('/api/avatar/sessions', { language: el('language').value, quizId: el('quiz').value || null });
+        if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
+        sessionId = result.sessionId;
+        const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        socket = new WebSocket(url);
+        socket.onmessage = event => {
+            try { void onMessage(JSON.parse(event.data), generation).catch(error => { notice(error.message); void end(); }); }
+            catch { notice('The voice connection returned an invalid message.'); void end(); }
+        };
+        socket.onclose = () => { if (generation === epoch) { notice('Conversation ended. Start again whenever you like.'); void end(); } };
+        socket.onerror = () => { if (generation === epoch) notice('Voice connection failed. Please start again.'); };
+        el('quiz').disabled = true; el('language').disabled = true; el('end').disabled = false;
+        el('hint').textContent = mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.';
+    } catch (error) {
+        notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
+        await end();
+    }
+}
+async function end() {
+    ++epoch; ready = false; holding = false; preRoll = []; speechFrames = 0; muted = false;
+    const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
+    if (socket) { send({ type: 'end' }); socket.onclose = null; socket.close(); socket = null; }
+    visual?.setAnalyser(null); await oldAudio?.close();
+    if (oldSession) {
+        await api(`/api/avatar/sessions/${oldSession}/end`, {}).catch(() => {});
+        for (let attempt = 0; attempt < 5; attempt++) {
+            const response = await fetch(`/api/avatar/sessions/${oldSession}/usage`, { credentials: 'same-origin' }).catch(() => null);
+            if (!response?.ok) break;
+            const usage = await response.json();
+            await onMessage(usage, epoch);
+            if (!usage.pending) break;
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
+    el('quiz').disabled = false; el('language').disabled = !!el('quiz').value;
+    el('end').disabled = true; el('mute').disabled = true; el('mute').textContent = 'Mute'; el('mute').setAttribute('aria-pressed', 'false');
+    el('hint').textContent = 'Your microphone is off.';
+    setState('off'); refreshStart();
+}
+function press(event) {
+    if (!ready || muted) return;
+    event?.preventDefault(); notice();
+    if (mode() === 'hands-free') { if (state === 'error' || state === 'idle') listen(); return; }
+    if (holding) return;
+    holding = true; preRoll = []; listen();
+}
+async function release() {
+    if (!holding) return;
+    holding = false;
+    if (state === 'listening') {
+        await audio?.flush();
+        if (ready && state === 'listening') { send({ type: 'commit' }); setState('thinking'); }
+    }
+    else if (state === 'connecting') interrupt();
+}
+el('start').addEventListener('click', start); el('end').addEventListener('click', end);
+el('talk').addEventListener('pointerdown', event => { el('talk').setPointerCapture(event.pointerId); press(event); });
+el('talk').addEventListener('pointerup', release); el('talk').addEventListener('pointercancel', release);
+document.addEventListener('keydown', event => {
+    if (event.code === 'Space' && !event.repeat && !event.target.closest('input,select,textarea,button,a,summary,[contenteditable]')) press(event);
+});
+document.addEventListener('keyup', event => { if (event.code === 'Space') release(); });
+el('talk').addEventListener('keydown', event => { if ((event.code === 'Space' || event.code === 'Enter') && !event.repeat) press(event); });
+el('talk').addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); release(); } });
+el('mute').addEventListener('click', () => {
+    muted = !muted; audio?.mute(muted); preRoll = []; holding = false;
+    el('mute').textContent = muted ? 'Unmute' : 'Mute'; el('mute').setAttribute('aria-pressed', String(muted));
+    if (muted && ['listening', 'connecting'].includes(state)) interrupt();
+    if (!muted && mode() === 'hands-free' && !['speaking', 'thinking'].includes(state)) listen();
+    else setState(state);
+});
+document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
+    if (ready) { interrupt(); if (mode() === 'hands-free' && !muted) listen(); }
+    el('hint').textContent = ready ? mode() === 'hands-free' ? 'Microphone is on. You can interrupt Rain.' : 'Hold Space or the talk button. Release to send.' : 'Your microphone stays off until you start.';
+    setState(state);
+}));
+el('quiz').addEventListener('change', () => {
+    const quiz = config.quizzes.find(item => item.id === el('quiz').value);
+    if (quiz) {
+        const language = config.languages.find(x => x.name === quiz.targetLanguage || x.code === quiz.targetLanguage);
+        if (language) el('language').value = language.code;
+    }
+    el('language').disabled = !!quiz;
+});
+window.addEventListener('pagehide', () => { void end(); visual?.dispose(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
+
+async function initialize() {
+    try {
+        const response = await fetch('/api/avatar/config', { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Conversation settings could not load. Refresh the page to retry.');
+        config = await response.json();
+        for (const language of config.languages) el('language').add(new Option(language.name, language.code));
+        el('language').value = config.languages.some(x => x.code === config.language) ? config.language : 'en';
+        for (const quiz of config.quizzes) el('quiz').add(new Option(quiz.name, quiz.id));
+        const r = config.rates;
+        el('rates').textContent = `Listening ${number(r.recognitionPerMinute)} / min · Replies ${number(r.replyPerThousandTokens)} / 1k tokens · Speech ${number(r.speechPerThousandCharacters)} / 1k characters`;
+        el('balance').textContent = number(config.balance);
+        if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
+        refreshStart();
+    } catch (error) { notice(error.message); }
+}
+void initialize();
+createAvatar(el('canvas')).then(value => {
+    visual = value; modelReady = true; el('render-status').hidden = true; setState('off'); refreshStart();
+}).catch(() => { el('render-status').textContent = 'Rain could not load. Refresh or try a browser with 3D support.'; });

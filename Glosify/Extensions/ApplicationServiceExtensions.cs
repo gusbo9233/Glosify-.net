@@ -258,6 +258,16 @@ public static class ApplicationServiceExtensions
         services.AddScoped<SpeechProviderBudget>();
         services.AddScoped<ISpeechProviderBudget>(provider => provider.GetRequiredService<SpeechProviderBudget>());
         services.AddScoped<ITextToSpeechService, ElevenLabsTextToSpeechService>();
+        services.AddOptions<Glosify.Services.Avatar.AvatarOptions>()
+            .Bind(configuration.GetSection("Avatar"))
+            .Validate(o => o.SynthesisSekPerMillionCharacters is > 0 and <= 1_000_000m, "Avatar provider pricing must be positive and bounded.")
+            .ValidateOnStart();
+        services.AddSingleton<Glosify.Services.Avatar.AvatarSessions>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarPricing>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarBilling>();
+        services.AddScoped<Glosify.Services.Avatar.IAvatarSpeech, Glosify.Services.Avatar.AvatarSpeech>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarConversation>();
+        services.AddHostedService<Glosify.Services.Avatar.AvatarMaintenance>();
         services.AddSingleton(TimeProvider.System);
 
         return services;
