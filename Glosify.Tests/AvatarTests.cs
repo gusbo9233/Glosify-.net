@@ -88,9 +88,12 @@ public sealed class AvatarTests
         var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = quiz, language = "en" });
         var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
         Assert.Equal("sv", payload.GetProperty("language").GetString());
+        Assert.Equal("Test voice", payload.GetProperty("voiceName").GetString());
+        Assert.True(payload.GetProperty("nativeVoice").GetBoolean());
         var id = payload.GetProperty("sessionId").GetGuid();
         var sessions = app.Services.GetRequiredService<AvatarSessions>();
         Assert.Contains("kaffe", sessions.Get(id, "admin").Practice);
+        Assert.Equal("test-female-sv", sessions.Get(id, "admin").Voice!.Id);
         Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(id, "learner")).Status);
         client.DefaultRequestHeaders.Add("Origin", "https://evil.example");
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/avatar/sessions/{id}/voice")).StatusCode);
@@ -208,6 +211,35 @@ public sealed class AvatarTests
     }
 
     [Fact]
+    public async Task VoiceSelectionFailureDoesNotStartOrChargeAConversation()
+    {
+        using var app = new AvatarFixture { Overrides = services =>
+        {
+            services.RemoveAll<IAvatarVoices>(); services.AddSingleton<IAvatarVoices, UnavailableVoices>();
+        } };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("Voice unavailable for test.", problem.RootElement.GetProperty("detail").GetString());
+        await app.Seed(async db =>
+        {
+            var account = await db.AiCreditAccounts.SingleAsync(x => x.UserId == "admin");
+            Assert.Equal(100m, account.BalanceCredits);
+            Assert.Equal(0m, account.ReservedCredits);
+            Assert.False(await db.Set<AvatarUsageOperation>().AnyAsync());
+        });
+        // A failed lookup must not consume the user's single-session slot.
+        app.Services.GetRequiredService<AvatarSessions>().Create("admin", Glosify.Services.Language.QuizLanguageCatalog.Find("sv")!, "free");
+    }
+
+    private sealed class UnavailableVoices : IAvatarVoices
+    {
+        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct) =>
+            throw new AvatarException(503, "Voice unavailable for test.");
+    }
+
+    [Fact]
     public void SessionsExpireAndCannotBeReusedAcrossAccounts()
     {
         var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
@@ -243,8 +275,14 @@ internal sealed class AvatarFixture : WebApplicationFactory<Program>
             foreach (var item in services.Where(s => s.ServiceType == typeof(Microsoft.Extensions.Hosting.IHostedService)).ToArray()) services.Remove(item);
             services.RemoveAll<DbContextOptions<GlosifyContext>>(); services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
             services.AddDbContext<GlosifyContext>(o => o.UseInMemoryDatabase(_database));
+            services.RemoveAll<IAvatarVoices>(); services.AddSingleton<IAvatarVoices, TestVoices>();
             Overrides?.Invoke(services);
         });
+    }
+    private sealed class TestVoices : IAvatarVoices
+    {
+        public Task<AvatarVoice> ResolveAsync(Glosify.Services.Language.QuizLanguage language, CancellationToken ct) =>
+            Task.FromResult(new AvatarVoice("test-female-" + language.Code, "Test voice", true));
     }
     public async Task Seed(Func<GlosifyContext, Task> seed)
     {

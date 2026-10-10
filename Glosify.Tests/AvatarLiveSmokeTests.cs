@@ -25,6 +25,7 @@ public sealed class AvatarLiveSmokeTests
         Assert.InRange(pcm.Length, 3200, 32000 * 15);
         using var app = new AvatarFixture { Overrides = services =>
         {
+            services.AddHttpClient<IAvatarVoices, AvatarVoices>();
             services.PostConfigure<SpeechOptions>(o => o.ApiKey = elevenKey!);
             services.PostConfigure<GenerativeAiOptions>(o => o.ApiKey = openAiKey!);
         } };
@@ -32,7 +33,9 @@ public sealed class AvatarLiveSmokeTests
         await using var scope = app.Services.CreateAsyncScope();
         var speech = scope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
         var ai = scope.ServiceProvider.GetRequiredService<IGenerativeAiClient>();
-        var session = new AvatarSession("admin", QuizLanguageCatalog.Find("en")!, "free", DateTimeOffset.UtcNow);
+        var language = QuizLanguageCatalog.Find("en")!;
+        var voice = await scope.ServiceProvider.GetRequiredService<IAvatarVoices>().ResolveAsync(language, CancellationToken.None);
+        var session = new AvatarSession("admin", language, "free", DateTimeOffset.UtcNow, voice);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(90));
         var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var channel = Channel.CreateBounded<byte[]>(8);

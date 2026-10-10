@@ -8,7 +8,7 @@ namespace Glosify.Services.Avatar;
 public sealed class AvatarOptions
 {
     public bool Enabled { get; set; }
-    public string VoiceId { get; set; } = "";
+    public Dictionary<string, string> VoiceIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     // Conservative cost ceiling for the provider budget, independent of customer rates.
     public decimal SynthesisSekPerMillionCharacters { get; set; } = 1928.29m;
     public const string SpeechModel = "eleven_v4_turbo";
@@ -25,7 +25,6 @@ public sealed class AvatarPricing(ICreditPricingResolver pricing, IOptions<Speec
         speech.Value.CalculateCredits(1000));
     public bool Available => options.Value.Enabled && !string.IsNullOrWhiteSpace(speech.Value.ApiKey)
         && !string.IsNullOrWhiteSpace(ai.Value.ApiKey);
-    public string VoiceId => string.IsNullOrWhiteSpace(options.Value.VoiceId) ? speech.Value.DefaultVoiceId : options.Value.VoiceId;
     public decimal CreditRate(string kind) => kind == "recognition" ? Rates.RecognitionPerMinute / 60m
         : speech.Value.TextSekPerMillionCharacters / 1_000_000m / speech.Value.SekPerCredit;
     public decimal ProviderSekRate(string kind) => kind == "recognition"

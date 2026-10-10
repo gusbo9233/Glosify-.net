@@ -1,9 +1,12 @@
-Rain Rig (CC) Blender Foundation | https://studio.blender.org/characters/rain/v3/
-Source: Rain v3.3 (rain_v3.2.blend), Blender Studio, August 2025.
-License: Creative Commons Attribution 4.0 International
-https://creativecommons.org/licenses/by/4.0/
+Rain portrait for GlobeGlotter
 
-Adapted for GlobeGlotter: evaluated mesh export, simplified PBR materials,
-compressed textures, and baked facial deformation poses. This adaptation is
-not endorsed by the original creators. The model remains available under
-CC BY 4.0. Attribution is also displayed on the Avatar page.
+Anatomy, skin, eyes, hair, clothing and facial pose references: MakeHuman Community.
+CC0 1.0 Universal — see MAKEHUMAN-LICENSE.md.
+Pinned source provenance and hashes: scripts/avatar/human-source.json.
+https://www.makehumancommunity.org/
+
+Adaptations: portrait proportions, chestnut materials, ivory fabric, hair styling,
+relaxed posture, facial expression morphs and optimized web export.
+Original adaptation code: scripts/avatar/build-rain.py and human_mesh.py.
+
+Courtyard background: AI-generated for GlobeGlotter.

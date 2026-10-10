@@ -20,7 +20,7 @@ namespace Glosify.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPricing pricing, AvatarSessions sessions,
     AvatarConversation conversation, AvatarBilling billing, GlosifyContext db, IAiCreditService credits, ILanguageContext languageContext,
-    SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users) : Controller
+    SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users, IAvatarVoices voices) : Controller
 {
     private QuizLanguage? CurrentLanguage => QuizLanguageCatalog.Find(languageContext.CurrentLanguage) is { IsLanguageLearning: true } language ? language : null;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -77,8 +77,10 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         if (account.AvailableCredits < required) throw new InsufficientAiCreditsException(account.AvailableCredits, required);
         try
         {
-            var session = sessions.Create(UserId, language, practice);
-            return Json(new { sessionId = session.Id, language = language.Code, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
+            var voice = await voices.ResolveAsync(language, ct);
+            var session = sessions.Create(UserId, language, practice, voice);
+            return Json(new { sessionId = session.Id, language = language.Code, voiceName = voice.Name,
+                nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
         }
         catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
     }

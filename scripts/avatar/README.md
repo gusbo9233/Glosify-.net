@@ -9,8 +9,19 @@ authentication or separate game deployment is required.
 
 Reuse `OPENAI_SECRET_KEY` and the existing ElevenLabs key configuration
 (`RealtimeTranslation:ElevenLabs:ApiKey` or legacy `Elevenlabs_key`; `Speech:ApiKey`
-is also bound by the speech options). Set `Avatar:VoiceId` to choose a voice;
-otherwise the existing `Speech:DefaultVoiceId` is used. The server uses Scribe v2
+is also bound by the speech options). The key also needs read access to the voices catalogue.
+The avatar selects an available adult female voice using native-language labels first,
+then verified languages, then a multilingual female fallback. Saved voice names never
+establish language support. Catalogue pagination is followed and results are cached for
+one hour; selection is pinned before the session begins and before any paid provider work.
+Custom-rate and live-moderated voices are excluded. The UI identifies a multilingual
+fallback when there is no native-labelled match; native accent quality still needs listening
+review. No voices are automatically added to the provider account.
+
+Optional `Avatar:VoiceIds:<catalog-language-code>` overrides choose a specific available
+female voice for one language. The previous global `Avatar:VoiceId` and the book reader's
+`Speech:DefaultVoiceId` no longer control avatar speech. Synthesis explicitly sends the
+current language (including `zh-Hans` → `zh` and `nb` → `no`). The server uses Scribe v2
 Realtime, the existing OpenAI client/model, and Eleven v4 Turbo.
 
 Customer rates come from the existing pricing resolver and speech options:
@@ -63,24 +74,28 @@ is Apache-2.0 licensed; linked license comments accompany the bundle.
 
 ## Rebuild Rain
 
-The source is [Rain v3.3](https://studio.blender.org/characters/rain/v3/) from Blender
-Studio, licensed CC BY 4.0. The page and distributed model directory retain credits.
-Download the official archive:
-`https://studio.blender.org/download-source/files/ee/a7/eea73e55dba1cea31c09848df6a794b2-4.zip`.
-
-Archive SHA-256: `80217f163f6392dc829233d63c2cfb5e1376775bc34101ad14f39631fea70d24`.
-Extract it outside the repository, then run:
+Rain now uses realistic adult anatomy and CC0 MakeHuman skin, eyes, long hair and
+clothing, with original portrait styling. Asset attribution and license are distributed
+with the model. `human-source.json` pins the upstream revision, download URLs and hashes.
+Prepare the listed files into an external source directory (archive files under `system/`):
 
 ```sh
-blender --factory-startup -b --disable-autoexec '/path/Rain v3.3/rain_v3.2.blend' \
-  -P scripts/avatar/export-rain.py -- Glosify/wwwroot/models/avatar/rain.glb
+python3 scripts/avatar/prepare-human.py /tmp/avatar-human-source
+blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
+  /tmp/avatar-human-source Glosify/wwwroot/models/avatar/rain-realistic.glb
 ```
 
-The conversion evaluates the production rig without running its embedded scripts,
-keeps about 40,000 vertices, and bakes jaw, blink, smile, nod and turn poses into
-morph targets. Textures and simplified PBR materials are embedded. Runtime mouth
-movement follows the output audio amplitude and spectrum; it is not phoneme-exact
-lip sync. The export preserves the authored character rather than recreating it.
+An optional final PNG path renders a portrait and saves a review `.blend` beside it.
+The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
+The export bakes jaw, blink, smile, nod and turn into morph targets and embeds textures.
+The resting smile, cheeks, eyelids and speaking mouth use the authored CC0 face pose
+units in `face-poses.json`, whose source revision is recorded alongside the poses. Runtime mouth
+movement follows output audio amplitude and spectrum; it is not phoneme-exact lip sync.
+
+`wwwroot/images/avatar/courtyard.jpg` is an AI-generated, optimized background. Prompt:
+“Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,
+jasmine, olive foliage and terracotta planters, soft Tuscan garden, late afternoon
+sunlight from upper left, uncluttered center for a brunette portrait, sage/cream palette.”
 
 ## Tests
 

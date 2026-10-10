@@ -16,15 +16,15 @@ export async function createAvatar(canvas) {
     const scene = new Scene(engine); scene.clearColor = new Color4(0, 0, 0, 0);
     scene.imageProcessingConfiguration.toneMappingEnabled = true;
     scene.imageProcessingConfiguration.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-    scene.imageProcessingConfiguration.exposure = 1.25;
-    const camera = new ArcRotateCamera('portrait', -Math.PI / 2, Math.PI / 2 - .015, 1.85, new Vector3(0, 1.35, 0), scene);
+    scene.imageProcessingConfiguration.exposure = 1.05;
+    const camera = new ArcRotateCamera('portrait', -Math.PI / 2, Math.PI / 2 - .13, 1.65, new Vector3(0, 1.42, 0), scene);
     camera.fov = .49; camera.minZ = .02;
-    const fill = new HemisphericLight('soft daylight', new Vector3(0, 1, -1), scene); fill.intensity = 1.2;
-    fill.diffuse = new Color3(.98, 1, .97); fill.groundColor = new Color3(.4, .48, .44);
-    const key = new DirectionalLight('key', new Vector3(.5, -1, 1), scene); key.intensity = 2.1; key.diffuse = new Color3(1, .89, .76);
-    const rim = new DirectionalLight('rim', new Vector3(-.7, -.2, -.8), scene); rim.intensity = 1.3; rim.diffuse = new Color3(.8, .95, 1);
+    const fill = new HemisphericLight('soft daylight', new Vector3(0, 1, -1), scene); fill.intensity = .8;
+    fill.diffuse = new Color3(.98, 1, .97); fill.groundColor = new Color3(.3, .25, .19);
+    const key = new DirectionalLight('key', new Vector3(.5, -1, 1), scene); key.intensity = 1.5; key.diffuse = new Color3(1, .89, .76);
+    const rim = new DirectionalLight('rim', new Vector3(-.7, -.2, -.8), scene); rim.intensity = .9; rim.diffuse = new Color3(1, .92, .79);
     let loaded;
-    try { loaded = await ImportMeshAsync('/models/avatar/rain.glb', scene); }
+    try { loaded = await ImportMeshAsync('/models/avatar/rain-realistic.glb', scene); }
     catch (error) { scene.dispose(); engine.dispose(); throw error; }
     const root = new TransformNode('breathing', scene); root.rotation.y = Math.PI;
     for (const mesh of loaded.meshes) if (!mesh.parent) mesh.parent = root;

@@ -123,6 +123,7 @@ async function start() {
         const result = await api('/api/avatar/sessions', { quizId: el('quiz').value || null });
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
+        el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
         const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         socket = new WebSocket(url);
         socket.onmessage = event => {

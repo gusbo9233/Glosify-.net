@@ -1,0 +1,273 @@
+{
+  "license": "CC0-1.0",
+  "repositoryRevision": "a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "packUrl": "https://files2.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip",
+  "packSha256": "b542127a8e25547c7c29c19f2d1d2adb9a664c80396ecd694095dbc8028a0107",
+  "files": [
+    {
+      "path": "base.obj",
+      "sha256": "8e761e6624b8f54536409135d1636da63b32486a90d4897f84e121d144f6fb4c",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/3dobjs/base.obj"
+    },
+    {
+      "path": "default.mhskel",
+      "sha256": "99f179bce0aa850b45d4191a1d0d234c5851f881c057439470ded3bddf729a24",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default.mhskel"
+    },
+    {
+      "path": "default_weights.mhw",
+      "sha256": "0f3641d651ae3d00ad6b4ccee43142edb109d3bd909d27d9e4139ef1beed8625",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/rigs/default_weights.mhw"
+    },
+    {
+      "path": "low-poly.mhclo",
+      "sha256": "68582e28e9176cba7cfcf35208f671b6201b8d1bc95c32decff61a3160ec34d8",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/low-poly/low-poly.mhclo"
+    },
+    {
+      "path": "low-poly.obj",
+      "sha256": "783fe1e6331162c876520b4c2bed7a8ca06354ca15497e8ebd68bb1b59f4d3de",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/eyes/low-poly/low-poly.obj"
+    },
+    {
+      "path": "caucasian-female-young.target",
+      "sha256": "118379f6e8ba9266247fdb8788a20e1df40a239f97ced0b9905bcbcc74f6e820",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/caucasian-female-young.target"
+    },
+    {
+      "path": "universal-female-young-averagemuscle-averageweight.target",
+      "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-young-averagemuscle-averageweight.target"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01.mhclo",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01.mhclo",
+      "sha256": "8ed657dbc49466e6a485993cfdcfd7b6ac30a0f44408dfd38de7a649477d8928"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01.mhmat",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01.mhmat",
+      "sha256": "a0b1708efbff3c4ad96f8e7d8cc27fb1652719549455ce94b89bcf6294cfbed0"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01.obj",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01.obj",
+      "sha256": "3b46cef6d63968954dc00c39ede649d76c05e5d36fe9f9c677349c88fd424de9"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01_ao.png",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01_ao.png",
+      "sha256": "0f89546c63ab16e2c1ba0556da7e07264b98b58e6200b043491f92f796b87673"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01_diffuse.png",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01_diffuse.png",
+      "sha256": "ebe6f2afcbaadbe56d5cee6e00bab45e97ce482f0be0e34491d16ca5f98b38ac"
+    },
+    {
+      "path": "system/clothes/female_elegantsuit01/female_elegantsuit01_normal.png",
+      "archivePath": "clothes/female_elegantsuit01/female_elegantsuit01_normal.png",
+      "sha256": "ae3650bce6678cd67d025ab70e68b22683176aeaabc06d8e5b2129af99c762e9"
+    },
+    {
+      "path": "system/hair/long01/long01.mhclo",
+      "archivePath": "hair/long01/long01.mhclo",
+      "sha256": "94ecbebfd834da2cbee2ce90b730972590eb22a252ecd9592038ea736e063646"
+    },
+    {
+      "path": "system/hair/long01/long01.mhmat",
+      "archivePath": "hair/long01/long01.mhmat",
+      "sha256": "74ec88267e679d316f8037a074511ffc887b27e198ea381d0ae4a3f180f96760"
+    },
+    {
+      "path": "system/hair/long01/long01.obj",
+      "archivePath": "hair/long01/long01.obj",
+      "sha256": "7f1d6dadbdf9e96435251955d6657e77ea5433c9bc7c85a5c5f5e4eae0cb9a8c"
+    },
+    {
+      "path": "system/hair/long01/long01_diffuse.png",
+      "archivePath": "hair/long01/long01_diffuse.png",
+      "sha256": "e8dc25d90f8f62467e8630420e1240a400d070054fb7c3f1d3f7bf3e457d6c2c"
+    },
+    {
+      "path": "system/eyebrows/eyebrow001/eyebrow001.mhclo",
+      "archivePath": "eyebrows/eyebrow001/eyebrow001.mhclo",
+      "sha256": "54c8892c2ba577f4152d779ce1f20f7cd323beb8cbd9cb701796165c221b4f5b"
+    },
+    {
+      "path": "system/eyebrows/eyebrow001/eyebrow001.mhmat",
+      "archivePath": "eyebrows/eyebrow001/eyebrow001.mhmat",
+      "sha256": "976e5f4f1d3922d7a11c6e2db233f8b4584b068d00619d5749687e81c92d61fc"
+    },
+    {
+      "path": "system/eyebrows/eyebrow001/eyebrow001.obj",
+      "archivePath": "eyebrows/eyebrow001/eyebrow001.obj",
+      "sha256": "88b13146395133f3901715e11706cdfd293e5d6087ad7c5e01efe1485a26b513"
+    },
+    {
+      "path": "system/eyebrows/eyebrow001/eyebrow001.png",
+      "archivePath": "eyebrows/eyebrow001/eyebrow001.png",
+      "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
+    },
+    {
+      "path": "system/eyelashes/eyelashes01/eyelashes01.mhclo",
+      "archivePath": "eyelashes/eyelashes01/eyelashes01.mhclo",
+      "sha256": "5a86b29c15649273d723084954b7fa7bf199112571d4f58539b46734d397ee6b"
+    },
+    {
+      "path": "system/eyelashes/eyelashes01/eyelashes01.mhmat",
+      "archivePath": "eyelashes/eyelashes01/eyelashes01.mhmat",
+      "sha256": "8029c99d94f3d87a1e81825fad6b90eec773ae6955a5b2592222ef237377e190"
+    },
+    {
+      "path": "system/eyelashes/eyelashes01/eyelashes01.obj",
+      "archivePath": "eyelashes/eyelashes01/eyelashes01.obj",
+      "sha256": "f78f5b93fea1946fcae103d32c4f082dd9612a1ec2e7e2f90b03ebe59b0baf20"
+    },
+    {
+      "path": "system/eyelashes/eyelashes01/eyelashes01.png",
+      "archivePath": "eyelashes/eyelashes01/eyelashes01.png",
+      "sha256": "4b69c0fff2648874460e9caf80c31413c444218a5c50afebc425aeaa65484a35"
+    },
+    {
+      "path": "system/teeth/teeth_base/teeth.mhmat",
+      "archivePath": "teeth/teeth_base/teeth.mhmat",
+      "sha256": "3baeff72d9eb06ca16c3cff7ca2ab304216717dee247e0d88f1dc33037c8320e"
+    },
+    {
+      "path": "system/teeth/teeth_base/teeth.png",
+      "archivePath": "teeth/teeth_base/teeth.png",
+      "sha256": "d0afb57869c6fbb56b98f5efc4aec629ee7593e70d8dd2bfb9de923acfb65f43"
+    },
+    {
+      "path": "system/teeth/teeth_base/teeth_base.mhclo",
+      "archivePath": "teeth/teeth_base/teeth_base.mhclo",
+      "sha256": "9edc3deff3bb97a95c791878064dd069a74a38f95ea6d9707a9ba68d888b3b5c"
+    },
+    {
+      "path": "system/teeth/teeth_base/teeth_base.obj",
+      "archivePath": "teeth/teeth_base/teeth_base.obj",
+      "sha256": "f55198069e55d360c4b4cc7ecb1cc292b2c7665753ab8b65eabf46a8783f2875"
+    },
+    {
+      "path": "system/tongue/tongue01/tongue01.mhclo",
+      "archivePath": "tongue/tongue01/tongue01.mhclo",
+      "sha256": "61d825899cd78ff3146fa1324118060cb44b095fae1427d408c199ade74e3c9e"
+    },
+    {
+      "path": "system/tongue/tongue01/tongue01.mhmat",
+      "archivePath": "tongue/tongue01/tongue01.mhmat",
+      "sha256": "7769df66c69b8c09a0ec713d70d8381abbb08ac82207369f5413970495cd4340"
+    },
+    {
+      "path": "system/tongue/tongue01/tongue01.obj",
+      "archivePath": "tongue/tongue01/tongue01.obj",
+      "sha256": "12f4a6a9f85abae2ce3b4aa42d8119e1f679a437e0e89cb928ec68b29a7a1587"
+    },
+    {
+      "path": "system/tongue/tongue01/tongue01_diffuse.png",
+      "archivePath": "tongue/tongue01/tongue01_diffuse.png",
+      "sha256": "3150be398e48e8ba1feac164c3143c16c0b2e959d9ffb6155f0171f59cfb4ea9"
+    },
+    {
+      "path": "system/skins/young_caucasian_female/young_caucasian_female.mhmat",
+      "archivePath": "skins/young_caucasian_female/young_caucasian_female.mhmat",
+      "sha256": "0bdea7786201f0b1132a24088336a97496ccdc54e9984db65d253a6a6d66f24f"
+    },
+    {
+      "path": "system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png",
+      "archivePath": "skins/young_caucasian_female/young_lightskinned_female_diffuse.png",
+      "sha256": "b2a6ac8cd4f9febdb447368e29c76cd68410bb66e46d9dcfa2d5f75126eea8fc"
+    },
+    {
+      "path": "system/eyes/materials/blue.mhmat",
+      "archivePath": "eyes/materials/blue.mhmat",
+      "sha256": "bd9cab4d2f6ca54df6253c1adfbb1c82e0ee61057361d95449ade06a1b5669c4"
+    },
+    {
+      "path": "system/eyes/materials/blue_eye.png",
+      "archivePath": "eyes/materials/blue_eye.png",
+      "sha256": "572ddc93ab3e177100619ec7c00b2574540cfb382805afc2e450788117f6140c"
+    },
+    {
+      "path": "system/eyes/materials/bluegreen.mhmat",
+      "archivePath": "eyes/materials/bluegreen.mhmat",
+      "sha256": "2dfb910b48da0e0739b44a8fa4728b3b351bf9b408034c6402a1b9c07915b884"
+    },
+    {
+      "path": "system/eyes/materials/bluegreen_eye.png",
+      "archivePath": "eyes/materials/bluegreen_eye.png",
+      "sha256": "653b3154e67f67e118c22acd19c472aa7543e0c229209f687c3f7f669f191fd9"
+    },
+    {
+      "path": "system/eyes/materials/brown.mhmat",
+      "archivePath": "eyes/materials/brown.mhmat",
+      "sha256": "4abad93ce50541c08127721e77bce035640c9f16bed16cd0f5524b1cd5908465"
+    },
+    {
+      "path": "system/eyes/materials/brown_eye.png",
+      "archivePath": "eyes/materials/brown_eye.png",
+      "sha256": "4659691c7295ad6206c78b003e5fd0e5f91dcd53032fa914a229bb48cabe424b"
+    },
+    {
+      "path": "system/eyes/materials/brownlight.mhmat",
+      "archivePath": "eyes/materials/brownlight.mhmat",
+      "sha256": "75ae6903fe51134ee6f10147dadad3cb1b355aecf8218213431fb6ddbb3ba71d"
+    },
+    {
+      "path": "system/eyes/materials/brownlight_eye.png",
+      "archivePath": "eyes/materials/brownlight_eye.png",
+      "sha256": "3f43a4de70e446186dac1760cfa01dfe36d530ed7564208455395b0ebcdf788a"
+    },
+    {
+      "path": "system/eyes/materials/deepblue.mhmat",
+      "archivePath": "eyes/materials/deepblue.mhmat",
+      "sha256": "08f7a30d8cd8d264d21d755afcfdca3d28386e780b9e9fea11a662337e99d3a3"
+    },
+    {
+      "path": "system/eyes/materials/deepblue_eye.png",
+      "archivePath": "eyes/materials/deepblue_eye.png",
+      "sha256": "55ec9e3d06c8193e74fbbcea32ea474c100feaccef96556d9181e796fe2a7ea6"
+    },
+    {
+      "path": "system/eyes/materials/green.mhmat",
+      "archivePath": "eyes/materials/green.mhmat",
+      "sha256": "b3b512120d9f87f91cd34879ac17ad9f26eb6a250d92be52df8b19df5cc90113"
+    },
+    {
+      "path": "system/eyes/materials/green_eye.png",
+      "archivePath": "eyes/materials/green_eye.png",
+      "sha256": "b9864ac4f4fa484b24e18f6aba030d70dbc8820cbbacfbe63a974c76772c2009"
+    },
+    {
+      "path": "system/eyes/materials/grey.mhmat",
+      "archivePath": "eyes/materials/grey.mhmat",
+      "sha256": "65c536157ef0550b2f8461a9526c726707533dc7cfe8a65abb9b9db0b4e6b25e"
+    },
+    {
+      "path": "system/eyes/materials/grey_eye.png",
+      "archivePath": "eyes/materials/grey_eye.png",
+      "sha256": "ecb05613126036a3d017880fabbd570501c5f14032c186462d8f6e2d719f6c4f"
+    },
+    {
+      "path": "system/eyes/materials/ice.mhmat",
+      "archivePath": "eyes/materials/ice.mhmat",
+      "sha256": "4b2d2d10d9d887dc6f4dd2f66ff252a85b60ca2a30bc2b57672f83b758db776b"
+    },
+    {
+      "path": "system/eyes/materials/ice_eye.png",
+      "archivePath": "eyes/materials/ice_eye.png",
+      "sha256": "a5903596fe033371ba7130b5c8b2c09ce2f5d282d77557c21060ab8a778bf03d"
+    },
+    {
+      "path": "system/eyes/materials/lightblue.mhmat",
+      "archivePath": "eyes/materials/lightblue.mhmat",
+      "sha256": "3bb470d56dfdf40b16e499578bf6ea2c4e0e7e27db4c5bd2adb47f760f5c5f34"
+    },
+    {
+      "path": "system/eyes/materials/lightblue_eye.png",
+      "archivePath": "eyes/materials/lightblue_eye.png",
+      "sha256": "687c8f6d95a8550bcd4a34158f415d6bb376c0bb32e67d127bbb51e5fa469eef"
+    }
+  ]
+}

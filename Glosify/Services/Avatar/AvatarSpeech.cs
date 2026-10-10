@@ -13,7 +13,7 @@ public interface IAvatarSpeech
     Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct);
 }
 
-public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, IOptions<SpeechOptions> options) : IAvatarSpeech
+public sealed class AvatarSpeech(AvatarBilling billing, IOptions<SpeechOptions> options) : IAvatarSpeech
 {
     public async Task<string> ListenAsync(AvatarSession session, string mode, ChannelReader<byte[]> audio,
         Func<string, Task> partial, Func<Task> ready, CancellationToken ct)
@@ -80,16 +80,17 @@ public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, I
     public async Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct)
     {
         if (text.Length is 0 or > 4000) throw new AvatarException(502, "The avatar reply was too long. Try a shorter question.");
+        var voice = session.Voice ?? throw new AvatarException(503, "Please start a new conversation to select a voice for your language.");
         var reservation = await billing.ReserveAsync(session.UserId, session.Id, "speech", text.Length, ct);
         using var socket = Socket();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(45));
         try
         {
-            await socket.ConnectAsync(new Uri($"wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input?model_id={AvatarOptions.SpeechModel}&output_format=pcm_24000"), timeout.Token);
-            await AvatarWire.SendAsync(socket, new { voices = new[] { pricing.VoiceId } }, timeout.Token);
+            await socket.ConnectAsync(SpeechUri(session.Language), timeout.Token);
+            await AvatarWire.SendAsync(socket, new { voices = new[] { voice.Id } }, timeout.Token);
             await billing.SubmittedAsync(reservation, text.Length, timeout.Token);
-            await AvatarWire.SendAsync(socket, new { inputs = new[] { new { text, voice_id = pricing.VoiceId, new_turn = true } } }, timeout.Token);
+            await AvatarWire.SendAsync(socket, new { inputs = new[] { new { text, voice_id = voice.Id, new_turn = true } } }, timeout.Token);
             await AvatarWire.SendAsync(socket, new { close_socket = true }, timeout.Token);
             var bytes = 0;
             while (true)
@@ -110,6 +111,8 @@ public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, I
         }
         finally { socket.Abort(); await billing.SettleAsync(reservation, CancellationToken.None); }
     }
+    internal static Uri SpeechUri(Glosify.Services.Language.QuizLanguage language) =>
+        new($"wss://api.elevenlabs.io/v1/text-to-dialogue/stream-input?model_id={AvatarOptions.SpeechModel}&output_format=pcm_24000&language_code={Uri.EscapeDataString(AvatarVoices.SpeechLanguage(language))}");
     private ClientWebSocket Socket()
     {
         var socket = new ClientWebSocket();
