@@ -60,6 +60,11 @@ changing quiz attempts or study progress. Interrupted replies are omitted from
 conversation memory until playback is acknowledged. No conversation transcript or
 audio is persisted by GlobeGlotter.
 
+The conversation settings use the app theme and can be collapsed with the side
+arrow. On phones they open as a scrollable side drawer; Escape closes the drawer
+and returns focus to the arrow. Notices reopen settings so connection errors remain
+visible. The portrait has no idle caption; captions appear only for conversation text.
+
 ## Rebuild the viewer
 
 ```sh

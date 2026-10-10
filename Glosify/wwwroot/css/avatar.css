@@ -14,3 +14,45 @@
 .avatar-stage-message{color:#fff;background:#263e30b8;border-radius:12px;padding:12px;backdrop-filter:blur(8px)}
 .avatar-voice{margin-top:-12px;margin-bottom:0}
 @media(max-width:720px){.avatar-stage{min-height:540px}}
+
+/* Use the app's midnight surfaces and green accent for the settings drawer. */
+.avatar-workspace{--settings-width:min(380px,40%);position:relative;grid-template-columns:minmax(0,1fr) var(--settings-width);gap:20px}
+.avatar-workspace.settings-closed{grid-template-columns:minmax(0,1fr);gap:0}
+.avatar-caption[hidden],.avatar-settings[hidden]{display:none}
+.avatar-settings{background:var(--surface,#112036);border-color:var(--outline-variant,#3d4a3d);color:var(--on-surface,#d6e3ff);padding:28px;color-scheme:dark;box-shadow:inset 0 1px 0 #ffffff06}
+.avatar-settings-heading{display:block;margin-bottom:26px}
+.avatar-step{display:block;font-size:9px;letter-spacing:.15em;font-weight:600;color:var(--secondary,#99d59d);margin-bottom:9px}
+.avatar-settings h2{font-family:var(--font-serif,Georgia,serif);font-size:25px;font-weight:400;letter-spacing:-.025em;line-height:1.2}
+.avatar-settings>label,.avatar-mode legend{font-size:12px;color:var(--on-surface,#d6e3ff)}
+.avatar-settings select{min-height:44px;background:var(--surface-low,#0d1c32);border-color:var(--outline-variant,#3d4a3d);color:var(--on-surface,#d6e3ff);font-size:13px;border-radius:9px}
+.avatar-settings .avatar-help{font-size:11px;color:var(--on-surface-variant,#bccbb9);margin-bottom:18px}
+.avatar-settings .avatar-voice{margin-bottom:0}
+.avatar-mode{margin:22px 0}
+.avatar-mode label{border-color:var(--outline-variant,#3d4a3d);background:var(--surface-low,#0d1c32);border-radius:9px;padding:12px;transition:background .15s,border-color .15s}
+.avatar-mode label:hover{border-color:var(--secondary,#99d59d)}
+.avatar-mode label:has(input:checked){border-color:var(--secondary,#99d59d);background:#99d59d12}
+.avatar-mode input{accent-color:var(--primary,#53e076)}
+.avatar-mode span{font-size:13px}.avatar-mode small{font-size:11px;color:var(--on-surface-variant,#bccbb9)}
+.avatar-pricing{border-color:var(--outline-variant,#3d4a3d)}
+.avatar-pricing h3{font-family:var(--font-serif,Georgia,serif);font-size:19px}
+.avatar-pricing #avatar-rates{color:var(--secondary,#99d59d);font-size:12px}
+.avatar-balance{color:var(--on-surface-variant,#bccbb9);font-size:12px;font-variant-numeric:tabular-nums}
+.avatar-balance strong{color:var(--on-surface,#d6e3ff);font-size:17px}
+.avatar-start{min-height:46px;background:var(--primary,#53e076);color:var(--on-primary,#003914);font-size:13px;font-weight:600;border-radius:9px;transition:background .15s}
+.avatar-start:hover:not(:disabled){background:var(--primary-fixed,#72fe8f)}
+.avatar-notice{color:var(--error,#ffb4ab)}
+.avatar-privacy{font-size:10px;color:var(--on-surface-variant,#bccbb9)}
+.avatar-settings-toggle{position:absolute;z-index:3;top:50%;right:calc(var(--settings-width) + 10px);transform:translate(50%,-50%);width:44px;height:60px;display:grid;place-items:center;padding:0;border:1px solid var(--outline-variant,#3d4a3d);border-radius:12px;background:var(--surface-high,#1c2a41);color:var(--secondary,#99d59d);cursor:pointer;box-shadow:0 4px 18px #010e2440}
+.avatar-settings-toggle:hover{background:var(--surface-highest,#27354c);color:var(--on-surface,#d6e3ff)}
+.avatar-settings-toggle svg{transition:transform .2s}
+.settings-closed .avatar-settings-toggle{right:0;transform:translateY(-50%);border-radius:12px 0 0 12px}
+.settings-closed .avatar-settings-toggle svg{transform:rotate(180deg)}
+.avatar-settings:not([hidden]){animation:avatar-settings-enter .2s ease-out}
+@keyframes avatar-settings-enter{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@media(max-width:720px){
+    .avatar-workspace{--settings-width:min(340px,calc(100% - 48px));grid-template-columns:minmax(0,1fr);gap:0}
+    .avatar-settings{position:absolute;z-index:2;inset:0 0 0 auto;width:var(--settings-width);overflow-y:auto;overscroll-behavior:contain;padding:24px 20px;box-shadow:-12px 0 28px #010e2440}
+    .avatar-settings-toggle{right:var(--settings-width);width:44px;height:56px}
+    .avatar-settings h2{font-size:23px}
+}
+@media(prefers-reduced-motion:reduce){.avatar-settings:not([hidden]){animation:none}.avatar-settings-toggle svg{transition:none}}

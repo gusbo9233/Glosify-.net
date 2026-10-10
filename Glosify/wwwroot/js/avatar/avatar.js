@@ -16,8 +16,28 @@ function setState(value) {
     el('talk').disabled = !ready || muted;
     el('talk').textContent = mode() === 'hands-free' ? (muted ? 'Microphone muted' : 'Hands-free is on') : holding ? 'Release to send' : 'Hold to talk · Space';
 }
-function notice(text = '') { el('notice').textContent = text; }
-function caption(text, speaker = 'assistant') { el('caption').textContent = text; el('caption').dataset.speaker = speaker; }
+function toggleSettings(open) {
+    const toggle = el('settings-toggle');
+    el('settings').hidden = !open;
+    el('workspace').classList.toggle('settings-closed', !open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', `${open ? 'Close' : 'Open'} conversation settings`);
+    toggle.title = `${open ? 'Close' : 'Open'} settings`;
+}
+el('settings-toggle').addEventListener('click', () => toggleSettings(el('settings').hidden));
+el('settings').addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+        event.preventDefault(); toggleSettings(false); el('settings-toggle').focus();
+    }
+});
+function notice(text = '') {
+    el('notice').textContent = text;
+    if (text) toggleSettings(true);
+}
+function caption(text, speaker = 'assistant') {
+    el('caption').textContent = text; el('caption').dataset.speaker = speaker;
+    el('caption').hidden = !text.trim();
+}
 function transcript(speaker, text) {
     const item = document.createElement('li'), who = document.createElement('strong');
     who.textContent = speaker + ' '; item.append(who, document.createTextNode(text));
@@ -113,7 +133,7 @@ async function onMessage(message, generation) {
 }
 async function start() {
     if (audio || sessionId) return;
-    const generation = ++epoch; notice(); el('start').disabled = true; setState('connecting');
+    const generation = ++epoch; notice(); caption(''); el('start').disabled = true; setState('connecting');
     el('transcript').replaceChildren(); el('spending').textContent = 'This conversation · 0 credits';
     const nextAudio = new AvatarAudio(); audio = nextAudio;
     try {

@@ -11,12 +11,12 @@
         <div><p class="avatar-eyebrow">YOUR CONVERSATION SPACE <span>ADMIN PREVIEW</span></p><h1>A little conversation.<br />A lot of possibility.</h1></div>
         <p>Find your words with Rain.<br />Talk about your day, follow a curiosity,<br />or bring a quiz to life.</p>
     </header>
-    <div class="avatar-workspace">
+    <div class="avatar-workspace" id="avatar-workspace">
         <div class="avatar-stage">
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
             <div class="avatar-stage-top"><span class="avatar-name">Rain <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
-            <div class="avatar-caption" id="avatar-caption" aria-live="polite">A conversation starts with hello.</div>
+            <div class="avatar-caption" id="avatar-caption" aria-live="polite" hidden></div>
             <div class="avatar-controls">
                 <button type="button" id="avatar-talk" disabled>Hold to talk <kbd>Space</kbd></button>
                 <button type="button" id="avatar-mute" disabled aria-pressed="false">Mute</button>
@@ -24,8 +24,11 @@
             </div>
             <p class="avatar-listening-hint" id="avatar-hint">Your microphone stays off until you start.</p>
         </div>
-        <aside class="avatar-settings" aria-label="Conversation settings">
-            <div class="avatar-settings-heading"><span class="avatar-step">01</span><h2>Make it your conversation</h2></div>
+        <button class="avatar-settings-toggle" id="avatar-settings-toggle" type="button" aria-controls="avatar-settings" aria-expanded="true" aria-label="Close conversation settings" title="Close settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        </button>
+        <aside class="avatar-settings" id="avatar-settings" aria-label="Conversation settings">
+            <div class="avatar-settings-heading"><span class="avatar-step">MAKE IT YOURS</span><h2>Conversation settings</h2></div>
             <label for="avatar-quiz">What brings you here?</label>
             <select id="avatar-quiz"><option value="">Just a conversation</option></select>
             <p class="avatar-help">Choose a quiz to practice its words and sentences naturally. No scores, no pressure.</p>
