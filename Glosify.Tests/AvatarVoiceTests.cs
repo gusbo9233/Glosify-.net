@@ -2,6 +2,9 @@ using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.Json;
 using System.Threading.Channels;
+using Glosify.Data;
+using Glosify.Services.Abuse;
+using Microsoft.EntityFrameworkCore;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Avatar;
@@ -47,6 +50,8 @@ public sealed class AvatarVoiceTests
         var reply = await Until(socket, "reply", timeout.Token);
         Assert.Equal("Hej! Hur mår du?", reply.GetProperty("text").GetString());
         await Until(socket, "audio-end", timeout.Token);
+        await Until(socket, "usage", timeout.Token);
+        await AssertNoReservations(app);
         var session = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin");
         Assert.Single(session.History); // Undelivered assistant text cannot become remembered speech.
         await AvatarWire.SendAsync(socket, new { type = "played", turnId }, timeout.Token);
@@ -74,9 +79,12 @@ public sealed class AvatarVoiceTests
         await Until(socket, "listening", timeout.Token);
         await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
         await Until(socket, "thinking", timeout.Token);
+        await ai.Started.Task.WaitAsync(timeout.Token);
+        await app.Seed(async db => Assert.Single(await db.Set<ResourceReservation>().ToListAsync()));
         await AvatarWire.SendAsync(socket, new { type = "interrupt" }, timeout.Token);
         await Until(socket, "idle", timeout.Token);
         Assert.True(ai.Cancelled);
+        await AssertNoReservations(app);
         Assert.Single(app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").History);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
     }
@@ -109,6 +117,7 @@ public sealed class AvatarVoiceTests
         await Until(socket, "listening", timeout.Token);
         await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
         await ai.Started.Task.WaitAsync(timeout.Token);
+        await app.Seed(async db => Assert.Single(await db.Set<ResourceReservation>().ToListAsync()));
         if (disconnect)
         {
             await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Leaving", timeout.Token);
@@ -130,7 +139,31 @@ public sealed class AvatarVoiceTests
             while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { }
         }
         Assert.True(ai.Cancelled);
+        await AssertNoReservations(app);
         Assert.Empty(logger.Warnings);
+    }
+
+    [Fact]
+    public async Task ProviderFailureReleasesTurnStorageReservation()
+    {
+        var ai = new Reply { Fail = true }; using var app = App(ai);
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "en" });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "listen", mode = "hands-free" }, timeout.Token);
+        await Until(socket, "listening", timeout.Token);
+        await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
+        var error = await Until(socket, "error", timeout.Token);
+        Assert.Equal(502, error.GetProperty("status").GetInt32());
+        Assert.True(ai.Started.Task.IsCompletedSuccessfully);
+        await Until(socket, "usage", timeout.Token);
+        await AssertNoReservations(app);
+        await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
     }
 
     private sealed class CapturedLogger : ILogger<AvatarConversation>
@@ -147,7 +180,8 @@ public sealed class AvatarVoiceTests
         Overrides = services =>
         {
             services.RemoveAll<IAvatarSpeech>(); services.AddSingleton<IAvatarSpeech, Speech>();
-            services.RemoveAll<IGenerativeAiClient>(); services.AddSingleton<IGenerativeAiClient>(reply);
+            services.RemoveAll<IGenerativeAiClient>();
+            services.AddScoped<IGenerativeAiClient>(sp => new ReservingReply(reply, sp.GetRequiredService<ResourceQuotaService>(), sp.GetRequiredService<RequestResourceReservations>()));
         }
     };
     private static async Task<JsonElement> Until(WebSocket socket, string type, CancellationToken ct)
@@ -167,7 +201,7 @@ public sealed class AvatarVoiceTests
             await ready();
             await foreach (var chunk in audio.ReadAllAsync(ct))
                 if (chunk.Length == 0 || mode == "hands-free") return "Hej!";
-            return "";
+            return "Hej!";
         }
         public Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct)
         {
@@ -178,15 +212,32 @@ public sealed class AvatarVoiceTests
             return audio(bytes);
         }
     }
+    private static Task AssertNoReservations(AvatarFixture app) => app.Seed(async db =>
+        Assert.Empty(await db.Set<ResourceReservation>().ToListAsync()));
+
+    private sealed class ReservingReply(Reply reply, ResourceQuotaService quotas, RequestResourceReservations reservations) : IGenerativeAiClient
+    {
+        public async Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext context, CancellationToken cancellationToken = default)
+        {
+            var id = await quotas.ReserveAsync("admin", new() { ["content_bytes"] = 1024 * 1024 }, cancellationToken);
+            reservations.Track(id, "admin");
+            return await reply.RunAgentTurnAsync(request, context, cancellationToken);
+        }
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext context, string? model = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<string> ExtractTextFromImageAsync(byte[] image, string contentType, string prompt, AiUsageContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
     private sealed class Reply : IGenerativeAiClient
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public AgentRequest? LastRequest;
         public bool Wait;
+        public bool Fail;
         public bool Cancelled;
         public async Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext context, CancellationToken cancellationToken = default)
         {
             LastRequest = request; Started.TrySetResult();
+            if (Fail) throw new InvalidOperationException("Provider unavailable");
             try { if (Wait) await Task.Delay(Timeout.Infinite, cancellationToken); }
             catch (OperationCanceledException) { Cancelled = true; throw; }
             return new("Hej! Hur mår du?", []);

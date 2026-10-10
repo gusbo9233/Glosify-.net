@@ -22,7 +22,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     AvatarConversation conversation, AvatarBilling billing, GlosifyContext db, IAiCreditService credits, ILanguageContext languageContext,
     SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users) : Controller
 {
-    internal static readonly HashSet<string> SupportedCodes = ["en", "sv", "es", "fr", "de", "it", "pt", "ja", "ko", "zh", "ar", "nl", "pl", "uk", "tr", "fi", "da", "no"];
+    internal static readonly HashSet<string> SupportedCodes = ["en", "sv", "es", "fr", "de", "it", "pt", "ja", "ko", "zh-Hans", "ar", "nl", "pl", "uk", "tr", "fi", "da", "nb"];
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     [HttpGet("/Avatar")]

@@ -97,6 +97,34 @@ public sealed class AvatarTests
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync($"/api/avatar/sessions/{id}/voice")).StatusCode);
     }
 
+    [Theory]
+    [InlineData("zh-Hans", "Chinese", "zho")]
+    [InlineData("nb", "Norwegian", "nor")]
+    public async Task CatalogLanguagesSupportFreeConversationAndQuizPractice(string code, string name, string scribe)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var quiz = Guid.NewGuid();
+        await app.Seed(async db =>
+        {
+            db.Quizzes.Add(new Quiz { Id = quiz, UserId = "admin", Name = "Practice", TargetLanguage = name });
+            db.Words.Add(new Word { Id = "hello", QuizId = quiz, Lemma = "hello", Translation = "greeting" });
+            await db.SaveChangesAsync();
+        });
+        using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
+        Assert.Contains(config.RootElement.GetProperty("languages").EnumerateArray(), x => x.GetProperty("code").GetString() == code);
+        Assert.Contains(config.RootElement.GetProperty("quizzes").EnumerateArray(), x => x.GetProperty("id").GetGuid() == quiz);
+        foreach (Guid? quizId in new Guid?[] { null, quiz })
+        {
+            using var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = quizId is null ? code : "en", quizId });
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(code, payload.RootElement.GetProperty("language").GetString());
+            var id = payload.RootElement.GetProperty("sessionId").GetGuid();
+            Assert.Equal(scribe, app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").Language.ScribeCode);
+            Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{id}/end", new { })).StatusCode);
+        }
+    }
+
     [Fact]
     public async Task NavigationOnlyOffersAvatarToAdmins()
     {

@@ -30,7 +30,10 @@ public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, I
             await socket.ConnectAsync(new Uri(url), timeout.Token);
             using var start = await AvatarWire.ReadAsync(socket, timeout.Token);
             if (start.RootElement.GetProperty("message_type").GetString() != "session_started") throw Unavailable();
-            sender = Send();
+            sender = SendAudioAsync(audio, mode,
+                (seconds, token) => billing.SubmittedAsync(reservation, seconds, token),
+                (chunk, commit, token) => AvatarWire.SendAsync(socket, new { message_type = "input_audio_chunk", audio_base_64 = Convert.ToBase64String(chunk), sample_rate = 16000, commit }, token),
+                timeout.Token);
             await ready();
             while (true)
             {
@@ -51,20 +54,27 @@ public sealed class AvatarSpeech(AvatarBilling billing, AvatarPricing pricing, I
             if (sender is not null) { try { await sender; } catch (Exception) { /* The receive loop observes sender failure; always settle in finally. */ } }
             await billing.SettleAsync(reservation, CancellationToken.None);
         }
-        async Task Send()
+    }
+
+    internal static async Task SendAudioAsync(ChannelReader<byte[]> audio, string mode,
+        Func<decimal, CancellationToken, Task> submitted,
+        Func<byte[], bool, CancellationToken, Task> send, CancellationToken ct)
+    {
+        long bytes = 0;
+        await foreach (var chunk in audio.ReadAllAsync(ct))
         {
-            long bytes = 0;
-            await foreach (var chunk in audio.ReadAllAsync(timeout.Token))
-            {
-                bytes += chunk.Length;
-                if (bytes > 45 * 32000) throw new AvatarException(400, mode == "hands-free"
-                    ? "Listening paused after 45 seconds without a completed utterance. Please retry the microphone."
-                    : "Please limit each turn to 45 seconds.");
-                if (chunk.Length > 0) await billing.SubmittedAsync(reservation, bytes / 32000m, timeout.Token);
-                await AvatarWire.SendAsync(socket, new { message_type = "input_audio_chunk", audio_base_64 = Convert.ToBase64String(chunk), sample_rate = 16000, commit = chunk.Length == 0 }, timeout.Token);
-                if (chunk.Length == 0) break;
-            }
+            if (chunk.Length == 0) break;
+            bytes += chunk.Length;
+            if (bytes > 45 * 32000) throw new AvatarException(400, mode == "hands-free"
+                ? "Listening paused after 45 seconds without a completed utterance. Please retry the microphone."
+                : "Please limit each turn to 45 seconds.");
+            await submitted(bytes / 32000m, ct);
+            await send(chunk, false, ct);
         }
+        // Completion cannot be dropped when the bounded microphone queue is full.
+        // Drain every accepted frame before committing a push-to-talk utterance.
+        ct.ThrowIfCancellationRequested();
+        if (mode == "push-to-talk") await send([], true, ct);
     }
 
     public async Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct)

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Entities;
+using Glosify.Services.Abuse;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
@@ -52,7 +53,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
                     await Send(new { type = "idle" }); continue;
                 }
                 if (type == "commit" && input is not null && listening)
-                { input.Writer.TryWrite([]); input.Writer.TryComplete(); continue; }
+                { listening = false; input.Writer.TryComplete(); continue; }
                 if (type != "listen") throw new AvatarException(400, "Unknown voice command.");
                 var mode = root.GetProperty("mode").GetString();
                 if (mode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
@@ -140,6 +141,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             finally
             {
                 listening = false; channel.Writer.TryComplete();
+                await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
+                    .ReleaseAsync(scope.ServiceProvider.GetRequiredService<ResourceQuotaService>());
                 if (!lifetime.IsCancellationRequested && socket.State == WebSocketState.Open)
                 {
                     try { await Send(await billing.TotalsAsync(session.UserId, session.Id, lifetime.Token)); }

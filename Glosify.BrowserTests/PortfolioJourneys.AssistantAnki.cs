@@ -20,6 +20,7 @@ public sealed partial class PortfolioJourneys
     {
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
+        await Page.WaitForLoadStateAsync(LoadState.Load);
         var quizUrl = Page.Url;
         foreach (var (word, translation) in new[] { ("kot", "cat"), ("pies", "dog") })
         {
@@ -27,6 +28,9 @@ public sealed partial class PortfolioJourneys
             await Page.GetByLabel("Translation", new() { Exact = true }).FillAsync(translation);
             await Page.GetByRole(AriaRole.Button, new() { Name = "Add word", Exact = true }).ClickAsync();
             await Expect(Page.Locator(".word-card").Filter(new() { HasText = word })).ToBeVisibleAsync();
+            // Server-rendered cards become visible before deferred scripts finish.
+            // Finish this navigation before posting again or leaving for Anki.
+            await Page.WaitForLoadStateAsync(LoadState.Load);
         }
         await Page.GotoAsync("/Anki?create=true");
         var form = Page.Locator("[data-anki-create-form]");
