@@ -75,6 +75,7 @@ internal sealed class AssistantMessagePresenter
         {
             return change.Kind switch
             {
+                PendingChangeKinds.RenameAnkiCollection or PendingChangeKinds.RemoveAnkiCards or PendingChangeKinds.UnlinkAnkiQuiz => GetString(change.Payload, "summary"),
                 PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),
                 PendingChangeKinds.AddSentence => BuildAddSentenceSummary(change.Payload),
                 PendingChangeKinds.EditWord => BuildEditWordSummary(change.Payload, wordLabels),

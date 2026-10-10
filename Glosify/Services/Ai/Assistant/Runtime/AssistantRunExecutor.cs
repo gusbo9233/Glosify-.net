@@ -1543,6 +1543,8 @@ internal sealed class AssistantRunExecutor(
             next = applied.CreatedQuizId is not null ? "Add the rest of the content with add_items and this quiz_id." : null,
             anki_collection_id = applied.AnkiCollectionId,
             anki_url = applied.AnkiCollectionId is Guid ankiId ? AnkiTools.Url(ankiId) : null,
+            anki_cards_removed = applied.AnkiCardsRemoved,
+            anki_quiz_unlinked = applied.AnkiQuizUnlinked,
             anki_selected_items = applied.AnkiSelectedItems,
             anki_cards_added = applied.AnkiCardsAdded,
             anki_already_included = applied.AnkiAlreadyIncluded,

@@ -12,10 +12,10 @@ public sealed record AnkiCardChange(AnkiCardState? Before, AnkiCardState After);
 public sealed record AnkiLinkChange(AnkiLinkSnapshot Before, AnkiLinkSnapshot After);
 public sealed record AnkiLinkSnapshot(Guid CollectionId, Guid QuizId, AnkiLinkState? Link, IReadOnlyList<AnkiCardState> Cards);
 public sealed record AnkiLinkState(Guid Id, Guid QuizId, bool WordsSourceToTarget, bool WordsTargetToSource,
-    bool SentencesSourceToTarget, bool SentencesTargetToSource, DateTimeOffset UpdatedAt)
+    bool SentencesSourceToTarget, bool SentencesTargetToSource, DateTimeOffset UpdatedAt, DateTimeOffset CreatedAt = default)
 {
     public static AnkiLinkState From(AnkiQuizLink link) => new(link.Id, link.QuizId, link.WordsSourceToTarget,
-        link.WordsTargetToSource, link.SentencesSourceToTarget, link.SentencesTargetToSource, link.UpdatedAt);
+        link.WordsTargetToSource, link.SentencesSourceToTarget, link.SentencesTargetToSource, link.UpdatedAt, link.CreatedAt);
 }
 
 // Membership can be restored without overwriting scheduling. The fingerprint fences later edits/reviews.
@@ -30,7 +30,7 @@ public sealed record AnkiCardState(Guid Id, Guid NoteId, bool DirectlyIncluded, 
             card.Direction, card.State, card.DueAt, card.Stability, card.Difficulty, card.LearningStep,
             card.ReviewCount, card.LapseCount, card.ScheduledDays, card.LastReviewedAt, card.BuriedUntil,
             card.Note.WordId, card.Note.SentenceId, card.Note.QuizId,
-            card.Note.TargetText, card.Note.SourceText, card.Note.UpdatedAt,
+            card.Note.TargetText, card.Note.SourceText,
         }));
 }
 

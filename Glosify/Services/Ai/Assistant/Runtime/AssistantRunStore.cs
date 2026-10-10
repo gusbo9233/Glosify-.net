@@ -258,6 +258,11 @@ internal sealed class AssistantRunStore(
         "list_anki_collections" or "get_anki_collection" => "Reading Anki collections",
         "create_anki_collection" => "Creating an Anki collection",
         "add_anki_items" => "Adding Anki cards",
+        "get_learning_mistakes" or "get_learning_progress" => "Reading learning history",
+        "prepare_study_session" => "Preparing a study link",
+        "rename_anki_collection" => "Renaming an Anki collection",
+        "remove_anki_cards" => "Removing Anki cards from study",
+        "unlink_anki_quiz" => "Unlinking a quiz from Anki",
         "link_anki_quiz" => "Linking the quiz to Anki",
         "get_book_pages" or "search_book_pages" or "list_books" => "Reading the book",
         "get_saved_transcript" or "list_saved_transcripts" => "Reading the transcript",
@@ -671,6 +676,8 @@ internal static class AssistantPermissions
 {
     private static readonly HashSet<string> Ask =
     [
+        PendingChangeKinds.RemoveAnkiCards,
+        PendingChangeKinds.UnlinkAnkiQuiz,
         PendingChangeKinds.DeleteWord,
         PendingChangeKinds.DeleteSentence,
         PendingChangeKinds.MoveQuiz,

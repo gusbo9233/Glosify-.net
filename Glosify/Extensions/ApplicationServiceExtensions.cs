@@ -100,6 +100,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<ICollectionService, CollectionService>();
         services.AddSingleton<IAnkiScheduler, Fsrs6AnkiScheduler>();
         services.AddScoped<IAnkiCollectionService, AnkiCollectionService>();
+        services.AddScoped<Glosify.Services.Learning.ILearningInsightsService, Glosify.Services.Learning.LearningInsightsService>();
         services.AddScoped<IAnkiStudyService, AnkiStudyService>();
         services.AddScoped<IAnkiStatisticsService, AnkiStatisticsService>();
         services.AddScoped<IQuizJsonImportService, QuizJsonImportService>();

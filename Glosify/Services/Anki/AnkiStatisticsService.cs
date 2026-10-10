@@ -20,17 +20,24 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         _timeProvider = timeProvider;
     }
 
-    public async Task<AnkiStatistics?> GetAsync(
+    public Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
+        ReadCoreAsync(collectionId, userId, true, cancellationToken);
+
+    public Task<AnkiStatistics?> ReadSnapshotAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
+        ReadCoreAsync(collectionId, userId, false, cancellationToken);
+
+    private async Task<AnkiStatistics?> ReadCoreAsync(
         Guid collectionId,
         string userId,
-        CancellationToken cancellationToken = default)
+        bool synchronize,
+        CancellationToken cancellationToken)
     {
         var collection = await _context.AnkiCollections.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == collectionId && item.UserId == userId,
             cancellationToken);
         if (collection is null)
             return null;
-        await _collections.SyncCollectionAsync(collectionId, cancellationToken);
+        if (synchronize) await _collections.SyncCollectionAsync(collectionId, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
         var zone = FindTimeZone(collection.TimeZoneId);

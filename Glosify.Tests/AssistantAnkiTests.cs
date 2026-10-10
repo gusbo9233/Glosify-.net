@@ -432,7 +432,7 @@ public sealed class AssistantAnkiTests
         await using var db = h.Db();
         var tools = AssistantToolFactory.Create(db);
         var context = new ToolContext { UserId = AssistantHarness.UserId, Mode = AssistantMode.Language, QuizId = h.QuizId };
-        Assert.Equal(5, tools.Toolbox.Declarations(AssistantMode.Language).Count(t => t.Name.Contains("anki")));
+        Assert.Equal(8, tools.Toolbox.Declarations(AssistantMode.Language).Count(t => t.Name.Contains("anki")));
         Assert.DoesNotContain(tools.Toolbox.Declarations(AssistantMode.Freestyle), t => t.Name.Contains("anki"));
         foreach (var ids in new[] { Array.Empty<string>(), Enumerable.Repeat(Id(0), 101).ToArray(), new[] { " " } })
         {

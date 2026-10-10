@@ -183,6 +183,10 @@ public sealed partial class AnkiCollectionService
             }
             else
             {
+                // Do not restore active membership if the source item was deleted later.
+                if (change.Before.IsActive && !(card.Note.WordId is { } wordId
+                    ? await _context.Words.AnyAsync(w => w.Id == wordId && w.QuizId == card.Note.QuizId, cancellationToken)
+                    : await _context.QuizSentences.AnyAsync(s => s.Id == card.Note.SentenceId && s.QuizId == card.Note.QuizId, cancellationToken))) return false;
                 card.DirectlyIncluded = change.Before.DirectlyIncluded;
                 card.QuizLinkIncluded = change.Before.QuizLinkIncluded;
                 card.ExcludedFromQuizLink = change.Before.ExcludedFromQuizLink;
@@ -204,10 +208,20 @@ public sealed partial class AnkiCollectionService
             var newIds = current.Cards.Where(c => !beforeIds.Contains(c.Id)).Select(c => c.Id).ToList();
             if (await _context.AnkiReviews.AnyAsync(r => newIds.Contains(r.AnkiCardId), cancellationToken)) return false;
             var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(l => l.AnkiCollectionId == current.CollectionId && l.QuizId == current.QuizId, cancellationToken);
-            if (link is null) return false;
-            if (change.Before.Link is not { } old) _context.AnkiQuizLinks.Remove(link);
+            if (change.Before.Link is not { } old)
+            {
+                if (link is not null) _context.AnkiQuizLinks.Remove(link);
+            }
             else
             {
+                var collection = await OwnedCollectionAsync(current.CollectionId, userId, cancellationToken);
+                var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == current.QuizId && q.UserId == userId, cancellationToken);
+                if (collection is null || quiz is null || !Matches(collection, quiz)) return false;
+                if (link is null)
+                {
+                    link = new AnkiQuizLink { Id = old.Id, AnkiCollectionId = current.CollectionId, QuizId = current.QuizId, CreatedAt = old.CreatedAt };
+                    _context.AnkiQuizLinks.Add(link);
+                }
                 link.WordsSourceToTarget = old.WordsSourceToTarget;
                 link.WordsTargetToSource = old.WordsTargetToSource;
                 link.SentencesSourceToTarget = old.SentencesSourceToTarget;

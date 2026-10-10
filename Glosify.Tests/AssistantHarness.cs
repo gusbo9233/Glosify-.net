@@ -269,6 +269,8 @@ internal sealed class AssistantHarness : IAsyncDisposable
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(new AiUsageOptions()));
         services.AddScoped<IQuizLanguagePreferenceService, QuizLanguagePreferenceService>();
         services.AddScoped<IAnkiCollectionService, AnkiCollectionService>();
+        services.AddScoped<IAnkiStatisticsService, AnkiStatisticsService>();
+        services.AddScoped<Glosify.Services.Learning.ILearningInsightsService, Glosify.Services.Learning.LearningInsightsService>();
         services.AddScoped<IQuizService, QuizService>();
         services.AddScoped<ICollectionService, CollectionService>();
         services.AddScoped<IBookDocumentService>(provider => new BookDocumentService(
@@ -438,6 +440,8 @@ internal static class AssistantToolFactory
             .AddSingleton(context)
             .AddSingleton<AssistantMessagePresenter>()
             .AddSingleton<IAnkiCollectionService, AnkiCollectionService>()
+            .AddSingleton<IAnkiStatisticsService, AnkiStatisticsService>()
+            .AddSingleton<Glosify.Services.Learning.ILearningInsightsService, Glosify.Services.Learning.LearningInsightsService>()
             .AddMemoryCache()
             .AddSingleton<TimeProvider>(new FakeTimeProvider(new DateTimeOffset(2026, 8, 10, 12, 0, 0, TimeSpan.Zero)))
             .AddSingleton<IRealtimeTranslationTranscriptService, RealtimeTranslationTranscriptService>()

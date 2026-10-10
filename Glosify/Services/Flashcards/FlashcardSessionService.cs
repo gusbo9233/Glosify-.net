@@ -69,7 +69,10 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
 
         var currentCard = session.Cards[session.CurrentIndex];
 
-        switch (rating?.Trim().ToLowerInvariant())
+        var normalizedRating = rating?.Trim().ToLowerInvariant();
+        session.Ratings.Add(new FlashcardRatingData(session.CurrentIndex,
+            normalizedRating is "again" or "skip" ? normalizedRating : "remembered"));
+        switch (normalizedRating)
         {
             case "again":
                 session.AgainCount++;

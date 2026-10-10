@@ -16,6 +16,8 @@ public sealed record AssistantApplyResult(
     AssistantCreatedQuizSummary? CreatedQuiz = null)
 {
     public Guid? AnkiCollectionId { get; init; }
+    public int AnkiCardsRemoved { get; init; }
+    public bool AnkiQuizUnlinked { get; init; }
     public int AnkiSelectedItems { get; init; }
     public int AnkiCardsAdded { get; init; }
     public int AnkiAlreadyIncluded { get; init; }
