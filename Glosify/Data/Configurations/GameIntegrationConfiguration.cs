@@ -36,6 +36,9 @@ public sealed class GamePlaySessionConfiguration : IEntityTypeConfiguration<Game
     public void Configure(EntityTypeBuilder<GamePlaySession> b)
     {
         b.HasKey(x => x.Id);
+        b.Property(x => x.ActiveSeconds).IsConcurrencyToken();
+        b.Property(x => x.LastSeenAt).IsConcurrencyToken();
+        b.Property(x => x.StartedAt).IsConcurrencyToken();
         b.Property(x => x.Id).HasMaxLength(64);
         b.Property(x => x.UserId).HasMaxLength(450);
         b.HasIndex(x => new { x.StartedAt, x.UserId });

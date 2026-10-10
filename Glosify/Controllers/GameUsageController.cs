@@ -33,6 +33,7 @@ public sealed class GameUsageController(GlosifyContext db, IConfiguration config
         var session = await db.Set<GamePlaySession>().SingleOrDefaultAsync(s => s.Id == input.SessionId, cancellation);
         if (session is not null && session.UserId != input.UserId) return Error(409);
         if (session is null) { session = new() { Id = input.SessionId, UserId = input.UserId, StartedAt = input.StartedAt }; db.Add(session); }
+        if (input.StartedAt < session.StartedAt) session.StartedAt = input.StartedAt;
         if (input.StartedAt > session.LastSeenAt) session.LastSeenAt = input.StartedAt;
         if (input.Operation == "session.active" && input.AudioSeconds is { } active) session.ActiveSeconds = Math.Max(session.ActiveSeconds, (long)active);
         try { await db.SaveChangesAsync(cancellation); }

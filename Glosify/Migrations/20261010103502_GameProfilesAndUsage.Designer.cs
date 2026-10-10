@@ -1754,12 +1754,15 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(64)");
 
                     b.Property<long>("ActiveSeconds")
+                        .IsConcurrencyToken()
                         .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("LastSeenAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetimeoffset");
 
                     b.Property<DateTimeOffset>("StartedAt")
+                        .IsConcurrencyToken()
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("UserId")

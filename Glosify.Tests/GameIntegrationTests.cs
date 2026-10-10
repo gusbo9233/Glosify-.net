@@ -37,6 +37,14 @@ public sealed class GameIntegrationTests
         using var learner = fixture.Client(); fixture.SignIn(learner, "learner", "stamp");
         Assert.Equal(HttpStatusCode.Forbidden, (await learner.GetAsync("/api/game/quizzes")).StatusCode);
     }
+    [Fact] public async Task StaleLoginPreservesSelectedQuizInLocalReturnUrl()
+    {
+        using var fixture = new GameAccessTests.Fixture(); using var client = fixture.Client(); var id=await Seed(fixture);
+        fixture.SignIn(client,"admin","old-stamp");
+        var response=await client.GetAsync($"/sso/game?quizId={id:D}");
+        Assert.Equal(HttpStatusCode.Redirect,response.StatusCode);
+        Assert.Equal("/login?returnUrl="+Uri.EscapeDataString($"/sso/game?quizId={id:D}"),response.Headers.Location!.OriginalString);
+    }
     private static JsonElement Character(Guid? quizId = null) => JsonSerializer.SerializeToElement(new
     {
         version = 1, profile = new { version = 1, name = "Role play", age = "25" },
