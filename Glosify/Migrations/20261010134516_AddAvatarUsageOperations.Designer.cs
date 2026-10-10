@@ -2029,6 +2029,13 @@ namespace Glosify.Migrations
                     b.Property<bool>("IsCorrect")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsSkipped")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ItemId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("Prompt")
                         .IsRequired()
                         .HasMaxLength(512)

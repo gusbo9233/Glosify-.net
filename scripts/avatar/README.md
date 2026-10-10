@@ -105,4 +105,7 @@ including microphone capture, PTT, playback acknowledgement, hands-free, mute, e
 mobile layout and reduced motion. Screenshots go in `output/playwright/`.
 
 No deployment, remote configuration, or production account changes are part of
-this feature branch. The separate worktree baseline is commit `37d76f5`.
+this feature branch. `codex/talking-avatar-pr` is based on master (`ff7a1f8`)
+and contains only the avatar implementation and review fixes. The original
+`codex/talking-avatar` branch remains available with its isolated snapshot baseline;
+do not use that original branch for a PR to master.
