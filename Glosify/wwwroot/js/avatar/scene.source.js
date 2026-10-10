@@ -9,6 +9,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import '@babylonjs/loaders/glTF';
+import { createPerformance } from './performance.js';
 
 export async function createAvatar(canvas) {
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
@@ -31,40 +32,44 @@ export async function createAvatar(canvas) {
     const targets = {};
     for (const mesh of loaded.meshes) {
         const manager = mesh.morphTargetManager;
-        if (manager) for (let i = 0; i < manager.numTargets; i++) {
+        if (!manager) continue;
+        for (let i = 0; i < manager.numTargets; i++) {
             const target = manager.getTarget(i); (targets[target.name] ||= []).push(target);
         }
+        // Many units cross zero every frame; a fixed influencer count avoids a shader
+        // variant per active-target count. Vertex-attribute mode supports only eight.
+        if (manager.isUsingTextureForTargets) manager.numMaxInfluencers = manager.numTargets;
     }
     const set = (name, value) => { for (const target of targets[name] || []) target.influence = value; };
-    let state = 'off', analyser = null, mouth = 0, blinkAt = 2.6, start = performance.now(), last = 0;
-    const wave = new Uint8Array(512);
+    const rain = createPerformance();
+    let analyser = null, spectrum = null, wave = null, last = performance.now();
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     engine.runRenderLoop(() => {
         if (document.hidden) return;
-        const now = performance.now(), t = (now - start) / 1000;
+        const now = performance.now();
         if (now - last < 1000 / 40) return;
-        last = now;
-        let volume = 0;
-        if (analyser && state === 'speaking') {
-            analyser.getByteTimeDomainData(wave);
-            volume = Math.sqrt(wave.reduce((sum, value) => sum + ((value - 128) / 128) ** 2, 0) / wave.length);
+        const elapsed = (now - last) / 1000; last = now;
+        let audio = null;
+        if (analyser && rain.state === 'speaking') {
+            analyser.getFloatFrequencyData(spectrum); analyser.getFloatTimeDomainData(wave);
+            audio = { spectrum, sampleRate: analyser.context.sampleRate, level: Math.sqrt(wave.reduce((sum, value) => sum + value * value, 0) / wave.length) };
         }
-        mouth += (Math.min(1, volume * 7) - mouth) * .55;
-        set('jawOpen', mouth); set('smile', 0);
-        if (!reduced.matches) {
-            if (t > blinkAt + .18) blinkAt = t + 2.8 + Math.random() * 3;
-            set('blink', t >= blinkAt ? Math.sin(Math.min(1, (t - blinkAt) / .18) * Math.PI) : 0);
-            set('nod', Math.sin(t * .72) * .25 + (state === 'listening' ? .28 : 0));
-            set('turn', Math.sin(t * .38) * .25);
-            root.position.y = Math.sin(t * 1.1) * .0018;
-            root.rotation.y = Math.PI + Math.sin(t * .4) * .014;
-        } else { set('blink', 0); set('nod', 0); set('turn', 0); }
+        const { weights, posture } = rain.update(elapsed, audio, reduced.matches);
+        for (const name in weights) set(name, weights[name]);
+        // A slight lean towards the viewer, weight shift and breathing rise.
+        root.position.set(0, posture.rise, -posture.lean);
+        root.rotation.set(0, Math.PI + posture.yaw, posture.sway);
         scene.render();
     });
     const resize = new ResizeObserver(() => engine.resize()); resize.observe(canvas);
     return {
-        setState(value) { state = value; },
-        setAnalyser(value) { analyser = value; },
+        setState(value) { rain.setState(value); },
+        setReply(text) { rain.setReply(text); },
+        hear(level) { rain.hear(level); },
+        setAnalyser(value) {
+            analyser = value;
+            if (value) { spectrum = new Float32Array(value.frequencyBinCount); wave = new Float32Array(value.fftSize); }
+        },
         dispose() { resize.disconnect(); scene.dispose(); engine.dispose(); }
     };
 }

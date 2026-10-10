@@ -2,8 +2,8 @@
 
 .avatar-heading h1{color:#e5ece7}.avatar-heading>p,.avatar-eyebrow,.avatar-footer,.avatar-transcript{color:#9fb3aa}
 
-/* Warm courtyard portrait, with independent contrast for the controls. */
-.avatar-stage{background:#c9b894 url('/images/avatar/courtyard.jpg') center center/cover no-repeat;min-height:660px}
+/* Warm library portrait, with independent contrast for the controls. */
+.avatar-stage{background:#6b4a36 url('/images/avatar/library.jpg') center center/cover no-repeat;min-height:660px}
 .avatar-stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#1f261b24,transparent 20%,transparent 58%,#17251d94);z-index:-1}
 .avatar-stage canvas{z-index:-1}
 .avatar-stage-top{color:#fff;text-shadow:0 1px 12px #182c23a0}

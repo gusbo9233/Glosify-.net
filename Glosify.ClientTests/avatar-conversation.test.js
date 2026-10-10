@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', im
 function setup(mode = 'push-to-talk') {
     const elements = new Map(), sent = [], listeners = {};
     const element = id => {
-        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], add(option) { this.options.push(option); }, replaceChildren() {}, addEventListener() {}, setAttribute() {} });
+        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren() {}, addEventListener() {}, setAttribute() {} });
         return elements.get(id);
     };
     const context = vm.createContext({

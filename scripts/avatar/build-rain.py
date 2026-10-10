@@ -3,7 +3,8 @@ Blender -b --factory-startup -P build-rain.py -- SOURCE_DIRECTORY OUTPUT.glb
 See README.md for the pinned source manifest and asset preparation.
 """
 from pathlib import Path
-import sys, math, json
+import sys, math, json, struct
+import numpy as np
 import bpy
 from mathutils import Vector, Matrix, Quaternion
 sys.path.insert(0, str(Path(__file__).parent))
@@ -60,6 +61,13 @@ def expression(name, weight=1):
         rest=bone.bone.matrix_local.to_3x3()
         bone.matrix_basis=bone.matrix_basis @ (rest.inverted() @ rotation @ rest).to_4x4()
     bpy.context.view_layer.update()
+def both(unit, weight=1):
+    for side in ['Left','Right']: expression(side+unit, weight)
+def shoulders(angle):
+    # Raise each collarbone about the sternum; the arm and blouse follow.
+    for side in ['L','R']:
+        bone=rig.pose.bones['clavicle.'+side]
+        rotate(bone.name,(0,1,0),-math.copysign(angle,bone.tail.x-bone.head.x))
 
 # Closed-mouth resting smile: opening the lips and jaw belongs only to speech.
 for side in ['Left','Right']:
@@ -117,12 +125,32 @@ for obj in originals:
     baked.shape_key_add(name='Basis'); exported.append((obj,baked))
 
 # Expressions are baked from anatomical skin weights, preserving teeth, lids and hair.
+# The viewer blends mouth shapes from speech audio, and expression, gaze, head and
+# shoulder units for body language; one-sided units allow asymmetric expressions.
 poses = {
     'jawOpen': lambda: expression('JawDrop',.65),
+    'mouthWide': lambda: [expression('Mouth'+side+'PullSide',.5) for side in ['Left','Right']],
+    'mouthRound': lambda: expression('LipsKiss'),
+    'lipsPart': lambda: [expression('UpperLipUp',.6), expression('lowerLipDown',.25)],
+    'mouthPress': lambda: expression('lowerLipUp',.35),
     'blink': lambda: [expression(side+part) for side in ['Left','Right'] for part in ['UpperLidClosed','LowerLidUp']],
-    'smile': lambda: [expression('Mouth'+side+'PullUp',.2) for side in ['Left','Right']],
+    'smileLeft': lambda: [expression('MouthLeftPullUp',.42), expression('LeftCheekUp',.6), expression('LeftLowerLidUp',.15)],
+    'smileRight': lambda: [expression('MouthRightPullUp',.42), expression('RightCheekUp',.6), expression('RightLowerLidUp',.15)],
+    'browRaiseLeft': lambda: [expression('LeftInnerBrowUp',.6), expression('LeftOuterBrowUp',.8)],
+    'browRaiseRight': lambda: [expression('RightInnerBrowUp',.6), expression('RightOuterBrowUp',.8)],
+    'browInner': lambda: both('InnerBrowUp',.8),
+    'browDown': lambda: both('BrowDown',.7),
+    'squint': lambda: both('LowerLidUp',.45),
+    'eyeWide': lambda: both('UpperLidOpen',.45),
+    'lookUp': lambda: both('EyeUp'),
+    'lookDown': lambda: both('EyeDown'),
+    'lookLeft': lambda: both('EyeturnLeft'),
+    'lookRight': lambda: both('EyeturnRight'),
     'nod': lambda: rotate('head',(1,0,0),.065),
-    'turn': lambda: rotate('head',(0,0,1),.07)
+    'turn': lambda: rotate('head',(0,0,1),.07),
+    'tilt': lambda: rotate('head',(0,1,0),.07),
+    'shrug': lambda: shoulders(.08),
+    'breathe': lambda: shoulders(.022)
 }
 neutral = {b.name:b.matrix_basis.copy() for b in rig.pose.bones}
 for name,pose in poses.items():
@@ -148,6 +176,68 @@ bpy.context.view_layer.objects.active=exported[0][1]
 out.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=str(out),export_format='GLB',use_selection=True,export_animations=False,
     export_morph=True,export_morph_normal=True,export_extras=True,export_image_format='JPEG',export_jpeg_quality=88)
+
+def compact_morph_targets(path, tolerances={'POSITION':1e-5,'NORMAL':1e-3}):
+    """Keep only measurable morph deltas as sparse accessors.
+    The exporter writes float noise for every vertex (normals in particular), which
+    otherwise stores each of the many face units densely."""
+    raw=path.read_bytes(); json_length=struct.unpack_from('<I',raw,12)[0]
+    gltf=json.loads(raw[20:20+json_length]); binary=raw[28+json_length:28+json_length+struct.unpack_from('<I',raw,20+json_length)[0]]
+    old_views,views,out,kept=gltf['bufferViews'],[],bytearray(),{}
+    kinds={5121:np.uint8,5123:np.uint16,5125:np.uint32}
+    def read(view,dtype,count,offset=0):
+        v=old_views[view]; assert 'byteStride' not in v
+        return np.frombuffer(binary,dtype,count,v.get('byteOffset',0)+offset)
+    def add(data,source=None):
+        out.extend(bytes((-len(out))%4)); view={'buffer':0,'byteOffset':len(out),'byteLength':len(data)}
+        view.update({k:source[k] for k in ('byteStride','target') if source and k in source})
+        views.append(view); out.extend(data); return len(views)-1
+    def keep(index):
+        if index not in kept:
+            v=old_views[index]; start=v.get('byteOffset',0)
+            kept[index]=add(binary[start:start+v['byteLength']],v)
+        return kept[index]
+    def dense(index):
+        a=gltf['accessors'][index]; assert a['componentType']==5126 and a['type']=='VEC3'
+        values=read(a['bufferView'],np.float32,a['count']*3,a.get('byteOffset',0)).reshape(-1,3).copy() if 'bufferView' in a else np.zeros((a['count'],3),np.float32)
+        if 'sparse' in a:
+            s=a['sparse']; i=read(s['indices']['bufferView'],kinds[s['indices']['componentType']],s['count'],s['indices'].get('byteOffset',0))
+            values[i]=read(s['values']['bufferView'],np.float32,s['count']*3,s['values'].get('byteOffset',0)).reshape(-1,3)
+        return values
+    replaced={}
+    for mesh in gltf['meshes']:
+        for primitive in mesh['primitives']:
+            for target in primitive.get('targets',[]):
+                deltas={name:dense(index) for name,index in target.items()}
+                for name,values in deltas.items(): values[np.linalg.norm(values,axis=1)<=tolerances.get(name,1e-3)]=0
+                changed=np.flatnonzero(np.any([np.any(v!=0,axis=1) for v in deltas.values()],axis=0))
+                if not len(changed): changed=np.array([0])
+                component=5123 if len(next(iter(deltas.values())))<65536 else 5125
+                # POSITION and NORMAL share one index list per target.
+                indices=(len(replaced),changed.astype(kinds[component]).tobytes())
+                for name,index in target.items():
+                    accessor={'componentType':5126,'count':len(deltas[name]),'type':'VEC3','sparse':{'count':len(changed),
+                        'indices':{'bufferView':indices,'componentType':component},'values':{'bufferView':('v',deltas[name][changed].tobytes())}}}
+                    if name=='POSITION': accessor.update(min=deltas[name].min(0).tolist(),max=deltas[name].max(0).tolist())
+                    replaced[index]=accessor
+    shared={}
+    for index,accessor in enumerate(gltf['accessors']):
+        if index in replaced:
+            accessor=gltf['accessors'][index]=replaced[index]; s=accessor['sparse']
+            key=s['indices']['bufferView'][0]
+            if key not in shared: shared[key]=add(s['indices']['bufferView'][1])
+            s['indices']['bufferView']=shared[key]; s['values']['bufferView']=add(s['values']['bufferView'][1])
+            continue
+        if 'bufferView' in accessor: accessor['bufferView']=keep(accessor['bufferView'])
+        for part in ('indices','values'):
+            if 'sparse' in accessor: accessor['sparse'][part]['bufferView']=keep(accessor['sparse'][part]['bufferView'])
+    for image in gltf.get('images',[]):
+        if 'bufferView' in image: image['bufferView']=keep(image['bufferView'])
+    out.extend(bytes((-len(out))%4)); gltf['bufferViews']=views; gltf['buffers'][0]['byteLength']=len(out)
+    text=json.dumps(gltf,separators=(',',':')).encode(); text+=b' '*((-len(text))%4)
+    path.write_bytes(struct.pack('<III',0x46546C67,2,28+len(text)+len(out))+struct.pack('<II',len(text),0x4E4F534A)+text
+        +struct.pack('<II',len(out),0x004E4942)+bytes(out))
+compact_morph_targets(out)
 # Optional reproducible portrait render for reviewing geometry and expressions.
 if len(args)>2:
     for original,_ in exported: original.hide_render=True

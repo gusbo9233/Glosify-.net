@@ -1,0 +1,225 @@
+{
+  "license": "Poly Haven models and textures: CC0-1.0. NASA Blue Marble land surface: public domain (NASA Goddard Space Flight Center, Reto Stöckli).",
+  "files": [
+    {
+      "path": "models/GreenChair_01/GreenChair_01.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/GreenChair_01/GreenChair_01_1k.gltf",
+      "sha256": "d1e4946ac99ab9e64c82d802fe5cd49d962750e34b8d284762b3fe2b00ba8a45"
+    },
+    {
+      "path": "models/GreenChair_01/textures/GreenChair_01_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/GreenChair_01/GreenChair_01_arm_1k.jpg",
+      "sha256": "d522e08441f3d54977e085b9e54de125efea7e963d3f433a5bd74cad031d2178"
+    },
+    {
+      "path": "models/GreenChair_01/textures/GreenChair_01_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/GreenChair_01/GreenChair_01_nor_gl_1k.jpg",
+      "sha256": "008b49786f8395301b15b398856f56bd04357096ce542da76f1a3dcad8c28fc8"
+    },
+    {
+      "path": "models/GreenChair_01/textures/GreenChair_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/GreenChair_01/GreenChair_01_diff_1k.jpg",
+      "sha256": "fb7ec456b37dc95fb73d0b08bfa2802c304a40263517d05e674657ad356cfac4"
+    },
+    {
+      "path": "models/GreenChair_01/GreenChair_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/GreenChair_01/GreenChair_01.bin",
+      "sha256": "9070a41bcf38005997fe71a49e50b942b427ec05938413c9dc204df0b781e410"
+    },
+    {
+      "path": "models/Chandelier_01/Chandelier_01.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/Chandelier_01/Chandelier_01_1k.gltf",
+      "sha256": "19a63453965dde6ace3159e2059c30adee81905e95a6beaf62b7f47d9283e724"
+    },
+    {
+      "path": "models/Chandelier_01/textures/Chandelier_01_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Chandelier_01/Chandelier_01_nor_gl_1k.jpg",
+      "sha256": "0830646c51d8d7a8af90b716768052aba973f9b2e43ac40fdaf7e5aeacbe0244"
+    },
+    {
+      "path": "models/Chandelier_01/Chandelier_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/Chandelier_01/Chandelier_01.bin",
+      "sha256": "f476cc0c0eed8ccc31c49fc797e00ac6a0c8666c345aa933a9accd5762c06cd1"
+    },
+    {
+      "path": "models/Chandelier_01/textures/Chandelier_01_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Chandelier_01/Chandelier_01_arm_1k.jpg",
+      "sha256": "f557f4872ed9a586728df285b5ee7d1e4a48aef81d8040d1e423a7fc02602e4e"
+    },
+    {
+      "path": "models/Chandelier_01/textures/Chandelier_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/Chandelier_01/Chandelier_01_diff_1k.jpg",
+      "sha256": "b52eaa35e990d61842006ee8c4a24e08c82e36d87e9ff7a751a6400547a0eba2"
+    },
+    {
+      "path": "models/ClassicConsole_01/ClassicConsole_01.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/ClassicConsole_01/ClassicConsole_01_1k.gltf",
+      "sha256": "6c7f79026ad7c388c5d40c56a0988f2a28dc0fc6e489e110332d06792ecd5833"
+    },
+    {
+      "path": "models/ClassicConsole_01/textures/ClassicConsole_01_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/ClassicConsole_01/ClassicConsole_01_nor_gl_1k.jpg",
+      "sha256": "b8619f83d22c8b050f66fe696e0422bd7e6d8b868295b2dd9708a60352539391"
+    },
+    {
+      "path": "models/ClassicConsole_01/textures/ClassicConsole_01_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/ClassicConsole_01/ClassicConsole_01_arm_1k.jpg",
+      "sha256": "39cd3bd935a13a09a694e5877f528f6d026395da7a4509fd4514d88c1d8dfd36"
+    },
+    {
+      "path": "models/ClassicConsole_01/ClassicConsole_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/ClassicConsole_01/ClassicConsole_01.bin",
+      "sha256": "f1781fbd65be7ea34a653ed1eaf06a47a4ee3e98dcc5a5627f5479019d87b025"
+    },
+    {
+      "path": "models/ClassicConsole_01/textures/ClassicConsole_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/ClassicConsole_01/ClassicConsole_01_diff_1k.jpg",
+      "sha256": "cf288157e8d8cfe70eef2d355a5d13076b9a1664ff1f5e6cb07f1970de6a2125"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/book_encyclopedia_set_01.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
+      "sha256": "89eb80fffd619ebbe5043d632bd8cf25b2d68a3614aee2f356e850c69ae498ba"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_cover_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_cover_diff_1k.jpg",
+      "sha256": "a456aae6ef0ab24769527cccac5313a802ad253584c49fc10a377ce75969d382"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/book_encyclopedia_set_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/book_encyclopedia_set_01/book_encyclopedia_set_01.bin",
+      "sha256": "bbc726698b6e40ab5537b73e082f7bb4db97b9e6f978f52cdaf763dddc85d9ba"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_paper_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_paper_nor_gl_1k.jpg",
+      "sha256": "705f4380c654c44d086ceb120595078e562438c6e4ba01458d2d23fd61483d9d"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_cover_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_cover_arm_1k.jpg",
+      "sha256": "ab19b627092da77770de2212a04785940feb2df0957cab8993742a6b8b3f7bff"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_cover_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_cover_nor_gl_1k.jpg",
+      "sha256": "17ad410f2d1aab487e47c729a5b988ea4e4d196679c8696331b7960e77a91c17"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_paper_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_paper_diff_1k.jpg",
+      "sha256": "b552d6829b75db7a75012bb761068c63507b69e8e944597ea53f6d1a70efa36c"
+    },
+    {
+      "path": "models/book_encyclopedia_set_01/textures/book_encyclopedia_set_01_paper_roughness_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/book_encyclopedia_set_01/book_encyclopedia_set_01_paper_roughness_1k.jpg",
+      "sha256": "62d875e9427f5d71f1bb4d9dc9569e34465bfd3067b8b13f5644b73e23a09fa3"
+    },
+    {
+      "path": "models/vintage_oil_lamp/vintage_oil_lamp.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/vintage_oil_lamp/vintage_oil_lamp_1k.gltf",
+      "sha256": "ae570b98ea30b0337f62d8e7f551c03a05de00b238f3fac8f1ca5a1f1dbd1add"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_glass_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_glass_diff_1k.jpg",
+      "sha256": "dbe33017c012a00c74419bb8f05b16a2eeee5e06e2ceab49a80462d25c7a7c0a"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_nor_gl_1k.jpg",
+      "sha256": "54db7efff64c4117782e25851544a0eb4881e5e28a13a06917a16d15ce26b1db"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_flame_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_flame_diff_1k.jpg",
+      "sha256": "827c6a4fa9274141636cee9415f416a32937f2f257901bbe8488b22b862509f1"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_diff_1k.jpg",
+      "sha256": "a96cc1383fb056618eca80a0cf4ae192286c8752f8e83cb52f9fec02ca94a471"
+    },
+    {
+      "path": "models/vintage_oil_lamp/vintage_oil_lamp.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/4k/vintage_oil_lamp/vintage_oil_lamp.bin",
+      "sha256": "4064065c8e288beaa58639c139c801db337bfc6183e73378a9177157f0587167"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_glass_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_glass_nor_gl_1k.jpg",
+      "sha256": "2752589c8f6c7724bf2aa5d097010bd9257fff8ca0f85add13ec2ac702909df0"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_arm_1k.jpg",
+      "sha256": "004b7b6238632e4fc9e2ad7e76529caa292cfd96f5a42d6564531207f25c3e92"
+    },
+    {
+      "path": "models/vintage_oil_lamp/textures/vintage_oil_lamp_glass_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/vintage_oil_lamp/vintage_oil_lamp_glass_arm_1k.jpg",
+      "sha256": "0ef2b0eb2087895851be979afc5ccb2c11076f71bc667f9e586b7f8038efc158"
+    },
+    {
+      "path": "models/mantel_clock_01/mantel_clock_01.gltf",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/1k/mantel_clock_01/mantel_clock_01_1k.gltf",
+      "sha256": "e4c4f264175626fa14f12409ee5d687cf7f0d68fd1881cb7eb927c5f112de6ab"
+    },
+    {
+      "path": "models/mantel_clock_01/textures/mantel_clock_01_diff_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/mantel_clock_01/mantel_clock_01_diff_1k.jpg",
+      "sha256": "278062fa68c0f763ecd55d59ed31873bfb7fb004a83ec7a3e5e26b31d3d1e23f"
+    },
+    {
+      "path": "models/mantel_clock_01/textures/mantel_clock_01_arm_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/mantel_clock_01/mantel_clock_01_arm_1k.jpg",
+      "sha256": "08dea26547315f6a081bfe0763da8eb987430833cd82f65bd472de165aaa6ba7"
+    },
+    {
+      "path": "models/mantel_clock_01/textures/mantel_clock_01_nor_gl_1k.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/1k/mantel_clock_01/mantel_clock_01_nor_gl_1k.jpg",
+      "sha256": "faa4e33a64fee23010abc03fff82f277ed1b1f115ab0651259e9c7df0aca6d5f"
+    },
+    {
+      "path": "models/mantel_clock_01/mantel_clock_01.bin",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/mantel_clock_01/mantel_clock_01.bin",
+      "sha256": "95e2b4820daaea592aa3e354bb06aa78c2e747fb89939b54eaf51140294d40c7"
+    },
+    {
+      "path": "textures/diagonal_parquet/Diffuse.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/diagonal_parquet/diagonal_parquet_diff_2k.jpg",
+      "sha256": "86b51dd6f1d4e51b065122666e9d03dfb40e3ada47f7f64db9209a45bfbefc2f"
+    },
+    {
+      "path": "textures/diagonal_parquet/nor_gl.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/diagonal_parquet/diagonal_parquet_nor_gl_2k.jpg",
+      "sha256": "0dc93d291b4f24d05842b5b207dae52accc7426dcb27bda318cc22e741937504"
+    },
+    {
+      "path": "textures/diagonal_parquet/Rough.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/diagonal_parquet/diagonal_parquet_rough_2k.jpg",
+      "sha256": "0ec27d8618e6c14e3439c9a68638766af9df369e04f8eb2486f0726d081aaf2f"
+    },
+    {
+      "path": "textures/dark_wood/Diffuse.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/dark_wood/dark_wood_diff_2k.jpg",
+      "sha256": "ff811f97ab46f1148f2753451fd9d64abf0ab9101e85922ed9f45fc3595a3cf2"
+    },
+    {
+      "path": "textures/dark_wood/nor_gl.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/dark_wood/dark_wood_nor_gl_2k.jpg",
+      "sha256": "624c7262c726cbc7da8ad02941dc6c95dec104fdc20e2804560ea112814b1d5d"
+    },
+    {
+      "path": "textures/dark_wood/Rough.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/dark_wood/dark_wood_rough_2k.jpg",
+      "sha256": "09eb42a24aeadcd5dd04d19f89d8df4116fd9cdbd405d0dab17e263b54ece133"
+    },
+    {
+      "path": "earth.jpg",
+      "url": "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57752/land_shallow_topo_2048.jpg",
+      "sha256": "5b54cc586c6cbf2b28762ef4d4011f6cf4227a8b93a637b818a0c54090ce6c2c"
+    }
+  ]
+}

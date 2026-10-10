@@ -62,6 +62,7 @@ function interrupt() {
 }
 function frame({ pcm, rms }) {
     if (!ready || muted) return;
+    visual?.hear(rms);
     if (state === 'listening') {
         if (mode() !== 'push-to-talk' || holding || flushing) socket.send(pcm);
         preRoll = []; return;
@@ -112,7 +113,7 @@ async function onMessage(message, generation) {
         case 'partial': caption(message.text, 'user'); break;
         case 'transcript': caption(message.text, 'user'); transcript('You', message.text); break;
         case 'thinking': setState('thinking'); break;
-        case 'reply': currentReply = message.text; caption(message.text); setState('speaking'); break;
+        case 'reply': currentReply = message.text; caption(message.text); visual?.setReply(message.text); setState('speaking'); break;
         case 'audio': audio?.play(message.pcm); break;
         case 'audio-end': {
             const id = turnId, text = currentReply;

@@ -94,17 +94,48 @@ blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
 The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
-The export bakes jaw, blink, smile, nod and turn into morph targets and embeds textures.
+The export bakes morph targets for mouth shapes (`jawOpen`, `mouthWide`, `mouthRound`,
+`lipsPart`, `mouthPress`), expressions (`smileLeft`/`Right`, `browRaiseLeft`/`Right`,
+`browInner`, `browDown`, `squint`, `eyeWide`, `blink`), gaze (`lookUp`/`Down`/`Left`/`Right`)
+and body language (`nod`, `turn`, `tilt`, `shrug`, `breathe`), and embeds textures. After
+export, morph deltas below 0.01 mm (positions) or 0.001 (normals) are dropped and stored
+as sparse accessors, so the extra units add about 0.6 MB instead of over 20 MB.
 Facial sculpt targets soften the jaw and define the upper lip. The resting smile
-has closed lips and no jaw-opening pose; the viewer keeps the extra smile morph
-at zero so speech always returns to this neutral expression. The hair is weighted to the head,
+has closed lips and no jaw-opening pose; expression smiles change slowly with the
+conversation state and never follow the audio, so speech returns to a calm closed mouth.
+The hair is weighted to the head,
 avoiding shoulder-driven kinks during posing. The face retains all source bone weights
 before baking so facial expressions are not truncated to four influences.
-The resting smile, cheeks, eyebrows, eyelids and speaking mouth use the authored CC0 face pose
-units in `face-poses.json`, whose source revision is recorded alongside the poses. Runtime mouth
-movement follows output audio amplitude; it is not phoneme-exact lip sync.
+The resting smile, cheeks, eyebrows, eyelids, gaze and speaking mouth use the authored CC0 face pose
+units in `face-poses.json`, whose source revision is recorded alongside the poses.
 
-`wwwroot/images/avatar/courtyard.jpg` is an AI-generated, optimized background. Prompt:
+`Glosify/wwwroot/js/avatar/performance.js` drives these morphs and is bundled into
+`scene.min.js`. Mouth shapes come from the reply audio's spectrum: loudness and energy
+near 1 kHz open the jaw, 2–3 kHz energy spreads the lips, its absence rounds them and
+hiss parts them. This is approximate, not phoneme-exact lip sync. Rain also holds eye
+contact with small saccades and occasional glances, blinks irregularly (sometimes twice),
+nods on speech emphasis, gives small nods when the learner pauses, looks away while
+thinking, raises her brows after asking a question, and breathes. With reduced motion,
+blinks, gaze, head and posture movement stop; the mouth still follows speech.
+
+## Rebuild the library background
+
+`wwwroot/images/avatar/library.jpg` is rendered in Blender: walnut bookcases filled with
+generated books, deep green drapes around an arched window, and an antique floor globe
+beside a reading chair, softly out of focus behind Rain. Furniture, chandelier, lamp,
+clock, books and wood textures are CC0 Poly Haven assets; the globe restyles the public
+domain NASA Blue Marble land map (credit: Reto Stöckli, NASA Goddard Space Flight Center).
+`library-source.json` pins every download and its hash; the build fetches and verifies
+missing files, then renders (about five minutes on a laptop CPU):
+
+```sh
+blender --factory-startup -b -P scripts/avatar/build-library.py -- \
+  /tmp/avatar-library-source Glosify/wwwroot/images/avatar/library.jpg
+```
+
+Optional arguments after the output set the resolution percentage and sample count for
+quick previews. The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
+AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,
 jasmine, olive foliage and terracotta planters, soft Tuscan garden, late afternoon
 sunlight from upper left, uncluttered center for a brunette portrait, sage/cream palette.”
@@ -113,7 +144,8 @@ sunlight from upper left, uncluttered center for a brunette portrait, sage/cream
 
 ```sh
 dotnet test Glosify.Tests --filter 'FullyQualifiedName~Avatar'
-node --test Glosify.ClientTests/avatar-audio.test.js
+node --test Glosify.ClientTests/avatar-audio.test.js Glosify.ClientTests/avatar-conversation.test.js \
+  Glosify.ClientTests/avatar-performance.test.js
 ```
 
 Set `RUN_SQLSERVER_TESTS=true` and a local `ConnectionStrings__DefaultConnection`

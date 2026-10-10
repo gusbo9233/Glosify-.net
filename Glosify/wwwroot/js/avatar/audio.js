@@ -14,7 +14,8 @@ export class AvatarAudio {
                 if (event.data.flushed) { this.flushReady?.(); this.flushReady = null; }
                 else onFrame(event.data);
             };
-            this.analyser = this.context.createAnalyser(); this.analyser.fftSize = 512;
+            // Little smoothing so the viewer's mouth shapes follow individual syllables.
+            this.analyser = this.context.createAnalyser(); this.analyser.fftSize = 512; this.analyser.smoothingTimeConstant = .25;
             this.analyser.connect(this.context.destination);
         } catch (error) { await this.close(); throw error; }
     }
