@@ -19,7 +19,7 @@ public sealed class LearningInsightsService(GlosifyContext db, TimeProvider cloc
         var observations = new List<Observation>();
         foreach (var attempt in attempts)
         foreach (var item in attempt.Items.Where(i => i.ItemId != null && !i.IsSkipped))
-            observations.Add(new(attempt.QuizId, PracticeItemType.Normalize(attempt.PracticeItemType), item.ItemId!,
+            observations.Add(new(attempt.QuizId, PracticeItemType.Normalize(attempt.PracticeItemType), NormalizeItemId(attempt.PracticeItemType, item.ItemId!),
                 !item.IsCorrect, attempt.CompletedAt, false));
         observations.AddRange(reviews.Select(r => new Observation(r.QuizId, r.ItemType, r.ItemId,
             r.Rating == "again", r.At, true)));
@@ -39,7 +39,7 @@ public sealed class LearningInsightsService(GlosifyContext db, TimeProvider cloc
             // Deleted/moved content and unidentifiable legacy history never become actionable ids.
             if (!content.TryGetValue(key, out var text)) continue;
             var quiz = quizzes[key.QuizId];
-            ranked.Add(new(quiz.Id, quiz.Name, quiz.SourceLanguage, quiz.TargetLanguage, key.Kind, key.Id, text.Item1, text.Item2,
+            ranked.Add(new(quiz.Id, quiz.Name, quiz.SourceLanguage, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language), key.Kind, key.Id, text.Item1, text.Item2,
                 group.Count(o => o.Mistake), group.Count(), group.Where(o => o.Mistake).Max(o => o.At),
                 group.Count(o => o.Mistake && !o.Anki), group.Count(o => o.Mistake && o.Anki)));
         }
@@ -67,7 +67,7 @@ public sealed class LearningInsightsService(GlosifyContext db, TimeProvider cloc
         string userId, string targetLanguage, Guid? quizId, int days, CancellationToken ct)
     {
         var language = QuizLanguageCatalog.Find(targetLanguage)?.Name ?? throw new ArgumentException("Select a learning language first.");
-        var quizzes = await db.Quizzes.AsNoTracking().Where(q => q.UserId == userId && q.TargetLanguage == language && (quizId == null || q.Id == quizId)).ToDictionaryAsync(q => q.Id, ct);
+        var quizzes = await db.Quizzes.AsNoTracking().Where(q => q.UserId == userId && (q.TargetLanguage == language || ((q.TargetLanguage == null || q.TargetLanguage.Trim() == "") && q.Language == language)) && (quizId == null || q.Id == quizId)).ToDictionaryAsync(q => q.Id, ct);
         if (quizId.HasValue && quizzes.Count == 0) throw new ArgumentException("Quiz not found for the selected language.");
         var ids = quizzes.Keys.ToList();
         var now = clock.GetUtcNow();
@@ -86,6 +86,11 @@ public sealed class LearningInsightsService(GlosifyContext db, TimeProvider cloc
             .Select(r => new Review(r.QuizId, r.ItemType, r.WordId ?? r.SentenceId?.ToString() ?? "", r.Rating, r.ReviewedAt)).ToList();
         return (quizzes, attempts, reviews, since);
     }
+
+    // Practice uses N-format GUIDs; Anki uses D-format. Normalize before grouping so
+    // both histories contribute to one sentence and already-recorded attempts keep working.
+    private static string NormalizeItemId(string? kind, string id) =>
+        PracticeItemType.IsSentences(kind) && Guid.TryParse(id, out var sentenceId) ? sentenceId.ToString() : id;
 
     private static void Validate(int days)
     {

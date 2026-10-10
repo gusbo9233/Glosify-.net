@@ -2,6 +2,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Quizzes;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 using Glosify.Services.Anki;
 
@@ -9,6 +10,7 @@ namespace Glosify.Services.Ai.Assistant;
 
 public sealed class ChangeApplier : IChangeApplier
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly GlosifyContext _context;
     private readonly IQuizService _quizService;
     private readonly ICollectionService _collectionService;
@@ -176,7 +178,7 @@ public sealed class ChangeApplier : IChangeApplier
                     break;
                 case PendingChangeKinds.RenameAnkiCollection:
                 {
-                    var input = change.Payload.GetProperty("input").Deserialize<AnkiRenameInput>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+                    var input = change.Payload.GetProperty("input").Deserialize<AnkiRenameInput>(JsonOptions)!;
                     var renamed = await _ankiCollections.RenameWithUndoAsync(input, userId, cancellationToken);
                     ankiCollectionId = input.CollectionId;
                     if (renamed is not null)
@@ -188,7 +190,7 @@ public sealed class ChangeApplier : IChangeApplier
                 }
                 case PendingChangeKinds.RemoveAnkiCards:
                 {
-                    var input = change.Payload.GetProperty("input").Deserialize<RemoveAnkiCardsInput>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+                    var input = change.Payload.GetProperty("input").Deserialize<RemoveAnkiCardsInput>(JsonOptions)!;
                     var removed = await _ankiCollections.RemoveCardsWithUndoAsync(input, userId, cancellationToken);
                     ankiCollectionId = input.CollectionId;
                     foreach (var card in removed)
@@ -199,11 +201,12 @@ public sealed class ChangeApplier : IChangeApplier
                 }
                 case PendingChangeKinds.UnlinkAnkiQuiz:
                 {
-                    var input = change.Payload.GetProperty("input").Deserialize<AnkiLinkSnapshot>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+                    var input = change.Payload.GetProperty("input").Deserialize<AnkiLinkSnapshot>(JsonOptions)!;
                     var unlinked = await _ankiCollections.UnlinkWithUndoAsync(input, userId, cancellationToken);
                     ankiCollectionId = input.CollectionId;
                     ankiQuizUnlinked = true;
-                    ankiCardsRemoved += unlinked.Before.Cards.Count(c => c.IsActive && unlinked.After.Cards.Any(a => a.Id == c.Id && !a.IsActive));
+                    var inactiveIds = unlinked.After.Cards.Where(c => !c.IsActive).Select(c => c.Id).ToHashSet();
+                    ankiCardsRemoved += unlinked.Before.Cards.Count(c => c.IsActive && inactiveIds.Contains(c.Id));
                     journal.Add(new(change.Kind, AppliedEntityTypes.AnkiQuizLink, unlinked.Before.Link!.Id.ToString(), null, unlinked.Before, unlinked.After));
                     applied++;
                     break;
@@ -214,7 +217,7 @@ public sealed class ChangeApplier : IChangeApplier
                     var source = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == sourceId && q.UserId == userId, cancellationToken)
                         ?? throw new QuizNotFoundException();
                     var created = await _ankiCollections.CreateAsync(new(GetString(change.Payload, "name") ?? string.Empty,
-                        source.SourceLanguage, source.TargetLanguage, "UTC"), userId, cancellationToken);
+                        source.SourceLanguage, QuizLanguageCatalog.TargetName(source.TargetLanguage, source.Language), "UTC"), userId, cancellationToken);
                     ankiCollectionId = created.Id;
                     journal.Add(new(change.Kind, AppliedEntityTypes.AnkiCollection, created.Id.ToString(), null, null, AnkiCollectionState.From(created)));
                     applied++;
@@ -223,10 +226,9 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.AddAnkiItems:
                 case PendingChangeKinds.LinkAnkiQuiz:
                 {
-                    var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
                     var result = change.Kind == PendingChangeKinds.AddAnkiItems
-                        ? await _ankiCollections.AddItemsAsync(change.Payload.Deserialize<AddAnkiItemsInput>(options)!, userId, cancellationToken)
-                        : await _ankiCollections.LinkQuizAdditiveAsync(change.Payload.Deserialize<AddAnkiQuizInput>(options)!, userId, cancellationToken);
+                        ? await _ankiCollections.AddItemsAsync(change.Payload.Deserialize<AddAnkiItemsInput>(JsonOptions)!, userId, cancellationToken)
+                        : await _ankiCollections.LinkQuizAdditiveAsync(change.Payload.Deserialize<AddAnkiQuizInput>(JsonOptions)!, userId, cancellationToken);
                     ankiCollectionId = result.CollectionId;
                     ankiSelectedItems += result.SelectedItems;
                     ankiCardsAdded += result.CardsAdded;
@@ -247,7 +249,16 @@ public sealed class ChangeApplier : IChangeApplier
 
         await _context.SaveChangesAsync(cancellationToken);
         foreach (var target in targets.Keys)
+        {
+            var cards = _context.AnkiCards.AsNoTracking().Include(c => c.Note)
+                .Where(c => c.Note.QuizId == target && c.Note.Collection.UserId == userId);
+            var beforeIds = (await cards.Select(c => c.Id).ToListAsync(cancellationToken)).ToHashSet();
             await _ankiCollections.SyncQuizAsync(target, cancellationToken);
+            // Synchronization can create cards for newly added quiz content. They are
+            // part of this operation and must be journaled before a later link Undo.
+            foreach (var card in (await cards.ToListAsync(cancellationToken)).Where(c => !beforeIds.Contains(c.Id)))
+                journal.Add(new(PendingChangeKinds.SyncAnkiCard, AppliedEntityTypes.AnkiCard, card.Id.ToString(), null, null, AnkiCardState.From(card)));
+        }
         return new AssistantApplyResult(
             applied,
             createdQuizId,

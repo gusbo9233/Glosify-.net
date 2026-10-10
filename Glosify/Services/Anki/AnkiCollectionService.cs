@@ -809,7 +809,7 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
 
     private static bool Matches(AnkiCollection collection, Quiz quiz) =>
         SameLanguage(collection.SourceLanguage, quiz.SourceLanguage)
-        && SameLanguage(collection.TargetLanguage, quiz.TargetLanguage);
+        && SameLanguage(collection.TargetLanguage, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language));
 
     private static bool SameLanguage(string left, string right)
     {

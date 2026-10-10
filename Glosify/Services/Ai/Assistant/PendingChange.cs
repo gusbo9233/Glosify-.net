@@ -9,6 +9,8 @@ public static class PendingChangeKinds
     public const string RenameAnkiCollection = "rename_anki_collection";
     public const string RemoveAnkiCards = "remove_anki_cards";
     public const string UnlinkAnkiQuiz = "unlink_anki_quiz";
+    // Journal-only side effect of quiz content synchronization, never offered as a tool.
+    public const string SyncAnkiCard = "sync_anki_card";
     public const string CreateAnkiCollection = "create_anki_collection";
     public const string AddAnkiItems = "add_anki_items";
     public const string LinkAnkiQuiz = "link_anki_quiz";

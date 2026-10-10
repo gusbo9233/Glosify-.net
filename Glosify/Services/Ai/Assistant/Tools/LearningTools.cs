@@ -64,7 +64,7 @@ internal sealed class GetLearningProgressTool(ILearningInsightsService insights,
     }
 }
 
-internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiStatisticsService statistics) : AssistantTool<PrepareStudyArgs>
+internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiCollectionService anki) : AssistantTool<PrepareStudyArgs>
 {
     public override string Name => "prepare_study_session";
     public override AssistantToolKind Kind => AssistantToolKind.Read;
@@ -91,8 +91,8 @@ internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiStatistics
             var choices = new List<(Guid Id, string Name, AnkiCollectionCounts Counts)>();
             foreach (var collection in collections)
             {
-                var stats = await statistics.ReadSnapshotAsync(collection.Id, context.UserId, ct);
-                if (stats is not null) choices.Add((collection.Id, collection.Name, stats.Counts));
+                var counts = await anki.ReadCountsAsync(collection.Id, context.UserId, ct);
+                if (counts is not null) choices.Add((collection.Id, collection.Name, counts));
             }
             var selected = choices.OrderByDescending(c => c.Counts.Due > 0).ThenByDescending(c => c.Counts.Due)
                 .ThenByDescending(c => c.Counts.New).FirstOrDefault();
@@ -105,7 +105,8 @@ internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiStatistics
         }
         var sentences = args.Kind == QuizItemKind.Sentences;
         var quizId = args.QuizId ?? context.QuizId;
-        var quizzes = db.Quizzes.AsNoTracking().Where(q => q.UserId == context.UserId && q.TargetLanguage == language);
+        var quizzes = db.Quizzes.AsNoTracking().Where(q => q.UserId == context.UserId && (q.TargetLanguage == language
+            || ((q.TargetLanguage == null || q.TargetLanguage.Trim() == "") && q.Language == language)));
         var quiz = quizId.HasValue ? await quizzes.SingleOrDefaultAsync(q => q.Id == quizId, ct)
             : await quizzes.Where(q => sentences
                 ? db.QuizSentences.Any(s => s.QuizId == q.Id)

@@ -144,6 +144,13 @@ public static class QuizLanguageCatalog
             "General", "General study", "Any subject"),
     ];
 
+    /// <summary>Older quizzes used Language before TargetLanguage was populated.</summary>
+    public static string TargetName(string? targetLanguage, string legacyLanguage)
+    {
+        var value = string.IsNullOrWhiteSpace(targetLanguage) ? legacyLanguage : targetLanguage;
+        return Find(value)?.Name ?? value;
+    }
+
     public static IReadOnlyList<QuizLanguage> All { get; } = Array.AsReadOnly(Languages);
 
     public static IReadOnlyList<QuizLanguage> LanguageLearning { get; } =

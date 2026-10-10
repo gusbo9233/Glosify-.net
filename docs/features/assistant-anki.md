@@ -40,6 +40,10 @@ history remain intact, and future quiz content synchronizes through existing
 Anki services. Saved tool outputs include collection identity and URL, selected
 item count, added card count, already-included count, and preserved exclusions.
 
+Undo reverses source edits and synchronizes their Anki snapshots in sequence,
+so later edits made by the same run are not mistaken for user changes. Cards
+created indirectly by quiz synchronization are journaled too, allowing a later
+whole-run Undo to remove those unreviewed cards before undoing the earlier link.
 Undo restores membership without resetting study progress. It compares the
 saved semantic state with current state, preserves reviewed/edited cards, and
 reports conflicts as kept changes. A whole-quiz link is kept if its affected
@@ -80,7 +84,8 @@ Additional requests supported by the language assistant:
 `get_learning_mistakes` ranks existing owned quiz words/sentences in the selected
 language by mistakes (quiz incorrect answers plus Anki Again ratings), then mistake
 rate, recency and stable IDs. It returns current text, translations, IDs and language
-pairs. Defaults are 30 days and 20 items; windows are bounded to 365 days and pages
+pairs. Quizzes with an empty `TargetLanguage` retain the legacy `Language`
+fallback; a populated target language takes precedence. Defaults are 30 days and 20 items; windows are bounded to 365 days and pages
 to 100 items. Deleted items and unidentifiable legacy results are not selected.
 `create_quiz` and `add_items` provide focused quizzes and requested example
 sentences; selected Anki additions use the existing items directly.
@@ -108,7 +113,8 @@ later edits and reviews. Source deletion prevents restoring an active removed ca
 The additive `TrackQuizAttemptItems` migration stores nullable historical item
 IDs and skip flags. It does not infer or backfill IDs from old prompt text. New
 typing attempts record IDs; new flashcard attempts record per-card ratings and
-IDs. Legacy aggregate-only attempts still contribute to overall statistics and
+IDs. Insights normalize sentence GUID formats before grouping, combining typing,
+flashcard and Anki history for the same sentence. Legacy aggregate-only attempts still contribute to overall statistics and
 are counted separately as unavailable for item-level selection. Apply the
 migration through the project's normal deployment process before running this code.
 

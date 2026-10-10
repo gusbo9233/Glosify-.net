@@ -352,6 +352,118 @@ public sealed class AssistantLearningTests
         Assert.Empty(db.ChangeTracker.Entries());
     }
 
+    [Fact]
+    public async Task Review_sentence_practice_ids_round_trip_through_attempts_and_insights()
+    {
+        await using var h = await SeedAsync();
+        await using var db = h.Db();
+        var sentenceId = Guid.NewGuid();
+        db.QuizSentences.Add(new() { Id = sentenceId, QuizId = h.QuizId, Text = "To jest dom.", Translation = "This is a house." });
+        await db.SaveChangesAsync();
+        var practice = await new Glosify.Services.Typing.TypingQuizService(db).GetQuizDataAsync(h.QuizId, 1, practiceItemType: "sentences");
+        var word = Assert.Single(practice.Words);
+        var session = new Glosify.Services.Typing.TypingSessionData
+        {
+            UserId = "user", QuizId = h.QuizId, PracticeItemType = "sentences", Words = practice.Words,
+            IncorrectCount = 1, IncorrectWords = [word]
+        };
+        await new Glosify.Services.Quizzes.QuizAttemptService(db).RecordTypingAttemptAsync(session);
+        var anki = new AnkiCollectionService(db, h.Clock);
+        var flashcard = Assert.Single(await new Glosify.Services.Words.WordService(db, anki).LoadSentenceCardsAsync(h.QuizId, 1));
+        await new Glosify.Services.Quizzes.QuizAttemptService(db).RecordFlashcardAttemptAsync(new()
+        {
+            UserId = "user", QuizId = h.QuizId, PracticeItemType = "sentences", AgainCount = 1,
+            Cards = [new() { Id = flashcard.Id, Prompt = flashcard.Lemma, Answer = flashcard.Translation }],
+            Ratings = [new(0, "again")]
+        });
+        await anki.AddItemsAsync(new(CollectionId, h.QuizId, "sentences", [sentenceId.ToString()], true, false), "user");
+        var card = await db.AnkiCards.SingleAsync();
+        var review = Review(h, card.Id, "again"); review.ReviewedAt = DateTimeOffset.UtcNow;
+        db.AnkiReviews.Add(review); await db.SaveChangesAsync();
+        h.Clock.SetUtcNow(DateTimeOffset.UtcNow.AddSeconds(1));
+        var results = await new LearningInsightsService(db, h.Clock).MistakesAsync("user", "Polish", h.QuizId, "sentences", 30, 0, 20);
+        var item = Assert.Single(results.Items);
+        Assert.Equal(sentenceId, Guid.Parse(item.ItemId)); Assert.Equal(3, item.Mistakes);
+        Assert.Equal(2, item.QuizMistakes); Assert.Equal(1, item.AnkiLapses);
+        Assert.Equal("To jest dom.", item.Text);
+    }
+
+    [Fact]
+    public async Task Review_undo_add_anki_then_edit_source_reverts_both_changes()
+    {
+        await using var h = await SeedAsync();
+        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { "w1" } })
+            .ThenCall("edit_items", new { words = new[] { new { id = "w1", translation = "home" } } }).ThenText("Done.");
+        var run = await h.RunAsync("Add dom to Anki and change its translation to home");
+        Assert.Equal(AssistantRunStatus.Completed, run.Status);
+        var undo = await h.UndoAsync(run.Id);
+        Assert.Equal(2, undo.Undone); Assert.Equal(0, undo.Kept);
+        await using var db = h.Db();
+        Assert.Equal("house", (await db.Words.SingleAsync(w => w.Id == "w1")).Translation);
+        Assert.Empty(await db.AnkiCards.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Review_undo_link_then_add_source_cleans_up_synchronized_cards()
+    {
+        await using var h = await SeedAsync();
+        h.Model.ThenCall("link_anki_quiz", new { collection_id = CollectionId, content = "words" })
+            .ThenCall("add_items", new { words = new[] { new { word = "pies", translation = "dog" }, new { word = "ptak", translation = "bird" } } }).ThenText("Done.");
+        var run = await h.RunAsync("Link the quiz and add pies");
+        Assert.Equal(AssistantRunStatus.Completed, run.Status);
+        await using (var before = h.Db()) Assert.Equal(4, await before.AnkiCards.CountAsync());
+        var undo = await h.UndoAsync(run.Id);
+        Assert.Equal(0, undo.Kept);
+        await using var db = h.Db();
+        Assert.Empty(await db.AnkiQuizLinks.ToListAsync()); Assert.Empty(await db.AnkiCards.ToListAsync());
+        Assert.Equal(2, await db.Words.CountAsync());
+    }
+
+    [Fact]
+    public async Task Review_legacy_language_remains_actionable_after_library_discovery()
+    {
+        await using var h = await SeedAsync();
+        await using var db = h.Db();
+        (await db.Quizzes.SingleAsync()).TargetLanguage = "";
+        db.QuizAttempts.Add(Attempt(h, "w1", false)); await db.SaveChangesAsync(); db.ChangeTracker.Clear();
+        var tools = AssistantToolFactory.Create(db);
+        Assert.Contains(h.QuizId.ToString(), JsonSerializer.Serialize((await tools.RunAsync("list_library", "{}", Context(h))).Output));
+        var result = await h.WithAsync(sp => sp.GetRequiredService<ILearningInsightsService>().MistakesAsync("user", "Polish", h.QuizId, "words", 30, 0, 20));
+        Assert.Equal("Polish", Assert.Single(result.Items).TargetLanguage);
+        Assert.False((await tools.RunAsync("prepare_study_session", "{\"mode\":\"typing\"}", Context(h))).IsError);
+        await AddAsync(h);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Review_ordered_undo_still_keeps_cards_reviewed_after_the_run(bool linked)
+    {
+        await using var h = await SeedAsync();
+        if (linked)
+            h.Model.ThenCall("link_anki_quiz", new { collection_id = CollectionId, content = "words" })
+                .ThenCall("add_items", new { words = new[] { new { word = "pies", translation = "dog" } } });
+        else
+            h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { "w1" } })
+                .ThenCall("edit_items", new { words = new[] { new { id = "w1", translation = "home" } } });
+        h.Model.ThenText("Done.");
+        var run = await h.RunAsync("Update my study material");
+        Assert.Equal(AssistantRunStatus.Completed, run.Status);
+        Guid reviewed;
+        await using (var db = h.Db())
+        {
+            var card = await db.AnkiCards.SingleAsync(c => c.Note.TargetText == (linked ? "pies" : "dom"));
+            reviewed = card.Id; card.ReviewCount = 1; card.LastReviewedAt = h.Clock.GetUtcNow();
+            db.AnkiReviews.Add(Review(h, reviewed, "good")); await db.SaveChangesAsync();
+        }
+        var undo = await h.UndoAsync(run.Id);
+        Assert.Equal(1, undo.Undone); Assert.Equal(linked ? 2 : 1, undo.Kept);
+        await using var after = h.Db();
+        Assert.Equal(reviewed, (await after.AnkiReviews.SingleAsync()).AnkiCardId);
+        Assert.Equal(1, (await after.AnkiCards.SingleAsync(c => c.Id == reviewed)).ReviewCount);
+        Assert.Equal("house", (await after.Words.SingleAsync(w => w.Id == "w1")).Translation);
+    }
+
     private static JsonElement Output(Glosify.Services.Ai.Generation.AgentRequest request)
     {
         foreach (var turn in request.History.Reverse())

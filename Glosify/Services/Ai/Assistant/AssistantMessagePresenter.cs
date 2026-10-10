@@ -76,6 +76,9 @@ internal sealed class AssistantMessagePresenter
             return change.Kind switch
             {
                 PendingChangeKinds.RenameAnkiCollection or PendingChangeKinds.RemoveAnkiCards or PendingChangeKinds.UnlinkAnkiQuiz => GetString(change.Payload, "summary"),
+                PendingChangeKinds.CreateAnkiCollection => $"Create Anki collection “{GetString(change.Payload, "name")}”",
+                PendingChangeKinds.AddAnkiItems => $"Add {CountArray(change.Payload, "itemIds")} selected items to Anki",
+                PendingChangeKinds.LinkAnkiQuiz => "Link quiz to Anki, including future additions",
                 PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),
                 PendingChangeKinds.AddSentence => BuildAddSentenceSummary(change.Payload),
                 PendingChangeKinds.EditWord => BuildEditWordSummary(change.Payload, wordLabels),

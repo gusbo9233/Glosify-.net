@@ -39,6 +39,13 @@ public sealed partial class AnkiCollectionService
             new(linkRows.Select(AnkiLinkState.From).ToList(), linkCount, Next(linkOffset, linkRows.Count, linkCount)));
     }
 
+    public async Task<AnkiCollectionCounts?> ReadCountsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default)
+    {
+        var collection = await _context.AnkiCollections.AsNoTracking()
+            .SingleOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
+        return collection is null ? null : await CountsAsync(collection, _timeProvider.GetUtcNow(), cancellationToken);
+    }
+
     private async Task<AnkiCollectionSummary> SummaryAsync(AnkiCollection c, CancellationToken ct) =>
         new(c.Id, c.Name, c.SourceLanguage, c.TargetLanguage, c.DefaultDirection, await CountsAsync(c, _timeProvider.GetUtcNow(), ct));
 

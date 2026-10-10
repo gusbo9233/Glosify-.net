@@ -51,19 +51,28 @@ internal sealed class AssistantUndoService(
                 .ToListAsync(cancellationToken);
             var undone = 0;
             var touched = new HashSet<Guid>();
+            async Task SynchronizeSourcesAsync()
+            {
+                foreach (var quizId in touched)
+                    if (await db.Quizzes.AnyAsync(q => q.Id == quizId, cancellationToken))
+                        await anki.SyncQuizAsync(quizId, cancellationToken);
+                touched.Clear();
+            }
             foreach (var change in changes)
             {
+                // Flush reversed source batches before comparing earlier Anki snapshots.
+                // Flushing after each item could recreate just-undone cards for the other
+                // items in the same batch before their source rows have been removed.
+                if (change.EntityType is AppliedEntityTypes.AnkiCard or AppliedEntityTypes.AnkiQuizLink or AppliedEntityTypes.AnkiCollection)
+                    await SynchronizeSourcesAsync();
                 var reverted = await RevertAsync(change, userId, cancellationToken);
                 change.Status = reverted ? AssistantChangeStatus.Undone : AssistantChangeStatus.Kept;
                 undone += reverted ? 1 : 0;
-                if (reverted && change.QuizId is Guid quizId && change.EntityType is AppliedEntityTypes.Word or AppliedEntityTypes.Sentence)
-                {
-                    touched.Add(quizId);
-                }
-
-                // Deleting a quiz saves on its own; keep the journal in step with it.
                 await db.SaveChangesAsync(cancellationToken);
+                if (reverted && change.QuizId is Guid quizId && change.EntityType is AppliedEntityTypes.Word or AppliedEntityTypes.Sentence)
+                    touched.Add(quizId);
             }
+            await SynchronizeSourcesAsync();
 
             var kept = changes.Count - undone;
             run.UndoneAt = store.Now;
@@ -87,14 +96,6 @@ internal sealed class AssistantUndoService(
             }
 
             await db.SaveChangesAsync(cancellationToken);
-            foreach (var quizId in touched)
-            {
-                if (await db.Quizzes.AnyAsync(quiz => quiz.Id == quizId, cancellationToken))
-                {
-                    await anki.SyncQuizAsync(quizId, cancellationToken);
-                }
-            }
-
             if (transaction is not null)
             {
                 await transaction.CommitAsync(cancellationToken);
@@ -117,6 +118,7 @@ internal sealed class AssistantUndoService(
                 return await anki.UndoCollectionCreationAsync(RunJson.Read<AnkiCollectionState>(change.AfterJson!), userId, cancellationToken);
             case PendingChangeKinds.RenameAnkiCollection:
                 return await anki.UndoRenameAsync(new(RunJson.Read<AnkiRenameState>(change.BeforeJson!), RunJson.Read<AnkiRenameState>(change.AfterJson!)), userId, cancellationToken);
+            case PendingChangeKinds.SyncAnkiCard:
             case PendingChangeKinds.RemoveAnkiCards:
             case PendingChangeKinds.AddAnkiItems:
                 return await anki.UndoCardAdditionAsync(new(

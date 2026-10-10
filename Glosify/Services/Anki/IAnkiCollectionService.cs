@@ -75,6 +75,7 @@ public interface IAnkiCollectionService
     Task<IReadOnlyList<AnkiCardChange>> RemoveCardsWithUndoAsync(RemoveAnkiCardsInput input, string userId, CancellationToken cancellationToken = default);
     Task<AnkiLinkChange> UnlinkWithUndoAsync(AnkiLinkSnapshot expected, string userId, CancellationToken cancellationToken = default);
     Task<bool> UndoRenameAsync(AnkiRenameChange change, string userId, CancellationToken cancellationToken = default);
+    Task<AnkiCollectionCounts?> ReadCountsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
     Task<AnkiPage<AnkiCollectionSummary>> BrowseAsync(string userId, int offset, CancellationToken cancellationToken = default);
     Task<AnkiInspection?> InspectAsync(Guid collectionId, string userId, int cardOffset, int linkOffset, CancellationToken cancellationToken = default);
     Task<AnkiAdditionResult> AddItemsAsync(AddAnkiItemsInput input, string userId, CancellationToken cancellationToken = default);
