@@ -1698,4 +1698,5 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>الإدارة</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>اللعبة</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>استخدام اللعبة</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>استخدام الأفاتار</value></data>
 </root>

@@ -1698,4 +1698,5 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>管理</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>游戏</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>游戏使用情况</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>虚拟角色使用情况</value></data>
 </root>

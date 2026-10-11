@@ -30,6 +30,10 @@ public sealed class AvatarBillingTests
         Assert.Equal(-.06m, debit.CreditAmount); Assert.Equal("avatar.recognition", debit.Operation);
         Assert.Equal(fixture.Session.ToString(), debit.RelatedEntityId);
         Assert.Equal(0, (await db.AiMonthlyBudgets.SingleAsync()).ReservedMicros);
+        var report = await new AvatarUsageReports(db, Options.Create(new AiUsageOptions()))
+            .ReadAsync(new(fixture.Clock.GetUtcNow().AddHours(-1), fixture.Clock.GetUtcNow().AddHours(1)), default);
+        Assert.Equal(1, report.Calls); Assert.Equal(.06m, report.Credits);
+        Assert.Equal(1.2m, report.AudioSeconds); Assert.Equal(.007m, report.EstimatedSek);
     }
 
     [Fact]

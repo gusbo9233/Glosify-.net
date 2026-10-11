@@ -16,7 +16,8 @@ Merely loading the page does not open the microphone or submit provider requests
 After a release during initial connection setup, the button stays disabled until the
 connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
-supports holding Space/Enter. In explicitly selected Hands-free mode, the same
+supports holding Enter. Holding Space anywhere outside form controls also records,
+without scrolling the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, the same
 button pauses/resumes capture; pausing during a reply lets the reply finish. The
 button keeps a fixed accessible name and reports recording through `aria-pressed`.
 There are no separate Mute/End controls or Space hint. Each account has one live
@@ -24,7 +25,7 @@ conversation: starting in another tab ends the earlier tab's conversation.
 
 Leaving the page stops capture. Returning in the same tab/browser session restores
 conversation context on the next talk action. Only an opaque reference and the
-selected partner/quiz/language are kept in account-scoped `sessionStorage`; the
+selected partner/quiz/language and help preferences are kept in account-scoped `sessionStorage`; the
 transcript remains in process-local server memory. Changing partner, language or
 quiz discards the previous reference instead of keeping separate conversations.
 Changing partner or quiz stops the old capture automatically. Captions show only turns heard during the current visit.
@@ -34,6 +35,39 @@ Server memory is owner/context-checked, bounded to 128 conversations and 24 turn
 turn or a new visit claiming it. Capacity eviction and application restarts can also discard it. An old
 connection cannot overwrite memory after a newer visit has claimed it. Existing
 30-minute connection limits and 45-second transport recovery limits still apply.
+
+## Optional conversation help
+
+Conversation settings offer independent English translations and suggested answers,
+both off by default. Preferences persist for the account in this tab's browser
+session. New microphone turns include the chosen options; changing them does not
+reset the conversation. Enabled help appears with the reply above the microphone.
+With both options enabled, the suggested answer also has an English translation.
+
+Help is generated in the same billed reply request using a strict JSON schema.
+Only the avatar's original reply reaches speech synthesis or conversation memory;
+example learner answers are never submitted as user speech. Turning both options
+off retains the existing plain-text reply path and its smaller output allowance.
+The suggestion prompt uses the practice language and forbids inventing learner facts.
+
+## Admin usage dashboard
+
+Settings → Admin → Avatar usage opens `/Admin/AvatarUsage`, protected by the same
+account-ID administrator policy as game usage. It reads existing accounting records,
+including earlier sessions, without a migration or additional provider calls.
+Filter by UTC call-start dates (up to one year), admin email/user ID, provider, model,
+operation, or session. Totals cover all matching calls; details show the latest 500.
+Each reservation is one call; unused-credit releases are not counted as extra calls.
+
+The dashboard separates charged credits from estimated provider costs in SEK.
+Voice estimates use submitted seconds/characters and the rate captured at reservation;
+reply estimates use recorded token counts and current configured budget model prices,
+without cached-input discounts. Unclassified tokens use the higher input/output rate.
+Unknown and pending costs are labeled explicitly; released reply requests can have
+unknown provider costs. This is an accounting report, not a provider invoice or a
+record of successful playback. Listening duration is submitted audio, including silence,
+not total time spent on the Avatar page. Conversation text/audio is not copied into
+usage records. The earlier customer charging and budget controls remain in effect.
 
 ## Providers and prices
 

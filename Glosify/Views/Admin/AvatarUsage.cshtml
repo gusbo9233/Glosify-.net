@@ -1,0 +1,73 @@
+@model Glosify.Services.Avatar.AvatarUsageReport
+@{
+    ViewData["Title"] = "Avatar usage";
+    ViewData.HideAssistantPanel();
+    var filter = Model.Filter;
+    string Number(decimal value) => value.ToString("0.######", CultureInfo.InvariantCulture);
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/avatar-usage.css" asp-append-version="true" />
+}
+<section class="avatar-usage-page">
+    <header class="select-header">
+        <div>
+            <p class="select-kicker">Admin</p>
+            <h1 class="select-title">Avatar usage</h1>
+            <p class="select-subtitle">Listening, replies and speech across Avatar conversations.</p>
+            <nav class="avatar-usage-links" aria-label="Usage navigation"><a href="/Avatar">Open Avatar</a><a href="/Admin/GameUsage">Game usage</a><a href="/Admin/AiCredits">AI credits</a></nav>
+        </div>
+    </header>
+    <form method="get" class="avatar-usage-filters" aria-label="Filter Avatar usage">
+        <label>From (UTC)<input name="from" type="datetime-local" step="1" value="@filter.From.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss")" /></label>
+        <label>To (UTC)<input name="to" type="datetime-local" step="1" value="@filter.To.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss")" /></label>
+        <label>Admin email or user ID<input name="admin" value="@filter.Admin" maxlength="450" /></label>
+        <label>Provider<input name="provider" value="@filter.Provider" placeholder="openai or elevenlabs" maxlength="128" /></label>
+        <label>Model<input name="model" value="@filter.Model" maxlength="128" /></label>
+        <label>Operation<select name="operation">
+            <option value="">All operations</option>
+            @foreach (var option in new[] { ("avatar.recognition", "Listening"), ("avatar.reply", "Replies"), ("avatar.speech", "Speech") })
+            { <option value="@option.Item1" selected="@(filter.Operation == option.Item1)">@option.Item2</option> }
+        </select></label>
+        <label class="avatar-usage-session">Session ID<input name="sessionId" value="@filter.SessionId" maxlength="128" /></label>
+        <div class="avatar-usage-filter-actions"><button type="submit">Filter</button><a href="/Admin/AvatarUsage">Reset</a></div>
+    </form>
+    <dl class="avatar-usage-totals">
+        <div><dt>Estimated provider cost</dt><dd id="avatar-usage-cost">@Number(Model.EstimatedSek) <small>SEK</small></dd></div>
+        <div><dt>Credits charged</dt><dd id="avatar-usage-credits">@Number(Model.Credits)</dd></div>
+        <div><dt>Sessions / calls</dt><dd id="avatar-usage-calls">@Model.Sessions / @Model.Calls</dd></div>
+        <div><dt>Listening</dt><dd id="avatar-usage-listening">@Number(Model.AudioSeconds) <small>seconds</small></dd></div>
+        <div><dt>Reply tokens</dt><dd id="avatar-usage-tokens">@Model.TotalTokens</dd></div>
+        <div><dt>Speech characters</dt><dd id="avatar-usage-characters">@Number(Model.Characters)</dd></div>
+    </dl>
+    <p class="avatar-usage-note"><span id="avatar-usage-pending">@Model.Pending pending calls</span> · <span id="avatar-usage-unpriced">@Model.Unpriced unpriced or incomplete calls</span>. Totals cover every matching call; the table shows the latest 500.</p>
+    <p class="avatar-usage-note">Dates select when a call started. Listening counts submitted audio, including hands-free silence. Pending calls can change as usage settles. Status describes billing settlement, not whether a reply finished playing.</p>
+    <details class="avatar-usage-explanation"><summary>How provider estimates work</summary>
+        <p>Costs are estimates in SEK, separate from credits charged. Listening and speech use the provider rates saved with each call. Replies use recorded tokens and current configured rates, without a cached-input discount. Unclassified tokens use the higher token rate. Unknown costs are excluded from the total, not treated as free calls.</p>
+        <p>Released reply requests can still have unknown provider costs after a timeout. These estimates are not provider invoices. No conversation text or audio is stored in this report.</p>
+    </details>
+    <h2>By provider, model and operation</h2>
+    <div class="avatar-usage-table-wrap" role="region" aria-label="Avatar usage breakdown" tabindex="0">
+        <table class="avatar-usage-table"><thead><tr><th scope="col">Provider / model</th><th scope="col">Operation</th><th scope="col">Calls</th><th scope="col">Pending</th><th scope="col">Unpriced</th><th scope="col">Credits</th><th scope="col">Estimated SEK</th></tr></thead><tbody>
+        @foreach (var group in Model.Breakdown)
+        {
+            <tr><td>@group.Provider<br /><small>@group.Model</small></td><td>@group.Operation</td><td>@group.Calls</td><td>@group.Pending</td><td>@group.Unpriced</td><td>@Number(group.Credits)</td><td>@Number(group.EstimatedSek)</td></tr>
+        }
+        @if (Model.Breakdown.Count == 0) { <tr><td colspan="7">No Avatar usage in this date range.</td></tr> }
+        </tbody></table>
+    </div>
+    <h2>Recent calls</h2>
+    <div class="avatar-usage-table-wrap" role="region" aria-label="Recent Avatar calls" tabindex="0">
+        <table class="avatar-usage-table"><thead><tr><th scope="col">Started (UTC)</th><th scope="col">Admin / session</th><th scope="col">Provider / model</th><th scope="col">Operation</th><th scope="col">Status</th><th scope="col">Input / output / total tokens</th><th scope="col">Audio seconds / characters</th><th scope="col">Credits</th><th scope="col">Estimated SEK</th></tr></thead><tbody>
+        @foreach (var entry in Model.Entries)
+        {
+            <tr data-avatar-usage-call="@entry.Id"><td>@entry.StartedAt.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@entry.Email<br /><small>@entry.UserId</small><br /><a href="@Url.Action("Index", "AvatarUsageAdmin", new { sessionId = entry.SessionId, from = filter.From.ToString("O"), to = filter.To.ToString("O"), admin = filter.Admin, provider = filter.Provider, model = filter.Model, operation = filter.Operation })">@entry.SessionId</a></td>
+                <td>@entry.Provider<br /><small>@entry.Model</small></td><td>@entry.Operation</td><td>@entry.Status</td>
+                <td>@(entry.InputTokens?.ToString() ?? "—") / @(entry.OutputTokens?.ToString() ?? "—") / @(entry.TotalTokens?.ToString() ?? "—")</td>
+                <td>@(entry.AudioSeconds.HasValue ? Number(entry.AudioSeconds.Value) : "—") / @(entry.Characters.HasValue ? Number(entry.Characters.Value) : "—")</td>
+                <td>@Number(entry.Credits)</td><td>@(entry.EstimatedSek.HasValue ? Number(entry.EstimatedSek.Value) : "Unknown")</td></tr>
+        }
+        @if (Model.Entries.Count == 0) { <tr><td colspan="9">No matching calls. Try a wider date range or clear a filter.</td></tr> }
+        </tbody></table>
+    </div>
+</section>

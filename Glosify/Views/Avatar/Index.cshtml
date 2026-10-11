@@ -13,9 +13,17 @@
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
             <div class="avatar-stage-top"><span class="avatar-name"><span id="avatar-name">Rain</span> <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
-            <div class="avatar-caption" id="avatar-caption" aria-live="polite" hidden></div>
+            <div class="avatar-dialogue" id="avatar-dialogue" aria-live="polite" hidden>
+                <div class="avatar-caption" id="avatar-caption" hidden></div>
+                <p class="avatar-translation" id="avatar-translation" lang="en" hidden></p>
+                <div class="avatar-suggestion" id="avatar-suggestion" hidden>
+                    <span class="avatar-suggestion-label">You could say</span>
+                    <p id="avatar-suggestion-text"></p>
+                    <p class="avatar-translation" id="avatar-suggestion-translation" lang="en" hidden></p>
+                </div>
+            </div>
             <div class="avatar-controls">
-                <button type="button" id="avatar-talk" aria-label="Hold to record" title="Hold to record" aria-pressed="false" disabled>
+                <button type="button" id="avatar-talk" aria-keyshortcuts="Space Enter" aria-label="Hold to record" title="Hold to record" aria-pressed="false" disabled>
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></svg>
                 </button>
             </div>
@@ -39,6 +47,11 @@
             <fieldset class="avatar-mode"><legend>How would you like to talk?</legend>
                 <label><input type="radio" name="avatar-mode" value="push-to-talk" checked /><span>Push to talk<small>Hold the button when you speak</small></span></label>
                 <label><input type="radio" name="avatar-mode" value="hands-free" /><span>Hands-free<small>Speak naturally, interrupt anytime</small></span></label>
+            </fieldset>
+            <fieldset class="avatar-mode avatar-learning-help"><legend>Conversation help</legend>
+                <label><input type="checkbox" id="avatar-translate" /><span>English translations<small>Understand your partner’s replies</small></span></label>
+                <label><input type="checkbox" id="avatar-suggest" /><span>Suggested answers<small>A little help with what to say next</small></span></label>
+                <p class="avatar-help">Applies to the next reply.</p>
             </fieldset>
             <p class="avatar-notice" id="avatar-notice" role="alert"></p>
         </aside>
