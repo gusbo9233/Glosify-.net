@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Glosify.Services.Avatar;
 
-public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider clock, ILogger<AvatarConversation> logger)
+public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider clock, ILogger<AvatarConversation> logger, AvatarSessions sessions)
 {
     public async Task<bool> RunAsync(WebSocket socket, AvatarSession session, ClaimsPrincipal principal, CancellationToken requestAborted)
     {
@@ -53,6 +53,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 if (type == "played" && root.TryGetProperty("turnId", out var played) && played.GetString() == turnId && pendingReply is not null)
                 {
                     session.History.Add(TextTurn("assistant", pendingReply)); pendingReply = null;
+                    sessions.Remember(session);
                     await Send(new { type = "idle" }); continue;
                 }
                 if (type == "commit" && input is not null && listening)
@@ -80,6 +81,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             await StopTurn();
             try { await monitor; } catch (OperationCanceledException) { }
             reconnect = reconnect && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
+            sessions.Remember(session);
             if (!reconnect) session.History.Clear();
             if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
@@ -111,6 +113,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 session.History.Add(TextTurn("user", text));
                 while (session.History.Count > 24 || session.History.Sum(x => x.ContentJson.Length) > 24000)
                     session.History.RemoveAt(0);
+                sessions.Remember(session);
                 await Send(new { type = "transcript", turnId = id, text });
                 await Send(new { type = "thinking", turnId = id });
                 var ai = scope.ServiceProvider.GetRequiredService<IGenerativeAiClient>();

@@ -5,6 +5,30 @@ It ships with `Avatar:Enabled=true`; apply `AddAvatarUsageOperations` through th
 `Admin:UserIds` allowlist controls the page, HTTP API, and WebSocket. No shared game
 authentication or separate game deployment is required.
 
+## Conversation controls and memory
+
+Push-to-talk is the default on every page visit. The first hold of the microphone
+button requests microphone permission and opens the voice connection; there is
+no separate Start action. Choose Hands-free explicitly to use continuous capture.
+Merely loading the page does not open the microphone or submit provider requests.
+The scene has one circular microphone control: hold to record, release to send on
+both desktop and mobile. The mobile target is 72 pixels; the focused button also
+supports holding Space/Enter. In explicitly selected Hands-free mode, the same
+button pauses/resumes capture. There are no separate Mute/End controls or Space hint.
+
+Leaving the page stops capture. Returning in the same tab/browser session restores
+conversation context on the next talk action. Only an opaque reference and the
+selected partner/quiz/language are kept in account-scoped `sessionStorage`; the
+transcript remains in process-local server memory. Changing partner, language or
+quiz discards the previous reference instead of keeping separate conversations.
+Changing partner or quiz stops the old capture automatically. Captions show only turns heard during the current visit.
+
+Server memory is owner/context-checked, bounded to 128 conversations and 24 turns /
+24,000 serialized characters each, and expires after eight hours without a saved
+turn. Capacity eviction and application restarts can also discard it. An old
+connection cannot overwrite memory after a newer visit has claimed it. Existing
+30-minute connection limits and 45-second transport recovery limits still apply.
+
 ## Providers and prices
 
 See [the Rain/Rowan casting sheet](voice-casting.md) for the researched 69-language
@@ -51,8 +75,10 @@ rate snapshots and reservation expiry. It stores no conversation text or audio.
 Expired operations settle after five minutes through the maintenance worker.
 Conversation context is process-local, capped at 24 messages/24,000 serialized
 characters. Sessions expire after 30 minutes; microphone turns after 45 seconds;
-unconnected sessions after 30 seconds. Switching
-away from the browser page ends capture. In hands-free mode, silence sent to
+unconnected sessions after 30 seconds. Switching tabs keeps the conversation,
+microphone and playback running while pausing hidden rendering. A held
+push-to-talk utterance is released when the tab becomes hidden. Navigating away
+from the page or closing it still ends capture. In hands-free mode, silence sent to
 recognition counts as usage. An utterance limit requires an explicit retry. Push-to-talk preserves up to five
 seconds of microphone input during recognition setup, including a release before
 setup completes; longer setup delays stop with a retry message. Turn deadlines
@@ -65,7 +91,7 @@ backoff for up to 45 seconds. The server retains the owned session and conversat
 context for 45 seconds after the old connection finishes cancelling its turn.
 Reconnect still checks authentication, origin and session ownership, allows only
 one socket, and never extends the original 30-minute lifetime. Restored sessions
-keep the microphone muted until the user chooses Unmute. Interrupted audio and
+keep the microphone paused until the user uses the microphone button again. Interrupted audio and
 provider requests are never automatically replayed; repeat the interrupted turn.
 Server receive/send deadlines and WebSocket ping/pong also bound stalled sockets.
 Recognition or synthesis failure reports an explicit retry on the current session.
@@ -83,7 +109,7 @@ including aliases and legacy quiz language fields. With no selected learning lan
 Quiz practice uses up to 40 words and 20 sentences from an owned quiz, without
 changing quiz attempts or study progress. Interrupted replies are omitted from
 conversation memory until playback is acknowledged. No conversation transcript or
-audio is persisted by GlobeGlotter.
+audio is written to the database; text memory is temporary as described above.
 
 The conversation settings use the app theme and can be collapsed with the side
 arrow. The page expands up to 1800px on wide screens, with a 300–360px settings
@@ -95,8 +121,9 @@ visible. The portrait has no idle caption; captions appear only for conversation
 
 ## Rendering cost
 
-The portrait settles into a still image before and after a conversation. During
-conversation, speech runs at 24 fps and other states at 15 fps. Hidden/offscreen
+Visible portraits keep subtle breathing, blinks and posture movement at 12 fps
+before/after a conversation, between turns and in error state. Active listening,
+connecting and thinking run at 15 fps; speech runs at 24 fps. Hidden/offscreen
 portraits pause; reduced motion also pauses settled non-speaking states. The
 canvas drawing buffer is capped at 1,000 pixels on its longest edge.
 See [the performance check](performance-review.md) for measurements and remaining

@@ -1,5 +1,5 @@
-// Keep a portrait still outside a conversation; only speech needs the higher rate.
-// A short settling period lets expressions return to rest before the loop stops.
+// Keep visible portraits gently alive at a lower idle rate; speech needs more frames.
+// Reduced motion settles expressions before stopping non-speaking animation.
 export function createRenderLoop(render, {
     request = callback => requestAnimationFrame(callback),
     cancel = id => cancelAnimationFrame(id),
@@ -7,14 +7,14 @@ export function createRenderLoop(render, {
 } = {}) {
     let frame = null, disposed = false, visible = true, state = 'off', reduced = false;
     let settleUntil = 0, last = null, due = 0;
-    const animated = () => state !== 'off' && state !== 'error' && (!reduced || state === 'speaking');
+    const animated = () => !reduced || state === 'speaking';
     function queue() {
         if (!disposed && visible && frame === null) frame = request(tick);
     }
     function tick(time) {
         frame = null;
         if (disposed || !visible) return;
-        const interval = 1000 / (state === 'speaking' ? 24 : 15);
+        const interval = 1000 / (state === 'speaking' ? 24 : ['off', 'idle', 'error'].includes(state) ? 12 : 15);
         if (time + .5 >= due) {
             render(last === null ? interval / 1000 : Math.min((time - last) / 1000, .1));
             last = time;

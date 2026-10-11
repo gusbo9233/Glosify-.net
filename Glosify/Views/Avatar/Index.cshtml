@@ -15,11 +15,10 @@
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
             <div class="avatar-caption" id="avatar-caption" aria-live="polite" hidden></div>
             <div class="avatar-controls">
-                <button type="button" id="avatar-talk" disabled>Hold to talk <kbd>Space</kbd></button>
-                <button type="button" id="avatar-mute" disabled aria-pressed="false">Mute</button>
-                <button type="button" id="avatar-end" disabled>End</button>
+                <button type="button" id="avatar-talk" aria-label="Hold to record" title="Hold to record" aria-pressed="false" disabled>
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></svg>
+                </button>
             </div>
-            <p class="avatar-listening-hint" id="avatar-hint">Your microphone stays off until you start.</p>
         </div>
         <button class="avatar-settings-toggle" id="avatar-settings-toggle" type="button" aria-controls="avatar-settings" aria-expanded="true" aria-label="Close conversation settings" title="Close settings">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
@@ -31,7 +30,7 @@
                 <option value="rain">Rain · female voice</option>
                 <option value="rowan">Rowan · male voice</option>
             </select>
-            <p class="avatar-help" id="avatar-character-help">Choose your partner before starting a conversation.</p>
+            <p class="avatar-help" id="avatar-character-help">Choose your partner, then hold the microphone to speak.</p>
             <label for="avatar-quiz">What brings you here?</label>
             <select id="avatar-quiz"><option value="">Just a conversation</option></select>
             <p class="avatar-help">Choose a quiz to practice its words and sentences naturally. No scores, no pressure.</p>
@@ -41,13 +40,10 @@
                 <label><input type="radio" name="avatar-mode" value="push-to-talk" checked /><span>Push to talk<small>Hold the button when you speak</small></span></label>
                 <label><input type="radio" name="avatar-mode" value="hands-free" /><span>Hands-free<small>Speak naturally, interrupt anytime</small></span></label>
             </fieldset>
-            <div class="avatar-pricing"><h3>A little credit, as you go</h3><p id="avatar-rates">Loading your rates…</p><p class="avatar-help">Recognition, replies, and speech are charged by usage. Hands-free listening includes silence sent to recognition. Submitted usage still counts if you interrupt.</p><p class="avatar-balance">Available <strong id="avatar-balance">—</strong> credits</p></div>
-            <button class="avatar-start" id="avatar-start" type="button" disabled>Start a conversation <span aria-hidden="true">↗</span></button>
             <p class="avatar-notice" id="avatar-notice" role="alert"></p>
-            <p class="avatar-privacy">A fresh start, every time. Conversations and audio aren’t saved in GlobeGlotter.</p>
         </aside>
     </div>
-    <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">This conversation · 0 credits</p><details><summary>Character credits</summary><p>Characters adapted from <a href="https://www.makehumancommunity.org/" target="_blank" rel="noopener">MakeHuman Community</a> CC0 anatomy and Rowan’s short hair. Rain’s <a href="https://www.makehumancommunity.org/node/2816" target="_blank" rel="noopener">Hazel Hair by Elvaerwyn</a> (CC-BY), adapted for this portrait. Original GlobeGlotter styling and animation. Library rendered with <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> CC0 models and textures; globe map from NASA Blue Marble (Reto Stöckli, NASA Goddard Space Flight Center); AI-generated courtyard view.</p></details></div>
+    <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">This visit · 0 credits</p><details><summary>Character credits</summary><p>Characters adapted from <a href="https://www.makehumancommunity.org/" target="_blank" rel="noopener">MakeHuman Community</a> CC0 anatomy and Rowan’s short hair. Rain’s <a href="https://www.makehumancommunity.org/node/2816" target="_blank" rel="noopener">Hazel Hair by Elvaerwyn</a> (CC-BY), adapted for this portrait. Original GlobeGlotter styling and animation. Library rendered with <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> CC0 models and textures; globe map from NASA Blue Marble (Reto Stöckli, NASA Goddard Space Flight Center); AI-generated courtyard view.</p></details></div>
     <details class="avatar-transcript"><summary>Conversation captions</summary><ol id="avatar-transcript"></ol></details>
 </section>
 @section Scripts {

@@ -5,10 +5,8 @@ async page => {
     if (!['localhost', '127.0.0.1'].includes(new URL(page.url()).hostname)) throw new Error('Use an isolated local test host.');
     page.setDefaultTimeout(15000);
     const errors = []; page.on('pageerror', error => errors.push(error.message));
-    const start = page.getByRole('button', { name: 'Start a conversation' });
-    await start.click();
     await page.waitForFunction(() => !document.getElementById('avatar-talk').disabled, null, { timeout: 15000 });
-    const talk = page.getByRole('button', { name: 'Hold to talk · Space' });
+    const talk = page.getByRole('button', { name: 'Hold to record' });
     const box = await talk.boundingBox();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
@@ -21,10 +19,10 @@ async page => {
     const beforeHandsFree = await page.locator('#avatar-transcript li').count();
     await page.getByRole('radio', { name: 'Hands-free' }).check();
     await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
-    await page.getByRole('button', { name: 'Mute', exact: true }).click();
-    if (await page.getByRole('button', { name: 'Unmute', exact: true }).getAttribute('aria-pressed') !== 'true') throw new Error('Mute state was not applied');
-    await page.getByRole('button', { name: 'End', exact: true }).click();
-    await page.waitForFunction(() => !document.getElementById('avatar-start').disabled);
+    await page.getByRole('button', { name: 'Pause microphone', exact: true }).click();
+    if (await page.getByRole('button', { name: 'Start microphone', exact: true }).getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');
+    await page.getByRole('combobox', { name: 'Conversation partner', exact: true }).selectOption('rowan');
+    await page.waitForFunction(() => !document.getElementById('avatar-talk').disabled);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(500); // Let the shared sidebar's responsive transition finish.
     await page.screenshot({ path: 'output/playwright/avatar-mobile.png', fullPage: true });
@@ -35,5 +33,5 @@ async page => {
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.setViewportSize({ width: 1440, height: 1100 });
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('PASS: microphone capture, push-to-talk, captions, playback, mode switch, mute, end, mobile layout, reduced motion; real voice transport with simulated providers.');
+    console.log('PASS: microphone capture, push-to-talk, captions, playback, mode switch, microphone pause, partner change, mobile layout, reduced motion; real voice transport with simulated providers.');
 }
