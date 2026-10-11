@@ -17,6 +17,14 @@ def dress(blouse, rig, *, male=False):
     nearest = KDTree(len(vertices))
     for i, co in enumerate(vertices): nearest.insert(co, i)
     nearest.balance()
+    # Rowan's shirt collar follows the neck anatomy, not the cardigan neckline.
+    if male:
+        neck_body=bpy.data.objects['Face, neck and hands']
+        neck_surface=BVHTree.FromPolygons([v.co.copy() for v in neck_body.data.vertices],
+                                         [list(p.vertices) for p in neck_body.data.polygons])
+        neck_nearest=KDTree(len(neck_body.data.vertices))
+        for i,v in enumerate(neck_body.data.vertices): neck_nearest.insert(v.co,i)
+        neck_nearest.balance()
 
     def material(name, color, roughness=.85):
         mat = bpy.data.materials.new(name); mat.use_nodes = True
@@ -43,29 +51,34 @@ def dress(blouse, rig, *, male=False):
     ribbon = material('Black silk ribbon', (.009, .014, .012), .65)
     patch = material('GG bottle-green patch', (.008, .026, .018))
     gold = material('Antique gold embroidery', (.57, .40, .16), .8)
-    coat = material('Dark wool overcoat lapels', (.045, .036, .029), .85)
+    knit_edge = material('Charcoal ribbed cardigan border', (.050, .044, .034), .94)
 
-    def attach(obj):
+    def attach(obj, neck_fit=False):
         # The same weights as the underlying garment keep accessories attached during
         # breathing and shrug morph baking, rather than floating over an animated torso.
         for c in list(obj.users_collection): c.objects.unlink(obj)
         collection.objects.link(obj); obj.parent = rig
-        groups = {g.index: obj.vertex_groups.new(name=g.name) for g in blouse.vertex_groups}
+        groups={g.name:obj.vertex_groups.new(name=g.name) for g in blouse.vertex_groups}
         for v in obj.data.vertices:
             if male:
-                # Blend nearby skin weights so straight lapel/collar edges stay
-                # smooth when the source A-pose is relaxed into the portrait pose.
-                samples=nearest.find_n(v.co,16)
-                factors=[1/(distance*distance+.0004) for _,_,distance in samples]
-                total=sum(factors); weights={}
-                for (_,index,_),factor in zip(samples,factors):
-                    for g in blouse.data.vertices[index].groups:
-                        weights[g.group]=weights.get(g.group,0)+g.weight*factor/total
-                for group,weight in weights.items(): groups[group].add([v.index],weight,'REPLACE')
+                # Blend chest and neck weights across the shirt so the collar,
+                # shirt front and tie remain joined during nods and shrugs.
+                neck_weight=max(0,min(1,(v.co.z-1.445)/.050)) if neck_fit else 0
+                weights={}
+                for source,lookup,mix in ((blouse,nearest,1-neck_weight),(neck_body,neck_nearest,neck_weight)):
+                    if mix==0: continue
+                    samples=lookup.find_n(v.co,16)
+                    factors=[1/(distance*distance+.0004) for _,_,distance in samples]
+                    total=sum(factors)
+                    for (_,index,_),factor in zip(samples,factors):
+                        for g in source.data.vertices[index].groups:
+                            name=source.vertex_groups[g.group].name
+                            weights[name]=weights.get(name,0)+g.weight*factor/total*mix
+                for name,weight in weights.items(): groups[name].add([v.index],weight,'REPLACE')
             else:
-                _, index, _ = nearest.find(v.co)
+                _,index,_=nearest.find(v.co)
                 for g in blouse.data.vertices[index].groups:
-                    groups[g.group].add([v.index], g.weight, 'REPLACE')
+                    groups[blouse.vertex_groups[g.group].name].add([v.index],g.weight,'REPLACE')
         mod = obj.modifiers.new('Follow blouse', 'ARMATURE'); mod.object = rig
         return obj
 
@@ -79,13 +92,13 @@ def dress(blouse, rig, *, male=False):
             for loop in face.loop_indices:
                 v = data.vertices[data.loops[loop].vertex_index].co
                 uv.data[loop].uv = (v.x * 5, v.z * 5)
-        attach(obj)
+        attach(obj, neck_fit=male and name in ('Shirt collar stand','Shirt shoulder yoke','Pointed ivory collar','Ivory shirt front','Dark necktie','Tie knot'))
         if thickness:
             mod = obj.modifiers.new('Fabric edge', 'SOLIDIFY'); mod.thickness = thickness
         return obj
 
-    # A continuous front profile spans the coat's open center without following
-    # seam gaps. All male overlays share it, keeping the shirt, tie and lapels apart.
+    # A continuous front profile spans the cardigan's V neck without following
+    # seam gaps. All male overlays share it, keeping the shirt, tie and knit border apart.
     profile_z=np.linspace(.82,1.49,45)
     profile_y=[]
     if male:
@@ -138,57 +151,112 @@ def dress(blouse, rig, *, male=False):
         vest = mesh('Forest green vest', points, faces, green, .002)
         sub = vest.modifiers.new('Soft knit silhouette', 'SUBSURF'); sub.levels=1
     else:
-        # Broad notched wool lapels over the fitted coat. Each row follows the
-        # original cloth surface, keeping the lapels clear of the chest in motion.
-        stations = [(1.46,.066,.142),(1.42,.072,.170),(1.38,.076,.184),
-                    (1.355,.078,.153),(1.335,.080,.170),(1.30,.081,.148),
-                    (1.26,.083,.125),(1.21,.087,.112),(1.10,.092,.117),(.85,.100,.126)]
+        # Narrow ribbing frames the V, then continues as a button band to the hem.
+        # Surface sampling keeps the trim against the knit rather than floating.
+        def cardigan_front(x,z,lift=.006):
+            hit=surface.ray_cast(Vector((x,-1,z)),Vector((0,1,0)))[0]
+            return (x,(hit.y if hit is not None and hit.y < -.015 else front(x,z,0)[1])-lift,z)
         for sign in (-1,1):
-            lapel_points, lapel_faces = [], []
-            samples = []
-            for a,b in zip(stations,stations[1:]):
-                for t in np.linspace(0,1,8,endpoint=False):
-                    samples.append(tuple(x+(y-x)*t for x,y in zip(a,b)))
-            samples.append(stations[-1])
-            for i,(z,inner,outer) in enumerate(samples):
-                for j in range(9):
-                    lapel_points.append(front(sign*(inner+(outer-inner)*j/8),z,.016))
+            trim_points,trim_faces=[],[]
+            for i,z in enumerate(np.linspace(1.465,.98,65)):
+                center=max(.008,.40*(z-1.265))
+                # Sample beyond the cut edge so both sides share a stable depth.
+                depth=cardigan_front(sign*(center+.021),z,.008)[1]
+                for j in range(5):
+                    x=sign*(center-.007+j*.006)
+                    trim_points.append((x,depth,z))
                     if i and j:
-                        n=i*9+j
-                        lapel_faces.append((n-10,n-9,n,n-1))
-            mesh('Notched wool lapel',lapel_points,lapel_faces,coat,.002)
+                        n=i*5+j; trim_faces.append((n-6,n-5,n,n-1))
+            mesh('V-neck cardigan ribbing',trim_points,trim_faces,knit_edge,.002)
+        button=material('Dark horn cardigan buttons',(.022,.017,.012),.55)
+        for z in (1.245,1.178,1.111,1.044,.987):
+            coords=[cardigan_front(.0065*math.cos(a),z+.0065*math.sin(a),.015)
+                    for a in np.linspace(0,2*math.pi,16,endpoint=False)]
+            mesh('Cardigan button',coords,[tuple(range(16))],button,.003)
+        # Closely spaced raised ribs give the border a knitted edge without a shader.
+        rib_points,rib_faces=[],[]
+        for sign in (-1,1):
+            for z in np.arange(.99,1.462,.004):
+                center=max(.008,.40*(z-1.265))
+                depth=cardigan_front(sign*(center+.021),z,.010)[1]
+                n=len(rib_points)
+                rib_points.extend((sign*x,depth,zz) for x,zz in
+                    [(center-.006,z),(center+.016,z),(center+.016,z+.001),(center-.006,z+.001)])
+                rib_faces.append((n,n+1,n+2,n+3))
+        mesh('Cardigan border stitches',rib_points,rib_faces,knit_edge)
 
-
-    # Ivory shirt front and two pointed collar leaves, visible inside the V neck.
+    # A real collar stand wraps the base of Rowan's neck. The smaller folded
+    # leaves meet at the tie knot instead of floating low across his chest.
     if male:
-        # Subdivide overlays before sampling the coat so its curved surface cannot
-        # cut through a large flat shirt or collar polygon.
-        def fitted_panel(name, corners, lift, mat):
-            points, faces = [], []
+        def shirt_front(x,z,lift=.007):
+            chest_y=front(x,z,0)[1]
+            blend=max(0,min(1,(z-1.445)/.050))
+            hit=neck_surface.ray_cast(Vector((x,-1,min(z,1.502))),Vector((0,1,0)))[0]
+            neck_y=hit.y-.003 if hit is not None else chest_y
+            return (x,chest_y*(1-blend)+neck_y*blend-lift,z)
+
+        points,faces=[],[]
+        segments,rows=64,5
+        for row in range(rows+1):
+            z=1.480+.022*row/rows
+            for col in range(segments):
+                theta=2*math.pi*col/segments
+                direction=Vector((math.sin(theta),-math.cos(theta),0))
+                origin=Vector((0,-.026,z))
+                hit=neck_surface.ray_cast(origin,direction,.12)[0]
+                if hit is None:
+                    radius=1/math.sqrt((direction.x/.062)**2+(direction.y/.062)**2)
+                    hit=origin+direction*radius
+                points.append(hit+direction*.004)
+                if row:
+                    a=(row-1)*segments+col; b=(row-1)*segments+(col+1)%segments
+                    faces.append((a,b,b+segments,a+segments))
+        mesh('Shirt collar stand',points,faces,ivory,.0015)
+
+        # Fill the shoulder area between the collar stand and the cardigan.
+        # The outer edge slips beneath the knit; no bare-skin wedges show below it.
+        yoke_points,yoke_faces=[],[]
+        for row in range(7):
+            t=row/6
+            for col in range(segments):
+                theta=2*math.pi*col/segments
+                direction=Vector((math.sin(theta),-math.cos(theta),0))
+                z=1.483
+                origin=Vector((0,-.026,z))
+                inner=neck_surface.ray_cast(origin,direction,.12)[0]
+                if inner is None: inner=origin+direction*.062
+                inner+=direction*.004
+                outer_z=1.448+.010*(1-math.cos(theta))
+                outer=Vector((.115*math.sin(theta),-.026-.055*math.cos(theta),outer_z))
+                point=inner.lerp(outer,t)
+                yoke_points.append(point)
+                # The front panel already covers the central chest. Keep this
+                # yoke at the shoulders/back so it cannot cross over the tie.
+                angle=min(theta,2*math.pi-theta)
+                if row and angle > .75:
+                    a=(row-1)*segments+col;b=(row-1)*segments+(col+1)%segments
+                    yoke_faces.append((a,b,b+segments,a+segments))
+        mesh('Shirt shoulder yoke',yoke_points,yoke_faces,ivory,.001)
+
+        def fitted_panel(name,corners,lift,mat):
+            points,faces=[],[]
             for i in range(17):
                 t=i/16
                 left=np.array(corners[0])*(1-t)+np.array(corners[3])*t
                 right=np.array(corners[1])*(1-t)+np.array(corners[2])*t
                 if name=='Ivory shirt front':
-                    width=float(np.interp(left[1],[.85,1.36,1.468],[.114,.100,.065]))
+                    width=float(np.interp(left[1],[1.265,1.38,1.46,1.478,1.498],[.003,.043,.083,.070,.056]))
                     left[0],right[0]=-width,width
                 for j in range(17):
                     x,z=left+(right-left)*j/16
-                    points.append(front(float(x),float(z),lift))
+                    points.append(shirt_front(float(x),float(z),lift))
                     if i and j:
-                        n=i*17+j
-                        faces.append((n-18,n-17,n,n-1))
+                        n=i*17+j; faces.append((n-18,n-17,n,n-1))
             mesh(name,points,faces,mat,.001)
-        fitted_panel('Ivory shirt front',[(-.065,1.468),(.065,1.468),(.114,.85),(-.114,.85)],.007,ivory)
-        # A subtle central placket and small dark buttons show below the tie.
-        placket=material('Ivory shirt placket',(.70,.66,.57))
-        fitted_panel('Shirt button placket',[(-.009,1.36),(.009,1.36),(.009,.85),(-.009,.85)],.008,placket)
-        for z in (1.12,1.045,.97):
-            coords=[front(.0035*math.cos(a),z+.0035*math.sin(a),.010) for a in np.linspace(0,2*math.pi,12,endpoint=False)]
-            mesh('Shirt button',coords,[tuple(range(12))],ivory,.001)
+        fitted_panel('Ivory shirt front',[(-.052,1.498),(.052,1.498),(.003,1.265),(-.003,1.265)],.007,ivory)
         for sign in (-1,1):
             fitted_panel('Pointed ivory collar',[(sign*x,z) for x,z in
-                [(.004,1.472),(.064,1.468),(.089,1.410),(.040,1.428)]],.038,ivory)
+                [(.010,1.502),(.052,1.500),(.066,1.449),(.022,1.474)]],.014,ivory)
     else:
         coords = [front(x, z, .002) for x, z in [(-.060, 1.468), (0, 1.472), (.060, 1.468),
             (-.085, 1.39), (0, 1.39), (.085, 1.39), (-.05, 1.30), (0, 1.30), (.05, 1.30)]]
@@ -202,16 +270,19 @@ def dress(blouse, rig, *, male=False):
         mesh('Ribbon tail', coords, [(0,1,2,3,4)], ribbon, .002)
     if male:
         tie_points, tie_faces = [], []
-        for i, z in enumerate(np.linspace(1.43, 1.17, 28)):
-            width = float(np.interp(z, [1.17,1.19,1.43], [0,.024,.009]))
-            tie_points.extend([front(-width,z,.028), front(width,z,.028)])
+        for i, z in enumerate(np.linspace(1.479, 1.270, 24)):
+            width = float(np.interp(z, [1.270,1.30,1.479], [0,.021,.009]))
+            tie_points.extend([shirt_front(-width,z,.016), shirt_front(width,z,.016)])
             if i: tie_faces.append((2*i-2,2*i-1,2*i+1,2*i))
         mesh('Dark necktie', tie_points, tie_faces, ribbon, .002)
-    mesh('Ribbon knot', [front(x,z,.027) for x,z in [(-.014,1.445),(.014,1.445),(.010,1.420),(-.010,1.420)]], [(0,1,2,3)], ribbon, .004)
+        mesh('Tie knot',[shirt_front(x,z,.018) for x,z in
+             [(-.012,1.501),(.012,1.501),(.009,1.477),(-.009,1.477)]],[(0,1,2,3)],ribbon,.004)
+    else:
+        mesh('Ribbon knot', [front(x,z,.027) for x,z in [(-.014,1.445),(.014,1.445),(.010,1.420),(-.010,1.420)]], [(0,1,2,3)], ribbon, .004)
 
     # Small stitched GG badge on her left chest, deliberately tucked under the hair.
     cx, cz, w, h = .100, 1.285, .062, .046
-    if male: cx,cz=.158,1.240
+    if male: cx,cz=.115,1.280
     coords = [front(cx+x,cz+z,.020) for x,z in [(-w/2,-h/2),(w/2,-h/2),(w/2,h/2),(-w/2,h/2)]]
     if not male: mesh('GG cloth patch', coords, [(0,1,2,3)], patch, .0015)
     # Separate short stitches form a fine embroidered border.
@@ -228,7 +299,7 @@ def dress(blouse, rig, *, male=False):
                 stitch_points.extend(front(x+a,z+b,.022) for a,b in [(-dx,-dz),(dx,-dz),(dx,dz),(-dx,dz)])
                 stitch_faces.append(tuple(start+i for i in range(4)))
     if male:
-        # An embroidered shield directly on the coat, without Rain's cloth patch.
+        # An embroidered shield directly on the cardigan, without Rain's cloth patch.
         shield = [(-.031,.027),(.031,.027),(.028,-.010),(0,-.035),(-.028,-.010)]
         for a,b in zip(shield,shield[1:]+shield[:1]):
             a,b=Vector(a),Vector(b); delta=b-a
@@ -237,14 +308,14 @@ def dress(blouse, rig, *, male=False):
             for i in range(count):
                 start=len(stitch_points)
                 lo,hi=a+delta*(i/count),a+delta*((i+.65)/count)
-                stitch_points.extend(front(cx+v.x,cz+v.y,.005) for v in [lo-normal,lo+normal,hi+normal,hi-normal])
+                stitch_points.extend(cardigan_front(cx+v.x,cz+v.y,.008) for v in [lo-normal,lo+normal,hi+normal,hi-normal])
                 stitch_faces.append(tuple(start+j for j in range(4)))
     mesh('GG embroidery border', stitch_points, stitch_faces, gold)
     lettering = bpy.data.curves.new('GG embroidery','FONT'); lettering.body='GG'
     lettering.align_x='CENTER'; lettering.align_y='CENTER'; lettering.size=.025
     lettering.extrude=.0003; lettering.bevel_depth=.00015; lettering.resolution_u=4
     text=bpy.data.objects.new('GG monogram',lettering); collection.objects.link(text)
-    text.location=front(cx,cz,.009 if male else .026); text.rotation_euler=(math.pi/2,0,0)
+    text.location=cardigan_front(cx,cz,.012) if male else front(cx,cz,.026); text.rotation_euler=(math.pi/2,0,0)
     text.data.materials.append(gold)
     bpy.ops.object.select_all(action='DESELECT'); text.select_set(True); bpy.context.view_layer.objects.active=text
     bpy.ops.object.convert(target='MESH'); text=bpy.context.object

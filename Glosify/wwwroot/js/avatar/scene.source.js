@@ -15,7 +15,7 @@ import { bindMorphTargets } from './morphs.js';
 import { createRenderLoop, portraitScaling } from './render-loop.js';
 
 export async function createAvatar(canvas, character = 'rain') {
-    const model = { rain: '/models/avatar/rain-realistic.glb?v=meshopt-1', rowan: '/models/avatar/rowan-realistic.glb?v=meshopt-1' }[character];
+    const model = { rain: '/models/avatar/rain-realistic.glb?v=meshopt-1', rowan: '/models/avatar/rowan-realistic.glb?v=cardigan-2' }[character];
     if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
     engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));

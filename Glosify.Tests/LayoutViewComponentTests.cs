@@ -98,16 +98,20 @@ public sealed class LayoutViewComponentTests
         var document = await GetHomeAsync(factory.CreateClient());
         Assert.Null(document.QuerySelector("header.app-topbar"));
         Assert.NotNull(document.QuerySelector(".app-sidebar [data-app-settings-open]"));
-        Assert.NotNull(document.QuerySelector(".app-mobile-nav [data-app-settings-open]"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav"));
+        Assert.Equal("app-sidebar", document.QuerySelector("[data-sidebar-toggle]")?.GetAttribute("aria-controls"));
         var settings = Assert.IsAssignableFrom<IElement>(document.QuerySelector("dialog#app-settings"));
         Assert.Single(document.QuerySelectorAll(".display-language-selector"));
         Assert.NotNull(settings.QuerySelector("#settings-general [data-speech-settings]"));
         Assert.NotNull(settings.QuerySelector("#settings-general form[action='/display-language'] input[name='__RequestVerificationToken']"));
         Assert.NotNull(settings.QuerySelector("#settings-account a[href='/account/usage']"));
-        Assert.Contains("learner@example.test", settings.QuerySelector(".app-settings-account")!.TextContent);
-        var logout = Assert.IsAssignableFrom<IElement>(settings.QuerySelector("form[action='/Account/Logout']"));
+        Assert.Null(settings.QuerySelector("form[action='/Account/Logout']"));
+        var account = Assert.IsAssignableFrom<IElement>(document.QuerySelector(".app-sidebar .app-navigation-account"));
+        Assert.Contains("learner@example.test", account.QuerySelector(".app-navigation-identity")!.TextContent);
+        var logout = Assert.IsAssignableFrom<IElement>(account.QuerySelector("form[action='/Account/Logout']"));
         Assert.Equal("post", logout.GetAttribute("method"));
         Assert.NotNull(logout.QuerySelector("input[name='__RequestVerificationToken']"));
+        Assert.Null(account.QuerySelector("a[href='/login']"));
     }
 
     [Fact]

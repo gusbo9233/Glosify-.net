@@ -1,0 +1,19 @@
+@using System.Security.Claims
+<div class="app-navigation-account">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        var account = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? Text["Layout.SignedIn"];
+        <div class="app-navigation-identity">
+            <span>@Text["Layout.SignedInAs"]</span>
+            <strong dir="auto" title="@account">@account</strong>
+        </div>
+        <form asp-controller="Account" asp-action="Logout" method="post">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="app-navigation-auth">@Text["Common.LogOut"]</button>
+        </form>
+    }
+    else
+    {
+        <a asp-controller="Account" asp-action="Login" class="app-navigation-auth">@Text["Common.LogIn"]</a>
+    }
+</div>

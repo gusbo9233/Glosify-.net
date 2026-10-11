@@ -30,8 +30,9 @@
         document.body.classList.remove('app-settings-open');
         triggers.forEach(item => item.setAttribute('aria-expanded', 'false'));
         // The visible trigger can change if the viewport rotates while open.
-        const target = opener?.getClientRects().length ? opener : triggers.find(item => item.getClientRects().length);
-        target?.focus();
+        const available = item => item && !item.closest('[inert]') && item.getClientRects().length && getComputedStyle(item).visibility !== 'hidden';
+        const target = available(opener) ? opener : triggers.find(available);
+        (target ?? document.querySelector('[data-sidebar-toggle]'))?.focus();
     });
     dialog.addEventListener('keydown', event => {
         if (event.key !== 'Tab') return;

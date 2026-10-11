@@ -130,9 +130,12 @@ user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in t
 main working tree); no photo pixels are included in the shipped assets. The patch
 is intentionally partly covered by her hair. Garments inherit the blouse's skin
 weights before morph baking, including breathing and shoulder movement.
-Rowan has male anatomy, short CC0 MakeHuman hair, and an open, oversized dark wool overcoat with fuller sleeves, a straight drape,
-a longer hem and notched lapels. A full ivory shirt with a button placket shows
-underneath, with a dark necktie and gold GG shield on the coat chest.
+Rowan has male anatomy, short CC0 MakeHuman hair, and a waist-length charcoal
+V-neck cardigan with fitted sleeves, fine knit textures, ribbed front borders and
+dark horn buttons. An ivory shirt and dark necktie show inside the V, with a gold
+GG shield embroidered on the cardigan chest. His raised collar stand wraps the neck;
+the shirt shoulders fill the neckline, and the smaller collar points frame the tie
+knot. Shirt and tie weights blend from the torso to the neck for body morphs.
 The character chooser swaps the model and pins the character name and matching voice
 for the conversation; it is locked while a model loads or a conversation is active.
 Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
@@ -166,7 +169,7 @@ It keeps mesh topology, textures, materials and named morph targets. Compression
 is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
 compress shipped files. The script rejects compressed inputs and identical
 input/output paths. The pre-compression assets are also retained in Git at
-`0d02d69`. Current shipped sizes are Rain 3.69 MB and Rowan 2.89 MB, down from
+`0d02d69`. Current shipped sizes are Rain 3.69 MB and Rowan 3.00 MB, down from
 15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.

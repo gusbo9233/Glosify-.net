@@ -19,7 +19,7 @@ Other adaptations: portrait proportions, ivory fabric, relaxed posture,
 facial expression morphs and optimized web export.
 Forest-green vest, ivory collar, ribbon and embroidered GG patch: original
 GlobeGlotter geometry and fabric texture, fitted to the MakeHuman blouse.
-Rowan's notched coat lapels, shirt collar, necktie and GG shield embroidery:
+Rowan's knitted V-neck cardigan, ribbing, buttons, shirt collar, necktie and GG shield embroidery:
 original GlobeGlotter geometry fitted to MakeHuman clothing.
 Original adaptation code: scripts/avatar/build-rain.py, human_mesh.py and
 academia_outfit.py.

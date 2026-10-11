@@ -149,7 +149,10 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.NotNull(settings);
         Assert.NotNull(settings!.QuerySelector("[data-speech-settings]"));
         Assert.NotNull(settings.QuerySelector(".display-language-selector"));
-        Assert.NotNull(settings.QuerySelector("#settings-account a[href='/login']"));
+        Assert.Null(settings.QuerySelector("#settings-account-tab"));
+        Assert.NotNull(document.QuerySelector(".app-sidebar .app-navigation-account a[href='/login']"));
+        Assert.Null(document.QuerySelector(".app-sidebar .app-navigation-identity"));
+        Assert.Null(document.QuerySelector(".app-sidebar form[action='/Account/Logout']"));
         Assert.Null(settings.QuerySelector("#settings-admin"));
         Assert.Null(settings.QuerySelector("form[action='/Account/Logout']"));
         Assert.Null(document.QuerySelector("header.app-topbar"));

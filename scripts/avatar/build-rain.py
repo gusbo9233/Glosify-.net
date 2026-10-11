@@ -114,31 +114,64 @@ for link in list(bsdf.inputs['Base Color'].links): blouse.node_tree.links.remove
 bsdf.inputs['Base Color'].default_value=(.038,.031,.026,1) if male else (.78,.74,.64,1)
 
 if male:
-    # Give the coat room over the shirt: relaxed shoulders and sleeves, a straight
-    # waist, and a longer hem. Preserve its skin weights for all baked movement.
+    # A waist-length cardigan follows the torso rather than the coat's broad,
+    # extended silhouette. Keep the source sleeves and anatomical skin weights.
     cloth=bpy.data.objects['Ivory blouse']
-    # Separate the two front panels so the coat hangs open over a real shirt layer.
-    bm=bmesh.new(); bm.from_mesh(cloth.data)
-    seam=[f for f in bm.faces if f.calc_center_median().y < -.025
-          and f.calc_center_median().z < 1.46
-          and min(v.co.x for v in f.verts) <= 0 <= max(v.co.x for v in f.verts)]
-    bmesh.ops.delete(bm,geom=seam,context='FACES'); bm.to_mesh(cloth.data); bm.free()
     groups={g.index:g.name.lower() for g in cloth.vertex_groups}
     for vertex in cloth.data.vertices:
         x,y,z=vertex.co
         arm=sum(g.weight for g in vertex.groups if any(part in groups[g.group] for part in ('arm','hand')))
         neck=min(1,max(0,(1.52-z)/.09))
-        waist=max(0,1-abs(z-1.13)/.25)*(1-arm)
-        vertex.co.x *= 1+neck*(.22+.22*waist)
-        vertex.co.y *= 1+neck*.28
-        vertex.co += vertex.normal*.020*neck
-        vertex.co.z -= max(0,min(1,(1.15-z)/.14))*.18*(1-arm)
-        if y < -.025 and z < 1.47 and abs(x)<.23:
-            opening=float(np.interp(z,[.85,1.15,1.35,1.47],[.075,.072,.060,0]))
-            vertex.co.x += math.copysign(opening*(1-abs(x)/.23)**2,x)
+        vertex.co.x *= 1+neck*.075
+        vertex.co.y *= 1+neck*.10
+        vertex.co += vertex.normal*.005*neck
+        # Keep the lower edge at the hip, with a gently gathered knit silhouette.
+        hem=max(0,min(1,(1.10-z)/.13))*(1-arm)
+        vertex.co.x *= 1-.045*hem
     cloth.data.update()
-    for node in blouse.node_tree.nodes:
-        if node.type=='NORMAL_MAP': node.inputs['Strength'].default_value=.3
+    # Cut the front along two exact diagonal planes, not a row of whole faces.
+    # This leaves a clean V neck for the ribbed border and the shirt underneath.
+    bm=bmesh.new(); bm.from_mesh(cloth.data)
+    for sign in (-1,1):
+        front_faces=[f for f in bm.faces if f.calc_center_median().y < -.015
+                     and f.calc_center_median().z > 1.24]
+        geom=list(set(front_faces+[e for f in front_faces for e in f.edges]+[v for f in front_faces for v in f.verts]))
+        bmesh.ops.bisect_plane(bm,geom=geom,dist=.00001,
+                              plane_co=(0,0,1.265),plane_no=(sign,0,-.40))
+    opening=[f for f in bm.faces if f.calc_center_median().y < -.015
+             and f.calc_center_median().z > 1.265
+             and abs(f.calc_center_median().x) < .40*(f.calc_center_median().z-1.265)+.0001]
+    bmesh.ops.delete(bm,geom=opening,context='FACES'); bm.to_mesh(cloth.data); bm.free()
+    cloth.data.update()
+    blouse.name='Charcoal knit cardigan'
+    # A baked knit texture is cheap to render and survives the glTF export.
+    size=512; yy,xx=np.mgrid[:size,:size]
+    stitch_x=(xx%16)/16; stitch_y=(yy%16)/16
+    yarn=np.cos(2*math.pi*(stitch_x-.32*np.abs(stitch_y*2-1)))
+    grain=np.sin(xx*2.4+yy*1.7)*.015
+    shade=.92+.07*yarn+.025*np.cos(2*math.pi*stitch_y)+grain
+    pixels=np.ones((size,size,4),dtype=np.float32)
+    pixels[:,:,:3]=shade[:,:,None]*np.array([.29,.27,.235])
+    knit=bpy.data.images.new('Charcoal knitted stitches',width=size,height=size)
+    knit.pixels.foreach_set(pixels.ravel()); knit.pack()
+    texture=blouse.node_tree.nodes.new('ShaderNodeTexImage'); texture.image=knit
+    blouse.node_tree.links.new(texture.outputs['Color'],bsdf.inputs['Base Color'])
+    bsdf.inputs['Roughness'].default_value=.94
+    # Replace the broad suit wrinkles with fine knitted yarn relief.
+    for uv in cloth.data.uv_layers.active.data: uv.uv *= 4
+    dx=np.roll(shade,-1,axis=1)-np.roll(shade,1,axis=1)
+    dy=np.roll(shade,-1,axis=0)-np.roll(shade,1,axis=0)
+    normals=np.stack((-dx*2,-dy*2,np.ones_like(dx)),axis=2)
+    normals/=np.linalg.norm(normals,axis=2)[:,:,None]
+    normal_pixels=np.ones((size,size,4),dtype=np.float32)
+    normal_pixels[:,:,:3]=normals*.5+.5
+    normal_image=bpy.data.images.new('Knitted yarn normals',width=size,height=size)
+    normal_image.colorspace_settings.name='Non-Color'
+    normal_image.pixels.foreach_set(normal_pixels.ravel()); normal_image.pack()
+    normal_texture=blouse.node_tree.nodes.new('ShaderNodeTexImage'); normal_texture.image=normal_image
+    normal_map=blouse.node_tree.nodes.new('ShaderNodeNormalMap'); normal_map.inputs['Strength'].default_value=.35
+    blouse.node_tree.links.new(normal_texture.outputs['Color'],normal_map.inputs['Color'])
+    blouse.node_tree.links.new(normal_map.outputs['Normal'],bsdf.inputs['Normal'])
 
 # Original layered outfit, fitted to the source blouse and included in every body morph.
 from academia_outfit import dress

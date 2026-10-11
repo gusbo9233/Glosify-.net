@@ -150,8 +150,12 @@
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <partial name="_SpeechDialog" />
     <partial name="_AppSettings" />
+    <button type="button" class="app-sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="@Text["Layout.PrimaryNavigation"]" data-open-label="@Text["Layout.PrimaryNavigation"]" data-close-label="@Text["Common.Close"]">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+    </button>
+    <div class="app-sidebar-backdrop" data-sidebar-backdrop hidden></div>
     <div class="app-shell">
-        <aside class="app-sidebar">
+        <aside id="app-sidebar" class="app-sidebar" aria-label="@Text["Layout.PrimaryNavigation"]">
             <div class="app-sidebar-brand">
                 <h1 class="wordmark">
                     <a asp-controller="Home" asp-action="Index">GlobeGlotter</a>
@@ -160,7 +164,7 @@
                 @await Component.InvokeAsync("LanguagePill")
             </div>
 
-            <nav class="app-nav">
+            <nav class="app-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
                 @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
                 {
                     <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Avatar <small>Preview</small></a>
@@ -212,6 +216,7 @@
                 <button type="button" class="app-nav-item app-settings-trigger" data-app-settings-open aria-haspopup="dialog" aria-controls="app-settings" aria-expanded="false">
                     @NavIcon("settings") <span>@Text["AppSettings.Title"]</span>
                 </button>
+                @await Html.PartialAsync("_NavigationAccount")
             </div>
         </aside>
 
@@ -232,62 +237,6 @@
             </footer>
         </main>
     </div>
-    <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
-        <div class="app-mobile-links">
-        @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
-        {
-            <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face")<span>Avatar</span></a>
-        }
-        <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
-            @NavIcon("language")
-            <span>@(isFreestyle ? "Mode" : Text["Nav.Language"])</span>
-        </a>
-        <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
-            @NavIcon("home")
-            <span>@Text["Nav.Home"]</span>
-        </a>
-        <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
-            @NavIcon("quiz")
-            <span>@Text["Nav.Quizzes"]</span>
-        </a>
-        <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
-            @NavIcon("anki")
-            <span>Anki</span>
-        </a>
-        <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
-            @NavIcon("auto_stories")
-            <span>@Text["Nav.Books"]</span>
-        </a>
-        @if (!isFreestyle)
-        {
-            <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
-                @NavIcon("subtitles")
-                <span>@Text["Nav.Transcripts"]</span>
-            </a>
-            <a class="@NavClass("Translations")" asp-controller="Translations" asp-action="Index">
-                @NavIcon("translate")
-                <span>@Text["Nav.Translations"]</span>
-            </a>
-        }
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
-                @NavIcon("explore")
-                <span>@Text["Nav.Explore"]</span>
-            </a>
-        }
-        else
-        {
-            <a class="@NavClass("Account", "Login")" asp-controller="Account" asp-action="Login">
-                <span class="material-symbols-outlined">login</span>
-                <span>@Text["Common.LogIn"]</span>
-            </a>
-        }
-        </div>
-        <button type="button" class="app-nav-item app-settings-trigger app-mobile-settings" data-app-settings-open aria-haspopup="dialog" aria-controls="app-settings" aria-expanded="false">
-            @NavIcon("settings") <span>@Text["AppSettings.Title"]</span>
-        </button>
-    </nav>
     @if (User.Identity?.IsAuthenticated == true && assistantPageContext?.IsHidden is not true)
     {
         @await Component.InvokeAsync("AssistantPanel", new
@@ -297,6 +246,7 @@
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app-sidebar.js" asp-append-version="true"></script>
     <script src="~/js/app-settings.js" asp-append-version="true"></script>
     <script src="~/js/tts.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>
