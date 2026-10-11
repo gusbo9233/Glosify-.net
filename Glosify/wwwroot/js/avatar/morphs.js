@@ -8,7 +8,11 @@ export function bindMorphTargets(meshes) {
     for (const manager of new Set(meshes.map(mesh => mesh.morphTargetManager).filter(Boolean))) {
         const textureMode = manager.isUsingTextureForTargets;
         let allowed;
-        if (textureMode) manager.numMaxInfluencers = manager.numTargets;
+        if (textureMode) {
+            // Keep the shader capacity stable, but skip zero-weight texture targets.
+            manager.optimizeInfluencers = true;
+            manager.numMaxInfluencers = manager.numTargets;
+        }
         else {
             // The glTF loader reserves every slot for small managers, even at zero
             // weight. Release that reservation before enforcing the fallback budget.

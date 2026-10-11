@@ -117,6 +117,8 @@ public sealed class AvatarSpeech(AvatarBilling billing, IOptions<SpeechOptions> 
     {
         var socket = new ClientWebSocket();
         socket.Options.SetRequestHeader("xi-api-key", options.Value.ApiKey);
+        socket.Options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+        socket.Options.KeepAliveTimeout = TimeSpan.FromSeconds(10);
         return socket;
     }
     private static AvatarException Unavailable() => new(502, "Voice is temporarily unavailable. Please retry.");

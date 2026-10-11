@@ -242,6 +242,30 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Contains("camera=()", permissions);
     }
 
+    [Theory]
+    [InlineData("/js/avatar/meshopt.worker.js?v=0.24.0-1", true)]
+    [InlineData("/js/avatar/scene.min.js", false)]
+    [InlineData("/login", false)]
+    public async Task OnlyMeshoptWorkerMayCompileWebAssembly(string path, bool isDecoder)
+    {
+        var response = await CreateClient().GetAsync(path);
+        response.EnsureSuccessStatusCode();
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.DoesNotContain("'unsafe-eval'", csp);
+        if (isDecoder)
+        {
+            Assert.Contains("script-src 'self' 'wasm-unsafe-eval';", csp);
+            Assert.Contains("connect-src 'none';", csp);
+            Assert.Contains("worker-src 'none';", csp);
+        }
+        else
+        {
+            Assert.DoesNotContain("'wasm-unsafe-eval'", csp);
+            Assert.Contains("script-src 'self';", csp);
+            Assert.Contains("worker-src 'self';", csp);
+        }
+    }
+
     [Fact]
     public async Task Post_WithoutAntiForgeryToken_IsRejected()
     {

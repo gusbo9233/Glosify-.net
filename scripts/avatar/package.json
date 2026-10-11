@@ -7,9 +7,13 @@
   },
   "dependencies": {
     "@babylonjs/core": "9.25.0",
-    "@babylonjs/loaders": "9.25.0"
+    "@babylonjs/loaders": "9.25.0",
+    "meshoptimizer": "0.24.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "4.2.1",
+    "@gltf-transform/extensions": "4.2.1",
+    "@gltf-transform/functions": "4.2.1",
     "esbuild": "0.25.12"
   }
 }

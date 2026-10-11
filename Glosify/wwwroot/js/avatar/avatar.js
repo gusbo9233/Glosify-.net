@@ -1,4 +1,5 @@
 import { AvatarAudio } from './audio.js';
+import { VoiceConnection } from './connection.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
@@ -6,14 +7,15 @@ const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'R
 let characterId = 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
+let ending = null;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
-function send(value) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(value)); }
+function send(value) { return socket ? socket.send(JSON.stringify(value)) !== false : false; }
 function setState(value) {
     state = value;
-    const labels = { off: 'Ready when you are', connecting: 'Connecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', idle: muted ? 'Microphone muted' : 'Your turn', error: 'Try again' };
+    const labels = { off: 'Ready when you are', connecting: 'Connecting', reconnecting: 'Reconnecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', idle: muted ? 'Microphone muted' : 'Your turn', error: 'Try again' };
     el('status').textContent = labels[value] || value;
     visual?.setState(value);
     el('talk').disabled = !ready || muted;
@@ -48,8 +50,8 @@ function transcript(speaker, text) {
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
 }
 function refreshStart() {
-    el('start').disabled = !config?.available || !config?.language || !modelReady || !!sessionId || !!audio;
-    el('character').disabled = characterLoading || !!sessionId || !!audio;
+    el('start').disabled = !config?.available || !config?.language || !modelReady || !!sessionId || !!audio || !!ending || pageLeaving;
+    el('character').disabled = characterLoading || !!sessionId || !!audio || !!ending || pageLeaving;
 }
 async function chooseCharacter() {
     if (pageLeaving || audio || sessionId || characterLoading || el('character').disabled) {
@@ -81,10 +83,32 @@ async function chooseCharacter() {
     }
 }
 el('character').addEventListener('change', () => { void chooseCharacter(); });
-async function api(path, body) {
-    const response = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) });
-    if (!response.ok) { const problem = await response.json().catch(() => ({})); throw new Error(problem.detail || problem.title || 'The conversation could not start.'); }
-    return response.status === 204 ? null : response.json();
+async function requestJson(path, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(path, { credentials: 'same-origin', ...options, signal: controller.signal });
+        if (!response.ok) {
+            const problem = await response.json().catch(() => ({}));
+            throw new Error(problem.detail || problem.title || 'The voice request failed. Please retry.');
+        }
+        return response.status === 204 ? null : await response.json();
+    } catch (error) {
+        if (controller.signal.aborted) throw new Error('Voice connection timed out. Please try again.');
+        throw error;
+    } finally { clearTimeout(timer); }
+}
+function api(path, body, timeout) {
+    return requestJson(path, { method: 'POST', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) }, timeout);
+}
+function connectionLost() {
+    ready = false; holding = false; awaitingCommit = false; flushing = false;
+    preRoll = []; speechFrames = 0; cancelledTurn = turnId; turnId = null; currentReply = '';
+    audio?.stop(); audio?.mute(true); muted = true;
+    el('mute').disabled = true; el('mute').textContent = 'Unmute'; el('mute').setAttribute('aria-pressed', 'true');
+    caption(''); setState('reconnecting');
+    el('hint').textContent = 'Microphone paused while reconnecting.';
+    notice('Connection lost. Reconnecting… Interrupted audio will not be replayed.');
 }
 function listen() {
     if (!ready || muted) return;
@@ -94,7 +118,7 @@ function listen() {
 function interrupt() {
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     awaitingCommit = false; preRoll = [];
-    send({ type: 'interrupt' }); setState('idle');
+    if (send({ type: 'interrupt' })) setState('idle');
 }
 function frame({ pcm, rms }) {
     if (!ready || muted) return;
@@ -127,7 +151,11 @@ async function onMessage(message, generation) {
     if (generation !== epoch) return;
     if (message.type === 'connected') {
         ready = true; el('mute').disabled = false; setState('idle');
-        if (mode() === 'hands-free') listen(); return;
+        if (message.resumed) {
+            notice('Connection restored. Unmute to continue; please repeat the interrupted turn.');
+            el('hint').textContent = 'Microphone paused. Unmute when you are ready.';
+        }
+        if (mode() === 'hands-free' && !muted) listen(); return;
     }
     if (message.type === 'usage') {
         el('balance').textContent = number(message.available);
@@ -143,7 +171,7 @@ async function onMessage(message, generation) {
         case 'listening':
             setState('listening');
             if (mode() === 'push-to-talk' && !holding && !awaitingCommit) { interrupt(); break; }
-            for (const pcm of preRoll) socket.send(pcm); preRoll = [];
+            for (const pcm of preRoll) { if (socket.send(pcm) === false) break; } preRoll = [];
             if (awaitingCommit && !flushing) commit();
             break;
         case 'partial': caption(message.text, 'user'); break;
@@ -169,8 +197,8 @@ async function onMessage(message, generation) {
     }
 }
 async function start() {
-    if (audio || sessionId || !modelReady) return;
-    const generation = ++epoch; notice(); caption(''); el('start').disabled = true; setState('connecting');
+    if (audio || sessionId || ending || pageLeaving || !modelReady) return;
+    const generation = ++epoch; ready = false; notice(); caption(''); el('start').disabled = true; el('end').disabled = false; setState('connecting');
     el('transcript').replaceChildren(); el('spending').textContent = 'This conversation · 0 credits';
     const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
     try {
@@ -182,40 +210,49 @@ async function start() {
         sessionId = result.sessionId;
         el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
         const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        socket = new WebSocket(url);
-        socket.onmessage = event => {
-            try { void onMessage(JSON.parse(event.data), generation).catch(error => { notice(error.message); void end(); }); }
-            catch { notice('The voice connection returned an invalid message.'); void end(); }
-        };
-        socket.onclose = () => { if (generation === epoch) { notice('Conversation ended. Start again whenever you like.'); void end(); } };
-        socket.onerror = () => { if (generation === epoch) notice('Voice connection failed. Please start again.'); };
+        socket = new VoiceConnection(url, {
+            onMessage: message => generation === epoch ? onMessage(message, generation) : undefined,
+            onLost: () => { if (generation === epoch) connectionLost(); },
+            onEnded: detail => { if (generation === epoch) { notice(detail); void end(); } }
+        });
         el('quiz').disabled = true; el('end').disabled = false;
         el('hint').textContent = mode() === 'hands-free' ? `Microphone is on. You can interrupt ${character().name}.` : 'Hold Space or the talk button. Release to send.';
     } catch (error) {
+        if (generation !== epoch) return;
         notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
         await end();
     }
 }
-async function end() {
-    ++epoch; ready = false; holding = false; awaitingCommit = false; preRoll = []; speechFrames = 0; muted = false;
+function end() {
+    if (ending) return ending;
+    const generation = ++epoch;
+    ready = false; holding = false; awaitingCommit = false; flushing = false;
+    preRoll = []; speechFrames = 0; muted = false; turnId = null;
     const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
-    if (socket) { send({ type: 'end' }); socket.onclose = null; socket.close(); socket = null; }
-    visual?.setAnalyser(null); await oldAudio?.close();
-    if (oldSession) {
-        await api(`/api/avatar/sessions/${oldSession}/end`, {}).catch(() => {});
-        for (let attempt = 0; attempt < 5; attempt++) {
-            const response = await fetch(`/api/avatar/sessions/${oldSession}/usage`, { credentials: 'same-origin' }).catch(() => null);
-            if (!response?.ok) break;
-            const usage = await response.json();
-            await onMessage(usage, epoch);
+    socket?.close(); socket = null;
+    visual?.setAnalyser(null);
+    el('end').disabled = true; el('mute').disabled = true; el('mute').textContent = 'Mute'; el('mute').setAttribute('aria-pressed', 'false');
+    el('hint').textContent = 'Your microphone is off.'; setState('off');
+    // Cleanup has a deadline; a dead network must not leave Start disabled forever.
+    ending = (async () => {
+        try { await oldAudio?.close(); } catch { /* Tracks stop before AudioContext closes. */ }
+        if (oldSession) await api(`/api/avatar/sessions/${oldSession}/end`, {}, 5000).catch(() => {});
+    })().finally(() => {
+        ending = null; el('quiz').disabled = false; refreshStart();
+        if (oldSession) void refreshUsage(oldSession, generation);
+    });
+    refreshStart(); return ending;
+}
+async function refreshUsage(id, generation) {
+    try {
+        for (let attempt = 0; attempt < 5 && generation === epoch; attempt++) {
+            const usage = await requestJson(`/api/avatar/sessions/${id}/usage`, {}, 5000);
+            if (generation !== epoch) return;
+            await onMessage(usage, generation);
             if (!usage.pending) break;
             await new Promise(resolve => setTimeout(resolve, 500));
         }
-    }
-    el('quiz').disabled = false;
-    el('end').disabled = true; el('mute').disabled = true; el('mute').textContent = 'Mute'; el('mute').setAttribute('aria-pressed', 'false');
-    el('hint').textContent = 'Your microphone is off.';
-    setState('off'); refreshStart();
+    } catch { /* The durable ledger is reconciled server-side even while offline. */ }
 }
 function press(event) {
     if (!ready || muted) return;
@@ -225,13 +262,14 @@ function press(event) {
     holding = true; awaitingCommit = false; preRoll = []; listen();
 }
 function commit() {
-    awaitingCommit = false; send({ type: 'commit' }); setState('thinking');
+    awaitingCommit = false; if (send({ type: 'commit' })) setState('thinking');
 }
 async function release() {
     if (!holding) return;
     holding = false; awaitingCommit = true; flushing = true;
     const generation = epoch;
     try { await audio?.flush(); }
+    catch { if (generation === epoch) { interrupt(); setState('error'); notice('Microphone stopped responding. Please retry.'); } }
     finally { flushing = false; }
     // A release during setup waits for Ready so the entire buffered utterance
     // reaches recognition, followed by its commit, even for a short button press.
@@ -247,11 +285,13 @@ document.addEventListener('keyup', event => { if (event.code === 'Space') releas
 el('talk').addEventListener('keydown', event => { if ((event.code === 'Space' || event.code === 'Enter') && !event.repeat) press(event); });
 el('talk').addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); release(); } });
 el('mute').addEventListener('click', () => {
+    if (!ready) return;
     muted = !muted; audio?.mute(muted); preRoll = []; holding = false;
     el('mute').textContent = muted ? 'Unmute' : 'Mute'; el('mute').setAttribute('aria-pressed', String(muted));
     if (muted && ['listening', 'connecting'].includes(state)) interrupt();
     if (!muted && mode() === 'hands-free' && !['speaking', 'thinking'].includes(state)) listen();
     else setState(state);
+    el('hint').textContent = muted ? 'Microphone paused.' : 'Microphone ready. Speak when you are ready.';
 });
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
     if (ready) { interrupt(); if (mode() === 'hands-free' && !muted) listen(); }
@@ -268,7 +308,7 @@ window.addEventListener('pageshow', async event => {
     const generation = modelEpoch;
     await pageCleanup;
     if (generation !== modelEpoch) return;
-    pageLeaving = false; el('character').value = characterId;
+    pageLeaving = false; el('character').value = characterId; refreshStart();
     void initialize(); void chooseCharacter();
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden && audio) { notice('Conversation ended while the page was away.'); void end(); } });
@@ -276,9 +316,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && aud
 async function initialize() {
     const generation = ++configEpoch;
     try {
-        const response = await fetch('/api/avatar/config', { credentials: 'same-origin' });
-        if (!response.ok) throw new Error('Conversation settings could not load. Refresh the page to retry.');
-        const next = await response.json();
+        const next = await requestJson('/api/avatar/config');
         if (pageLeaving || generation !== configEpoch) return;
         config = next;
         el('language').textContent = config.languageName ? `Practicing ${config.languageName}` : 'Choose a learning language in the sidebar.';

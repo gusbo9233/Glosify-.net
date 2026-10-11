@@ -47,3 +47,27 @@ test('release flushes a partial microphone frame before acknowledging commit', (
     assert.equal(messages[1].flushed, true);
     assert.equal(capture.position, 0);
 });
+
+
+test('late microphone permission cannot restart capture after End', async () => {
+    let allow, stopped = 0;
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { mediaDevices: {
+        getUserMedia: () => new Promise(resolve => { allow = resolve; })
+    } } });
+    try {
+        const audio = new AvatarAudio(); const opening = audio.open(() => {});
+        await audio.close();
+        allow({ getTracks: () => [{ stop() { stopped++; } }] }); await opening;
+        assert.equal(stopped, 1); assert.equal(audio.stream, null); assert.equal(audio.context, null);
+    } finally {
+        if (original) Object.defineProperty(globalThis, 'navigator', original);
+        else delete globalThis.navigator;
+    }
+});
+
+test('unresponsive capture worklet times out instead of leaving release pending', async () => {
+    const audio = new AvatarAudio(); audio.context = { state: 'running' }; audio.capture = { port: { postMessage() {} } };
+    await assert.rejects(audio.flush(), /Microphone flush timed out/);
+    assert.equal(audio.flushReady, null);
+});
