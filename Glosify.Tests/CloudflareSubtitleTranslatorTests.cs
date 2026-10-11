@@ -209,6 +209,7 @@ public sealed class CloudflareSubtitleTranslatorTests
 
     private sealed class ConcurrentRecordingHandler : HttpMessageHandler
     {
+        private readonly TaskCompletionSource _firstBatchStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _calls;
         private int _concurrency;
         private int _maximumConcurrency;
@@ -235,7 +236,10 @@ public sealed class CloudflareSubtitleTranslatorTests
                 var body = await request.Content!.ReadAsStringAsync(cancellationToken);
                 using var document = System.Text.Json.JsonDocument.Parse(body);
                 var text = document.RootElement.GetProperty("text").GetString();
-                await Task.Delay(10, cancellationToken);
+                // Hold the first request until its batch partner arrives instead of
+                // assuming the runner schedules both within a fixed delay.
+                if (concurrency >= 2) _firstBatchStarted.TrySetResult();
+                await _firstBatchStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(
