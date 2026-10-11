@@ -54,7 +54,9 @@ The suggestion prompt uses the practice language and forbids inventing learner f
 
 Settings → Admin → Avatar usage opens `/Admin/AvatarUsage`, protected by the same
 account-ID administrator policy as game usage. It reads existing accounting records,
-including earlier sessions, without a migration or additional provider calls.
+including earlier sessions, without additional provider calls. The additive
+`IndexAvatarUsageReservations` migration adds a filtered, covering date index
+for Avatar reservations; it does not change ledger rows or customer billing.
 Filter by UTC call-start dates (up to one year), admin email/user ID, provider, model,
 operation, or session. Totals cover all matching calls; details show the latest 500.
 Each reservation is one call; unused-credit releases are not counted as extra calls.
