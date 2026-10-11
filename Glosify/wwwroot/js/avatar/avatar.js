@@ -56,13 +56,17 @@ function transcript(speaker, text) {
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
 }
 function refreshStart() {
-    const recording = holding || (mode() === 'hands-free' && !!audio && !muted);
-    const label = holding ? 'Release to send' : mode() === 'hands-free'
-        ? (recording ? 'Pause microphone' : 'Start microphone') : 'Hold to record';
-    el('talk').disabled = !!ending || changingQuiz || pageLeaving || !(ready || canStart() || holding || awaitingCommit);
+    const handsFree = mode() === 'hands-free', reconnecting = state === 'reconnecting';
+    // A hands-free error stops listening until the explicit retry.
+    const recording = holding || (handsFree && !!audio && !muted && state !== 'error');
+    // The name stays fixed so assistive technology reads recording from aria-pressed.
+    const label = handsFree ? 'Microphone' : 'Hold to record';
+    // An active hold keeps the button enabled, even while starting over, so its release arrives.
+    el('talk').disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || awaitingCommit || reconnecting));
     el('talk').setAttribute('aria-label', label);
     el('talk').setAttribute('aria-pressed', String(recording));
-    el('talk').title = label;
+    el('talk').title = reconnecting ? 'Start over' : holding ? 'Release to send'
+        : handsFree ? (recording ? 'Pause microphone' : 'Start microphone') : label;
     el('quiz').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('character').disabled = characterLoading || !!ending || changingQuiz || (!!audio && !ready) || pageLeaving;
 }
@@ -131,7 +135,7 @@ function connectionLost() {
     preRoll = []; speechFrames = 0; cancelledTurn = turnId; turnId = null; currentReply = '';
     audio?.stop(); audio?.mute(true); muted = true;
     caption(''); setState('reconnecting');
-    notice('Connection lost. Reconnecting… Interrupted audio will not be replayed.');
+    notice('Connection lost. Reconnecting… Use the microphone to start over instead. Interrupted audio will not be replayed.');
 }
 function listen(preserveCapture = false) {
     if (!ready || muted) return;
@@ -189,7 +193,8 @@ async function onMessage(message, generation) {
             notice('Connection restored. Use the microphone to continue; please repeat the interrupted turn.');
         }
         if (mode() === 'hands-free' && !muted) listen();
-        else if (holding || (awaitingCommit && preRoll.length)) listen(true);
+        // A pending flush may still deliver the only audio of a short first press.
+        else if (holding || (awaitingCommit && (preRoll.length || flushing))) listen(true);
         else { awaitingCommit = false; refreshStart(); }
         return;
     }
@@ -273,7 +278,7 @@ function end() {
         try { await oldAudio?.close(); } catch { /* Tracks stop before AudioContext closes. */ }
         if (oldSession) await api(`/api/avatar/sessions/${oldSession}/end`, {}, 5000).catch(() => {});
     })().finally(() => {
-        ending = null; el('quiz').disabled = false; refreshStart();
+        ending = null; refreshStart();
         if (oldSession) void refreshUsage(oldSession, generation);
     });
     refreshStart(); return ending;
@@ -289,16 +294,35 @@ async function refreshUsage(id, generation) {
         }
     } catch { /* The durable ledger is reconciled server-side even while offline. */ }
 }
+function startOver() {
+    // Recovery can keep waiting for a session the server already discarded, for
+    // example after mobile suspension. Remembered context carries into a new one.
+    const ended = end();
+    // end() resets capture synchronously; the press that started over is still a
+    // push-to-talk hold, buffered from the new microphone exactly like a first press.
+    holding = mode() === 'push-to-talk'; refreshStart();
+    return ended.then(() => start());
+}
 function press(event) {
-    if (ending || changingQuiz || pageLeaving || (!ready && !canStart())) return;
+    if (ending || changingQuiz || pageLeaving) return;
+    if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
+    if (!ready && !canStart()) return;
     event?.preventDefault(); notice();
     if (!ready) {
         holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch;
         void start(); return;
     }
     if (mode() === 'hands-free') {
-        if (muted || state === 'error') { muted = false; audio?.mute(false); listen(); }
-        else { muted = true; audio?.mute(true); interrupt(); setState('idle'); }
+        const reply = state === 'speaking' || state === 'thinking';
+        if (muted || state === 'error') {
+            // During a reply, unpausing re-enables interruption; its idle starts listening.
+            muted = false; audio?.mute(false);
+            if (reply) setState(state); else listen();
+        } else {
+            // Pausing stops capture only; a reply that is already under way still plays.
+            muted = true; audio?.mute(true);
+            if (state === 'listening' || state === 'connecting') interrupt(); else setState(state);
+        }
         return;
     }
     if (muted) { muted = false; audio?.mute(false); }
@@ -345,8 +369,8 @@ el('talk').addEventListener('keydown', event => { if ((event.code === 'Space' ||
 el('talk').addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); release(); } });
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
     holding = false;
+    // Settings navigation never opens the microphone; the talk button starts it.
     if (ready) { interrupt(); if (mode() === 'hands-free' && !muted) listen(); }
-    else if (mode() === 'hands-free' && canStart()) void start();
     setState(state);
 }));
 window.addEventListener('pagehide', () => {

@@ -7,14 +7,15 @@ import { readFileSync } from 'node:fs';
 const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', import.meta.url), 'utf8');
 function setup(mode = 'push-to-talk') {
     const elements = new Map(), sent = [], listeners = {}, windowListeners = {};
+    const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
     const element = id => {
         if (['avatar-new', 'avatar-memory', 'avatar-balance', 'avatar-rates', 'avatar-mute', 'avatar-end', 'avatar-hint'].includes(id)) return null;
         if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], attributes: {}, listeners: {}, classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener(name, action) { this.listeners[name] = action; }, setAttribute(name, value) { this.attributes[name] = value; }, setPointerCapture() {} });
         return elements.get(id);
     };
     const context = vm.createContext({
-        document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? { value: mode } : { value: 'csrf' },
-            querySelectorAll: () => [], addEventListener: (name, action) => { listeners[name] = action; } },
+        document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
+            querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action) => { listeners[name] = action; } },
         window: { addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, createConversationMemory,
         setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
@@ -27,7 +28,7 @@ function setup(mode = 'push-to-talk') {
         const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
     } };`, context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
-    return { sent, elements, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name) => listeners[name]?.(), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
+    return { sent, elements, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name) => listeners[name]?.(), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => Object.prototype.toString.call(x) === '[object ArrayBuffer]').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
@@ -255,7 +256,9 @@ test('lost connection pauses capture, clears pending audio and resumes muted wit
     h.run(`audio.mute = value => wire({ muted: value }); turnId = 'old-turn';
         preRoll = [new ArrayBuffer(10)]; holding = true; awaitingCommit = true; currentReply = 'old reply';`);
     h.run('connectionLost()');
-    assert.equal(h.elements.get('avatar-talk').disabled, true);
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+    assert.equal(h.elements.get('avatar-talk').title, 'Start over');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
     assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
     assert.equal(h.run('preRoll.length'), 0);
     assert.equal(h.run('turnId'), null);
@@ -299,7 +302,8 @@ test('a failed interrupt keeps the reconnecting state and paused microphone', ()
     const h = setup();
     h.run('audio.mute = () => {}; socket.send = () => { connectionLost(); return false; }; interrupt();');
     assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
-    assert.equal(h.elements.get('avatar-talk').disabled, true);
+    assert.equal(h.run('muted'), true);
+    assert.equal(h.elements.get('avatar-talk').title, 'Start over');
 });
 
 test('stalled HTTP cleanup aborts at its deadline and releases the talk control', async () => {
@@ -407,7 +411,7 @@ function prepareFirstPress(h) {
         AvatarAudio = class {
             async open() { wire({ microphoneOpened: true }); }
             async close() { wire({ microphoneClosed: true }); }
-            async flush() {} stop() {}
+            async flush() {} stop() {} mute() {}
         };
         WebSocket = class { send(value) { wire(value); } close() {} };
         let finishStart;
@@ -509,7 +513,8 @@ for (const speakingMode of ['push-to-talk', 'hands-free']) {
 test('pointer hold records and release sends once, including lost capture after release', async () => {
     const h = setup();
     h.buttonEvent('pointerdown', { isPrimary: true, button: 0, pointerId: 1, preventDefault() {} });
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Release to send');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Hold to record');
+    assert.equal(h.elements.get('avatar-talk').title, 'Release to send');
     assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
     await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(1);
     await h.buttonEvent('pointerup'); await h.buttonEvent('lostpointercapture');
@@ -518,6 +523,7 @@ test('pointer hold records and release sends once, including lost capture after 
     assert.deepEqual(h.commands(), ['listen', 'commit']);
     assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
     assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Hold to record');
+    assert.equal(h.elements.get('avatar-talk').title, 'Hold to record');
 });
 
 test('secondary pointers cannot start recording and keyboard focus loss releases a hold', async () => {
@@ -536,11 +542,15 @@ test('the single microphone can pause and resume explicitly selected hands-free 
     const h = setup('hands-free');
     h.run("audio.mute = value => wire({ muted: value }); setState('listening'); press();");
     assert.equal(h.run('muted'), true);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Start microphone');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Microphone');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-talk').title, 'Start microphone');
     h.frame(1); assert.deepEqual(h.binary(), []);
     h.run('press()');
     assert.equal(h.run('muted'), false);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Pause microphone');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Microphone');
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    assert.equal(h.elements.get('avatar-talk').title, 'Pause microphone');
     assert.deepEqual(h.commands(), ['interrupt', 'listen']);
 });
 
@@ -579,4 +589,140 @@ test('changing quiz closes active capture and blocks recording until cleanup com
     assert.equal(h.sent.filter(x => x.path === '/api/avatar/memories/old-memory/forget').length, 1);
     assert.equal(h.elements.get('avatar-talk').disabled, false);
     assert.equal(h.run('sessionId'), null);
+});
+
+for (const replyState of ['thinking', 'speaking']) {
+    test(`pausing hands-free while ${replyState} keeps the reply and waits for the microphone`, async () => {
+        const h = setup('hands-free');
+        h.run(`audio.mute = value => wire({ muted: value }); audio.stop = () => wire({ stoppedAudio: true });
+            turnId = 'turn'; setState('${replyState}'); press();`);
+        assert.equal(h.run('muted'), true);
+        assert.equal(h.run('turnId'), 'turn');
+        assert.deepEqual(h.commands(), []);
+        assert.equal(h.sent.filter(x => x.stoppedAudio).length, 0);
+        assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+        await h.run("onMessage({ type: 'idle' }, epoch)");
+        assert.equal(h.elements.get('avatar-status').textContent, 'Microphone muted');
+        assert.deepEqual(h.commands(), []);
+        h.run('press()');
+        assert.deepEqual(h.commands(), ['listen']);
+    });
+}
+
+test('unpausing hands-free during a reply re-enables interruption without cutting it off', async () => {
+    const h = setup('hands-free');
+    h.run(`audio.mute = () => {}; audio.stop = () => wire({ stoppedAudio: true });
+        turnId = 'turn'; setState('speaking'); press(); press();`);
+    assert.equal(h.run('muted'), false);
+    assert.equal(h.elements.get('avatar-status').textContent, 'Speaking');
+    assert.deepEqual(h.commands(), []);
+    assert.equal(h.sent.filter(x => x.stoppedAudio).length, 0);
+    await h.run("onMessage({ type: 'idle' }, epoch)");
+    assert.deepEqual(h.commands(), ['listen']);
+});
+
+test('pausing hands-free when its interrupt cannot be sent keeps the reconnecting state', () => {
+    const h = setup('hands-free');
+    h.run("audio.mute = () => {}; setState('listening'); socket.send = () => { connectionLost(); return false; }; press();");
+    assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
+    assert.equal(h.run('ready'), false);
+});
+
+test('a hands-free listening error shows the microphone as off until it is retried', async () => {
+    const h = setup('hands-free');
+    h.run("audio.mute = () => {}; turnId = 'turn'; setState('listening');");
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    await h.run("onMessage({ type: 'error', turnId: 'turn', detail: 'Listening paused after 45 seconds.' }, epoch)");
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-talk').title, 'Start microphone');
+    h.run('press()');
+    assert.deepEqual(h.commands(), ['listen']);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+});
+
+test('choosing Hands-free in settings does not open the microphone before the button is used', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.chooseMode('hands-free'); await tick();
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 0);
+    assert.equal(h.sent.filter(x => x.path).length, 0);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    h.run('press()'); await tick();
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
+});
+
+function loseConnection(h) {
+    prepareFirstPress(h);
+    h.run(`memory.save(selection(), 'memory'); sessionId = 'stale'; ready = true; audio = new AvatarAudio();
+        socket = { send: () => false, close() { wire({ socketClosed: true }); } };
+        api = (path, body) => { wire({ path, body }); return path.endsWith('/end') ? Promise.resolve() : new Promise(resolve => { finishStart = resolve; }); };
+        requestJson = async () => { throw Error('offline'); };
+        connectionLost();`);
+}
+const hold = { isPrimary: true, button: 0, pointerId: 1, preventDefault() {} };
+
+test('holding the microphone while reconnecting starts over with remembered context and records that hold', async () => {
+    const h = setup(); loseConnection(h);
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+    assert.match(h.elements.get('avatar-notice').textContent, /start over/);
+    h.buttonEvent('pointerdown', hold);
+    // Cleanup of the stale session must not disable the button under the held pointer.
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    h.run('press()'); await tick(); await tick();
+    assert.equal(h.sent.filter(x => x.socketClosed).length, 1);
+    assert.equal(h.sent.filter(x => x.microphoneClosed).length, 1);
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions/stale/end').length, 1);
+    const starts = h.sent.filter(x => x.path === '/api/avatar/sessions');
+    assert.equal(starts.length, 1);
+    assert.equal(starts[0].body.memoryId, 'memory');
+    h.frame(1); h.frame(2);
+    h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.equal(h.run('sessionId'), 'fresh');
+    assert.deepEqual(h.commands(), ['listen']);
+    h.frame(3); await h.buttonEvent('pointerup');
+    await h.run("connectionHandlers.onMessage({ type: 'listening' })");
+    assert.deepEqual(h.binary(), [1, 2, 3]);
+    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+});
+
+test('releasing before the restarted microphone opens records nothing and leaves the new session ready', async () => {
+    const h = setup(); loseConnection(h);
+    h.buttonEvent('pointerdown', hold); await h.buttonEvent('pointerup');
+    assert.equal(h.run('holding'), false);
+    await tick(); await tick();
+    h.frame(1);
+    h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.deepEqual(h.binary(), []);
+    assert.deepEqual(h.commands(), []);
+    assert.equal(h.elements.get('avatar-status').textContent, 'Your turn');
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+});
+
+test('starting over in hands-free listens on the new session without a second press', async () => {
+    const h = setup('hands-free'); loseConnection(h);
+    h.run('press()'); await tick(); await tick();
+    assert.equal(h.run('holding'), false);
+    h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.equal(h.run('muted'), false);
+    assert.deepEqual(h.commands(), ['listen']);
+});
+
+test('the first connection keeps a short press whose only audio is still being flushed', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run('press()'); await tick();
+    h.run('let finishFlush; audio.flush = () => new Promise(resolve => { finishFlush = resolve; });');
+    const released = h.run('release()');
+    h.run("finishStart({ sessionId: 'session', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.deepEqual(h.commands(), ['listen']);
+    h.frame(1); h.run('finishFlush()'); await released;
+    await h.run("connectionHandlers.onMessage({ type: 'listening' })");
+    assert.deepEqual(h.binary(), [1]);
+    assert.deepEqual(h.commands(), ['listen', 'commit']);
 });

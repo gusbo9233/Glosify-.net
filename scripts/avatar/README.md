@@ -9,12 +9,16 @@ authentication or separate game deployment is required.
 
 Push-to-talk is the default on every page visit. The first hold of the microphone
 button requests microphone permission and opens the voice connection; there is
-no separate Start action. Choose Hands-free explicitly to use continuous capture.
+no separate Start action. Choose Hands-free explicitly to use continuous capture,
+then use the microphone button to start it; choosing a mode never opens the microphone.
 Merely loading the page does not open the microphone or submit provider requests.
 The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
 supports holding Space/Enter. In explicitly selected Hands-free mode, the same
-button pauses/resumes capture. There are no separate Mute/End controls or Space hint.
+button pauses/resumes capture; pausing during a reply lets the reply finish. The
+button keeps a fixed accessible name and reports recording through `aria-pressed`.
+There are no separate Mute/End controls or Space hint. Each account has one live
+conversation: starting in another tab ends the earlier tab's conversation.
 
 Leaving the page stops capture. Returning in the same tab/browser session restores
 conversation context on the next talk action. Only an opaque reference and the
@@ -25,7 +29,7 @@ Changing partner or quiz stops the old capture automatically. Captions show only
 
 Server memory is owner/context-checked, bounded to 128 conversations and 24 turns /
 24,000 serialized characters each, and expires after eight hours without a saved
-turn. Capacity eviction and application restarts can also discard it. An old
+turn or a new visit claiming it. Capacity eviction and application restarts can also discard it. An old
 connection cannot overwrite memory after a newer visit has claimed it. Existing
 30-minute connection limits and 45-second transport recovery limits still apply.
 
@@ -91,7 +95,11 @@ backoff for up to 45 seconds. The server retains the owned session and conversat
 context for 45 seconds after the old connection finishes cancelling its turn.
 Reconnect still checks authentication, origin and session ownership, allows only
 one socket, and never extends the original 30-minute lifetime. Restored sessions
-keep the microphone paused until the user uses the microphone button again. Interrupted audio and
+keep the microphone paused until the user uses the microphone button again. While
+reconnecting, the microphone button can instead start over with a new session that
+restores remembered context, for example after mobile suspension outlasted the
+server's grace period; a push-to-talk hold that starts over records like a first
+press. Interrupted audio and
 provider requests are never automatically replayed; repeat the interrupted turn.
 Server receive/send deadlines and WebSocket ping/pong also bound stalled sockets.
 Recognition or synthesis failure reports an explicit retry on the current session.
@@ -150,7 +158,7 @@ worker cannot fetch resources or create nested workers.
 ## Rebuild the characters
 
 Both characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
-portrait styling. `academia_outfit.py` adds an ivory pointed collar, forest-green
+portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan keeps the original brown eyes. `academia_outfit.py` adds an ivory pointed collar, forest-green
 woven-check vest, black ribbon tie and an antique-gold embroidered GG chest patch.
 The outfit combines the green vest/ivory shirt and ribbon/check details from the
 user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in the
@@ -196,7 +204,7 @@ It keeps mesh topology, textures, materials and named morph targets. Compression
 is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
 compress shipped files. The script rejects compressed inputs and identical
 input/output paths. The pre-compression assets are also retained in Git at
-`0d02d69`. Current shipped sizes are Rain 3.69 MB and Rowan 3.00 MB, down from
+`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 3.00 MB, down from
 15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
@@ -247,8 +255,8 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 ```
 
 Optional arguments after the output set the resolution percentage and sample count for
-quick previews. The background carries an `academia-1` cache revision; both Meshopt models use
-`meshopt-1`. Bump the relevant revision and rebuild the viewer when replacing an asset.
+quick previews. The background carries an `academia-1` cache revision; Rain uses
+`natural-brown-eyes-1` and Rowan uses `cardigan-2`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
 The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,

@@ -19,8 +19,10 @@ async page => {
     const beforeHandsFree = await page.locator('#avatar-transcript li').count();
     await page.getByRole('radio', { name: 'Hands-free' }).check();
     await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
-    await page.getByRole('button', { name: 'Pause microphone', exact: true }).click();
-    if (await page.getByRole('button', { name: 'Start microphone', exact: true }).getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');
+    const microphone = page.getByRole('button', { name: 'Microphone', exact: true });
+    if (await microphone.getAttribute('aria-pressed') !== 'true') throw new Error('Hands-free microphone was not live');
+    await microphone.click();
+    if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');
     await page.getByRole('combobox', { name: 'Conversation partner', exact: true }).selectOption('rowan');
     await page.waitForFunction(() => !document.getElementById('avatar-talk').disabled);
     await page.setViewportSize({ width: 390, height: 844 });

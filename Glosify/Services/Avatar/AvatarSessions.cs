@@ -33,7 +33,9 @@ public sealed class AvatarSessions(TimeProvider clock)
         lock (_gate)
         {
             Sweep();
-            if (_sessions.Values.Any(x => x.UserId == userId)) throw new AvatarException(409, "End the other avatar session before starting another.");
+            // One conversation per account. The newest start wins, so another tab, or a
+            // session whose cleanup never reached the server, cannot block the user.
+            foreach (var previous in _sessions.Values.Where(x => x.UserId == userId)) Remove(previous);
             if (_sessions.Count >= 16) throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");
             var session = new AvatarSession(userId, language, practice, clock.GetUtcNow(), voice, character);
             if (memoryId is { } id && _memories.TryGetValue(id, out var memory)
@@ -42,15 +44,16 @@ public sealed class AvatarSessions(TimeProvider clock)
             {
                 session.MemoryId = id;
                 session.History.AddRange(memory.History);
-                _memories[id] = memory with { WriterId = session.Id };
+                // Claiming is activity; Sweep must not expire memory the new session is using.
+                _memories[id] = memory with { WriterId = session.Id, ExpiresAt = clock.GetUtcNow().Add(MemoryLifetime) };
             }
             else
             {
                 // Bound ephemeral text independently of the live connection limit.
                 if (_memories.Count >= 128)
                 {
-                    var oldest = _memories.Where(x => !_sessions.Values.Any(active => active.MemoryId == x.Key))
-                        .MinBy(x => x.Value.ExpiresAt);
+                    var active = _sessions.Values.Select(x => x.MemoryId).ToHashSet();
+                    var oldest = _memories.Where(x => !active.Contains(x.Key)).MinBy(x => x.Value.ExpiresAt);
                     _memories.Remove(oldest.Key);
                 }
                 _memories[session.MemoryId] = new(userId, language.Code, session.Character.Id, practice, session.Id,

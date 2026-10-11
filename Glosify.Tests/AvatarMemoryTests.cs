@@ -96,6 +96,22 @@ public sealed class AvatarMemoryTests
     }
 
     [Fact]
+    public void ClaimingMemoryJustBeforeExpiryKeepsItForTheActiveSession()
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var first = sessions.Create("owner", English, "free");
+        first.History.Add(AvatarConversation.TextTurn("user", "Earlier")); sessions.Remember(first); sessions.Remove(first);
+        clock.Advance(TimeSpan.FromHours(8) - TimeSpan.FromMinutes(1));
+        var next = sessions.Create("owner", English, "free", memoryId: first.MemoryId);
+        sessions.Connect(next.Id, "owner");
+        clock.Advance(TimeSpan.FromMinutes(2)); sessions.Sweep();
+        next.History.Add(AvatarConversation.TextTurn("user", "Newer")); sessions.Remember(next); sessions.Remove(next);
+        var later = sessions.Create("owner", English, "free", memoryId: first.MemoryId);
+        Assert.Equal(first.MemoryId, later.MemoryId);
+        Assert.Contains(later.History, turn => turn.ContentJson.Contains("Newer", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task StartReturnsMemoryReferenceAndForgetRequiresAntiforgery()
     {
         using var app = new AvatarFixture(); using var client = await app.Client("admin");

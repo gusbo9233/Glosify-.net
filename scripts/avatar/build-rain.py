@@ -30,7 +30,7 @@ if male:
     sculpt = [('caucasian-male-young.target', 1), ('universal-male-young-averagemuscle-averageweight.target', 1), ('head-oval.target', .15)]
 for side in ['l', 'r']:
     sculpt += [(side+'-cheek-bones-incr.target', .15), (side+'-eye-scale-incr.target', .08)]
-rig = human.build_character(targets=sculpt,
+rig = human.build_character(targets=sculpt, eye_color='brown' if male else 'brownlight',
     height_metres=1.72, skin_path=human.SOURCE/('system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png' if male else 'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png'),
     asset_specs=[('Ivory blouse', 'clothes/female_elegantsuit01', 'female_elegantsuit01', .75, False),
                  ('Chestnut hair', 'hair/short02' if male else 'hair/elvs_hazel_hair', 'short02' if male else 'elvs_hazel_hair', .5, True),
@@ -102,7 +102,7 @@ hair_shader.inputs['Base Color'].default_value=(.045,.022,.013,1)
 hair_shader.inputs['Specular IOR Level'].default_value=.3
 hair_shader.inputs['Roughness'].default_value=.46
 
-eye=bpy.data.materials['Brown eyes'].node_tree.nodes.get('Principled BSDF')
+eye=bpy.data.objects['Eyes'].active_material.node_tree.nodes.get('Principled BSDF')
 eye.inputs['Roughness'].default_value=.14
 eye.inputs['Specular IOR Level'].default_value=.5
 eye.inputs['Coat Weight'].default_value=.45

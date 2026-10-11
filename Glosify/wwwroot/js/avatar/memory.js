@@ -22,7 +22,11 @@ export function createConversationMemory(owner, storage) {
     }
     function write(value) {
         fallback = value;
-        try { if (key) storage?.setItem(key, JSON.stringify(value)); } catch { /* Tab-local fallback. */ }
+        try { if (key) storage?.setItem(key, JSON.stringify(value)); }
+        catch {
+            // Tab-local fallback. Remove the older value so read() cannot restore it.
+            try { storage?.removeItem(key); } catch { /* Storage is unavailable. */ }
+        }
     }
     const matches = (entry, selection) => entry?.language === selection.language
         && entry?.characterId === selection.characterId && entry?.quizId === selection.quizId;
@@ -37,9 +41,6 @@ export function createConversationMemory(owner, storage) {
         get(selection) { const value = read(); return matches(value.preferences, selection) ? value.id : undefined; },
         save(selection, id) {
             if (typeof id === 'string') write({ preferences: selection, id });
-        },
-        forget(selection) {
-            if (matches(read().preferences, selection)) write({ preferences: selection });
         }
     };
 }

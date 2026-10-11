@@ -60,7 +60,7 @@ def material(name,diffuse,normal=None,roughness=.7,alpha=False):
         links.new(n.outputs['Color'],nm.inputs['Color']);links.new(nm.outputs['Normal'],bsdf.inputs['Normal'])
     return mat
 
-def build_character(*, targets, height_metres, asset_specs, skin_path):
+def build_character(*, targets, height_metres, asset_specs, skin_path, eye_color='brown'):
     # Replace only the avatar collection.
     old=bpy.data.collections.get('Player')
     if old:
@@ -139,7 +139,7 @@ def build_character(*, targets, height_metres, asset_specs, skin_path):
     fits,_=fit_data(SOURCE/'low-poly.mhclo',base)
     _,uv,faces=obj_data(SOURCE/'low-poly.obj')
     vertices=[sum((base[i]*w for i,w in zip(ids,fs)),offset.copy()) for ids,fs,offset in fits]
-    mesh('Eyes',vertices,uv,faces,fits,material('Brown eyes',system/'eyes/materials/brown_eye.png',roughness=.24))
+    mesh('Eyes',vertices,uv,faces,fits,material(eye_color.capitalize()+' eyes',system/f'eyes/materials/{eye_color}_eye.png',roughness=.24))
 
     bpy.ops.object.select_all(action='DESELECT')
     for ob in collection.all_objects: ob.select_set(True)

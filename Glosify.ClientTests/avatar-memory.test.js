@@ -28,11 +28,15 @@ for (const change of [{ language: 'en' }, { characterId: 'rowan' }, { quizId: 'q
         assert.equal(memory.get(choice), undefined);
     });
 }
-test('forget clears the reference without losing preferences', () => {
-    const store = storage(), memory = createConversationMemory('owner', store);
-    memory.save(choice, 'reference'); memory.forget(choice);
-    assert.equal(createConversationMemory('owner', store).get(choice), undefined);
-    assert.deepEqual(memory.preferences(), choice);
+test('a failed storage write cannot later restore the discarded selection or reference', () => {
+    const store = storage(), memory = createConversationMemory('owner', store), next = { ...choice, quizId: 'quiz' };
+    store.removeItem = key => store.values.delete(key);
+    memory.save(choice, 'reference');
+    store.setItem = () => { throw new Error('QuotaExceededError'); };
+    assert.equal(memory.select(next), 'reference');
+    assert.deepEqual(memory.preferences(), next);
+    assert.equal(memory.select(next), undefined);
+    assert.equal(memory.get(choice), undefined);
 });
 test('blocked or malformed session storage does not prevent a conversation', () => {
     for (const store of [undefined, { getItem() { throw Error(); }, setItem() { throw Error(); } },
@@ -41,7 +45,7 @@ test('blocked or malformed session storage does not prevent a conversation', () 
         assert.equal(memory.get(choice), undefined);
         memory.save(choice, 'reference');
         assert.equal(memory.get(choice), 'reference');
-        memory.forget(choice);
+        assert.equal(memory.select({ ...choice, quizId: 'quiz' }), 'reference');
         assert.equal(memory.get(choice), undefined);
     }
 });

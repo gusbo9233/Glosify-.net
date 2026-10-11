@@ -68,7 +68,9 @@ public sealed class AvatarTests
         var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var session = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
-        Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" })).StatusCode);
+        // A newer start, for example from another tab, replaces the account's previous session.
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" })).StatusCode);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => app.Services.GetRequiredService<AvatarSessions>().Get(session, "admin")).Status);
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{session}/end", new { })).StatusCode);
         // The browser may finish closing the socket before its cleanup POST arrives.
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{session}/end", new { })).StatusCode);
@@ -280,10 +282,22 @@ public sealed class AvatarTests
         var language = Glosify.Services.Language.QuizLanguageCatalog.Find("en")!;
         var first = sessions.Create("admin", language, "free");
         Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(first.Id, "another")).Status);
-        Assert.Equal(409, Assert.Throws<AvatarException>(() => sessions.Create("admin", language, "free")).Status);
         clock.Advance(TimeSpan.FromSeconds(31)); sessions.Sweep();
         Assert.True(first.Lifetime.IsCancellationRequested);
         Assert.NotEqual(first.Id, sessions.Create("admin", language, "free").Id);
+    }
+    [Fact]
+    public void ANewerStartReplacesOnlyTheSameAccountsSession()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var language = Glosify.Services.Language.QuizLanguageCatalog.Find("en")!;
+        var first = sessions.Create("admin", language, "free"); sessions.Connect(first.Id, "admin");
+        var other = sessions.Create("other", language, "free");
+        var next = sessions.Create("admin", language, "free");
+        Assert.True(first.Lifetime.IsCancellationRequested);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(first.Id, "admin")).Status);
+        Assert.Same(next, sessions.Get(next.Id, "admin"));
+        Assert.False(other.Lifetime.IsCancellationRequested);
     }
     [Fact]
     public void ReconnectIsOwnedExclusiveAndCannotExtendTheOriginalSessionLifetime()
