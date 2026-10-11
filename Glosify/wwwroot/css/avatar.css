@@ -67,3 +67,15 @@
 .avatar-controls svg{pointer-events:none}
 @media(max-width:720px){.avatar-controls{bottom:24px}.avatar-controls button{width:72px;height:72px}.avatar-controls svg{width:30px;height:30px}}
 @media(prefers-reduced-motion:reduce){.avatar-controls button{transition:none}}
+
+/* Keep optional reading help together, above the microphone on every screen. */
+.avatar-dialogue{position:absolute;bottom:120px;left:28px;right:28px;max-width:48rem;margin-inline:auto;max-height:45%;overflow:auto;overscroll-behavior:contain;padding:14px 18px;border-radius:12px;background:#fffcf2f5;color:#304236;box-shadow:0 8px 28px #17251d12;font-size:15px;line-height:1.6;text-align:center}
+.avatar-dialogue[hidden],.avatar-dialogue [hidden]{display:none}
+.avatar-dialogue .avatar-caption{position:static;padding:0;margin:0;max-height:none;background:none;box-shadow:none;backdrop-filter:none;overflow:visible}
+.avatar-translation{font-size:13px;color:#58695c;margin:7px 0 0}
+.avatar-suggestion{border-top:1px solid #30423626;margin-top:12px;padding-top:10px}
+.avatar-suggestion-label{display:block;font-size:11px;font-weight:600;color:#50634e}
+.avatar-suggestion p{margin:4px 0 0}
+.avatar-learning-help{margin-top:0;margin-bottom:0}
+.avatar-learning-help .avatar-help{margin:8px 0 0}
+@media(max-width:720px){.avatar-dialogue{left:18px;right:18px;bottom:114px;padding:12px 14px;font-size:14px}}

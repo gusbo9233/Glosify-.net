@@ -87,6 +87,7 @@ public sealed class LayoutViewComponentTests
 
         Assert.NotNull(document.QuerySelector("#settings-admin-tab"));
         Assert.NotNull(document.QuerySelector("#settings-admin a[href='/Admin/AiCredits']"));
+        Assert.NotNull(document.QuerySelector("#settings-admin a[href='/Admin/AvatarUsage']"));
         Assert.Equal("span", document.QuerySelector("#settings-account .credit-pill")?.LocalName);
         Assert.Empty(document.QuerySelectorAll("#settings-account a[href^='/Admin']"));
     }

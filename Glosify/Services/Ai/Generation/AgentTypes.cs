@@ -63,6 +63,22 @@ public sealed record AgentRequest(
     public string? TrailingInstruction { get; init; }
 
     public AgentToolChoice ToolChoice { get; init; } = AgentToolChoice.Auto;
+
+    /// <summary>Optional code-owned JSON schema for a structured text reply.</summary>
+    public AgentResponseSchema? ResponseSchema { get; init; }
+}
+
+public sealed record AgentResponseSchema(string Name, object Schema);
+
+public static class AgentResponseSchemas
+{
+    public static AgentResponseSchema StringFields(string name, params string[] fields) => new(name, new
+    {
+        type = "object",
+        properties = fields.ToDictionary(field => field, _ => new { type = "string" }),
+        required = fields,
+        additionalProperties = false
+    });
 }
 
 public enum AgentToolChoice

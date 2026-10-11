@@ -200,6 +200,14 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
         {
             openAiRequest.Instructions += "\n\n" + request.ContextInstruction;
         }
+        if (request.ResponseSchema is { } format)
+        {
+            openAiRequest.TextOptions = new ResponseTextOptions
+            {
+                TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(format.Name,
+                    BinaryData.FromString(JsonSerializer.Serialize(format.Schema, JsonOptions)), null, true)
+            };
+        }
         OpenAiMessageMapper.AddHistory(openAiRequest.InputItems, request.History);
         if (!string.IsNullOrWhiteSpace(request.TrailingInstruction))
         {
@@ -230,7 +238,8 @@ public sealed class OpenAiGenerativeAiClient : IGenerativeAiClient
             EstimateTokens(openAiRequest.Instructions)
             + EstimateTokens(request.TrailingInstruction)
             + EstimateTokens(JsonSerializer.Serialize(request.History, JsonOptions))
-            + EstimateTokens(JsonSerializer.Serialize(declarations, JsonOptions));
+            + EstimateTokens(JsonSerializer.Serialize(declarations, JsonOptions))
+            + (request.ResponseSchema is { } schema ? EstimateTokens(JsonSerializer.Serialize(schema.Schema, JsonOptions)) : 0);
         var response = await ExecuteChargedAsync(
             usageContext,
             estimatedPromptTokens,

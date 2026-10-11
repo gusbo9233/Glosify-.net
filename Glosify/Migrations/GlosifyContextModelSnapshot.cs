@@ -159,6 +159,12 @@ namespace Glosify.Migrations
 
                     b.HasIndex("BudgetPeriodKey");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_AiCreditTransactions_AvatarReservations_CreatedAt")
+                        .HasFilter("[Kind] = 'reservation' AND [RelatedEntityType] = 'AvatarSession' AND [RelatedEntityId] IS NOT NULL AND [ReservationId] IS NOT NULL");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("CreatedAt"), new[] { "UserId", "ReservationId", "RelatedEntityId", "Provider", "Model", "Operation" });
+
                     b.HasIndex("OperationId");
 
                     b.HasIndex("ReservationId");

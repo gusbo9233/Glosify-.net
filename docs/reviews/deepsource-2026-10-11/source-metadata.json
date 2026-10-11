@@ -1,0 +1,29 @@
+{
+  "defaultBranch": "master",
+  "analysisRuns": {
+    "edges": [
+      {
+        "node": {
+          "commitOid": "ef9cc38e6806531f7cd586e24c04460b2384f79e",
+          "branchName": "master",
+          "status": "FAILURE",
+          "createdAt": "2026-10-11T17:46:49.451224+00:00",
+          "finishedAt": "2026-10-11T17:49:06.094198+00:00"
+        }
+      }
+    ]
+  },
+  "issueOccurrences": {
+    "totalCount": 1458
+  },
+  "retrieved_occurrences": 1458,
+  "unique_occurrence_ids": 1458,
+  "distinct_rules": 80,
+  "cli_export_count": 897,
+  "decisions": {
+    "no_change": 1196,
+    "defer": 130,
+    "fix": 10,
+    "analyzer_configuration": 122
+  }
+}

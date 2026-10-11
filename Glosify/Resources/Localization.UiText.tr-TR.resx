@@ -1698,4 +1698,5 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>Yönetim</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>Oyun</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Oyun kullanımı</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Avatar kullanımı</value></data>
 </root>

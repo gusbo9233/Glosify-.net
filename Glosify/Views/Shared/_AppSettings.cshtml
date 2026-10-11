@@ -53,6 +53,7 @@
                 <section id="settings-admin" role="tabpanel" aria-labelledby="settings-admin-tab" tabindex="0">
                     <h3>@Text["AppSettings.Admin"]</h3>
                     <a class="app-settings-row app-settings-action" asp-controller="Admin" asp-action="AiCredits"><span>@Text["Payments.AiCreditAdmin"]</span><span aria-hidden="true">↗</span></a>
+                    <a class="app-settings-row app-settings-action" href="/Admin/AvatarUsage"><span>@Text["AppSettings.AvatarUsage"]</span><span aria-hidden="true">↗</span></a>
                     @if (SettingsConfiguration.GetValue<bool>("SharedAuth:Enabled"))
                     {
                         <a class="app-settings-row app-settings-action" href="/sso/game"><span>@Text["AppSettings.Game"]</span><span aria-hidden="true">↗</span></a>

@@ -86,6 +86,9 @@ jobs:
           --logger "trx;LogFileName=glosify-tests.trx"
           --results-directory "${{ runner.temp }}/test-results/dotnet"
 
+      - name: Test release smoke validation
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
       - name: Install JavaScript dependencies
         run: |
           npm ci --prefix Glosify.ClientTests

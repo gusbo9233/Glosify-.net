@@ -116,6 +116,29 @@ public sealed class OpenAiGenerativeAiTests
     }
 
     [Fact]
+    public async Task Agent_structured_reply_keeps_history_token_limit_and_charged_usage()
+    {
+        var transport = new RecordingTransport { Response = Envelope("""{"original":"Hej","english":"Hi"}""") };
+        var credits = new RecordingCredits();
+        var client = CreateClient(transport, credits);
+        var request = new AgentRequest("Speak Swedish.", [new("user", """{"parts":[{"kind":"text","text":"Hej"}]}""")], [], MaxOutputTokens: 1200)
+        {
+            ResponseSchema = AgentResponseSchemas.StringFields("AvatarReply", "original", "english")
+        };
+        var result = await client.RunAgentTurnAsync(request, Usage(AiUsageFeatures.Assistant));
+        var json = SerializeRequest(Assert.Single(transport.Requests));
+        var format = json.GetProperty("text").GetProperty("format");
+        Assert.Equal("json_schema", format.GetProperty("type").GetString());
+        Assert.True(format.GetProperty("strict").GetBoolean());
+        Assert.Equal(new[] { "original", "english" }, format.GetProperty("schema").GetProperty("required").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal(1200, json.GetProperty("max_output_tokens").GetInt32());
+        Assert.Contains("Hej", json.GetProperty("input").GetRawText());
+        Assert.Equal("""{"original":"Hej","english":"Hi"}""", result.Text);
+        Assert.Single(credits.Reservations);
+        Assert.Single(credits.Commits);
+    }
+
+    [Fact]
     public async Task Agent_turn_keeps_every_tool_declared_and_narrows_with_allowed_tools()
     {
         var transport = new RecordingTransport();

@@ -8,6 +8,28 @@ let sessionStore;
 try { sessionStore = globalThis.sessionStorage; } catch { /* Storage may be disabled. */ }
 const memory = createConversationMemory(document.body?.dataset.speechUser, sessionStore);
 const preferences = memory.preferences();
+const helpKey = document.body?.dataset.speechUser ? `glosify.avatar.help.${document.body.dataset.speechUser}` : null;
+const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked });
+let replyHelp = null, spaceHeld = false;
+try {
+    const saved = JSON.parse(helpKey && sessionStore?.getItem(helpKey) || '{}');
+    el('translate').checked = saved?.translateReplies === true;
+    el('suggest').checked = saved?.suggestAnswers === true;
+} catch { /* Disabled or invalid storage leaves both options off. */ }
+function renderHelp() {
+    const options = helpOptions();
+    const translation = options.translateReplies ? replyHelp?.translation : '';
+    const suggestion = options.suggestAnswers ? replyHelp?.suggestion : '';
+    const suggestionTranslation = suggestion && options.translateReplies ? replyHelp?.suggestionTranslation : '';
+    el('translation').textContent = translation || ''; el('translation').hidden = !translation;
+    el('suggestion-text').textContent = suggestion || ''; el('suggestion').hidden = !suggestion;
+    el('suggestion-translation').textContent = suggestionTranslation || ''; el('suggestion-translation').hidden = !suggestionTranslation;
+    el('dialogue').hidden = el('caption').hidden && !translation && !suggestion;
+}
+for (const name of ['translate', 'suggest']) el(name).addEventListener('change', () => {
+    try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
+    renderHelp();
+});
 const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
 let characterId = Object.hasOwn(characters, preferences?.characterId) ? preferences.characterId : 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
@@ -48,6 +70,8 @@ function notice(text = '') {
 function caption(text, speaker = 'assistant') {
     el('caption').textContent = text; el('caption').dataset.speaker = speaker;
     el('caption').hidden = !text.trim();
+    if (!text.trim() || speaker === 'user') replyHelp = null;
+    renderHelp();
 }
 function transcript(speaker, text) {
     const item = document.createElement('li'), who = document.createElement('strong');
@@ -141,7 +165,7 @@ function listen(preserveCapture = false) {
     if (!ready || muted) return;
     if (!preserveCapture) { ++captureEpoch; flushing = false; }
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
-    setState('connecting'); send({ type: 'listen', mode: mode() });
+    setState('connecting'); send({ type: 'listen', mode: mode(), ...helpOptions() });
 }
 function interrupt() {
     ++captureEpoch; flushing = false;
@@ -217,7 +241,7 @@ async function onMessage(message, generation) {
         case 'partial': caption(message.text, 'user'); break;
         case 'transcript': caption(message.text, 'user'); transcript('You', message.text); break;
         case 'thinking': setState('thinking'); break;
-        case 'reply': currentReply = message.text; caption(message.text); visual?.setReply(message.text); setState('speaking'); break;
+        case 'reply': currentReply = message.text; replyHelp = message; caption(message.text); visual?.setReply(message.text); setState('speaking'); break;
         case 'audio': audio?.play(message.pcm); break;
         case 'audio-end': {
             const id = turnId, text = currentReply;
@@ -272,7 +296,7 @@ function end() {
     preRoll = []; speechFrames = 0; muted = false; turnId = null;
     const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
     socket?.close(); socket = null;
-    visual?.setAnalyser(null); setState('off');
+    visual?.setAnalyser(null); caption(''); setState('off');
     // Cleanup has a deadline; a dead network must not leave the talk control disabled forever.
     ending = (async () => {
         try { await oldAudio?.close(); } catch { /* Tracks stop before AudioContext closes. */ }
@@ -365,8 +389,28 @@ el('talk').addEventListener('pointerup', release); el('talk').addEventListener('
 el('talk').addEventListener('lostpointercapture', release);
 el('talk').addEventListener('blur', release);
 el('talk').addEventListener('contextmenu', event => event.preventDefault());
-el('talk').addEventListener('keydown', event => { if ((event.code === 'Space' || event.code === 'Enter') && !event.repeat) press(event); });
-el('talk').addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); release(); } });
+el('talk').addEventListener('keydown', event => {
+    if (event.code === 'Enter') { event.preventDefault(); if (!event.repeat) press(event); }
+});
+el('talk').addEventListener('keyup', event => { if (event.code === 'Enter') { event.preventDefault(); void release(); } });
+// Space works from the scene or page, while native controls keep their own keys.
+document.addEventListener('keydown', event => {
+    if (event.code !== 'Space') return;
+    if (spaceHeld) { event.preventDefault(); return; }
+    if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || pageLeaving) return;
+    const target = event.target;
+    if (target !== el('talk') && (target?.isContentEditable || target?.closest?.('input, textarea, select, button, a, summary, [contenteditable], [role="button"], [role="textbox"], [role="combobox"], [role="dialog"], dialog'))) return;
+    // Also suppress scrolling while the microphone is still getting ready.
+    event.preventDefault();
+    if (event.repeat || el('talk').disabled) return;
+    spaceHeld = true; press();
+});
+document.addEventListener('keyup', event => {
+    if (event.code !== 'Space' || !spaceHeld) return;
+    event.preventDefault(); spaceHeld = false; void release();
+});
+function releaseKeyboard() { spaceHeld = false; void release(); }
+window.addEventListener('blur', releaseKeyboard);
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
     holding = false;
     // A mode selection pauses existing capture too; only the microphone starts it.
@@ -376,7 +420,7 @@ document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.ad
     setState(state);
 }));
 window.addEventListener('pagehide', () => {
-    pageLeaving = true; ++modelEpoch; ++configEpoch; modelReady = false; characterLoading = false; config = null;
+    spaceHeld = false; pageLeaving = true; ++modelEpoch; ++configEpoch; modelReady = false; characterLoading = false; config = null;
     pageCleanup = end().catch(() => {});
     visual?.dispose(); visual = null; refreshStart();
 });
@@ -390,7 +434,7 @@ window.addEventListener('pageshow', async event => {
 });
 // A tab switch pauses only the renderer. Keep voice alive, but finish a held
 // push-to-talk utterance because its key/pointer release may happen in another tab.
-document.addEventListener('visibilitychange', () => { if (document.hidden) void release(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseKeyboard(); });
 
 async function initialize() {
     const generation = ++configEpoch;
@@ -398,6 +442,8 @@ async function initialize() {
         const next = await requestJson('/api/avatar/config');
         if (pageLeaving || generation !== configEpoch) return;
         config = next;
+        el('caption').lang = config.language || '';
+        el('suggestion-text').lang = config.language || '';
         el('language').textContent = config.languageName ? `Practicing ${config.languageName}` : 'Choose a learning language in the sidebar.';
         const saved = memory.preferences();
         const selectedQuiz = saved?.language === config.language ? el('quiz').value || saved.quizId : '';

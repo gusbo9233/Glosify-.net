@@ -28,7 +28,7 @@ function setup(mode = 'push-to-talk') {
         const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
     } };`, context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
-    return { sent, elements, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name) => listeners[name]?.(), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
+    return { sent, elements, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => Object.prototype.toString.call(x) === '[object ArrayBuffer]').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
@@ -533,7 +533,7 @@ test('secondary pointers cannot start recording and keyboard focus loss releases
     h.buttonEvent('pointerdown', { isPrimary: false, button: 0 });
     h.buttonEvent('pointerdown', { isPrimary: true, button: 2 });
     assert.deepEqual(h.commands(), []);
-    h.buttonEvent('keydown', { code: 'Space', repeat: false, preventDefault() {} });
+    h.buttonEvent('keydown', { code: 'Enter', repeat: false, preventDefault() {} });
     await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(1);
     await h.buttonEvent('blur');
     assert.deepEqual(h.commands(), ['listen', 'commit']);
@@ -760,4 +760,112 @@ test('choosing Hands-free during first setup discards the previous pending hold 
     h.run('finishFlush()'); await released; h.frame(3);
     assert.deepEqual(h.commands(), ['listen']);
     assert.deepEqual(h.binary(), [3]);
+});
+
+function space(overrides = {}) {
+    return { code: 'Space', repeat: false, defaultPrevented: false,
+        preventDefault() { this.defaultPrevented = true; }, ...overrides };
+}
+test('page Space prevents scroll and records one hold despite repeat keys and a changed release target', async () => {
+    const h = setup(); h.run('refreshStart()');
+    const down = space(); h.documentEvent('keydown', down);
+    assert.equal(down.defaultPrevented, true);
+    for (let i = 0; i < 3; i++) {
+        const repeat = space({ repeat: true }); h.documentEvent('keydown', repeat);
+        assert.equal(repeat.defaultPrevented, true);
+    }
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(7);
+    const up = space({ target: { closest: () => ({}) } }); h.documentEvent('keyup', up); await tick();
+    h.frame(8);
+    assert.equal(up.defaultPrevented, true);
+    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.binary(), [7]);
+});
+test('Space leaves text input, focused controls, composing text and modified shortcuts alone', () => {
+    const h = setup(); h.run('refreshStart()');
+    for (const options of [{ target: { closest: () => ({}) } }, { target: { isContentEditable: true } },
+        { altKey: true }, { ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { isComposing: true }]) {
+        const event = space(options); h.documentEvent('keydown', event);
+        assert.equal(event.defaultPrevented, false);
+    }
+    assert.deepEqual(h.commands(), []);
+});
+test('Space works with the microphone focused and window blur releases it without ending the session', async () => {
+    const h = setup(); h.run("sessionId = 'ongoing'; refreshStart()");
+    h.documentEvent('keydown', space({ target: h.elements.get('avatar-talk') }));
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(3);
+    h.windowEvent('blur'); await tick();
+    h.documentEvent('keyup', space());
+    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.equal(h.run('sessionId'), 'ongoing');
+    assert.equal(h.run('spaceHeld'), false);
+});
+test('Space held through the first connection sends a short utterance once', async () => {
+    const h = setup(); prepareFirstPress(h);
+    const down = space(); h.documentEvent('keydown', down); await tick(); h.frame(2);
+    h.documentEvent('keyup', space()); await tick();
+    h.run("finishStart({ sessionId: 's', memoryId: 'm', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    assert.equal(down.defaultPrevented, true);
+    assert.deepEqual(h.binary(), [2]);
+    assert.deepEqual(h.commands(), ['listen', 'commit']);
+});
+test('hands-free Space repeats do not repeatedly toggle the microphone', () => {
+    const h = setup('hands-free'); h.run('muted = true; audio.mute = () => {}; refreshStart()');
+    h.documentEvent('keydown', space());
+    h.documentEvent('keydown', space({ repeat: true }));
+    h.documentEvent('keyup', space());
+    assert.equal(h.run('muted'), false);
+    assert.deepEqual(h.commands(), ['listen']);
+});
+test('conversation help is opt-in and independently included in every new turn', () => {
+    const h = setup(); h.run('listen()');
+    const requests = () => h.sent.filter(x => typeof x === 'string').map(x => JSON.parse(x));
+    assert.deepEqual(requests().at(-1), { type: 'listen', mode: 'push-to-talk', translateReplies: false, suggestAnswers: false });
+    h.elements.get('avatar-translate').checked = true; h.run('listen()');
+    assert.equal(requests().at(-1).translateReplies, true);
+    assert.equal(requests().at(-1).suggestAnswers, false);
+    h.elements.get('avatar-translate').checked = false; h.elements.get('avatar-suggest').checked = true; h.run('listen()');
+    assert.equal(requests().at(-1).translateReplies, false);
+    assert.equal(requests().at(-1).suggestAnswers, true);
+});
+test('reply help obeys toggles and clears for user speech, stale turns, reconnection and session end', async () => {
+    const h = setup();
+    h.run("visual = { setReply() {}, setState() {}, setAnalyser() {} }; turnId = 'current'; audio.mute = () => {};");
+    h.elements.get('avatar-translate').checked = true;
+    h.elements.get('avatar-suggest').checked = true;
+    const reply = "onMessage({ type: 'reply', turnId: 'current', text: 'Hur mår du?', translation: 'How are you?', suggestion: 'Och du?', suggestionTranslation: 'And you?' }, epoch)";
+    await h.run(reply);
+    assert.equal(h.elements.get('avatar-caption').textContent, 'Hur mår du?');
+    assert.equal(h.elements.get('avatar-translation').textContent, 'How are you?');
+    assert.equal(h.elements.get('avatar-suggestion-text').textContent, 'Och du?');
+    assert.equal(h.elements.get('avatar-suggestion-translation').textContent, 'And you?');
+    h.elements.get('avatar-translate').checked = false; h.elements.get('avatar-translate').listeners.change();
+    assert.equal(h.elements.get('avatar-translation').hidden, true);
+    assert.equal(h.elements.get('avatar-suggestion-translation').hidden, true);
+    assert.equal(h.elements.get('avatar-suggestion').hidden, false);
+    h.elements.get('avatar-suggest').checked = false; h.elements.get('avatar-suggest').listeners.change();
+    assert.equal(h.elements.get('avatar-suggestion').hidden, true);
+    h.elements.get('avatar-suggest').checked = true;
+    await h.run("onMessage({ type: 'partial', turnId: 'current', text: 'Hej' }, epoch)");
+    await h.run("onMessage({ type: 'reply', turnId: 'old', text: 'stale', suggestion: 'stale' }, epoch)");
+    assert.equal(h.elements.get('avatar-suggestion').hidden, true);
+    assert.equal(h.elements.get('avatar-caption').textContent, 'Hej');
+    await h.run(reply); h.run('connectionLost()');
+    assert.equal(h.elements.get('avatar-dialogue').hidden, true);
+    h.run("turnId = 'new'; cancelledTurn = null; socket = { close() {} }; audio.close = async () => {}; api = async () => {}; caption('');");
+    await h.run("onMessage({ type: 'reply', turnId: 'new', text: 'New', suggestion: 'Answer' }, epoch)");
+    assert.equal(h.elements.get('avatar-suggestion').hidden, false);
+    await h.run('end()');
+    assert.equal(h.elements.get('avatar-dialogue').hidden, true);
+});
+
+test('Space while the microphone is unavailable suppresses repeat scrolling without starting capture', () => {
+    const h = setup(); h.elements.get('avatar-talk').disabled = true;
+    for (const repeat of [false, true, true]) {
+        const event = space({ repeat }); h.documentEvent('keydown', event);
+        assert.equal(event.defaultPrevented, true);
+    }
+    assert.deepEqual(h.commands(), []);
 });

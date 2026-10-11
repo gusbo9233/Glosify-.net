@@ -20,4 +20,4 @@
 - [ ] I added or updated tests when behavior changed.
 - [ ] I did not commit secrets or private user data.
 - [ ] I updated documentation when setup or behavior changed.
-- [ ] I assessed Copilot and Greptile feedback for the latest revision, fixed confirmed issues, and documented rejected findings or unavailable reviews.
+- [ ] I assessed the active reviewers' feedback for the latest revision under [the review policy](https://github.com/gusbo9233/Glosify-.net/blob/master/AGENTS.md), fixed confirmed issues, and documented rejected findings or unavailable reviews (DeepSource + Qodo through October 25, 2026).

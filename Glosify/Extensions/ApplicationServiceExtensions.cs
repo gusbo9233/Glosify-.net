@@ -266,6 +266,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<Glosify.Services.Avatar.AvatarPricing>();
         services.AddHttpClient<Glosify.Services.Avatar.IAvatarVoices, Glosify.Services.Avatar.AvatarVoices>(client => client.Timeout = TimeSpan.FromSeconds(15));
         services.AddScoped<Glosify.Services.Avatar.AvatarBilling>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarUsageReports>();
         services.AddScoped<Glosify.Services.Avatar.IAvatarSpeech, Glosify.Services.Avatar.AvatarSpeech>();
         services.AddScoped<Glosify.Services.Avatar.AvatarConversation>();
         services.AddHostedService<Glosify.Services.Avatar.AvatarMaintenance>();

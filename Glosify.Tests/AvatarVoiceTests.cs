@@ -321,6 +321,56 @@ public sealed class AvatarVoiceTests
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task OptionalHelpTravelsWithTheReplyButIsNeverSpokenOrRemembered(bool translate, bool suggest)
+    {
+        var ai = new Reply(); var speech = new Speech();
+        using var app = App(ai); var configure = app.Overrides!;
+        app.Overrides = services => { configure(services); services.RemoveAll<IAvatarSpeech>(); services.AddSingleton<IAvatarSpeech>(speech); };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        // Options can change for the next turn without a new session or lost history.
+        foreach (var options in new[] { (translate, suggest), (false, false) })
+        {
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "hands-free", translateReplies = options.Item1, suggestAnswers = options.Item2 }, timeout.Token);
+            await Until(socket, "listening", timeout.Token);
+            await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
+            var reply = await Until(socket, "reply", timeout.Token);
+            Assert.Equal("Hej! Hur mår du?", reply.GetProperty("text").GetString());
+            Assert.Equal(options.Item1 ? "Hi! How are you?" : null, reply.GetProperty("translation").GetString());
+            Assert.Equal(options.Item2 ? "Hur har din dag varit?" : null, reply.GetProperty("suggestion").GetString());
+            Assert.Equal(options.Item1 && options.Item2 ? "How has your day been?" : null, reply.GetProperty("suggestionTranslation").GetString());
+            await Until(socket, "audio-end", timeout.Token);
+            await Until(socket, "usage", timeout.Token);
+            Assert.Equal("Hej! Hur mår du?", speech.SpokenText);
+            await AvatarWire.SendAsync(socket, new { type = "played", turnId = reply.GetProperty("turnId").GetString() }, timeout.Token);
+            await Until(socket, "idle", timeout.Token);
+            Assert.Equal("avatar.reply", ai.LastUsage!.Operation);
+            Assert.Equal(id.ToString(), ai.LastUsage.RelatedEntityId);
+            await AssertNoReservations(app);
+        }
+        var history = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").History;
+        Assert.Equal(4, history.Count);
+        Assert.All(history.Where(turn => turn.Role == "assistant"), turn =>
+        {
+            Assert.Contains("Hej! Hur", turn.ContentJson);
+            Assert.DoesNotContain("How", turn.ContentJson);
+            Assert.DoesNotContain("suggestion", turn.ContentJson);
+        });
+        Assert.Equal(2, ai.Calls);
+        await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+    }
+
     private sealed class CapturedLogger : ILogger<AvatarConversation>
     {
         public ConcurrentQueue<string> Warnings { get; } = new();
@@ -353,6 +403,7 @@ public sealed class AvatarVoiceTests
     {
         public bool FailRecognition, FailSynthesis;
         public int ListenCalls;
+        public string? SpokenText;
         public async Task<string> ListenAsync(AvatarSession session, string mode, ChannelReader<byte[]> audio, Func<string, Task> partial, Func<Task> ready, CancellationToken ct)
         {
             ListenCalls++;
@@ -364,6 +415,7 @@ public sealed class AvatarVoiceTests
         }
         public Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct)
         {
+            SpokenText = text;
             if (FailSynthesis) throw new WebSocketException("Synthesis connection lost");
             var bytes = new byte[96000];
             for (var i = 0; i < bytes.Length / 2; i++)
@@ -391,16 +443,25 @@ public sealed class AvatarVoiceTests
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public AgentRequest? LastRequest;
+        public AiUsageContext? LastUsage;
         public bool Wait;
         public bool Fail;
         public bool Cancelled;
         public int Calls;
         public async Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext context, CancellationToken cancellationToken = default)
         {
-            Calls++; LastRequest = request; Started.TrySetResult();
+            Calls++; LastRequest = request; LastUsage = context; Started.TrySetResult();
             if (Fail) throw new InvalidOperationException("Provider unavailable");
             try { if (Wait) await Task.Delay(Timeout.Infinite, cancellationToken); }
             catch (OperationCanceledException) { Cancelled = true; throw; }
+            if (request.ResponseSchema is not null)
+            {
+                using var schema = JsonDocument.Parse(JsonSerializer.Serialize(request.ResponseSchema.Schema));
+                var values = new Dictionary<string, string> { ["original"] = "Hej! Hur mår du?", ["english"] = "Hi! How are you?",
+                    ["suggestion"] = "Hur har din dag varit?", ["suggestionEnglish"] = "How has your day been?" };
+                return new(JsonSerializer.Serialize(schema.RootElement.GetProperty("required").EnumerateArray()
+                    .ToDictionary(field => field.GetString()!, field => values[field.GetString()!])), []);
+            }
             return new("Hej! Hur mår du?", []);
         }
         public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext context, string? model = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();

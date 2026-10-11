@@ -21,7 +21,7 @@ services:
       # and leaves macOS swapping.
       MSSQL_MEMORY_LIMIT_MB: "2048"
     ports:
-      - "1433:1433"
+      - "127.0.0.1:1433:1433"
     volumes:
       - glosify-sql-data:/var/opt/mssql
     healthcheck:

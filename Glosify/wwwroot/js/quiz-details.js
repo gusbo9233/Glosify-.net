@@ -27,9 +27,4 @@
     ankiDialog?.querySelector('[data-close-anki-item]')?.addEventListener('click', () => ankiDialog.close());
     ankiDialog?.addEventListener('close', () => ankiTrigger?.focus());
     ankiDialog?.addEventListener('click', event => { if (event.target === ankiDialog) ankiDialog.close(); });
-
-    document.querySelectorAll('[data-confirm]').forEach(form => form.addEventListener('submit', event => {
-        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-    }));
-
 })();

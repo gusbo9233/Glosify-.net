@@ -1698,4 +1698,5 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>Admin</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>Gim</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Penggunaan gim</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Penggunaan avatar</value></data>
 </root>
