@@ -18,8 +18,10 @@ async page => {
     await page.waitForFunction(() => document.querySelector('#avatar-transcript').textContent.includes('Rain'));
     const beforeHandsFree = await page.locator('#avatar-transcript li').count();
     await page.getByRole('radio', { name: 'Hands-free' }).check();
-    await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
     const microphone = page.getByRole('button', { name: 'Microphone', exact: true });
+    if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Mode selection started capture');
+    await microphone.click();
+    await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
     if (await microphone.getAttribute('aria-pressed') !== 'true') throw new Error('Hands-free microphone was not live');
     await microphone.click();
     if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');

@@ -62,7 +62,7 @@ function refreshStart() {
     // The name stays fixed so assistive technology reads recording from aria-pressed.
     const label = handsFree ? 'Microphone' : 'Hold to record';
     // An active hold keeps the button enabled, even while starting over, so its release arrives.
-    el('talk').disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || awaitingCommit || reconnecting));
+    el('talk').disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || reconnecting));
     el('talk').setAttribute('aria-label', label);
     el('talk').setAttribute('aria-pressed', String(recording));
     el('talk').title = reconnecting ? 'Start over' : holding ? 'Release to send'
@@ -199,7 +199,7 @@ async function onMessage(message, generation) {
         return;
     }
     if (message.type === 'usage') {
-        el('spending').textContent = `This visit · ${number(message.total)} credits · Listening ${number(message.recognition)} / Replies ${number(message.replies)} / Speech ${number(message.speech)}`;
+        el('spending').textContent = `Current session · ${number(message.total)} credits · Listening ${number(message.recognition)} / Replies ${number(message.replies)} / Speech ${number(message.speech)}`;
         document.querySelectorAll('[data-credit-balance]').forEach(span => {
             span.textContent = span.dataset.creditLabel.replace('__COUNT__', number(Math.ceil(message.available)));
         });
@@ -239,7 +239,7 @@ async function onMessage(message, generation) {
 async function start() {
     if (!canStart()) return;
     const generation = ++epoch; ready = false; notice(); caption(''); setState('connecting');
-    el('spending').textContent = 'This visit · 0 credits';
+    el('spending').textContent = 'Current session · 0 credits';
     const context = selection();
     const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
     try {
@@ -369,8 +369,10 @@ el('talk').addEventListener('keydown', event => { if ((event.code === 'Space' ||
 el('talk').addEventListener('keyup', event => { if (event.code === 'Space' || event.code === 'Enter') { event.preventDefault(); release(); } });
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
     holding = false;
-    // Settings navigation never opens the microphone; the talk button starts it.
-    if (ready) { interrupt(); if (mode() === 'hands-free' && !muted) listen(); }
+    // A mode selection pauses existing capture too; only the microphone starts it.
+    if (audio) { muted = true; audio.mute(true); }
+    if (ready) interrupt();
+    else { ++captureEpoch; awaitingCommit = false; flushing = false; preRoll = []; }
     setState(state);
 }));
 window.addEventListener('pagehide', () => {

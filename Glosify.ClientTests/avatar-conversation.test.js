@@ -432,6 +432,8 @@ test('the first talk press starts once and preserves a short utterance through H
     assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
     assert.equal(h.elements.get('avatar-quiz').disabled, true);
     h.frame(1); h.frame(2); await h.run('release()'); h.frame(3);
+    // No second recording can start until this connection is ready.
+    assert.equal(h.elements.get('avatar-talk').disabled, true);
     h.run("finishStart({ sessionId: 'session', memoryId: 'memory', connectUrl: '/voice', rememberedTurns: 0 })");
     await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
@@ -725,4 +727,37 @@ test('the first connection keeps a short press whose only audio is still being f
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     assert.deepEqual(h.binary(), [1]);
     assert.deepEqual(h.commands(), ['listen', 'commit']);
+});
+
+
+test('choosing Hands-free on a ready session waits for an explicit microphone press', async () => {
+    const h = setup();
+    h.run("audio.mute = value => wire({ muted: value }); setState('idle');");
+    h.chooseMode('hands-free'); h.frame(1);
+    await h.run("onMessage({ type: 'idle' }, epoch)");
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.deepEqual(h.binary(), []);
+    assert.deepEqual(h.commands(), ['interrupt']);
+    h.run('press()');
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(2);
+    assert.deepEqual(h.commands(), ['interrupt', 'listen']);
+    assert.deepEqual(h.binary(), [2]);
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+});
+
+test('choosing Hands-free during first setup discards the previous pending hold and waits for a press', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run('press()'); await tick(); h.frame(1);
+    h.run('let finishFlush; audio.flush = () => new Promise(resolve => { finishFlush = resolve; });');
+    const released = h.run('release()');
+    h.chooseMode('hands-free'); h.frame(2);
+    h.run("finishStart({ sessionId: 'session', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.deepEqual(h.commands(), []);
+    h.run('press()');
+    await h.run("connectionHandlers.onMessage({ type: 'listening' })");
+    h.run('finishFlush()'); await released; h.frame(3);
+    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.binary(), [3]);
 });

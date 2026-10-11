@@ -10,9 +10,11 @@ authentication or separate game deployment is required.
 Push-to-talk is the default on every page visit. The first hold of the microphone
 button requests microphone permission and opens the voice connection; there is
 no separate Start action. Choose Hands-free explicitly to use continuous capture,
-then use the microphone button to start it; choosing a mode never opens the microphone.
+then use the microphone button to start it. Changing modes pauses existing capture
+and waits for the microphone button; choosing a mode never opens the microphone.
 Merely loading the page does not open the microphone or submit provider requests.
-The scene has one circular microphone control: hold to record, release to send on
+After a release during initial connection setup, the button stays disabled until the
+connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
 supports holding Space/Enter. In explicitly selected Hands-free mode, the same
 button pauses/resumes capture; pausing during a reply lets the reply finish. The
