@@ -1,12 +1,11 @@
 using Glosify.Extensions;
 using Glosify.Services.Ai;
-using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.ViewComponents;
 
 /// <summary>
-/// The credit balance in the top bar, and the admin links beside it.
+/// The read-only credit balance shown in account settings.
 /// </summary>
 /// <remarks>
 /// <see cref="IAiCreditService.GetOrCreateAccountAsync"/> can write, so this ran a
@@ -17,16 +16,13 @@ namespace Glosify.ViewComponents;
 public sealed class AiCreditPillViewComponent : ViewComponent
 {
     private readonly IAiCreditService _credits;
-    private readonly AdministratorAccess _administratorAccess;
     private readonly ILogger<AiCreditPillViewComponent> _logger;
 
     public AiCreditPillViewComponent(
         IAiCreditService credits,
-        AdministratorAccess administratorAccess,
         ILogger<AiCreditPillViewComponent> logger)
     {
         _credits = credits;
-        _administratorAccess = administratorAccess;
         _logger = logger;
     }
 
@@ -43,14 +39,14 @@ public sealed class AiCreditPillViewComponent : ViewComponent
                 UserClaimsPrincipal.GetUserId(),
                 HttpContext.RequestAborted);
 
-            return View(new AiCreditPillModel(Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits), _administratorAccess.IsAdmin(UserClaimsPrincipal)));
+            return View(new AiCreditPillModel(Glosify.Services.Ai.CreditAmounts.Display(account.AvailableCredits)));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _logger.LogWarning(exception, "Could not read the AI credit balance for the top bar");
+            _logger.LogWarning(exception, "Could not read the AI credit balance for account settings");
             return Content(string.Empty);
         }
     }
 }
 
-public sealed record AiCreditPillModel(int AvailableCredits, bool IsAdmin);
+public sealed record AiCreditPillModel(int AvailableCredits);

@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>苦手な内容を繰り返し、自分のペースで進みましょう。</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>的を絞ったクイズで復習し、残したい単語をAnkiに保存しましょう。</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>もっと多くの学び方を探す</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>設定</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>一般</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>アカウント</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>管理</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>ゲーム</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>ゲームの利用状況</value></data>
 </root>

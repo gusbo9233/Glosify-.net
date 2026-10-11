@@ -141,6 +141,20 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.NotNull(footer.QuerySelector("a[href='/Home/Support']"));
     }
 
+    [Fact]
+    public async Task Anonymous_settings_keep_preferences_and_login_without_admin_actions()
+    {
+        var document = await GetDocumentAsync(CreateClient(), "/");
+        var settings = document.QuerySelector("dialog#app-settings");
+        Assert.NotNull(settings);
+        Assert.NotNull(settings!.QuerySelector("[data-speech-settings]"));
+        Assert.NotNull(settings.QuerySelector(".display-language-selector"));
+        Assert.NotNull(settings.QuerySelector("#settings-account a[href='/login']"));
+        Assert.Null(settings.QuerySelector("#settings-admin"));
+        Assert.Null(settings.QuerySelector("form[action='/Account/Logout']"));
+        Assert.Null(document.QuerySelector("header.app-topbar"));
+    }
+
     [Theory]
     [InlineData("/Quizzes")]
     [InlineData("/Quizzes/Index")]

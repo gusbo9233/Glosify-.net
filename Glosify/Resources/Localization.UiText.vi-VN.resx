@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Ôn lại những ý cần luyện tập và tiến bộ theo nhịp độ của bạn.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Ôn tập bằng các bài kiểm tra trọng tâm, rồi lưu những từ bạn muốn vào Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Khám phá thêm cách học</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Cài đặt</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Chung</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Tài khoản</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Quản trị</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Trò chơi</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Mức sử dụng trò chơi</value></data>
 </root>

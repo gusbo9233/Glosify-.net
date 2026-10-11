@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Ulangi konsep yang perlu dilatih dan maju sesuai kecepatanmu.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Ulangi dengan kuis terarah, lalu simpan kata yang kamu inginkan di Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Jelajahi lebih banyak cara belajar</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Pengaturan</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Umum</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Akun</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Admin</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Gim</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Penggunaan gim</value></data>
 </root>

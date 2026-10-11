@@ -1,0 +1,73 @@
+@using System.Security.Claims
+@inject Glosify.Services.Auth.AdministratorAccess Administrators
+@inject Microsoft.Extensions.Configuration.IConfiguration SettingsConfiguration
+@inject IStripePaymentService SettingsPayments
+@{
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var account = User.FindFirstValue(ClaimTypes.Email) ?? User.Identity?.Name ?? Text["Layout.SignedIn"];
+}
+<dialog id="app-settings" class="app-settings-dialog" aria-labelledby="app-settings-title">
+    <header class="app-settings-heading">
+        <h2 id="app-settings-title">@Text["AppSettings.Title"]</h2>
+        <button type="button" class="icon-button" data-app-settings-close aria-label="@Text["Common.Close"]" autofocus>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+    </header>
+    <div class="app-settings-body">
+        <div class="app-settings-tabs" role="tablist" aria-label="@Text["AppSettings.Title"]" aria-orientation="vertical">
+            <button type="button" id="settings-general-tab" role="tab" aria-selected="true" aria-controls="settings-general" data-settings-tab>@Text["AppSettings.General"]</button>
+            <button type="button" id="settings-account-tab" role="tab" aria-selected="false" aria-controls="settings-account" tabindex="-1" data-settings-tab>@Text["AppSettings.Account"]</button>
+            @if (Administrators.IsAdmin(User))
+            {
+                <button type="button" id="settings-admin-tab" role="tab" aria-selected="false" aria-controls="settings-admin" tabindex="-1" data-settings-tab>@Text["AppSettings.Admin"]</button>
+            }
+        </div>
+        <div class="app-settings-panels">
+            <section id="settings-general" role="tabpanel" aria-labelledby="settings-general-tab" tabindex="0">
+                <h3>@Text["AppSettings.General"]</h3>
+                <div class="app-settings-row">
+                    <span>@Text["DisplayLanguage.Label"]</span>
+                    @await Html.PartialAsync("_DisplayLanguageSelector")
+                </div>
+                <button type="button" class="app-settings-row app-settings-action" data-speech-settings>
+                    <span>@Text["Speech.Settings"]</span><span aria-hidden="true">↗</span>
+                </button>
+            </section>
+            <section id="settings-account" role="tabpanel" aria-labelledby="settings-account-tab" tabindex="0" hidden>
+                <h3>@Text["AppSettings.Account"]</h3>
+                @if (signedIn)
+                {
+                    <div class="app-settings-account"><span>@Text["Layout.SignedInAs"]</span><strong>@account</strong></div>
+                    <div class="app-settings-row app-settings-balance">
+                        @await Component.InvokeAsync("AiCreditPill")
+                        @if (SettingsPayments.IsEnabled)
+                        {
+                            <a class="app-settings-link" asp-controller="Payments" asp-action="Index">@Text["Layout.GetCredits"] <span aria-hidden="true">↗</span></a>
+                        }
+                    </div>
+                    <a href="/account/usage" class="app-settings-row app-settings-action"><span>@Text["Usage.Title"]</span><span aria-hidden="true">↗</span></a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="app-settings-logout">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="app-settings-row app-settings-action"><span>@Text["Common.LogOut"]</span><span aria-hidden="true">↗</span></button>
+                    </form>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="app-settings-row app-settings-action"><span>@Text["Common.LogIn"]</span><span aria-hidden="true">↗</span></a>
+                }
+            </section>
+            @if (Administrators.IsAdmin(User))
+            {
+                <section id="settings-admin" role="tabpanel" aria-labelledby="settings-admin-tab" tabindex="0" hidden>
+                    <h3>@Text["AppSettings.Admin"]</h3>
+                    <a class="app-settings-row app-settings-action" asp-controller="Admin" asp-action="AiCredits"><span>@Text["Payments.AiCreditAdmin"]</span><span aria-hidden="true">↗</span></a>
+                    @if (SettingsConfiguration.GetValue<bool>("SharedAuth:Enabled"))
+                    {
+                        <a class="app-settings-row app-settings-action" href="/sso/game"><span>@Text["AppSettings.Game"]</span><span aria-hidden="true">↗</span></a>
+                        <a class="app-settings-row app-settings-action" href="/Admin/GameUsage"><span>@Text["AppSettings.GameUsage"]</span><span aria-hidden="true">↗</span></a>
+                    }
+                </section>
+            }
+        </div>
+    </div>
+</dialog>

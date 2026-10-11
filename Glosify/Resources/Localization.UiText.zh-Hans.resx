@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>重复练习需要巩固的知识，按自己的节奏进步。</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>通过重点测验复习，再将所需词汇保存到 Anki。</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>探索更多学习方式</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>设置</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>常规</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>账户</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>管理</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>游戏</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>游戏使用情况</value></data>
 </root>

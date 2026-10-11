@@ -7,10 +7,7 @@
 }
 <section class="avatar-page" id="avatar-page">
     @Html.AntiForgeryToken()
-    <header class="avatar-heading">
-        <div><p class="avatar-eyebrow">YOUR CONVERSATION SPACE <span>ADMIN PREVIEW</span></p><h1>A little conversation.<br />A lot of possibility.</h1></div>
-        <p>Find your words together.<br />Talk about your day, follow a curiosity,<br />or bring a quiz to life.</p>
-    </header>
+    <h1 class="visually-hidden">Avatar conversation</h1>
     <div class="avatar-workspace" id="avatar-workspace">
         <div class="avatar-stage">
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>

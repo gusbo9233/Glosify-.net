@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Reprenez les notions à travailler et avancez à votre rythme.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Révisez avec des quiz ciblés, puis enregistrez les mots souhaités dans Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Découvrez d’autres façons d’apprendre</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Général</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Compte</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Administration</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Jeu</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Utilisation du jeu</value></data>
 </root>
