@@ -1,5 +1,8 @@
 # Avatar performance check — 2026-10-11
 
+The initial measurements below describe the first optimization. The idle-animation
+follow-up at the end supersedes its zero-idle-frame behavior.
+
 The main avoidable cost was continuous 3D rendering before a conversation started
 and after it ended. The existing 40 fps throttle delivered approximately 30 fps
 on the tested 60 Hz display. Reduced motion suppressed movement but did not stop
@@ -122,3 +125,19 @@ Validation: 156 client tests passed. The affected .NET suites ran with
 Passed: 89, Failed: 0, Skipped: 5 (opt-in provider/SQL tests).
 This includes response-header tests proving only the worker can compile WASM.
 No deployment or real speech-provider requests were performed.
+
+
+## Follow-up: keep the portrait alive while visible
+
+Visible off, idle and error states now render breathing, blinks and posture at
+12 fps. Connecting/listening/thinking remain at 15 fps and speaking at 24 fps.
+Hidden/offscreen rendering still stops, and reduced motion settles non-speaking
+states before stopping. The buffer cap and Meshopt compression remain in place.
+
+A headed Chromium check loaded both actual compressed models with instrumented
+renderer source and the pinned dependencies. Each rendered 97 frames over eight
+seconds, blink weight reached 1, and breathing covered approximately 0.999 of its
+normalized range. Both rendered zero offscreen frames and stopped after settling
+with reduced motion. There were no JavaScript page errors or WebGL errors.
+These measurements verify movement and scheduling, not older-laptop CPU usage.
+The shipping scene bundle was rebuilt from this source.

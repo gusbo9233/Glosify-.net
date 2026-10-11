@@ -233,6 +233,23 @@ public sealed class AvatarVoiceTests
         Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Connect(id, "admin")).Status);
         Assert.Empty(session.History);
         await AssertNoReservations(app);
+
+        // Leaving the page ends the microphone connection, but a later visit
+        // with its opaque browser-session reference retains the completed context.
+        using var nextStart = await client.PostAsJsonAsync("/api/avatar/sessions", new { memoryId = session.MemoryId });
+        nextStart.EnsureSuccessStatusCode();
+        using var nextPayload = JsonDocument.Parse(await nextStart.Content.ReadAsStringAsync());
+        var nextId = nextPayload.RootElement.GetProperty("sessionId").GetGuid();
+        Assert.Equal(priorCount + 1, nextPayload.RootElement.GetProperty("rememberedTurns").GetInt32());
+        using var nextVisit = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{nextId}/voice"), timeout.Token);
+        await Until(nextVisit, "connected", timeout.Token);
+        Assert.Equal(2, ai.Calls); // Restoring memory cannot initiate a paid reply.
+        await AvatarWire.SendAsync(nextVisit, new { type = "listen", mode = "hands-free" }, timeout.Token);
+        await Until(nextVisit, "listening", timeout.Token);
+        await nextVisit.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
+        await Until(nextVisit, "audio-end", timeout.Token);
+        Assert.Equal(priorCount + 2, ai.LastRequest!.History.Count);
+        await AvatarWire.SendAsync(nextVisit, new { type = "end" }, timeout.Token);
     }
 
     [Fact]

@@ -74,14 +74,14 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         }
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         // Recognition reserves the maximum 45-second utterance. Replies and speech
-        // reserve separately at the point of use, with rates displayed before Start.
+        // reserve separately at the point of use.
         var required = CreditAmounts.RoundCharge(pricing.CreditRate("recognition") * 45);
         if (account.AvailableCredits < required) throw new InsufficientAiCreditsException(account.AvailableCredits, required);
         try
         {
             var voice = await voices.ResolveAsync(language, ct, character);
-            var session = sessions.Create(UserId, language, practice, voice, character);
-            return Json(new { sessionId = session.Id, characterId = character.Id, language = language.Code, voiceName = voice.Name,
+            var session = sessions.Create(UserId, language, practice, voice, character, request.MemoryId);
+            return Json(new { sessionId = session.Id, memoryId = session.MemoryId, rememberedTurns = session.History.Count, characterId = character.Id, language = language.Code, voiceName = voice.Name,
                 nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
         }
         catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
@@ -101,6 +101,14 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         if (await Access() is { } failure) return failure;
         try { sessions.Remove(sessions.Get(id, UserId)); return NoContent(); }
         catch (AvatarException ex) when (ex.Status is 404 or 410) { return NoContent(); }
+    }
+
+    [HttpPost("/api/avatar/memories/{id:guid}/forget"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> Forget(Guid id)
+    {
+        if (await Access() is { } failure) return failure;
+        sessions.Forget(id, UserId);
+        return NoContent();
     }
 
     // HTTP/2 WebSockets use CONNECT rather than GET. The anti-forgery-protected
@@ -141,4 +149,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null);
+public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null);

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createPerformance } from '../Glosify/wwwroot/js/avatar/performance.js';
 import { createRenderLoop, portraitScaling } from '../Glosify/wwwroot/js/avatar/render-loop.js';
 
 function harness() {
@@ -20,25 +21,29 @@ function harness() {
     } };
 }
 
-test('pre-conversation portrait settles, then stops scheduling work; resize can redraw it', () => {
-    const h = harness(); h.advance(2000);
-    assert.ok(h.draws.length > 0);
-    assert.equal(h.pending.size, 0);
-    const settled = h.draws.length; h.advance(5000);
-    assert.equal(h.draws.length, settled);
-    h.loop.invalidate(); h.advance(100);
-    assert.ok(h.draws.length > settled);
-    h.advance(2000); assert.equal(h.pending.size, 0);
+test('visible portraits stay alive at 12 fps before, between and after conversations', () => {
+    const h = harness();
+    for (const state of ['off', 'idle', 'error', 'speaking', 'off']) {
+        h.loop.setState(state); h.draws.length = 0; h.advance(5000);
+        const expected = state === 'speaking' ? 120 : 60;
+        assert.ok(Math.abs(h.draws.length - expected) <= 1, `${state}: ${h.draws.length}`);
+        assert.equal(h.pending.size, 1);
+    }
+    const actor = createPerformance(() => .5);
+    const poses = h.draws.map(draw => actor.update(draw.dt));
+    assert.ok(poses.some(pose => pose.weights.blink > .5), 'idle portrait visibly blinks');
+    const breathing = poses.map(pose => pose.weights.breathe);
+    assert.ok(Math.max(...breathing) - Math.min(...breathing) > .8, 'idle portrait keeps breathing');
+    h.loop.invalidate(); const before = h.draws.length; h.advance(100);
+    assert.ok(h.draws.length > before);
 });
 
-test('conversation renders at 15 fps and speech at 24 fps on a 60 Hz display', () => {
+test('active conversation renders at 15 fps and speech at 24 fps on a 60 Hz display', () => {
     const h = harness();
-    for (const [state, expected] of [['listening', 75], ['speaking', 120]]) {
+    for (const [state, expected] of [['listening', 75], ['thinking', 75], ['speaking', 120]]) {
         h.loop.setState(state); h.draws.length = 0; h.advance(5000);
         assert.ok(Math.abs(h.draws.length - expected) <= 1, `${state}: ${h.draws.length}`);
     }
-    h.loop.setState('off'); h.advance(2000);
-    assert.equal(h.pending.size, 0);
 });
 
 test('invisible portrait cancels work even during speech and resumes without a large time step', () => {
@@ -53,7 +58,7 @@ test('invisible portrait cancels work even during speech and resumes without a l
 });
 
 test('reduced motion stops non-speaking animation, preserves speech and reacts to preference changes', () => {
-    const h = harness(); h.loop.setState('listening'); h.loop.setReducedMotion(true); h.advance(2000);
+    const h = harness(); h.loop.setState('off'); h.loop.setReducedMotion(true); h.advance(2000);
     assert.equal(h.pending.size, 0);
     h.loop.setState('speaking'); h.advance(2000);
     assert.equal(h.pending.size, 1);
@@ -61,9 +66,8 @@ test('reduced motion stops non-speaking animation, preserves speech and reacts t
     h.loop.setReducedMotion(false); h.advance(2000); assert.equal(h.pending.size, 1);
 });
 
-test('errors settle, and disposal prevents every later wakeup', () => {
+test('disposal prevents every later wakeup', () => {
     const h = harness(); h.loop.setState('speaking'); h.advance(1000);
-    h.loop.setState('error'); h.advance(2000); assert.equal(h.pending.size, 0);
     h.loop.setState('speaking'); h.loop.dispose(); const count = h.draws.length;
     h.loop.invalidate(); h.loop.setVisible(false); h.loop.setVisible(true);
     h.loop.setState('listening'); h.loop.setReducedMotion(true); h.advance(5000);
