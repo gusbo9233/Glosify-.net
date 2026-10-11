@@ -363,6 +363,11 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("input[type=password]")).ToHaveCountAsync(0);
         var credentials = await RegisterAsync();
         await AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync();
+        // The mobile sidebar starts closed; account controls live inside it.
+        var sidebarToggle = Page.Locator("[data-sidebar-toggle]");
+        await Expect(sidebarToggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await sidebarToggle.ClickAsync();
+        await Expect(Page.Locator(".app-navigation-identity strong")).ToHaveTextAsync(credentials.Email);
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log out" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/$"));
 
@@ -373,6 +378,9 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).Not.ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
         await Page.GotoAsync("/Quizzes");
         await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(sidebarToggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await sidebarToggle.ClickAsync();
+        await Expect(Page.Locator(".app-navigation-identity strong")).ToHaveTextAsync(credentials.Email);
         await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Log out", Exact = true }))
             .ToBeVisibleAsync();
     }
