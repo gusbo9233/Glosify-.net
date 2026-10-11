@@ -20,11 +20,6 @@
     document.querySelectorAll('[data-browser-timezone]').forEach(input => {
         input.value = Intl.DateTimeFormat().resolvedOptions().timeZone || input.value || 'UTC';
     });
-    document.querySelectorAll('[data-confirm]').forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-        });
-    });
 
     const search = document.querySelector('[data-anki-item-search]');
     search?.addEventListener('input', () => {

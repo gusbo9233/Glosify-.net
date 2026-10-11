@@ -1,0 +1,45 @@
+using System.Net;
+using System.Net.Http.Json;
+using Glosify.Data;
+using Glosify.Models.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Xunit;
+
+namespace Glosify.Tests;
+
+// Review-only reproducer in the isolated exported snapshot; never added to the working repository.
+public sealed class DeepSourceTriageProbeTests
+{
+    [Fact]
+    public async Task Oversized_cache_counts_bypass_validation_when_their_sum_overflows()
+    {
+        using var fixture = new GameAccessTests.Fixture();
+        using var client = fixture.Client();
+        client.DefaultRequestHeaders.Add("X-Game-Service-Key", new string('x', 40));
+        var usage = new GameUsageEvent
+        {
+            Id = Guid.NewGuid(),
+            UserId = "admin",
+            SessionId = Guid.NewGuid().ToString("N"),
+            Provider = "openai",
+            Model = "gpt-6-luna",
+            Endpoint = "decisions",
+            Outcome = "completed",
+            Measurement = "actual",
+            InputTokens = 100,
+            OutputTokens = 0,
+            CachedInputTokens = long.MaxValue,
+            CacheWriteTokens = long.MaxValue,
+            StartedAt = DateTimeOffset.UtcNow,
+        };
+        Assert.Equal(-2L, (usage.CachedInputTokens ?? 0) + (usage.CacheWriteTokens ?? 0));
+        var response = await client.PostAsJsonAsync("/api/game/internal/usage", usage);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        using var scope = fixture.App.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+        var stored = await db.Set<GameUsageEvent>().SingleAsync(row => row.Id == usage.Id);
+        Assert.Equal(long.MaxValue, stored.CachedInputTokens);
+        Assert.Equal(long.MaxValue, stored.CacheWriteTokens);
+    }
+}

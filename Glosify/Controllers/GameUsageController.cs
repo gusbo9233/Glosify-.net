@@ -19,10 +19,14 @@ public sealed class GameUsageController(GlosifyContext db, IConfiguration config
         if (!GameServiceAuthentication.IsTrusted(HttpContext)) return Error(403);
         if (input.Id == Guid.Empty || !Guid.TryParse(input.SessionId, out _) || string.IsNullOrEmpty(input.UserId) || input.UserId.Length > 450
             || new[] { input.Provider, input.Model, input.Endpoint, input.Operation, input.ServiceTier, input.Outcome, input.Measurement }.Any(s => s is null || s.Length > 100)
-            || input.InputTokens is < 0 or > 100000000 || input.OutputTokens is < 0 or > 100000000 || input.CachedInputTokens is < 0
-            || input.CacheWriteTokens is < 0 || (input.CachedInputTokens ?? 0) + (input.CacheWriteTokens ?? 0) > input.InputTokens || input.Characters is < 0 or > 100000000 || input.AudioSeconds is < 0 or > 10000000
+            || input.InputTokens is < 0 or > 100000000 || input.OutputTokens is < 0 or > 100000000
+            || input.CachedInputTokens is < 0 or > 100000000 || input.CacheWriteTokens is < 0 or > 100000000
+            || input.Characters is < 0 or > 100000000 || input.AudioSeconds is < 0 or > 10000000
             || input.Measurement is not ("actual" or "estimated" or "unknown")
             || input.StartedAt > DateTimeOffset.UtcNow.AddMinutes(5) || input.StartedAt < DateTimeOffset.UtcNow.AddYears(-1)) return Error(400);
+        // Bound both cache counts before adding them. A missing input total remains unknown usage.
+        if (input.InputTokens is { } inputTokens
+            && (input.CachedInputTokens ?? 0) + (input.CacheWriteTokens ?? 0) > inputTokens) return Error(400);
         var existing = await db.Set<GameUsageEvent>().SingleOrDefaultAsync(e => e.Id == input.Id, cancellation);
         if (existing is not null && (existing.UserId != input.UserId || existing.SessionId != input.SessionId)) return Error(409);
         // A delayed pending message cannot overwrite the completed provider attempt.
