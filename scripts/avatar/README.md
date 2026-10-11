@@ -51,12 +51,28 @@ rate snapshots and reservation expiry. It stores no conversation text or audio.
 Expired operations settle after five minutes through the maintenance worker.
 Conversation context is process-local, capped at 24 messages/24,000 serialized
 characters. Sessions expire after 30 minutes; microphone turns after 45 seconds;
-unconnected sessions after 30 seconds; inactive sockets after 90 seconds. Switching
+unconnected sessions after 30 seconds. Switching
 away from the browser page ends capture. In hands-free mode, silence sent to
 recognition counts as usage. An utterance limit requires an explicit retry. Push-to-talk preserves up to five
 seconds of microphone input during recognition setup, including a release before
 setup completes; longer setup delays stop with a retry message. Turn deadlines
 also report an explicit retry without closing the conversation.
+
+The browser sends a heartbeat every five seconds and detects a silent connection
+within 20 seconds; opening a socket has a ten-second deadline. A lost connection
+pauses capture and playback immediately when detected, then retries with capped
+backoff for up to 45 seconds. The server retains the owned session and conversation
+context for 45 seconds after the old connection finishes cancelling its turn.
+Reconnect still checks authentication, origin and session ownership, allows only
+one socket, and never extends the original 30-minute lifetime. Restored sessions
+keep the microphone muted until the user chooses Unmute. Interrupted audio and
+provider requests are never automatically replayed; repeat the interrupted turn.
+Server receive/send deadlines and WebSocket ping/pong also bound stalled sockets.
+Recognition or synthesis failure reports an explicit retry on the current session.
+End, expired authorization and session expiry remove the session; process restart
+loses process-local context. HTTP setup and cleanup have deadlines, and late usage
+responses cannot update a later conversation. See the [connection check](connection-review.md)
+for failure scenarios and verification limits.
 
 Conversations use the current learning language from the app’s language context;
 there is no separate avatar language picker or fixed preview allowlist. The server
@@ -77,6 +93,15 @@ open as a scrollable side drawer; Escape closes the drawer
 and returns focus to the arrow. Notices reopen settings so connection errors remain
 visible. The portrait has no idle caption; captions appear only for conversation text.
 
+## Rendering cost
+
+The portrait settles into a still image before and after a conversation. During
+conversation, speech runs at 24 fps and other states at 15 fps. Hidden/offscreen
+portraits pause; reduced motion also pauses settled non-speaking states. The
+canvas drawing buffer is capped at 1,000 pixels on its longest edge.
+See [the performance check](performance-review.md) for measurements and remaining
+model-loading costs.
+
 ## Rebuild the viewer
 
 ```sh
@@ -85,9 +110,15 @@ npm ci --ignore-scripts
 npm run build
 ```
 
-Commit `scene.min.js` and `scene.min.js.LEGAL.txt` with source changes. Dependencies are pinned
+Commit `scene.min.js`, `meshopt.worker.js`, and their `.LEGAL.txt` notices with source changes. Dependencies are pinned
 in the lockfile; the generated bundle is loaded only on the avatar page. Babylon.js
 is Apache-2.0 licensed; linked license comments accompany the bundle.
+The meshoptimizer 0.24.0 decoder is MIT-licensed and bundled into a 27 KB local
+worker. `meshopt.js` registers the glTF loader adapter, so no CDN scripts, blob
+workers or network decoder downloads are used. Each model load owns one worker
+and terminates it when loading finishes or fails. Only the exact worker script
+response permits WebAssembly in its CSP; pages keep `script-src 'self'`, and the
+worker cannot fetch resources or create nested workers.
 
 ## Rebuild the characters
 
@@ -99,9 +130,12 @@ user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in t
 main working tree); no photo pixels are included in the shipped assets. The patch
 is intentionally partly covered by her hair. Garments inherit the blouse's skin
 weights before morph baking, including breathing and shoulder movement.
-Rowan has male anatomy, short CC0 MakeHuman hair, and an open, oversized dark wool overcoat with fuller sleeves, a straight drape,
-a longer hem and notched lapels. A full ivory shirt with a button placket shows
-underneath, with a dark necktie and gold GG shield on the coat chest.
+Rowan has male anatomy, short CC0 MakeHuman hair, and a waist-length charcoal
+V-neck cardigan with fitted sleeves, fine knit textures, ribbed front borders and
+dark horn buttons. An ivory shirt and dark necktie show inside the V, with a gold
+GG shield embroidered on the cardigan chest. His raised collar stand wraps the neck;
+the shirt shoulders fill the neckline, and the smaller collar points frame the tie
+knot. Shirt and tie weights blend from the torso to the neck for body morphs.
 The character chooser swaps the model and pins the character name and matching voice
 for the conversation; it is locked while a model loads or a conversation is active.
 Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
@@ -116,10 +150,27 @@ Prepare the listed files into an external source directory (archive files under 
 ```sh
 python3 scripts/avatar/prepare-human.py /tmp/avatar-human-source
 blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
-  /tmp/avatar-human-source Glosify/wwwroot/models/avatar/rain-realistic.glb
+  /tmp/avatar-human-source /tmp/avatar-rain-raw.glb
 blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
-  /tmp/avatar-human-source Glosify/wwwroot/models/avatar/rowan-realistic.glb --character rowan
+  /tmp/avatar-human-source /tmp/avatar-rowan-raw.glb --character rowan
 ```
+
+Then compress the fresh exports as the final asset step:
+
+```sh
+node scripts/avatar/compress-model.mjs /tmp/avatar-rain-raw.glb Glosify/wwwroot/models/avatar/rain-realistic.glb
+node scripts/avatar/compress-model.mjs /tmp/avatar-rowan-raw.glb Glosify/wwwroot/models/avatar/rowan-realistic.glb
+npm run build --prefix scripts/avatar
+```
+
+The pinned glTF Transform pipeline uses Meshopt high compression with 14-bit
+positions, 10-bit normals and 12-bit UVs; UVs outside [0,1] remain unquantized.
+It keeps mesh topology, textures, materials and named morph targets. Compression
+is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
+compress shipped files. The script rejects compressed inputs and identical
+input/output paths. The pre-compression assets are also retained in Git at
+`0d02d69`. Current shipped sizes are Rain 3.69 MB and Rowan 3.00 MB, down from
+15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
 The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
@@ -169,8 +220,8 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 ```
 
 Optional arguments after the output set the resolution percentage and sample count for
-quick previews. The background and Rain model carry an `academia-1` cache revision; Rowan uses
-`academia-3`. Bump the relevant revision and rebuild the viewer when replacing an asset.
+quick previews. The background carries an `academia-1` cache revision; both Meshopt models use
+`meshopt-1`. Bump the relevant revision and rebuild the viewer when replacing an asset.
 The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,
@@ -181,8 +232,7 @@ sunlight from upper left, uncluttered center for a brunette portrait, sage/cream
 
 ```sh
 dotnet test Glosify.Tests --filter 'FullyQualifiedName~Avatar'
-node --test Glosify.ClientTests/avatar-audio.test.js Glosify.ClientTests/avatar-conversation.test.js \
-  Glosify.ClientTests/avatar-performance.test.js
+node --test Glosify.ClientTests/avatar-*.test.js
 ```
 
 Set `RUN_SQLSERVER_TESTS=true` and a local `ConnectionStrings__DefaultConnection`

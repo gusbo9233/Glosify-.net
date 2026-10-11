@@ -285,6 +285,39 @@ public sealed class AvatarTests
         Assert.True(first.Lifetime.IsCancellationRequested);
         Assert.NotEqual(first.Id, sessions.Create("admin", language, "free").Id);
     }
+    [Fact]
+    public void ReconnectIsOwnedExclusiveAndCannotExtendTheOriginalSessionLifetime()
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var session = sessions.Create("admin", Glosify.Services.Language.QuizLanguageCatalog.Find("en")!, "free");
+        Assert.Same(session, sessions.Connect(session.Id, "admin"));
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Connect(session.Id, "other")).Status);
+        Assert.Equal(409, Assert.Throws<AvatarException>(() => sessions.Connect(session.Id, "admin")).Status);
+        clock.Advance(TimeSpan.FromMinutes(29));
+        sessions.Disconnect(session);
+        clock.Advance(TimeSpan.FromSeconds(44));
+        Assert.Same(session, sessions.Connect(session.Id, "admin"));
+        sessions.Disconnect(session);
+        clock.Advance(TimeSpan.FromSeconds(17));
+        Assert.Equal(410, Assert.Throws<AvatarException>(() => sessions.Connect(session.Id, "admin")).Status);
+        Assert.True(session.Lifetime.IsCancellationRequested);
+    }
+
+    [Fact]
+    public void ReconnectGraceExpiresAndExplicitEndCannotBeResurrectedByLateCleanup()
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var language = Glosify.Services.Language.QuizLanguageCatalog.Find("en")!;
+        var expired = sessions.Create("admin", language, "free");
+        sessions.Connect(expired.Id, "admin"); sessions.Disconnect(expired);
+        clock.Advance(TimeSpan.FromSeconds(45));
+        Assert.Equal(410, Assert.Throws<AvatarException>(() => sessions.Connect(expired.Id, "admin")).Status);
+        var ended = sessions.Create("admin", language, "free");
+        sessions.Connect(ended.Id, "admin"); sessions.Remove(ended); sessions.Disconnect(ended);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Connect(ended.Id, "admin")).Status);
+        Assert.True(ended.Lifetime.IsCancellationRequested);
+    }
+
 }
 
 internal sealed class AvatarFixture : WebApplicationFactory<Program>

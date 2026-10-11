@@ -27,9 +27,6 @@
 
     string CurrentController => (ViewContext.RouteData.Values["controller"] as string ?? "").ToLowerInvariant();
     string CurrentAction => (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
-    string DisplayAccount => User.FindFirstValue(ClaimTypes.Email)
-        ?? User.Identity?.Name
-        ?? Text["Layout.SignedIn"];
 
     bool IsActive(string controller, string action) =>
         CurrentController == controller.ToLowerInvariant() && CurrentAction == action.ToLowerInvariant();
@@ -50,6 +47,11 @@
     {
         var paths = name switch
         {
+            "settings" => """
+                <path d="M4 7h16M4 17h16"></path>
+                <circle cx="9" cy="7" r="3" fill="var(--background)"></circle>
+                <circle cx="15" cy="17" r="3" fill="var(--background)"></circle>
+                """,
             "language" => """
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M3 12h18"></path>
@@ -138,6 +140,7 @@
     <link href="@WebFonts.TextStylesheetUrl" rel="stylesheet" />
     <link href="@WebFonts.IconStylesheetUrl" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app-settings.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
@@ -146,8 +149,12 @@
       data-speech-user="@User.FindFirstValue(ClaimTypes.NameIdentifier)"
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <partial name="_SpeechDialog" />
+    <button type="button" class="app-sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="@Text["Layout.PrimaryNavigation"]" data-open-label="@Text["Layout.PrimaryNavigation"]" data-close-label="@Text["Common.Close"]">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+    </button>
+    <div class="app-sidebar-backdrop" data-sidebar-backdrop hidden></div>
     <div class="app-shell">
-        <aside class="app-sidebar">
+        <aside id="app-sidebar" class="app-sidebar" aria-label="@Text["Layout.PrimaryNavigation"]">
             <div class="app-sidebar-brand">
                 <h1 class="wordmark">
                     <a asp-controller="Home" asp-action="Index">GlobeGlotter</a>
@@ -156,7 +163,7 @@
                 @await Component.InvokeAsync("LanguagePill")
             </div>
 
-            <nav class="app-nav">
+            <nav class="app-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
                 @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
                 {
                     <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Avatar <small>Preview</small></a>
@@ -204,54 +211,15 @@
                     </a>
                 }
             </nav>
-
+            <div class="app-sidebar-footer">
+                <a href="#app-settings" class="app-nav-item app-settings-trigger" data-app-settings-open aria-haspopup="dialog" aria-controls="app-settings" aria-expanded="false">
+                    @NavIcon("settings") <span>@Text["AppSettings.Title"]</span>
+                </a>
+                @await Html.PartialAsync("_NavigationAccount")
+            </div>
         </aside>
 
         <main class="app-main">
-            <header class="app-topbar">
-                <a class="app-mobile-brand" asp-controller="Home" asp-action="Index" aria-label="GlobeGlotter @Text["Nav.Home"]">
-                    GlobeGlotter
-                </a>
-                <div class="app-topbar-right">
-                    <button type="button" class="speech-settings-button" data-speech-settings title="@Text["Speech.Settings"]" aria-label="@Text["Speech.Settings"]"><span class="material-symbols-outlined" aria-hidden="true">tune</span></button>
-                    @await Html.PartialAsync("_DisplayLanguageSelector")
-                    @if (User.Identity?.IsAuthenticated == true)
-                    {
-                        @if (StripePayments.IsEnabled)
-                        {
-                            <a class="credit-pill credit-pill-buy" asp-controller="Payments" asp-action="Index">
-                                <span class="material-symbols-outlined" aria-hidden="true">add_circle</span>
-                                @Text["Layout.GetCredits"]
-                            </a>
-                        }
-                        @await Component.InvokeAsync("AiCreditPill")
-                        <a href="/account/usage" class="btn-login">@Text["Usage.Title"]</a>
-                        <div class="account-block">
-                            <div class="account-meta">
-                                <span class="account-meta-eyebrow">@Text["Layout.SignedInAs"]</span>
-                                <span class="account-meta-email">@DisplayAccount</span>
-                            </div>
-                            <div class="account-avatar" title="@DisplayAccount">
-                                <span class="material-symbols-outlined">account_circle</span>
-                            </div>
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="btn-social-form">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="icon-button" title="@Text["Common.LogOut"]" aria-label="@Text["Common.LogOut"]">
-                                    <span class="material-symbols-outlined">logout</span>
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login" class="btn-login">
-                            <span class="material-symbols-outlined">login</span>
-                            @Text["Common.LogIn"]
-                        </a>
-                    }
-                </div>
-            </header>
-
             <div class="app-canvas">
                 <div class="speech-error" data-speech-error role="alert" hidden>
                     <span data-speech-error-text></span>
@@ -266,59 +234,9 @@
                     <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
                 </nav>
             </footer>
+            <partial name="_AppSettings" />
         </main>
     </div>
-    <nav class="app-mobile-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
-        @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
-        {
-            <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face")<span>Avatar</span></a>
-        }
-        <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
-            @NavIcon("language")
-            <span>@(isFreestyle ? "Mode" : Text["Nav.Language"])</span>
-        </a>
-        <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
-            @NavIcon("home")
-            <span>@Text["Nav.Home"]</span>
-        </a>
-        <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
-            @NavIcon("quiz")
-            <span>@Text["Nav.Quizzes"]</span>
-        </a>
-        <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
-            @NavIcon("anki")
-            <span>Anki</span>
-        </a>
-        <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
-            @NavIcon("auto_stories")
-            <span>@Text["Nav.Books"]</span>
-        </a>
-        @if (!isFreestyle)
-        {
-            <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
-                @NavIcon("subtitles")
-                <span>@Text["Nav.Transcripts"]</span>
-            </a>
-            <a class="@NavClass("Translations")" asp-controller="Translations" asp-action="Index">
-                @NavIcon("translate")
-                <span>@Text["Nav.Translations"]</span>
-            </a>
-        }
-        @if (User.Identity?.IsAuthenticated == true)
-        {
-            <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
-                @NavIcon("explore")
-                <span>@Text["Nav.Explore"]</span>
-            </a>
-        }
-        else
-        {
-            <a class="@NavClass("Account", "Login")" asp-controller="Account" asp-action="Login">
-                <span class="material-symbols-outlined">login</span>
-                <span>@Text["Common.LogIn"]</span>
-            </a>
-        }
-    </nav>
     @if (User.Identity?.IsAuthenticated == true && assistantPageContext?.IsHidden is not true)
     {
         @await Component.InvokeAsync("AssistantPanel", new
@@ -328,6 +246,8 @@
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app-sidebar.js" asp-append-version="true"></script>
+    <script src="~/js/app-settings.js" asp-append-version="true"></script>
     <script src="~/js/tts.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)

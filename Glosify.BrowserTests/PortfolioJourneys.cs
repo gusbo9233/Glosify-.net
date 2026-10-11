@@ -329,6 +329,14 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
             .PressAsync("Enter");
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(noJavaScriptPage.Locator(".app-nav")).ToBeVisibleAsync();
+        await Expect(noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Log out", Exact = true })).ToBeVisibleAsync();
+        await noJavaScriptPage.Locator("[data-app-settings-open]").ClickAsync();
+        var displayLanguage = noJavaScriptPage.Locator("#app-settings select[name='culture']");
+        await Expect(displayLanguage).ToBeVisibleAsync();
+        await displayLanguage.SelectOptionAsync("en-GB");
+        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Change language", Exact = true }).ClickAsync();
+        await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
         // URL matching happens before the destination's assets finish loading.
         // Drain this observed context before disposal can strand its requests.
         await noJavaScriptPage.WaitForLoadStateAsync(LoadState.Load);
@@ -363,6 +371,11 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("input[type=password]")).ToHaveCountAsync(0);
         var credentials = await RegisterAsync();
         await AssertLanguageCatalogSupportsSearchKeyboardMobileAndNoJavaScriptSelectionAsync();
+        // The mobile sidebar starts closed; account controls live inside it.
+        var sidebarToggle = Page.Locator("[data-sidebar-toggle]");
+        await Expect(sidebarToggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await sidebarToggle.ClickAsync();
+        await Expect(Page.Locator(".app-navigation-identity strong")).ToHaveTextAsync(credentials.Email);
         await Page.GetByRole(AriaRole.Button, new() { Name = "Log out" }).ClickAsync();
         await Expect(Page).ToHaveURLAsync(new Regex("/$"));
 
@@ -373,6 +386,9 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).Not.ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
         await Page.GotoAsync("/Quizzes");
         await Expect(Page).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(sidebarToggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await sidebarToggle.ClickAsync();
+        await Expect(Page.Locator(".app-navigation-identity strong")).ToHaveTextAsync(credentials.Email);
         await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Log out", Exact = true }))
             .ToBeVisibleAsync();
     }
@@ -828,6 +844,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     public async Task SwedishDisplayLanguagePersistsAcrossNavigationReloadMobileAndSignIn()
     {
         await Page.GotoAsync("/");
+        await OpenAppSettingsAsync();
         await Page.GetByLabel("Display language").SelectOptionAsync("sv-SE");
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Gör nya ord till riktiga samtal." })).ToBeVisibleAsync();
@@ -835,6 +852,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
 
         await Page.SetViewportSizeAsync(390, 844);
+        await OpenAppSettingsAsync();
         var mobileSelector = Page.GetByLabel("Visningsspråk");
         await Expect(mobileSelector).ToBeVisibleAsync();
         Assert.NotNull(await mobileSelector.BoundingBoxAsync());
@@ -877,6 +895,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Page.GotoAsync("/");
         foreach (var culture in cultures)
         {
+            await OpenAppSettingsAsync();
             await Page.Locator("select[name='culture']").SelectOptionAsync(culture);
             await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", culture);
             await Expect(Page.Locator("html")).ToHaveAttributeAsync("dir", culture == "ar" ? "rtl" : "ltr");
@@ -898,11 +917,21 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         await Page.SetViewportSizeAsync(390, 844);
         await Page.GotoAsync("/ar");
+        await OpenAppSettingsAsync();
         var selector = Page.Locator("select[name='culture']");
         await Expect(selector).ToBeVisibleAsync();
         Assert.NotNull(await selector.BoundingBoxAsync());
         Assert.NotEmpty(await Page.ScreenshotAsync(new PageScreenshotOptions { FullPage = true }));
         await AssertNoPageErrorsAsync();
+    }
+
+    private async Task OpenAppSettingsAsync()
+    {
+        var toggle = Page.Locator("[data-sidebar-toggle]");
+        if (await toggle.GetAttributeAsync("aria-expanded") == "false")
+            await toggle.ClickAsync();
+        await Page.Locator("[data-app-settings-open]").ClickAsync();
+        await Expect(Page.Locator("#app-settings")).ToBeVisibleAsync();
     }
 
     private async Task<(string Email, string Password)> RegisterAsync()

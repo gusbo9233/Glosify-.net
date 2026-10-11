@@ -24,7 +24,12 @@ public static class SecurityHeaderExtensions
             var headers = context.Response.Headers;
             headers["X-Content-Type-Options"] = "nosniff";
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            headers["Content-Security-Policy"] = contentSecurityPolicy;
+            // A worker receives its own CSP from its script response. Only this
+            // bundled decoder may compile WASM; pages still disallow eval/WASM,
+            // and the worker cannot fetch resources or create nested workers.
+            headers["Content-Security-Policy"] = context.Request.Path == "/js/avatar/meshopt.worker.js"
+                ? "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'none'; worker-src 'none'; frame-ancestors 'none'; base-uri 'none';"
+                : contentSecurityPolicy;
             headers["Permissions-Policy"] =
                 "microphone=(), camera=(), geolocation=(), payment=(), usb=(), interest-cohort=()";
             await next();

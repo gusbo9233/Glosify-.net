@@ -532,4 +532,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Repeat the ideas that need work and move forward at your pace.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Review with focused quizzes, then save the words you want in Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Explore more ways to learn</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>General</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Account</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Admin</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Game</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Game usage</value></data>
 </root>

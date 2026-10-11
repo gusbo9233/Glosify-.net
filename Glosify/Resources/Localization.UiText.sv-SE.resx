@@ -532,4 +532,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Repetera det som behöver övas och gå framåt i din egen takt.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Repetera med fokuserade quiz och spara sedan de ord du vill ha i Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Utforska fler sätt att lära</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Inställningar</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Allmänt</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Konto</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Administration</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Spel</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Spelanvändning</value></data>
 </root>

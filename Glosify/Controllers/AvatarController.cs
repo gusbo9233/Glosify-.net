@@ -114,15 +114,18 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
             return ProblemResult(403, "Voice connections must originate from this app.");
         if (!HttpContext.WebSockets.IsWebSocketRequest) return ProblemResult(400, "A voice WebSocket connection is required.");
         AvatarSession session;
-        try { session = sessions.Get(id, UserId); }
+        try { session = sessions.Connect(id, UserId); }
         catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
-        if (Interlocked.CompareExchange(ref session.Connected, 1, 0) != 0) return ProblemResult(409, "This conversation is already connected.");
+        var reconnect = false;
         try
         {
-            using var socket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-            await conversation.RunAsync(socket, session, User, ct);
+            using var socket = await HttpContext.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
+            {
+                KeepAliveInterval = TimeSpan.FromSeconds(10), KeepAliveTimeout = TimeSpan.FromSeconds(10)
+            });
+            reconnect = await conversation.RunAsync(socket, session, User, ct);
         }
-        finally { sessions.Remove(session); }
+        finally { if (reconnect) sessions.Disconnect(session); else sessions.Remove(session); }
         return new EmptyResult();
     }
 

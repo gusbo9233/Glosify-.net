@@ -9,15 +9,19 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import '@babylonjs/loaders/glTF';
+import './meshopt.js';
 import { createPerformance } from './performance.js';
 import { bindMorphTargets } from './morphs.js';
+import { createRenderLoop, portraitScaling } from './render-loop.js';
 
 export async function createAvatar(canvas, character = 'rain') {
-    const model = { rain: '/models/avatar/rain-realistic.glb?v=academia-1', rowan: '/models/avatar/rowan-realistic.glb?v=academia-3' }[character];
+    const model = { rain: '/models/avatar/rain-realistic.glb?v=meshopt-1', rowan: '/models/avatar/rowan-realistic.glb?v=cardigan-2' }[character];
     if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
-    engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
-    const scene = new Scene(engine); scene.clearColor = new Color4(0, 0, 0, 0);
+    engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
+    const scene = new Scene(engine);
+    scene.skipPointerMovePicking = true;
+    scene.clearColor = new Color4(0, 0, 0, 0);
     scene.imageProcessingConfiguration.toneMappingEnabled = true;
     scene.imageProcessingConfiguration.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
     scene.imageProcessingConfiguration.exposure = 1.05;
@@ -31,16 +35,15 @@ export async function createAvatar(canvas, character = 'rain') {
     try { loaded = await ImportMeshAsync(model, scene); }
     catch (error) { scene.dispose(); engine.dispose(); throw error; }
     const root = new TransformNode('breathing', scene); root.rotation.y = Math.PI;
-    for (const mesh of loaded.meshes) if (!mesh.parent) mesh.parent = root;
+    for (const mesh of loaded.meshes) {
+        if (!mesh.parent) mesh.parent = root;
+        mesh.isPickable = false;
+    }
     const applyWeights = bindMorphTargets(loaded.meshes);
     const rain = createPerformance();
-    let analyser = null, spectrum = null, wave = null, last = performance.now();
+    let analyser = null, spectrum = null, wave = null;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-    engine.runRenderLoop(() => {
-        if (document.hidden) return;
-        const now = performance.now();
-        if (now - last < 1000 / 40) return;
-        const elapsed = (now - last) / 1000; last = now;
+    const loop = createRenderLoop(elapsed => {
         let audio = null;
         if (analyser && rain.state === 'speaking') {
             analyser.getFloatFrequencyData(spectrum); analyser.getFloatTimeDomainData(wave);
@@ -51,17 +54,41 @@ export async function createAvatar(canvas, character = 'rain') {
         // A slight lean towards the viewer, weight shift and breathing rise.
         root.position.set(0, posture.rise, -posture.lean);
         root.rotation.set(0, Math.PI + posture.yaw, posture.sway);
-        scene.render();
+        engine.beginFrame(); scene.render(); engine.endFrame();
     });
-    const resize = new ResizeObserver(() => engine.resize()); resize.observe(canvas);
+    loop.setReducedMotion(reduced.matches);
+    let inView = true;
+    const visibility = () => loop.setVisible(!document.hidden && inView);
+    const motion = () => loop.setReducedMotion(reduced.matches);
+    document.addEventListener('visibilitychange', visibility);
+    reduced.addEventListener('change', motion);
+    visibility();
+    const intersection = new IntersectionObserver(entries => {
+        inView = entries[0].isIntersecting; visibility();
+    });
+    intersection.observe(canvas);
+    const resize = new ResizeObserver(() => {
+        engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
+        engine.resize(); loop.invalidate();
+    });
+    resize.observe(canvas);
+    // Shader/texture readiness and context restoration can occur after settling.
+    const ready = scene.onReadyObservable.addOnce(() => loop.invalidate());
+    const restored = engine.onContextRestoredObservable.add(() => loop.invalidate());
     return {
-        setState(value) { rain.setState(value); },
+        setState(value) { rain.setState(value); loop.setState(value); },
         setReply(text) { rain.setReply(text); },
         hear(level) { rain.hear(level); },
         setAnalyser(value) {
             analyser = value;
             if (value) { spectrum = new Float32Array(value.frequencyBinCount); wave = new Float32Array(value.fftSize); }
         },
-        dispose() { resize.disconnect(); scene.dispose(); engine.dispose(); }
+        dispose() {
+            loop.dispose(); resize.disconnect(); intersection.disconnect();
+            document.removeEventListener('visibilitychange', visibility);
+            reduced.removeEventListener('change', motion);
+            scene.onReadyObservable.remove(ready); engine.onContextRestoredObservable.remove(restored);
+            scene.dispose(); engine.dispose();
+        }
     };
 }

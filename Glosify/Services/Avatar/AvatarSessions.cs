@@ -13,7 +13,7 @@ public sealed class AvatarSession(string userId, QuizLanguage language, string p
     public AvatarCharacter Character { get; } = character ?? AvatarCharacter.Rain;
     public AvatarVoice? Voice { get; } = voice;
     public DateTimeOffset ExpiresAt { get; } = now.AddMinutes(30);
-    public DateTimeOffset ConnectBy { get; } = now.AddSeconds(30);
+    public DateTimeOffset ConnectBy { get; internal set; } = now.AddSeconds(30);
     public CancellationTokenSource Lifetime { get; } = new();
     public List<AgentTurn> History { get; } = [];
     public int Connected;
@@ -37,10 +37,32 @@ public sealed class AvatarSessions(TimeProvider clock)
     }
     public AvatarSession Get(Guid id, string userId)
     {
-        if (!_sessions.TryGetValue(id, out var session) || session.UserId != userId) throw new AvatarException(404, "Conversation not found.");
-        if (session.ExpiresAt <= clock.GetUtcNow() || session.Connected == 0 && session.ConnectBy <= clock.GetUtcNow())
-        { Remove(session); throw new AvatarException(410, "Conversation expired. Start a new conversation."); }
-        return session;
+        lock (_gate)
+        {
+            if (!_sessions.TryGetValue(id, out var session) || session.UserId != userId) throw new AvatarException(404, "Conversation not found.");
+            if (session.ExpiresAt <= clock.GetUtcNow() || session.Connected == 0 && session.ConnectBy <= clock.GetUtcNow())
+            { Remove(session); throw new AvatarException(410, "Conversation expired. Start a new conversation."); }
+            return session;
+        }
+    }
+    public AvatarSession Connect(Guid id, string userId)
+    {
+        lock (_gate)
+        {
+            var session = Get(id, userId);
+            if (session.Connected != 0) throw new AvatarException(409, "This conversation is already connected.");
+            session.Connected = 1;
+            return session;
+        }
+    }
+    public void Disconnect(AvatarSession session)
+    {
+        lock (_gate)
+        {
+            if (!_sessions.ContainsKey(session.Id)) return;
+            session.ConnectBy = clock.GetUtcNow().AddSeconds(45);
+            session.Connected = 0;
+        }
     }
     public void Remove(AvatarSession session)
     {
@@ -48,6 +70,7 @@ public sealed class AvatarSessions(TimeProvider clock)
     }
     public void Sweep()
     {
+        lock (_gate)
         foreach (var session in _sessions.Values)
             if (session.ExpiresAt <= clock.GetUtcNow() || session.Connected == 0 && session.ConnectBy <= clock.GetUtcNow()) Remove(session);
     }

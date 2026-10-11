@@ -70,6 +70,9 @@ public sealed class LayoutViewComponentTests
         Assert.Contains("42 credits", document.QuerySelector(".credit-pill")?.TextContent ?? string.Empty);
         // This account ID has not been granted administrator access.
         Assert.Equal("span", document.QuerySelector(".credit-pill")?.LocalName);
+        Assert.Null(document.QuerySelector("#settings-admin-tab"));
+        Assert.Null(document.QuerySelector("#settings-admin"));
+        Assert.Empty(document.QuerySelectorAll("#app-settings a[href^='/Admin']"));
         Assert.EndsWith(
             "Polish",
             document.QuerySelector(".language-context-pill-active")?.TextContent.Trim(),
@@ -77,14 +80,38 @@ public sealed class LayoutViewComponentTests
     }
 
     [Fact]
-    public async Task Credit_pill_links_to_admin_only_for_approved_account_id()
+    public async Task Admin_settings_are_only_rendered_for_an_approved_account_id()
     {
         using var factory = CreateFactory(administratorId: "learner-1");
         var document = await GetHomeAsync(factory.CreateClient());
 
-        var pill = document.QuerySelector(".credit-pill");
-        Assert.Equal("a", pill?.LocalName);
-        Assert.Equal("/Admin/AiCredits", pill?.GetAttribute("href"));
+        Assert.NotNull(document.QuerySelector("#settings-admin-tab"));
+        Assert.NotNull(document.QuerySelector("#settings-admin a[href='/Admin/AiCredits']"));
+        Assert.Equal("span", document.QuerySelector("#settings-account .credit-pill")?.LocalName);
+        Assert.Empty(document.QuerySelectorAll("#settings-account a[href^='/Admin']"));
+    }
+
+    [Fact]
+    public async Task Settings_replace_the_header_without_losing_account_or_language_actions()
+    {
+        using var factory = CreateFactory();
+        var document = await GetHomeAsync(factory.CreateClient());
+        Assert.Null(document.QuerySelector("header.app-topbar"));
+        Assert.NotNull(document.QuerySelector(".app-sidebar [data-app-settings-open]"));
+        Assert.Null(document.QuerySelector(".app-mobile-nav"));
+        Assert.Equal("app-sidebar", document.QuerySelector("[data-sidebar-toggle]")?.GetAttribute("aria-controls"));
+        var settings = Assert.IsAssignableFrom<IElement>(document.QuerySelector("dialog#app-settings"));
+        Assert.Single(document.QuerySelectorAll(".display-language-selector"));
+        Assert.NotNull(settings.QuerySelector("#settings-general [data-speech-settings]"));
+        Assert.NotNull(settings.QuerySelector("#settings-general form[action='/display-language'] input[name='__RequestVerificationToken']"));
+        Assert.NotNull(settings.QuerySelector("#settings-account a[href='/account/usage']"));
+        Assert.Null(settings.QuerySelector("form[action='/Account/Logout']"));
+        var account = Assert.IsAssignableFrom<IElement>(document.QuerySelector(".app-sidebar .app-navigation-account"));
+        Assert.Contains("learner@example.test", account.QuerySelector(".app-navigation-identity")!.TextContent);
+        var logout = Assert.IsAssignableFrom<IElement>(account.QuerySelector("form[action='/Account/Logout']"));
+        Assert.Equal("post", logout.GetAttribute("method"));
+        Assert.NotNull(logout.QuerySelector("input[name='__RequestVerificationToken']"));
+        Assert.Null(account.QuerySelector("a[href='/login']"));
     }
 
     [Fact]

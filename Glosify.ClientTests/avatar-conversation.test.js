@@ -13,17 +13,21 @@ function setup(mode = 'push-to-talk') {
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? { value: mode } : { value: 'csrf' },
             querySelectorAll: () => [], addEventListener: (name, action) => { listeners[name] = action; } },
-        window: { addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL,
+        window: { addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController,
+        setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
         Option: class { constructor(text, value) { this.text = text; this.value = value; } },
         createAvatar: () => new Promise(() => {}), fetch: () => new Promise(() => {}),
         wire: value => sent.push(value),
     });
     vm.runInContext(source.replace(/^import .*;\n/gm, ''), context);
+    vm.runInContext(`VoiceConnection = class { constructor(url, handlers) {
+        const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
+    } };`, context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
     return { sent, elements, windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
-        binary: () => sent.filter(x => typeof x !== 'string').map(x => new Uint8Array(x)[0]),
+        binary: () => sent.filter(x => Object.prototype.toString.call(x) === '[object ArrayBuffer]').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
     };
 }
@@ -241,4 +245,119 @@ test('an older configuration response cannot overwrite the restored page languag
     await oldRequest;
     assert.equal(h.elements.get('avatar-language').textContent, 'Practicing Swedish');
     assert.deepEqual(h.elements.get('avatar-quiz').options.map(q => q.value), ['', 'swedish']);
+});
+
+
+test('lost connection pauses capture, clears pending audio and resumes muted without replay', async () => {
+    const h = setup('hands-free');
+    h.run(`audio.mute = value => wire({ muted: value }); turnId = 'old-turn';
+        preRoll = [new ArrayBuffer(10)]; holding = true; awaitingCommit = true; currentReply = 'old reply';`);
+    h.run('connectionLost()');
+    assert.equal(h.elements.get('avatar-talk').disabled, true);
+    assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
+    assert.equal(h.run('preRoll.length'), 0);
+    assert.equal(h.run('turnId'), null);
+    assert.equal(h.run('awaitingCommit'), false);
+    await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+    assert.equal(h.elements.get('avatar-mute').disabled, false);
+    assert.equal(h.elements.get('avatar-talk').disabled, true);
+    assert.match(h.elements.get('avatar-notice').textContent, /Unmute to continue/);
+    assert.deepEqual(h.commands(), []);
+    h.frame(1); assert.deepEqual(h.binary(), []);
+});
+
+test('late usage from an ended session cannot overwrite a newer conversation', async () => {
+    const h = setup();
+    h.run(`let finishUsage; requestJson = () => new Promise(resolve => { finishUsage = resolve; });`);
+    const pending = h.run("refreshUsage('old-session', epoch)");
+    h.run("epoch++; el('balance').textContent = 'new balance';");
+    h.run("finishUsage({ type: 'usage', available: 1, total: 99, pending: false })");
+    await pending;
+    assert.equal(h.elements.get('avatar-balance').textContent, 'new balance');
+});
+
+test('End is single-flight and remains usable after failed cleanup', async () => {
+    const h = setup();
+    h.run(`sessionId = 'ending-session'; modelReady = true; config = { available: true, language: 'sv' };
+        audio.close = async () => { wire({ closed: true }); };
+        socket.close = () => { wire({ closedSocket: true }); };
+        let finishEnd; api = () => new Promise(resolve => { finishEnd = resolve; });
+        requestJson = async () => { throw new Error('offline'); };`);
+    const first = h.run('end()'), second = h.run('end()');
+    assert.equal(first, second);
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    await new Promise(resolve => setImmediate(resolve));
+    h.run('finishEnd()'); await first;
+    assert.equal(h.elements.get('avatar-start').disabled, false);
+    assert.equal(h.sent.filter(x => x.closed).length, 1);
+    assert.equal(h.sent.filter(x => x.closedSocket).length, 1);
+});
+
+
+test('a failed interrupt keeps the reconnecting state and paused microphone', () => {
+    const h = setup();
+    h.run('audio.mute = () => {}; socket.send = () => { connectionLost(); return false; }; interrupt();');
+    assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
+    assert.equal(h.elements.get('avatar-talk').disabled, true);
+});
+
+test('stalled HTTP cleanup aborts at its deadline and releases Start', async () => {
+    const h = setup();
+    h.run(`sessionId = 'offline-session'; modelReady = true; config = { available: true, language: 'sv' };
+        audio.close = async () => {}; socket.close = () => {};
+        let expireRequest; setTimeout = (action, delay) => { expireRequest = action; wire({ deadline: delay }); return 1; };
+        clearTimeout = () => {};
+        fetch = (_, options) => new Promise((_, reject) => options.signal.addEventListener('abort', () => reject(new Error('aborted'))));`);
+    const cleanup = h.run('end()');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(h.elements.get('avatar-start').disabled, true);
+    assert.equal(h.sent.find(x => x.deadline).deadline, 5000);
+    h.run('expireRequest()'); await cleanup;
+    assert.equal(h.elements.get('avatar-start').disabled, false);
+    assert.equal(h.run('audio'), null);
+});
+
+for (const outcome of ['resolve', 'reject']) {
+    test(`a stale microphone flush (${outcome}) cannot overwrite recovery or commit a new turn`, async () => {
+        const h = setup();
+        h.run(`audio.mute = () => {}; let resolveOld, rejectOld;
+            audio.flush = () => new Promise((resolve, reject) => { resolveOld = resolve; rejectOld = reject; }); press();`);
+        const oldRelease = h.run('release()');
+        h.run('connectionLost()');
+        const sentBeforeRecovery = h.commands().length;
+        if (outcome === 'reject') {
+            h.run("rejectOld(new Error('flush timeout'))");
+            await oldRelease;
+            assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
+            assert.match(h.elements.get('avatar-notice').textContent, /Connection lost/);
+            assert.equal(h.commands().length, sentBeforeRecovery);
+        }
+        await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+        h.run(`muted = false; let finishNew;
+            audio.flush = () => new Promise(resolve => { finishNew = resolve; }); press();`);
+        await h.run("onMessage({ type: 'listening' }, epoch)");
+        const newRelease = h.run('release()');
+        if (outcome === 'resolve') { h.run('resolveOld()'); await oldRelease; }
+        assert.equal(h.run('flushing'), true);
+        assert.equal(h.elements.get('avatar-status').textContent, 'Listening');
+        assert.equal(h.commands().includes('interrupt'), false);
+        assert.equal(h.commands().includes('commit'), false);
+        h.run('finishNew()'); await newRelease;
+        assert.equal(h.commands().filter(command => command === 'commit').length, 1);
+    });
+}
+
+test('a late failed flush after reconnection cannot interrupt the replacement turn', async () => {
+    const h = setup();
+    h.run(`audio.mute = () => {}; let rejectOld;
+        audio.flush = () => new Promise((_, reject) => { rejectOld = reject; }); press();`);
+    const oldRelease = h.run('release()');
+    h.run('connectionLost()');
+    await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+    h.run('muted = false; press();');
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    h.run("rejectOld(new Error('late timeout'))"); await oldRelease;
+    assert.equal(h.elements.get('avatar-status').textContent, 'Listening');
+    assert.equal(h.commands().includes('interrupt'), false);
+    assert.equal(h.commands().includes('commit'), false);
 });

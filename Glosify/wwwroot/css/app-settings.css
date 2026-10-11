@@ -1,0 +1,102 @@
+/* Settings live beside navigation so pages keep their full vertical workspace. */
+.app-settings-trigger { border: 0; background: transparent; font-family: inherit; cursor: pointer; text-align: start; }
+.app-sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--surface-container-high); }
+.app-sidebar-footer .app-settings-trigger { width: 100%; min-height: 44px; }
+.app-navigation-account { min-width: 0; padding: 10px 12px 0; }
+.app-navigation-identity { display: grid; gap: 4px; min-width: 0; font-size: 11px; color: var(--on-surface-var); }
+.app-navigation-identity strong { font-size: 13px; font-weight: 500; color: var(--on-surface); overflow-wrap: anywhere; }
+.app-navigation-account form { margin: 0; flex-shrink: 0; }
+.app-navigation-auth { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--on-surface-var); font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
+.app-navigation-auth:hover { color: var(--primary); }
+.app-navigation-auth:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.app-settings-open { overflow: hidden; }
+.app-settings-dialog {
+    width: min(780px, calc(100% - 40px));
+    max-width: none;
+    max-height: calc(100dvh - 48px);
+    padding: 0;
+    margin: auto;
+    overflow: hidden;
+    border: 1px solid var(--surface-container-highest);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-body);
+    box-shadow: 0 24px 80px #01091466;
+}
+.app-settings-dialog[open] { display: flex; flex-direction: column; }
+.app-settings-dialog::backdrop { background: #01091499; }
+.app-settings-heading { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px 14px 28px; gap: 16px; flex-shrink: 0; }
+.app-settings-heading h2 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -.025em; }
+.app-settings-heading .icon-button { flex-shrink: 0; width: 44px; height: 44px; }
+.app-settings-body { display: grid; grid-template-columns: 164px minmax(0, 1fr); min-height: 340px; overflow-y: auto; overscroll-behavior: contain; }
+.app-settings-tabs { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 12px; background: var(--surface-low); }
+.app-settings-tabs button { min-height: 44px; border: 0; border-radius: 8px; padding: 10px 14px; text-align: start; color: var(--on-surface-var); background: transparent; font: inherit; font-size: 14px; cursor: pointer; }
+.app-settings-tabs button:hover { background: var(--surface-container-high); color: var(--on-surface); }
+.app-settings-tabs button[aria-selected="true"] { background: var(--surface-container-high); color: var(--on-surface); font-weight: 600; }
+.app-settings-panels { padding: 24px 28px 32px; min-width: 0; }
+.app-settings-panels h3 { margin: 0 0 22px; font: inherit; font-size: 16px; font-weight: 600; }
+.app-settings-row { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px; min-height: 64px; padding: 16px 0; border: 0; border-bottom: 1px solid var(--surface-container-highest); background: transparent; color: var(--on-surface); font: inherit; font-size: 14px; text-align: start; text-decoration: none; }
+.app-settings-action { cursor: pointer; }
+.app-settings-action > span:last-child { color: var(--on-surface-var); }
+.app-settings-action:hover { color: var(--primary); }
+.app-settings-link { color: var(--primary); text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+.app-settings-link:hover { text-decoration: underline; }
+.app-settings-dialog .display-language-selector select { max-width: 180px; min-height: 44px; border-radius: 8px; font-size: 14px; }
+.app-settings-dialog .display-language-selector .material-symbols-outlined { display: none; }
+.app-settings-balance { flex-wrap: wrap; }
+.app-settings-balance .credit-pill { margin: 0; padding: 0; background: transparent; }
+.app-settings-dialog :focus-visible, .app-settings-trigger:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+/* A shared drawer replaces the separate mobile navigation. */
+.app-body { --app-sidebar-width: 240px; padding-bottom: 0; }
+.app-shell { padding-inline-start: 0; transition: padding-inline-start .2s ease; }
+.app-sidebar { display: flex; position: fixed; inset-block-start: 0; inset-inline-start: 0; width: var(--app-sidebar-width); height: 100dvh; padding-top: max(24px, env(safe-area-inset-top)); padding-bottom: max(16px, env(safe-area-inset-bottom)); z-index: 1500; transform: translateX(-100%); visibility: hidden; transition: transform .2s ease, visibility .2s; }
+[dir="rtl"] .app-sidebar { transform: translateX(100%); }
+.app-sidebar-open .app-sidebar { transform: translateX(0); visibility: visible; }
+.app-sidebar-open .app-shell { padding-inline-start: var(--app-sidebar-width); }
+.app-sidebar-toggle { position: fixed; inset-inline-start: 0; top: 50%; transform: translateY(-50%); z-index: 1501; width: 44px; height: 60px; display: grid; place-items: center; border: 1px solid var(--surface-container-highest); border-inline-start: 0; border-start-end-radius: 12px; border-end-end-radius: 12px; background: var(--surface); color: var(--primary); cursor: pointer; transition: inset-inline-start .2s ease; }
+.app-sidebar-toggle:hover { background: var(--surface-container-high); }
+.app-sidebar-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
+.app-sidebar-open .app-sidebar-toggle { inset-inline-start: var(--app-sidebar-width); }
+.app-sidebar-open .app-sidebar-toggle svg, [dir="rtl"] .app-sidebar-toggle svg { transform: rotate(180deg); }
+[dir="rtl"] .app-sidebar-open .app-sidebar-toggle svg { transform: none; }
+.app-sidebar-backdrop { position: fixed; inset: 0; z-index: 1499; background: #01091499; }
+.app-sidebar-backdrop[hidden] { display: none; }
+@media (max-width: 900px) {
+    .app-body { --app-sidebar-width: min(280px, calc(100vw - 52px)); }
+    .app-sidebar-open { overflow: hidden; }
+    .app-sidebar-open .app-shell { padding-inline-start: 0; }
+    .assistant-float { bottom: calc(16px + env(safe-area-inset-bottom)); }
+    .app-canvas { padding-top: max(12px, env(safe-area-inset-top)); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .app-sidebar, .app-sidebar-toggle, .app-shell { transition: none; }
+}
+@media (max-width: 600px) {
+    .app-settings-dialog { width: calc(100% - 24px); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border-radius: 14px; }
+    .app-settings-heading { padding: 12px 12px 8px 20px; }
+    .app-settings-body { display: flex; flex-direction: column; min-height: 300px; }
+    .app-settings-tabs { flex-direction: row; flex-shrink: 0; gap: 4px; padding: 8px 12px; overflow-x: auto; }
+    .app-settings-tabs button { flex: 1; text-align: center; padding-inline: 10px; }
+    .app-settings-panels { padding: 20px; }
+    .app-settings-row { flex-wrap: wrap; gap: 8px; }
+    .app-settings-dialog .display-language-selector { max-width: 100%; }
+    .app-settings-dialog .display-language-selector select { max-width: 100%; font-size: 16px; }
+}
+
+/* Navigation and settings remain usable until their scripts enhance them. */
+.app-body:not(.app-sidebar-ready) .app-sidebar {
+    position: relative; inset: auto; height: auto; transform: none; visibility: visible; flex-shrink: 0;
+}
+.app-body:not(.app-sidebar-ready) .app-sidebar-toggle { display: none; }
+.app-body:not(.app-settings-ready) .app-settings-dialog {
+    position: static; width: calc(100% - 40px); max-height: none; margin: 24px auto; box-shadow: none;
+}
+.app-body:not(.app-settings-ready) .app-settings-body { display: block; min-height: 0; }
+.app-body:not(.app-settings-ready) .app-settings-tabs,
+.app-body:not(.app-settings-ready) [data-app-settings-close],
+.app-body:not(.app-settings-ready) #app-settings [data-speech-settings] { display: none; }
+@media (max-width: 900px) {
+    .app-body:not(.app-sidebar-ready) .app-shell { flex-direction: column; }
+    .app-body:not(.app-sidebar-ready) .app-sidebar { width: 100%; }
+}

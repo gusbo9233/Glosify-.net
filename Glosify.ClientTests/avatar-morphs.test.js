@@ -22,6 +22,7 @@ test('attribute fallback preserves speech, paired smile, blink and nod without s
         ['jawOpen', 'mouthWide', 'smileLeft', 'smileRight', 'blink', 'nod']);
     assert.equal(full.targets.find(t => t.name === 'lookLeft').influence, .7);
     assert.equal(full.numMaxInfluencers, full.numTargets);
+    assert.equal(full.optimizeInfluencers, true);
     assert.equal(low.numMaxInfluencers, 0);
     assert.equal(low.optimizeInfluencers, true);
     apply({ ...weights, jawOpen: 0, mouthWide: 0, mouthRound: 0, lipsPart: 0 });

@@ -1,7 +1,10 @@
 export class AvatarAudio {
     constructor() { this.sources = new Set(); this.endAt = 0; this.generation = 0; }
     async open(onFrame) {
-        this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+        const generation = this.generation;
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+        if (generation !== this.generation) { stream.getTracks().forEach(track => track.stop()); return; }
+        this.stream = stream;
         try {
             this.context = new AudioContext();
             await this.context.resume();
@@ -21,7 +24,11 @@ export class AvatarAudio {
     }
     flush() {
         if (!this.capture || !this.context || this.context.state !== 'running') return Promise.resolve();
-        return new Promise(resolve => { this.flushReady = resolve; this.capture.port.postMessage({ type: 'flush' }); });
+        return new Promise((resolve, reject) => {
+            const timer = setTimeout(() => { this.flushReady = null; reject(new Error('Microphone flush timed out.')); }, 1000);
+            this.flushReady = () => { clearTimeout(timer); resolve(); };
+            this.capture.port.postMessage({ type: 'flush' });
+        });
     }
     mute(value) { this.stream?.getAudioTracks().forEach(track => { track.enabled = !value; }); }
     play(encoded) {

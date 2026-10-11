@@ -12,12 +12,13 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Glosify.Services.Avatar;
 
-public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessions sessions, TimeProvider clock, ILogger<AvatarConversation> logger)
+public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider clock, ILogger<AvatarConversation> logger)
 {
-    public async Task RunAsync(WebSocket socket, AvatarSession session, ClaimsPrincipal principal, CancellationToken requestAborted)
+    public async Task<bool> RunAsync(WebSocket socket, AvatarSession session, ClaimsPrincipal principal, CancellationToken requestAborted)
     {
-        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token);
-        lifetime.CancelAfter(session.ExpiresAt - clock.GetUtcNow());
+        var remaining = session.ExpiresAt - clock.GetUtcNow();
+        using var expires = new CancellationTokenSource(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero, clock);
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token, expires.Token);
         using var sendLock = new SemaphoreSlim(1);
         CancellationTokenSource? turnCancellation = null;
         Channel<byte[]>? input = null;
@@ -25,14 +26,15 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
         string? turnId = null;
         string? pendingReply = null;
         var listening = false;
+        var reconnect = true;
         var monitor = MonitorIdentity();
         try
         {
             await Send(new { type = "connected", language = session.Language.Code });
             while (!lifetime.IsCancellationRequested && socket.State == WebSocketState.Open)
             {
-                using var idle = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
-                idle.CancelAfter(TimeSpan.FromSeconds(90));
+                using var idleDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(35), clock);
+                using var idle = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, idleDeadline.Token);
                 var (messageType, buffer) = await ReadClientFrame(socket, idle.Token);
                 if (messageType == WebSocketMessageType.Close) break;
                 if (messageType == WebSocketMessageType.Binary)
@@ -45,7 +47,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
                 using var message = JsonDocument.Parse(buffer);
                 var root = message.RootElement;
                 var type = root.GetProperty("type").GetString();
-                if (type == "end") break;
+                if (type == "ping") { await Send(new { type = "pong" }); continue; }
+                if (type == "end") { reconnect = false; break; }
                 if (type == "interrupt") { await StopTurn(); await Send(new { type = "idle" }); continue; }
                 if (type == "played" && root.TryGetProperty("turnId", out var played) && played.GetString() == turnId && pendingReply is not null)
                 {
@@ -67,6 +70,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
         catch (Exception ex) when (ex is OperationCanceledException or WebSocketException) { }
         catch (Exception ex)
         {
+            reconnect = false;
             logger.LogWarning(ex, "Avatar transport failed for session {SessionId}", session.Id);
             try { await Error(ex); } catch (Exception sendError) when (sendError is WebSocketException or OperationCanceledException) { }
         }
@@ -75,15 +79,18 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             lifetime.Cancel();
             await StopTurn();
             try { await monitor; } catch (OperationCanceledException) { }
-            sessions.Remove(session);
-            session.History.Clear();
+            reconnect = reconnect && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
+            if (!reconnect) session.History.Clear();
             if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
                 using var close = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                try { await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Conversation ended", close.Token); }
+                try { await socket.CloseOutputAsync(reconnect ? WebSocketCloseStatus.EndpointUnavailable : WebSocketCloseStatus.NormalClosure,
+                    reconnect ? "Reconnect to continue" : "Conversation ended", close.Token); }
                 catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
             }
         }
+
+        return reconnect;
 
         async Task Respond(Channel<byte[]> channel, string id, string mode, CancellationToken stopToken)
         {
@@ -162,9 +169,16 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
         }
         async Task Send(object value)
         {
-            await sendLock.WaitAsync(lifetime.Token);
-            try { await AvatarWire.SendAsync(socket, value, lifetime.Token); }
-            finally { sendLock.Release(); }
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10), clock);
+            using var send = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, deadline.Token);
+            try
+            {
+                await sendLock.WaitAsync(send.Token);
+                try { await AvatarWire.SendAsync(socket, value, send.Token); }
+                finally { sendLock.Release(); }
+            }
+            catch (OperationCanceledException) when (deadline.IsCancellationRequested)
+            { lifetime.Cancel(); throw; }
         }
         Task Error(Exception ex)
         {
@@ -179,18 +193,18 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, AvatarSessio
             {
                 while (true)
                 {
-                    await Task.Delay(TimeSpan.FromSeconds(30), lifetime.Token);
+                    await Task.Delay(TimeSpan.FromSeconds(30), clock, lifetime.Token);
                     await using var scope = scopes.CreateAsyncScope();
                     var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
                     var signIn = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
                     var user = await signIn.ValidateSecurityStampAsync(principal);
                     if (user is null || !await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user)
                         || !scope.ServiceProvider.GetRequiredService<AdministratorAccess>().IsAdminUser(user.Id))
-                    { lifetime.Cancel(); return; }
+                    { reconnect = false; lifetime.Cancel(); return; }
                 }
             }
             catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-            catch (Exception ex) { logger.LogWarning(ex, "Avatar authorization monitor failed"); lifetime.Cancel(); }
+            catch (Exception ex) { logger.LogWarning(ex, "Avatar authorization monitor failed"); reconnect = false; lifetime.Cancel(); }
         }
     }
     private static async Task<(WebSocketMessageType Type, byte[] Bytes)> ReadClientFrame(WebSocket socket, CancellationToken ct)

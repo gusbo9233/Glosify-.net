@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Çalışmanız gereken konuları tekrarlayın ve kendi hızınızda ilerleyin.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Odaklı testlerle tekrar edin, ardından istediğiniz kelimeleri Anki’ye kaydedin.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Daha fazla öğrenme yöntemi keşfedin</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Ayarlar</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Genel</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Hesap</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Yönetim</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Oyun</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Oyun kullanımı</value></data>
 </root>

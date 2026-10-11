@@ -1692,4 +1692,10 @@
   <data name="Home.RevisitText" xml:space="preserve"><value>Повторюйте те, що потребує уваги, і рухайтеся у власному темпі.</value></data>
   <data name="Home.KeepWordsText" xml:space="preserve"><value>Повторюйте за допомогою тематичних тестів, а потім зберігайте потрібні слова в Anki.</value></data>
   <data name="Home.ExploreWays" xml:space="preserve"><value>Відкрийте більше способів навчання</value></data>
+  <data name="AppSettings.Title" xml:space="preserve"><value>Налаштування</value></data>
+  <data name="AppSettings.General" xml:space="preserve"><value>Загальні</value></data>
+  <data name="AppSettings.Account" xml:space="preserve"><value>Обліковий запис</value></data>
+  <data name="AppSettings.Admin" xml:space="preserve"><value>Адміністрування</value></data>
+  <data name="AppSettings.Game" xml:space="preserve"><value>Гра</value></data>
+  <data name="AppSettings.GameUsage" xml:space="preserve"><value>Використання гри</value></data>
 </root>

@@ -141,6 +141,23 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.NotNull(footer.QuerySelector("a[href='/Home/Support']"));
     }
 
+    [Fact]
+    public async Task Anonymous_settings_keep_preferences_and_login_without_admin_actions()
+    {
+        var document = await GetDocumentAsync(CreateClient(), "/");
+        var settings = document.QuerySelector("dialog#app-settings");
+        Assert.NotNull(settings);
+        Assert.NotNull(settings!.QuerySelector("[data-speech-settings]"));
+        Assert.NotNull(settings.QuerySelector(".display-language-selector"));
+        Assert.Null(settings.QuerySelector("#settings-account-tab"));
+        Assert.NotNull(document.QuerySelector(".app-sidebar .app-navigation-account a[href='/login']"));
+        Assert.Null(document.QuerySelector(".app-sidebar .app-navigation-identity"));
+        Assert.Null(document.QuerySelector(".app-sidebar form[action='/Account/Logout']"));
+        Assert.Null(settings.QuerySelector("#settings-admin"));
+        Assert.Null(settings.QuerySelector("form[action='/Account/Logout']"));
+        Assert.Null(document.QuerySelector("header.app-topbar"));
+    }
+
     [Theory]
     [InlineData("/Quizzes")]
     [InlineData("/Quizzes/Index")]
@@ -240,6 +257,30 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         var permissions = Assert.Single(response.Headers.GetValues("Permissions-Policy"));
         Assert.Contains("microphone=()", permissions);
         Assert.Contains("camera=()", permissions);
+    }
+
+    [Theory]
+    [InlineData("/js/avatar/meshopt.worker.js?v=0.24.0-1", true)]
+    [InlineData("/js/avatar/scene.min.js", false)]
+    [InlineData("/login", false)]
+    public async Task OnlyMeshoptWorkerMayCompileWebAssembly(string path, bool isDecoder)
+    {
+        var response = await CreateClient().GetAsync(path);
+        response.EnsureSuccessStatusCode();
+        var csp = Assert.Single(response.Headers.GetValues("Content-Security-Policy"));
+        Assert.DoesNotContain("'unsafe-eval'", csp);
+        if (isDecoder)
+        {
+            Assert.Contains("script-src 'self' 'wasm-unsafe-eval';", csp);
+            Assert.Contains("connect-src 'none';", csp);
+            Assert.Contains("worker-src 'none';", csp);
+        }
+        else
+        {
+            Assert.DoesNotContain("'wasm-unsafe-eval'", csp);
+            Assert.Contains("script-src 'self';", csp);
+            Assert.Contains("worker-src 'self';", csp);
+        }
     }
 
     [Fact]

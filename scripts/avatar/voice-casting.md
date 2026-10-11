@@ -3,7 +3,7 @@
 Reviewed 2026-10-10 against the app’s 69 learning languages, the full 442-voice account catalogue, and language/gender searches in the ElevenLabs voice library.
 
 - **Rain:** teenage or young-adult sound; light, bright and clear, with gentle warmth and natural conversation to match her bookish styling.
-- **Rowan:** young-adult, grounded, thoughtful and relaxed; clear medium-to-low delivery to complement the open wool coat.
+- **Rowan:** young-adult, grounded, thoughtful and relaxed; clear medium-to-low delivery to complement the V-neck cardigan.
 
 These are the **shipped voice selections**, chosen from provider metadata. They have not had a listening audition. Language labels and descriptions are provider claims, not independent proof of native pronunciation. Prefer the app’s locale where a comparable candidate exists. Several less-resourced languages have designed voices or no clearly youthful candidate; each is marked in `voice-casting.json` and the audition sheet.
 
