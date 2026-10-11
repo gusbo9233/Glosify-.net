@@ -12,6 +12,8 @@ export default [
       '**/coverage/**',
       '**/dist/**',
       '**/*.min.js',
+      // Generated bundle; meshopt.worker.source.js remains linted.
+      'Glosify/wwwroot/js/avatar/meshopt.worker.js',
     ],
   },
   js.configs.recommended,

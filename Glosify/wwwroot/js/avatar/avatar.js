@@ -94,7 +94,7 @@ async function requestJson(path, options = {}, timeout = 10000) {
         }
         return response.status === 204 ? null : await response.json();
     } catch (error) {
-        if (controller.signal.aborted) throw new Error('Voice connection timed out. Please try again.');
+        if (controller.signal.aborted) throw new Error('Voice connection timed out. Please try again.', { cause: error });
         throw error;
     } finally { clearTimeout(timer); }
 }
