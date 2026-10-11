@@ -149,7 +149,6 @@
       data-speech-user="@User.FindFirstValue(ClaimTypes.NameIdentifier)"
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <partial name="_SpeechDialog" />
-    <partial name="_AppSettings" />
     <button type="button" class="app-sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="@Text["Layout.PrimaryNavigation"]" data-open-label="@Text["Layout.PrimaryNavigation"]" data-close-label="@Text["Common.Close"]">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
     </button>
@@ -213,9 +212,9 @@
                 }
             </nav>
             <div class="app-sidebar-footer">
-                <button type="button" class="app-nav-item app-settings-trigger" data-app-settings-open aria-haspopup="dialog" aria-controls="app-settings" aria-expanded="false">
+                <a href="#app-settings" class="app-nav-item app-settings-trigger" data-app-settings-open aria-haspopup="dialog" aria-controls="app-settings" aria-expanded="false">
                     @NavIcon("settings") <span>@Text["AppSettings.Title"]</span>
-                </button>
+                </a>
                 @await Html.PartialAsync("_NavigationAccount")
             </div>
         </aside>
@@ -235,6 +234,7 @@
                     <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
                 </nav>
             </footer>
+            <partial name="_AppSettings" />
         </main>
     </div>
     @if (User.Identity?.IsAuthenticated == true && assistantPageContext?.IsHidden is not true)

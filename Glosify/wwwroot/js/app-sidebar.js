@@ -43,6 +43,9 @@
     };
     toggle.addEventListener('click', () => setOpen(!open));
     backdrop.addEventListener('click', () => setOpen(false));
+    sidebar.querySelector('[data-app-settings-open]')?.addEventListener('click', () => {
+        if (mobile.matches && !document.body.classList.contains('app-settings-ready')) setOpen(false, false);
+    });
     mobile.addEventListener('change', () => {
         const focusWasInside = sidebar.contains(document.activeElement);
         open = mobile.matches ? false : desktopOpen;
@@ -50,7 +53,7 @@
         if (!open && focusWasInside) toggle.focus();
     });
     document.addEventListener('keydown', event => {
-        if (!open || document.querySelector('dialog[open]')) return;
+        if (!open || document.querySelector('dialog:modal')) return;
         if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
         if (event.key !== 'Tab' || !mobile.matches) return;
         const items = controls();
@@ -62,7 +65,7 @@
     let touch;
     document.addEventListener('touchstart', event => {
         touch = undefined;
-        if (!mobile.matches || event.touches.length !== 1 || document.querySelector('dialog[open]')) return;
+        if (!mobile.matches || event.touches.length !== 1 || document.querySelector('dialog:modal')) return;
         const point = event.touches[0];
         const rtl = document.documentElement.dir === 'rtl';
         const edge = rtl ? innerWidth - point.clientX : point.clientX;
@@ -81,4 +84,5 @@
     document.addEventListener('touchcancel', () => { touch = undefined; }, { passive: true });
     open = !mobile.matches && desktopOpen;
     render();
+    document.body.classList.add('app-sidebar-ready');
 })();

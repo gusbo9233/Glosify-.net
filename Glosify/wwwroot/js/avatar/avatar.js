@@ -7,7 +7,7 @@ const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'R
 let characterId = 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
-let ending = null;
+let ending = null, captureEpoch = 0;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
@@ -102,6 +102,7 @@ function api(path, body, timeout) {
     return requestJson(path, { method: 'POST', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) }, timeout);
 }
 function connectionLost() {
+    ++captureEpoch;
     ready = false; holding = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; cancelledTurn = turnId; turnId = null; currentReply = '';
     audio?.stop(); audio?.mute(true); muted = true;
@@ -112,10 +113,12 @@ function connectionLost() {
 }
 function listen() {
     if (!ready || muted) return;
+    ++captureEpoch; flushing = false;
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     setState('connecting'); send({ type: 'listen', mode: mode() });
 }
 function interrupt() {
+    ++captureEpoch; flushing = false;
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     awaitingCommit = false; preRoll = [];
     if (send({ type: 'interrupt' })) setState('idle');
@@ -226,6 +229,7 @@ async function start() {
 function end() {
     if (ending) return ending;
     const generation = ++epoch;
+    ++captureEpoch;
     ready = false; holding = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; muted = false; turnId = null;
     const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
@@ -267,13 +271,18 @@ function commit() {
 async function release() {
     if (!holding) return;
     holding = false; awaitingCommit = true; flushing = true;
-    const generation = epoch;
+    const generation = epoch, capture = captureEpoch;
+    const current = () => generation === epoch && capture === captureEpoch;
     try { await audio?.flush(); }
-    catch { if (generation === epoch) { interrupt(); setState('error'); notice('Microphone stopped responding. Please retry.'); } }
-    finally { flushing = false; }
+    catch {
+        if (!current()) return;
+        interrupt();
+        if (ready) { setState('error'); notice('Microphone stopped responding. Please retry.'); }
+    }
+    finally { if (current()) flushing = false; }
     // A release during setup waits for Ready so the entire buffered utterance
     // reaches recognition, followed by its commit, even for a short button press.
-    if (generation === epoch && ready && awaitingCommit && state === 'listening') commit();
+    if (current() && ready && awaitingCommit && state === 'listening') commit();
 }
 el('start').addEventListener('click', start); el('end').addEventListener('click', end);
 el('talk').addEventListener('pointerdown', event => { el('talk').setPointerCapture(event.pointerId); press(event); });

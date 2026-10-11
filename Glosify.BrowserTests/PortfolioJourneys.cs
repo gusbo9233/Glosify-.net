@@ -329,6 +329,14 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Serbian (Latin)", Exact = true })
             .PressAsync("Enter");
         await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
+        await Expect(noJavaScriptPage.Locator(".app-nav")).ToBeVisibleAsync();
+        await Expect(noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Log out", Exact = true })).ToBeVisibleAsync();
+        await noJavaScriptPage.Locator("[data-app-settings-open]").ClickAsync();
+        var displayLanguage = noJavaScriptPage.Locator("#app-settings select[name='culture']");
+        await Expect(displayLanguage).ToBeVisibleAsync();
+        await displayLanguage.SelectOptionAsync("en-GB");
+        await noJavaScriptPage.GetByRole(AriaRole.Button, new() { Name = "Change language", Exact = true }).ClickAsync();
+        await Expect(noJavaScriptPage).ToHaveURLAsync(new Regex("/Quizzes$", RegexOptions.IgnoreCase));
         // URL matching happens before the destination's assets finish loading.
         // Drain this observed context before disposal can strand its requests.
         await noJavaScriptPage.WaitForLoadStateAsync(LoadState.Load);

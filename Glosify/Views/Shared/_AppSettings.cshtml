@@ -4,7 +4,7 @@
 @{
     var signedIn = User.Identity?.IsAuthenticated == true;
 }
-<dialog id="app-settings" class="app-settings-dialog" aria-labelledby="app-settings-title">
+<dialog open id="app-settings" class="app-settings-dialog" aria-labelledby="app-settings-title">
     <header class="app-settings-heading">
         <h2 id="app-settings-title">@Text["AppSettings.Title"]</h2>
         <button type="button" class="icon-button" data-app-settings-close aria-label="@Text["Common.Close"]" autofocus>
@@ -36,7 +36,7 @@
             </section>
             @if (signedIn)
             {
-                <section id="settings-account" role="tabpanel" aria-labelledby="settings-account-tab" tabindex="0" hidden>
+                <section id="settings-account" role="tabpanel" aria-labelledby="settings-account-tab" tabindex="0">
                     <h3>@Text["AppSettings.Account"]</h3>
                     <div class="app-settings-row app-settings-balance">
                         @await Component.InvokeAsync("AiCreditPill")
@@ -50,7 +50,7 @@
             }
             @if (Administrators.IsAdmin(User))
             {
-                <section id="settings-admin" role="tabpanel" aria-labelledby="settings-admin-tab" tabindex="0" hidden>
+                <section id="settings-admin" role="tabpanel" aria-labelledby="settings-admin-tab" tabindex="0">
                     <h3>@Text["AppSettings.Admin"]</h3>
                     <a class="app-settings-row app-settings-action" asp-controller="Admin" asp-action="AiCredits"><span>@Text["Payments.AiCreditAdmin"]</span><span aria-hidden="true">↗</span></a>
                     @if (SettingsConfiguration.GetValue<bool>("SharedAuth:Enabled"))

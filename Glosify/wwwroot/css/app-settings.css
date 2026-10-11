@@ -83,3 +83,20 @@
     .app-settings-dialog .display-language-selector { max-width: 100%; }
     .app-settings-dialog .display-language-selector select { max-width: 100%; font-size: 16px; }
 }
+
+/* Navigation and settings remain usable until their scripts enhance them. */
+.app-body:not(.app-sidebar-ready) .app-sidebar {
+    position: relative; inset: auto; height: auto; transform: none; visibility: visible; flex-shrink: 0;
+}
+.app-body:not(.app-sidebar-ready) .app-sidebar-toggle { display: none; }
+.app-body:not(.app-settings-ready) .app-settings-dialog {
+    position: static; width: calc(100% - 40px); max-height: none; margin: 24px auto; box-shadow: none;
+}
+.app-body:not(.app-settings-ready) .app-settings-body { display: block; min-height: 0; }
+.app-body:not(.app-settings-ready) .app-settings-tabs,
+.app-body:not(.app-settings-ready) [data-app-settings-close],
+.app-body:not(.app-settings-ready) #app-settings [data-speech-settings] { display: none; }
+@media (max-width: 900px) {
+    .app-body:not(.app-sidebar-ready) .app-shell { flex-direction: column; }
+    .app-body:not(.app-sidebar-ready) .app-sidebar { width: 100%; }
+}

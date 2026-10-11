@@ -316,3 +316,48 @@ test('stalled HTTP cleanup aborts at its deadline and releases Start', async () 
     assert.equal(h.elements.get('avatar-start').disabled, false);
     assert.equal(h.run('audio'), null);
 });
+
+for (const outcome of ['resolve', 'reject']) {
+    test(`a stale microphone flush (${outcome}) cannot overwrite recovery or commit a new turn`, async () => {
+        const h = setup();
+        h.run(`audio.mute = () => {}; let resolveOld, rejectOld;
+            audio.flush = () => new Promise((resolve, reject) => { resolveOld = resolve; rejectOld = reject; }); press();`);
+        const oldRelease = h.run('release()');
+        h.run('connectionLost()');
+        const sentBeforeRecovery = h.commands().length;
+        if (outcome === 'reject') {
+            h.run("rejectOld(new Error('flush timeout'))");
+            await oldRelease;
+            assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
+            assert.match(h.elements.get('avatar-notice').textContent, /Connection lost/);
+            assert.equal(h.commands().length, sentBeforeRecovery);
+        }
+        await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+        h.run(`muted = false; let finishNew;
+            audio.flush = () => new Promise(resolve => { finishNew = resolve; }); press();`);
+        await h.run("onMessage({ type: 'listening' }, epoch)");
+        const newRelease = h.run('release()');
+        if (outcome === 'resolve') { h.run('resolveOld()'); await oldRelease; }
+        assert.equal(h.run('flushing'), true);
+        assert.equal(h.elements.get('avatar-status').textContent, 'Listening');
+        assert.equal(h.commands().includes('interrupt'), false);
+        assert.equal(h.commands().includes('commit'), false);
+        h.run('finishNew()'); await newRelease;
+        assert.equal(h.commands().filter(command => command === 'commit').length, 1);
+    });
+}
+
+test('a late failed flush after reconnection cannot interrupt the replacement turn', async () => {
+    const h = setup();
+    h.run(`audio.mute = () => {}; let rejectOld;
+        audio.flush = () => new Promise((_, reject) => { rejectOld = reject; }); press();`);
+    const oldRelease = h.run('release()');
+    h.run('connectionLost()');
+    await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+    h.run('muted = false; press();');
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    h.run("rejectOld(new Error('late timeout'))"); await oldRelease;
+    assert.equal(h.elements.get('avatar-status').textContent, 'Listening');
+    assert.equal(h.commands().includes('interrupt'), false);
+    assert.equal(h.commands().includes('commit'), false);
+});

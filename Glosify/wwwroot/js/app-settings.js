@@ -1,6 +1,6 @@
 (() => {
     const dialog = document.getElementById('app-settings');
-    if (!dialog) return;
+    if (!dialog || typeof dialog.showModal !== 'function') return;
     const triggers = [...document.querySelectorAll('[data-app-settings-open]')];
     const tabs = [...dialog.querySelectorAll('[data-settings-tab]')];
     const tablist = dialog.querySelector('[role="tablist"]');
@@ -17,7 +17,8 @@
     };
     const orientation = () => tablist.setAttribute('aria-orientation', narrow.matches ? 'horizontal' : 'vertical');
     orientation(); narrow.addEventListener('change', orientation);
-    for (const trigger of triggers) trigger.addEventListener('click', () => {
+    for (const trigger of triggers) trigger.addEventListener('click', event => {
+        event.preventDefault();
         if (dialog.open) return;
         opener = trigger;
         selectTab(tabs[0]);
@@ -70,4 +71,7 @@
             if (next) { event.preventDefault(); selectTab(next); next.focus(); }
         });
     }
+    selectTab(tabs[0]);
+    dialog.removeAttribute('open');
+    document.body.classList.add('app-settings-ready');
 })();
