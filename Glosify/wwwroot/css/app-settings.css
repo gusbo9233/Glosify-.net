@@ -8,6 +8,8 @@
 .app-navigation-account form { margin: 0; flex-shrink: 0; }
 .app-navigation-auth { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 0; border: 0; background: transparent; color: var(--on-surface-var); font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
 .app-navigation-auth:hover { color: var(--primary); }
+a.app-navigation-auth { width: 100%; min-height: 48px; padding: 12px 14px; border-radius: 8px; box-sizing: border-box; font-size: 16px; font-weight: 500; color: var(--on-surface); }
+a.app-navigation-auth:hover { background: var(--surface-container-high); color: var(--primary); }
 .app-navigation-auth:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .app-settings-open { overflow: hidden; }
 .app-settings-dialog {
