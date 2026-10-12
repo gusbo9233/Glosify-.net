@@ -584,8 +584,9 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Page.GetByRole(AriaRole.Form, new() { NameRegex = new Regex("^Add .+ to Anki$") }).First
             .GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
         await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Show answer" }).ClickAsync();
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "dom", Exact = true })).ToBeVisibleAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for house", Exact = true }).ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "house", Exact = true })).ToBeVisibleAsync();
+        await Expect(Page.Locator(".card-answer .translation")).ToHaveTextAsync("dom");
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
 
@@ -686,6 +687,13 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         var apiQuizRequests = 0;
         var applyAttempts = 0;
         var failContextPatch = false;
+        var createdQuiz = new
+        {
+            id = createdQuizId,
+            name = "Travel Polish",
+            sourceLanguage = "English",
+            targetLanguage = "Polish",
+        };
         string? contextPatch = null;
         Page.Request += (_, request) =>
         {
@@ -717,6 +725,17 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
                 },
             }}),
         }));
+        // Applying the mock proposal must also update the catalog fetched by the UI.
+        await Page.RouteAsync("**/Assistant/ContextOptions", route => route.FulfillAsync(new()
+        {
+            ContentType = "application/json",
+            Body = JsonSerializer.Serialize(new
+            {
+                quizzes = applyAttempts > 1 ? new[] { createdQuiz } : [],
+                books = Array.Empty<object>(),
+                transcripts = Array.Empty<object>(),
+            }),
+        }));
         await Page.RouteAsync("**/Assistant/Apply/*", route =>
         {
             applyAttempts++;
@@ -735,13 +754,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
                     {
                         applied = 1,
                         createdQuizId,
-                        createdQuiz = new
-                        {
-                            id = createdQuizId,
-                            name = "Travel Polish",
-                            sourceLanguage = "English",
-                            targetLanguage = "Polish",
-                        },
+                        createdQuiz,
                         createdCollectionId = (Guid?)null,
                     }),
             });
@@ -821,7 +834,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         await Expect(Page.Locator("[data-assistant-quiz-selector]")).ToHaveValueAsync(createdQuizId.ToString());
         await Expect(Page.Locator($"[data-assistant-quiz-selector] option[value='{createdQuizId}']"))
-            .ToContainTextAsync("Travel Polish (English -> Polish)");
+            .ToHaveTextAsync("Travel Polish (English → Polish)");
         Assert.NotNull(contextPatch);
         using (var patchJson = JsonDocument.Parse(contextPatch))
         {
@@ -852,6 +865,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
 
         await Page.SetViewportSizeAsync(390, 844);
+        // The media-query change closes the drawer asynchronously after resizing.
+        await Expect(Page.Locator("[data-sidebar-toggle]")).ToHaveAttributeAsync("aria-expanded", "false");
         await OpenAppSettingsAsync();
         var mobileSelector = Page.GetByLabel("Visningsspråk");
         await Expect(mobileSelector).ToBeVisibleAsync();
