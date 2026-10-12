@@ -27,53 +27,207 @@ sculpt = [
     ('mouth-upperlip-volume-incr.target', .32), ('mouth-upperlip-height-incr.target', .24), ('mouth-lowerlip-volume-incr.target', .2)
 ]
 if male:
-    # A young-adult, angular face: broad jaw, high cheekbones, hooded eyes and
-    # a defined cupid's bow. Fit the eyes, brows and facial rig to this anatomy.
+    # A young-adult face: high cheekbones over lean cheeks, a jaw tapering to a
+    # narrower cleft chin, low brows over hooded eyes, a long straight nose and
+    # full lips. Fit the eyes, brows and facial rig to this anatomy.
     sculpt = [
         ('caucasian-male-young.target', 1), ('universal-male-young-averagemuscle-averageweight.target', 1),
-        ('head-square.target', .38), ('chin-width-incr.target', .16),
-        ('chin-prominent-incr.target', .18), ('chin-height-decr.target', .08),
-        ('mouth-scale-horiz-incr.target', .22), ('mouth-cupidsbow-incr.target', .18),
-        ('mouth-upperlip-volume-incr.target', .12), ('mouth-lowerlip-volume-incr.target', .22),
-        ('eyebrows-trans-down.target', .16), ('eyebrows-angle-up.target', .16),
-        ('nose-width2-decr.target', .12), ('nose-width3-decr.target', .10)
+        ('head-square.target', .10), ('head-invertedtriangular.target', .30), ('head-fat-decr.target', .20),
+        ('chin-width-decr.target', .25), ('chin-prominent-incr.target', .20),
+        ('chin-cleft-incr.target', .20), ('chin-height-incr.target', .05),
+        ('mouth-scale-horiz-incr.target', .10), ('mouth-cupidsbow-incr.target', .18),
+        ('mouth-upperlip-volume-incr.target', .30), ('mouth-lowerlip-volume-incr.target', .50),
+        ('eyebrows-trans-down.target', .30),
+        ('nose-scale-vert-incr.target', .20), ('nose-point-width-decr.target', .30),
+        ('nose-width1-decr.target', .10), ('nose-width2-decr.target', .12), ('nose-width3-decr.target', .10)
     ]
 for side in ['l', 'r']:
-    sculpt += [(side+'-cheek-bones-incr.target', .58 if male else .15),
+    sculpt += [(side+'-cheek-bones-incr.target', .60 if male else .15),
                (side+'-eye-scale-incr.target', .04 if male else .08)]
     if male:
-        sculpt += [(side+'-cheek-volume-decr.target', .20), (side+'-cheek-trans-up.target', .16),
-                   (side+'-eye-height1-decr.target', .10), (side+'-eye-corner2-up.target', .12)]
-rig = human.build_character(targets=sculpt, eye_color='lightblue' if male else 'brownlight',
+        sculpt += [(side+'-cheek-volume-decr.target', .35), (side+'-cheek-inner-decr.target', .15),
+                   (side+'-cheek-trans-up.target', .16), (side+'-eye-height1-decr.target', .10),
+                   (side+'-eye-height2-decr.target', .15), (side+'-eye-corner2-up.target', .12),
+                   (side+'-eye-eyefold-down.target', .20)]
+rig = human.build_character(targets=sculpt, eye_color='grey' if male else 'brownlight',
     height_metres=1.72, skin_path=human.SOURCE/('system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png' if male else 'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png'),
     asset_specs=[('Ivory blouse', 'clothes/female_elegantsuit01', 'female_elegantsuit01', .75, False),
-                 ('Chestnut hair', 'hair/short01' if male else 'hair/elvs_hazel_hair', 'short01' if male else 'elvs_hazel_hair', .5, True),
-                 ('Eyebrows', 'eyebrows/eyebrow001', 'eyebrow001', .85, True),
+                 ('Chestnut hair', 'hair/short02' if male else 'hair/elvs_hazel_hair', 'short02' if male else 'elvs_hazel_hair', .5, True),
+                 ('Eyebrows', 'eyebrows/eyebrow009' if male else 'eyebrows/eyebrow001', 'eyebrow009' if male else 'eyebrow001', .85, True),
                  ('Eyelashes', 'eyelashes/eyelashes01', 'eyelashes01', .8, True),
                  ('Teeth', 'teeth/teeth_base', 'teeth_base', .4, False),
                  ('Tongue', 'tongue/tongue01', 'tongue01', .65, False)])
 
 # Hair follows the head, not the shoulders sampled by generic clothing weights.
 hair = bpy.data.objects['Chestnut hair']
+def clamp(value): return max(0., min(1., value))
 if male:
-    # Bend the quiff forward into a loose fringe. Keep the rooted sides fitted;
-    # the source's separate textured locks provide the broken silhouette.
-    pivot = Vector((0, -.035, 1.68))
+    # Shape the cap into a close-fitting mop: settle the crown and sides nearer the
+    # head, drop the fringe to just above the brows (longer and swept to his left),
+    # and let the sides fall over the ear tops. Lock cards below break up its surface.
+    from mathutils.bvhtree import BVHTree
+    head = bpy.data.objects['Face, neck and hands'].data
+    skin = BVHTree.FromPolygons([v.co.copy() for v in head.vertices], [p.vertices[:] for p in head.polygons])
+    center = Vector((0, -.065, 1.625))
     for vertex in hair.data.vertices:
+        co = vertex.co.copy(); x, y, z = co
+        outward = (co-center).normalized()
+        top = clamp((z-1.64)/.07)
+        co -= outward*(.004*top + .002*clamp((abs(x)-.03)/.05)*(1-top))
+        front = clamp((-y-.095)/.04)
+        low = clamp((1.705-z)/.055)
+        lean = .75 + .55*clamp((x+.04)/.09)
+        co.z -= .04*front*low*lean
+        if abs(x) < .055 and z > 1.642: co.z = max(co.z, 1.642)  # Keep the brows clear.
+        co.x += .016*front*low*max(0, 1-abs(x)/.09)
+        sides = clamp((abs(x)-.055)/.025)*clamp((1.67-z)/.05)*(1-front)
+        co.z -= .008*sides
+        co += outward*.001*sides
+        vertex.co = co
+    # Rest every strand outside the skin, and lay the fringe close on the forehead.
+    for vertex in hair.data.vertices:
+        location, normal, _, _ = skin.find_nearest(vertex.co)
         x, y, z = vertex.co
-        front = max(0, min(1, (-y+.015)/.065))
-        top = max(0, min(1, (z-1.64)/.035))
-        weight = front*top
-        angle = .18*weight
-        vertex.co = pivot + Matrix.Rotation(angle, 3, 'X') @ (vertex.co-pivot)
-        vertex.co.x += .006*weight
-        vertex.co.y -= .011*weight  # Keep the bent locks above the forehead.
+        offset = (vertex.co-location).dot(normal)
+        fringe = clamp((-y-.095)/.04)*clamp((1.69-z)/.03)
+        target = max(.003, offset - max(0, offset-.007)*fringe)
+        vertex.co += normal*(target-offset)
     hair.data.update()
-    # Fuller dark brows, tapered at the ends rather than a uniform heavy strip.
+
+    # Original hair cards over the mop: tapered locks grown from the crown whorl
+    # forward over the top, down the sides and back, with a dense row along the
+    # hairline so the fringe falls to the brows in separate pointed locks.
+    rng = np.random.default_rng(11)
+    shell = BVHTree.FromPolygons([v.co.copy() for v in hair.data.vertices], [p.vertices[:] for p in hair.data.polygons])
+    # Lock atlas: four vertical strips with roots at the top (v=1). Each strip holds
+    # one to three solid locks tapering to pointed, lightly frayed tips; strand detail
+    # lives in colour streaks so the alpha cutout keeps clean edges in the browser.
+    size, strips = 1024, 4
+    strip_width = size//strips
+    alpha = np.zeros((size, size), np.float32)
+    rows, columns = np.mgrid[:size, :size].astype(np.float32)
+    along = rows/(size-1)  # 0 at the tip row, 1 at the root row
+    def smooth(a, b, t):
+        t = np.clip((t-a)/(b-a), 0, 1); return t*t*(3-2*t)
+    for s in range(strips):
+        x0 = s*strip_width
+        count = [1, 2, 2, 3][s]
+        for k in range(count):
+            cx = x0 + strip_width*(k+.5)/count + rng.normal(0, strip_width*.02)
+            tip = rng.uniform(0, .22)
+            t = np.clip((along-tip)/(1-tip), 0, 1)
+            half = strip_width/count*.46*(.08 + .92*t**.55)
+            middle = cx + rng.uniform(-6, 6)*(1-t)**2
+            alpha = np.maximum(alpha, smooth(1.2, -1.2, abs(columns-middle)-half)*(along > tip)*(abs(columns-x0-strip_width/2) < strip_width/2))
+        for _ in range(4):  # A few stray strands break off past the tips.
+            cx = x0 + rng.uniform(.15, .85)*strip_width
+            index = np.nonzero(rows[:, 0] >= rng.uniform(0, .12)*(size-1))[0]
+            x = cx + rng.normal(0, 2)*(1-along[index, 0])*8
+            for dx in (-1, 0, 1):
+                column = np.clip(np.round(x).astype(int)+dx, x0, x0+strip_width-1)
+                alpha[index, column] = np.maximum(alpha[index, column], np.clip(1.4-abs(column-x)/.9, 0, 1)*(along[index, 0] < .45))
+    # Streaks along each lock read as strands, drifting slightly towards the tips.
+    streaks = sum(np.interp(np.arange(size), np.linspace(0, size, f*4), rng.normal(0, 1, f*4))/np.sqrt(f) for f in (3, 7, 17, 41, 97))
+    streaks = (streaks-streaks.min())/(streaks.max()-streaks.min())
+    drift = (1-along)*rng.normal(0, 4)
+    shade = .7 + .9*np.interp((columns+drift).ravel() % size, np.arange(size), streaks).reshape(size, size)
+    # Fade in unevenly at the root so card tops never show as straight edges.
+    start = 1 - .16*np.interp(np.arange(size), np.linspace(0, size, 64), rng.uniform(.5, 1, 64))
+    alpha *= np.clip((start[None, :]-along)/.04, 0, 1)
+    pixels = np.zeros((size, size, 4), np.float32)
+    pixels[:, :, :3] = np.array([.14, .105, .085], np.float32)*shade[:, :, None]
+    pixels[:, :, 3] = alpha
+    strands = bpy.data.images.new('Hair lock strands', size, size, alpha=True)
+    strands.pixels.foreach_set(pixels.ravel()); strands.pack()
+
+    whorl = Vector((-.012, .02, 1.765))
+    def surface(point):
+        location, normal, _, distance = shell.find_nearest(point)
+        return location, normal if normal.dot(location-center) > 0 else -normal, distance
+    def flow(point, normal):
+        # Away from the whorl, swept to his left at the front, falling lower down.
+        d = point-whorl; d.z *= .35; d = d.normalized()
+        d += Vector((.45*clamp((-point.y-.06)/.06), 0, 0))
+        d += Vector((0, 0, -1))*(.25 + .9*clamp((1.70-point.z)/.06))
+        d -= normal*d.dot(normal)
+        return d.normalized() if d.length > 1e-6 else Vector((0, 0, -1))
+    def limit(point):
+        # Locks end just above the brows in front, above the ears at the temples,
+        # over the ear tops at the sides and at the nape behind.
+        front = clamp((-point.y-.10)/.03)*clamp((.075-abs(point.x))/.02)
+        z = 1.60 + (1.505-1.60)*clamp((point.y+.02)/.06)
+        z += (1.625-z)*clamp((-point.y-.04)/.03)*(1-front)
+        return z + (1.652-z)*front
+    shell_points = [v.co.copy() for v in hair.data.vertices]
+    roots = []
+    hairline = [v for v in shell_points if 1.655 < v.z < 1.705 and v.y < -.115 and abs(v.x) < .07]
+    for i in rng.permutation(len(hairline)):
+        c = hairline[i] + Vector(rng.normal(0, .003, 3))
+        if all((c-r).length > .007 for r, _ in roots): roots.append((c, (.05, .085)))
+    upper = [v for v in shell_points if v.z > 1.57]
+    for i in rng.permutation(len(upper)):
+        c = upper[i] + Vector(rng.normal(0, .004, 3))
+        if (c-whorl).length < .03: continue  # Direction is undefined at the whorl.
+        if all((c-r).length > .013 for r, _ in roots): roots.append((c, (.07, .12)))
+    corners, quads, uvs = [], [], []
+    step = .004
+    for root, lengths in roots:
+        location, normal, _ = surface(root)
+        lift = rng.uniform(.001, .003)
+        point = location + normal*lift
+        points = [point.copy()]
+        target = rng.uniform(*lengths)
+        travelled = 0
+        while travelled < target and len(points) < 60:
+            location, normal, distance = surface(point)
+            on_shell = distance < lift + .004
+            d = flow(point, normal) if on_shell else (flow(point, normal)*.35 + Vector((0, 0, -1))*.65).normalized()
+            point = point + d*step
+            location, normal, distance = surface(point)
+            if distance < lift + .004 and on_shell: point = location + normal*lift
+            location, normal, _, _ = skin.find_nearest(point)
+            offset = (point-location).dot(normal)
+            if offset < .003: point += normal*(.003-offset)
+            travelled += step
+            points.append(point.copy())
+            if point.z < limit(point): break
+        if len(points) < 6: continue
+        width = rng.uniform(.010, .020)
+        strip = rng.integers(0, strips)
+        first = len(corners)
+        for k, q in enumerate(points):
+            t = k/(len(points)-1)
+            tangent = (points[min(k+1, len(points)-1)]-points[max(k-1, 0)]).normalized()
+            _, normal, _ = surface(q)
+            across = normal.cross(tangent).normalized()*width*(1-.65*t)/2
+            q = q + normal*.0015*t*t  # Tips lift slightly away from the mop.
+            corners += [q-across, q+across]
+            uvs += [(strip/strips+.01, 1-.98*t), ((strip+1)/strips-.01, 1-.98*t)]
+        quads += [(first+2*k, first+2*k+1, first+2*k+3, first+2*k+2) for k in range(len(points)-1)]
+    mesh = bpy.data.meshes.new('Hair locks')
+    mesh.from_pydata([tuple(c) for c in corners], [], quads); mesh.update()
+    layer = mesh.uv_layers.new(name='UVMap')
+    for poly in mesh.polygons:
+        poly.use_smooth = True
+        for loop, index in zip(poly.loop_indices, poly.vertices): layer.data[loop].uv = uvs[index]
+    lock_material = bpy.data.materials.new('Hair locks'); lock_material.use_nodes = True
+    nodes = lock_material.node_tree.nodes; bsdf = nodes.get('Principled BSDF')
+    texture = nodes.new('ShaderNodeTexImage'); texture.image = strands
+    lock_material.node_tree.links.new(texture.outputs['Color'], bsdf.inputs['Base Color'])
+    lock_material.node_tree.links.new(texture.outputs['Alpha'], bsdf.inputs['Alpha'])
+    bsdf.inputs['Roughness'].default_value = .7; bsdf.inputs['Specular IOR Level'].default_value = .35
+    lock_material.surface_render_method = 'DITHERED'; lock_material.use_backface_culling = False
+    mesh.materials.append(lock_material)
+    locks = bpy.data.objects.new('Hair locks', mesh)
+    bpy.data.collections['Player'].objects.link(locks); locks.parent = rig
+    locks.vertex_groups.new(name='head').add(list(range(len(mesh.vertices))), 1, 'REPLACE')
+    locks.modifiers.new('Skin deformation', 'ARMATURE').object = rig
+
+    # Heavy dark brows, tapered at the ends rather than a uniform strip.
     brows = bpy.data.objects['Eyebrows']
     center_z = sum(v.co.z for v in brows.data.vertices)/len(brows.data.vertices)
     for vertex in brows.data.vertices:
-        vertex.co.z = center_z + (vertex.co.z-center_z)*1.32
+        vertex.co.z = center_z + (vertex.co.z-center_z)*1.35
     brows.data.update()
 hair.vertex_groups.clear()
 hair.vertex_groups.new(name='head').add(list(range(len(hair.data.vertices))), 1, 'REPLACE')
@@ -112,16 +266,22 @@ def shoulders(angle):
         rotate(bone.name,(0,1,0),-math.copysign(angle,bone.tail.x-bone.head.x))
 
 # Closed-mouth resting smile: opening the lips and jaw belongs only to speech.
+# Rowan rests with a steady gaze: low brows and lightly hooded, narrowed lids.
+resting_lid = .12 if male else 0
 for side in ['Left','Right']:
-    expression('Mouth'+side+'PullUp',(.19 if side=='Left' else .25) if male else .28)
-    expression(side+'CheekUp',.08)
+    expression('Mouth'+side+'PullUp',.37 if male else .28)
+    expression(side+'CheekUp',.23 if male else .08)
     expression(side+'InnerBrowUp',.025 if male else .08)
     expression(side+'OuterBrowUp',.05 if male else .12)
+    if male:
+        expression(side+'BrowDown',.3)
+        expression(side+'UpperLidClosed',resting_lid)
+        expression(side+'LowerLidUp',.35)
 rotate('head',(0,1,0),.025)
 
 # Keep high-resolution skin, soft highlights and textured chestnut hair.
 for name, tint in [('Skin', (.96,.90,.84) if male else (.94,.86,.76)),
-                   ('Eyebrows', (.16,.12,.10) if male else (.42,.29,.19))]:
+                   ('Eyebrows', (.05,.04,.035) if male else (.42,.29,.19))]:
     mat = bpy.data.materials[name]; nodes=mat.node_tree.nodes; links=mat.node_tree.links
     bsdf=nodes.get('Principled BSDF'); tex=next(n for n in nodes if n.type=='TEX_IMAGE')
     mix=nodes.new('ShaderNodeMix'); mix.data_type='RGBA'; mix.blend_type='MULTIPLY'; mix.inputs['Factor'].default_value=1
@@ -129,7 +289,67 @@ for name, tint in [('Skin', (.96,.90,.84) if male else (.94,.86,.76)),
     bsdf.inputs['Roughness'].default_value=.58 if name=='Skin' else .8
     if name=='Skin': bsdf.inputs['Subsurface Weight'].default_value=.06
 
-# Keep Rowan's strand texture under an espresso tint; Rain retains her warm base.
+def blur(values, radius):
+    # Separable box blur over a 2D array, clamped at the edges.
+    for axis in (0, 1):
+        total = np.cumsum(np.pad(values, [(radius+1, radius) if i == axis else (0, 0) for i in range(2)], mode='edge'), axis=axis)
+        values = (np.take(total, range(2*radius+1, total.shape[axis]), axis=axis)
+                  - np.take(total, range(0, total.shape[axis]-2*radius-1), axis=axis))/(2*radius+1)
+    return values
+
+if male:
+    # Paint light stubble into the skin texture: upper lip, chin, jawline, lower
+    # cheeks and sideburns, with a short neck beard and clean lips. A per-vertex
+    # mask from the sculpted head is rasterised into UV space, softened only
+    # within painted skin so UV seams stay invisible, then shaded with fine follicles.
+    def smooth(a, b, t):
+        t = clamp((t-a)/(b-a)); return t*t*(3-2*t)
+    def lerp(a, b, t): return a + (b-a)*clamp(t)
+    def beard(x, y, z):
+        ax = abs(x)
+        edge = 1.578 if ax < .018 else lerp(1.578, 1.572, (ax-.018)/.017) if ax < .035 else lerp(1.572, 1.606, (ax-.035)/.033)
+        edge += .02*smooth(-.075, -.05, y)  # Sideburns in front of the ears.
+        upper = 1 - smooth(edge-.014, edge+.004, z)
+        jaw = 1.484 + .4*max(0., ax-.012)  # None down the sides of the neck.
+        lower = smooth(jaw-.012, jaw+.008, z)
+        front = smooth(-.03, -.062, y)
+        lips = 1 - smooth(.82, 1.08, math.hypot(ax/.026, (z-1.5525)/.0158)) if y < -.125 else 0
+        density = .8 + .2*smooth(.055, .02, ax)
+        neck = lerp(.45, 1, (z-1.472)/.03)
+        return upper*lower*front*(1-lips)*density*neck
+    head = bpy.data.objects['Face, neck and hands'].data
+    skin_image = next(n for n in bpy.data.materials['Skin'].node_tree.nodes if n.type=='TEX_IMAGE').image
+    width, height = skin_image.size
+    values = [beard(*v.co) for v in head.vertices]
+    uv = head.uv_layers.active.data
+    mask = np.zeros((height, width), np.float32); cover = np.zeros((height, width), np.float32)
+    for poly in head.polygons:
+        if max(head.vertices[i].co.z for i in poly.vertices) < 1.42: continue
+        for k in range(1, len(poly.vertices)-1):
+            corners = [0, k, k+1]
+            p = np.array([(uv[poly.loop_indices[c]].uv[0]*width, uv[poly.loop_indices[c]].uv[1]*height) for c in corners])
+            m = np.array([values[poly.vertices[c]] for c in corners])
+            x0, y0 = np.maximum(np.floor(p.min(0)).astype(int), 0)
+            x1, y1 = np.minimum(np.ceil(p.max(0)).astype(int), (width-1, height-1))
+            area = (p[1,1]-p[2,1])*(p[0,0]-p[2,0]) + (p[2,0]-p[1,0])*(p[0,1]-p[2,1])
+            if x1 < x0 or y1 < y0 or abs(area) < 1e-9: continue
+            gx, gy = np.meshgrid(np.arange(x0, x1+1)+.5, np.arange(y0, y1+1)+.5)
+            a = ((p[1,1]-p[2,1])*(gx-p[2,0]) + (p[2,0]-p[1,0])*(gy-p[2,1]))/area
+            b = ((p[2,1]-p[0,1])*(gx-p[2,0]) + (p[0,0]-p[2,0])*(gy-p[2,1]))/area
+            inside = (a >= -.02) & (b >= -.02) & (1-a-b >= -.02)
+            region = mask[y0:y1+1, x0:x1+1]
+            region[inside] = np.maximum(region[inside], (a*m[0] + b*m[1] + (1-a-b)*m[2])[inside])
+            cover[y0:y1+1, x0:x1+1][inside] = 1
+    mask = np.clip(blur(mask, 5)/np.maximum(blur(cover, 5), 1e-3), 0, 1)*cover*.45
+    follicles = (np.random.default_rng(7).random((height, width)) > .6).astype(np.float32)
+    follicles = .6*follicles + .4*blur(follicles, 1)
+    pixels = np.array(skin_image.pixels[:], np.float32).reshape(height, width, 4)
+    rgb = pixels[:, :, :3]
+    rgb *= 1 - mask[:, :, None]*(1-np.array([.80, .81, .86], np.float32))
+    rgb += (rgb*np.array([.36, .36, .42], np.float32) - rgb)*(mask*follicles)[:, :, None]
+    skin_image.pixels.foreach_set(pixels.ravel()); skin_image.update()
+
+# Keep Rowan's strand texture under a near-black espresso tint; Rain retains her warm base.
 hair_material=bpy.data.materials['Chestnut hair']
 hair_shader=hair_material.node_tree.nodes.get('Principled BSDF')
 for link in list(hair_shader.inputs['Base Color'].links): hair_material.node_tree.links.remove(link)
@@ -137,13 +357,26 @@ if male:
     texture=next(n for n in hair_material.node_tree.nodes if n.type=='TEX_IMAGE')
     tint=hair_material.node_tree.nodes.new('ShaderNodeMix')
     tint.data_type='RGBA'; tint.blend_type='MULTIPLY'; tint.inputs['Factor'].default_value=1
-    tint.inputs[7].default_value=(.90,.79,.70,1)
+    tint.inputs[7].default_value=(.20,.17,.15,1)
     hair_material.node_tree.links.new(texture.outputs['Color'],tint.inputs[6])
     hair_material.node_tree.links.new(tint.outputs[2],hair_shader.inputs['Base Color'])
 else:
     hair_shader.inputs['Base Color'].default_value=(.045,.022,.013,1)
 hair_shader.inputs['Specular IOR Level'].default_value=.3
 hair_shader.inputs['Roughness'].default_value=.62 if male else .46
+
+if male:
+    # Cool the grey irises toward a pale blue, leaving sclera and pupils unchanged.
+    eye_image = next(n for n in bpy.data.objects['Eyes'].active_material.node_tree.nodes if n.type=='TEX_IMAGE').image
+    width, height = eye_image.size
+    pixels = np.array(eye_image.pixels[:], np.float32).reshape(height, width, 4)
+    rows, columns = np.mgrid[:height, :width]
+    pupils = (pixels[:, :, :3] @ np.array([.3, .59, .11], np.float32) < .12) & (abs(columns/width-.5) < .35) & (abs(rows/height-.5) < .35)
+    for half in (columns < width/2, columns >= width/2):
+        cy, cx = rows[pupils & half].mean(), columns[pupils & half].mean()
+        iris = np.clip((.118 - np.hypot(rows-cy, columns-cx)/width)/.014, 0, 1)[:, :, None]
+        pixels[:, :, :3] = np.clip(pixels[:, :, :3]*(1 + (np.array([.84, .95, 1.10], np.float32)-1)*iris), 0, 1)
+    eye_image.pixels.foreach_set(pixels.ravel()); eye_image.update()
 
 eye=bpy.data.objects['Eyes'].active_material.node_tree.nodes.get('Principled BSDF')
 eye.inputs['Roughness'].default_value=.14
@@ -253,7 +486,8 @@ poses = {
     'mouthRound': lambda: expression('LipsKiss'),
     'lipsPart': lambda: [expression('UpperLipUp',.6), expression('lowerLipDown',.25)],
     'mouthPress': lambda: expression('lowerLipUp',.35),
-    'blink': lambda: [expression(side+part) for side in ['Left','Right'] for part in ['UpperLidClosed','LowerLidUp']],
+    # Close from the resting lid without overshooting into the lower lid.
+    'blink': lambda: [[expression(side+'UpperLidClosed',1-resting_lid), expression(side+'LowerLidUp')] for side in ['Left','Right']],
     'smileLeft': lambda: [expression('MouthLeftPullUp',.42), expression('LeftCheekUp',.6), expression('LeftLowerLidUp',.15)],
     'smileRight': lambda: [expression('MouthRightPullUp',.42), expression('RightCheekUp',.6), expression('RightLowerLidUp',.15)],
     'browRaiseLeft': lambda: [expression('LeftInnerBrowUp',.6), expression('LeftOuterBrowUp',.8)],
@@ -307,7 +541,7 @@ def compact_morph_targets(path, tolerances={'POSITION':1e-5,'NORMAL':1e-3}):
         # Short hair uses overlapping cards. Cutout depth avoids transparent-card
         # sorting artifacts at the crown in the web renderer.
         for material in gltf['materials']:
-            if material['name']=='Chestnut hair':
+            if material['name'] in ('Chestnut hair', 'Hair locks'):
                 material['alphaMode']='MASK'; material['alphaCutoff']=.35
     old_views,views,out,kept=gltf['bufferViews'],[],bytearray(),{}
     kinds={5121:np.uint8,5123:np.uint16,5125:np.uint32}

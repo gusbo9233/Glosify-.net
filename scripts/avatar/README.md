@@ -166,7 +166,11 @@ audio is written to the database; text memory is temporary as described above.
 The conversation settings use the app theme and can be collapsed with the side
 arrow. The page expands up to 1800px on wide screens, with a 300–360px settings
 panel and a landscape library backdrop; closing settings gives the scene the full
-width. Captions stay within a readable 48rem measure. At 1100px and below, settings
+width. Above 1100px the stage height follows the viewport (620–980px), never the
+settings content; the panel matches it and scrolls. The camera frames the portrait
+by height alone, so closing settings or the app sidebar widens the room without
+zooming the character out; the 720px phone layout widens the view to keep the
+shoulders in frame. Captions stay within a readable 48rem measure. At 1100px and below, settings
 open as a scrollable side drawer; Escape closes the drawer
 and returns focus to the arrow. Notices reopen settings so connection errors remain
 visible. The portrait has no idle caption; captions appear only for conversation text.
@@ -202,19 +206,25 @@ worker cannot fetch resources or create nested workers.
 ## Rebuild the characters
 
 Both characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
-portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan uses the pinned light-blue eye texture. `academia_outfit.py` adds an ivory pointed collar, forest-green
+portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan uses the pinned grey eye texture with its irises cooled to a pale blue. `academia_outfit.py` adds an ivory pointed collar, forest-green
 woven-check vest, black ribbon tie and an antique-gold embroidered GG chest patch.
 The outfit combines the green vest/ivory shirt and ribbon/check details from the
 user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in the
 main working tree); no photo pixels are included in the shipped assets. The patch
 is intentionally partly covered by her hair. Garments inherit the blouse's skin
 weights before morph baking, including breathing and shoulder movement.
-Rowan has young-adult male anatomy, an angular jaw and higher cheekbones, fuller
-dark brows, light-blue eyes, and tousled dark-brown CC0 MakeHuman hair. His
-appearance is inspired by a young Ian Somerhalder; it is sculpted from the source
-anatomy, without using the reference photograph as a texture. The short01 hair is shaped
-into a loose forward fringe and retains its separate textured locks and soft
-hairline under a dark-brown tint. His
+Rowan has young-adult male anatomy: high cheekbones over lean cheeks, a jaw tapering
+to a narrower cleft chin, a long straight nose and full lips. Heavy dark brows sit
+low over lightly hooded pale-blue eyes, and light stubble is painted into the skin
+texture over the upper lip, chin, jawline, lower cheeks and sideburns, leaving the
+lips clean. He is sculpted from the source anatomy. His dark mop fits close to the
+head and has two layers. The CC0 short02 hair, under a dark espresso tint, is
+reshaped into the base: a crown about 1.5 cm off the scalp, sides over the ear tops
+and a fringe ending just above the brows, swept to his left. Original hair cards are
+grown over it from the crown whorl, with a dense row along the hairline. They use a
+generated lock texture (tapered, pointed locks with strand streaks), so the fringe,
+temples and nape break into separate locks. Both layers use an alpha cutout and
+follow the head. His
 outfit remains a waist-length charcoal
 V-neck cardigan with fitted sleeves, fine knit textures, ribbed front borders and
 dark horn buttons. An ivory shirt and dark necktie show inside the V, with a gold
@@ -254,7 +264,7 @@ It keeps mesh topology, textures, materials and named morph targets. Compression
 is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
 compress shipped files. The script rejects compressed inputs and identical
 input/output paths. The pre-compression assets are also retained in Git at
-`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 3.89 MB, down from
+`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 4.46 MB, down from
 15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
@@ -270,6 +280,8 @@ targets define the jaw, cheekbones, brows, nose and lips before fitting the faci
 rig and attachments. The resting smile
 has closed lips and no jaw-opening pose; expression smiles change slowly with the
 conversation state and never follow the audio, so speech returns to a calm closed mouth.
+Rowan rests with low brows and lightly hooded, narrowed lids; his blink closes from
+that resting lid instead of overshooting it.
 The hair is weighted to the head,
 avoiding shoulder-driven kinks during posing. The face retains all source bone weights
 before baking so facial expressions are not truncated to four influences.
@@ -308,7 +320,7 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 
 Optional arguments after the output set the resolution percentage and sample count for
 quick previews. The background carries an `academia-1` cache revision; Rain uses
-`natural-brown-eyes-1` and Rowan uses `tousled-portrait-1`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
+`natural-brown-eyes-1` and Rowan uses `close-locks-1`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
 The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,

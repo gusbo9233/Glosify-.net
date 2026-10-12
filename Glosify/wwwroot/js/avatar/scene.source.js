@@ -12,10 +12,10 @@ import '@babylonjs/loaders/glTF';
 import './meshopt.js';
 import { createPerformance } from './performance.js';
 import { bindMorphTargets } from './morphs.js';
-import { createRenderLoop, portraitScaling } from './render-loop.js';
+import { createRenderLoop, portraitFraming, portraitScaling } from './render-loop.js';
 
 export async function createAvatar(canvas, character = 'rain') {
-    const model = { rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1', rowan: '/models/avatar/rowan-realistic.glb?v=tousled-portrait-1' }[character];
+    const model = { rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1', rowan: '/models/avatar/rowan-realistic.glb?v=close-locks-1' }[character];
     if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
     engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
@@ -26,7 +26,13 @@ export async function createAvatar(canvas, character = 'rain') {
     scene.imageProcessingConfiguration.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
     scene.imageProcessingConfiguration.exposure = 1.05;
     const camera = new ArcRotateCamera('portrait', -Math.PI / 2, Math.PI / 2 - .13, 1.65, new Vector3(0, 1.42, 0), scene);
-    camera.fov = .49; camera.minZ = .02;
+    camera.minZ = .02;
+    const compact = matchMedia('(max-width: 720px)');
+    const frame = () => {
+        const { fov, targetY } = portraitFraming(canvas.clientWidth, canvas.clientHeight, { compact: compact.matches, distance: camera.radius });
+        camera.fov = fov; camera.target.y = targetY;
+    };
+    frame();
     const fill = new HemisphericLight('soft daylight', new Vector3(0, 1, -1), scene); fill.intensity = .8;
     fill.diffuse = new Color3(.98, 1, .97); fill.groundColor = new Color3(.3, .25, .19);
     const key = new DirectionalLight('key', new Vector3(.5, -1, 1), scene); key.intensity = 1.5; key.diffuse = new Color3(1, .89, .76);
@@ -69,7 +75,7 @@ export async function createAvatar(canvas, character = 'rain') {
     intersection.observe(canvas);
     const resize = new ResizeObserver(() => {
         engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
-        engine.resize(); loop.invalidate();
+        engine.resize(); frame(); loop.invalidate();
     });
     resize.observe(canvas);
     // Shader/texture readiness and context restoration can occur after settling.

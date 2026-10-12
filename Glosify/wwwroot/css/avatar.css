@@ -59,9 +59,13 @@
 @media(prefers-reduced-motion:reduce){.avatar-settings{scroll-margin-top:80px}
 .avatar-settings:not([hidden]){animation:none}.avatar-settings-toggle svg{transition:none}}
 
-/* Keep the room generous on desktop; the portrait retains its vertical framing. */
+/* Size the desktop stage from the viewport, never from the settings drawer, so closing
+   either sidebar only widens the room and the portrait keeps its scale. The drawer
+   matches the stage height and scrolls on its own. */
 @media(min-width:1100px){
-    .avatar-stage{min-height:clamp(660px,70vh,820px)}
+    .avatar-workspace{--stage-height:clamp(620px,calc(100dvh - 180px),980px);align-items:start}
+    .avatar-stage{height:var(--stage-height);min-height:0}
+    .avatar-settings{height:var(--stage-height);box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain}
 }
 .avatar-caption{max-width:48rem;margin-inline:auto}
 

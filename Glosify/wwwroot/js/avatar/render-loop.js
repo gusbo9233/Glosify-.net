@@ -46,3 +46,13 @@ export function createRenderLoop(render, {
 export function portraitScaling(width, height, devicePixelRatio = 1) {
     return Math.max(1, devicePixelRatio / 1.5, width / 1000, height / 1000);
 }
+
+// Frame the portrait from the canvas height alone: a wider stage (a closed sidebar or
+// settings drawer) shows more of the room but never shrinks the character. The compact
+// phone layout, whose drawers overlay the stage, widens the view just enough to keep
+// the shoulders in frame. The view spans `extent` metres vertically with a little
+// headroom above the hair.
+export function portraitFraming(width, height, { compact = false, distance = 1.65 } = {}) {
+    const extent = compact ? Math.max(.64, .5 * height / Math.max(width, 1)) : .64;
+    return { fov: 2 * Math.atan(extent / 2 / distance), targetY: 1.75 - .42 * extent };
+}
