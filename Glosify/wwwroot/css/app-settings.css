@@ -65,7 +65,8 @@ button.app-navigation-auth:focus-visible { outline-color: var(--error); }
 .app-sidebar-open .app-sidebar-toggle { inset-inline-start: calc(var(--app-sidebar-width) - 52px); min-width: 44px; width: 44px; height: 44px; padding: 0; border-color: transparent; background: transparent; color: var(--on-surface-var); }
 .app-sidebar-open .app-sidebar-toggle:hover { background: var(--surface-container-high); color: var(--on-surface); }
 .app-sidebar-open .app-sidebar-toggle-label { display: none; }
-.app-sidebar-ready:not(.app-sidebar-open) .app-canvas { padding-top: max(80px, calc(env(safe-area-inset-top) + 64px)); }
+/* Keep a header-sized blue breathing space above the page, with either drawer state. */
+.app-main::before { content: ""; display: block; flex-shrink: 0; height: calc(64px + env(safe-area-inset-top)); background: var(--background); }
 .app-sidebar-open .app-sidebar-toggle svg, [dir="rtl"] .app-sidebar-toggle svg { transform: rotate(180deg); }
 [dir="rtl"] .app-sidebar-open .app-sidebar-toggle svg { transform: none; }
 .app-sidebar-backdrop { position: fixed; inset: 0; z-index: 1499; background: #01091499; }
