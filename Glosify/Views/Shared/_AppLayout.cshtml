@@ -8,6 +8,7 @@
     var assistantPanel = new AssistantPanelViewModel
     {
         QuizId = assistantPageContext?.QuizId,
+        AnkiCollectionId = assistantPageContext?.AnkiCollectionId,
         FocusedWordId = assistantPageContext?.FocusedWordId,
         DocumentId = assistantPageContext?.DocumentId,
         CurrentPage = assistantPageContext?.CurrentPage,
@@ -116,6 +117,13 @@
             </svg>
             """);
     }
+}
+@if (Context.Request.Headers["X-Learning-Refresh"] == "true")
+{
+    <div data-learning-screen data-learning-controller="@CurrentController">@RenderBody()</div>
+    IgnoreSection("Styles");
+    IgnoreSection("Scripts");
+    return;
 }
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentUICulture.Name" dir="@(CultureInfo.CurrentUICulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")" data-display-culture="@CultureInfo.CurrentUICulture.Name">
@@ -249,7 +257,14 @@
                     <span data-speech-error-text></span>
                     <button type="button" data-speech-settings>@Text["Speech.Settings"]</button>
                 </div>
-                @RenderBody()
+                @if (CurrentController is "quiz" or "anki" or "flashcardquiz" or "typingquiz")
+                {
+                    <div data-learning-screen data-learning-controller="@CurrentController">@RenderBody()</div>
+                }
+                else
+                {
+                    @RenderBody()
+                }
             </div>
             <footer class="app-legal-footer">
                 <nav aria-label="@Text["Legal.Label"]">
@@ -315,6 +330,7 @@
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
+    <script type="module" src="~/js/learning-updates.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/tts.js" asp-append-version="true"></script>
     <script src="~/js/local-time.js" asp-append-version="true"></script>

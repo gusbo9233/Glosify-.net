@@ -117,6 +117,7 @@ public sealed class WordServiceAnkiAtomicityTests
         public Task<AnkiCollectionDetails?> GetDetailsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection> CreateAsync(CreateAnkiCollectionInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection?> CreateFromQuizAsync(CreateAnkiCollectionFromQuizInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> SetDirectionAsync(Guid collectionId, string direction, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> RenameAsync(Guid collectionId, string name, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> UpdateSettingsAsync(Guid collectionId, double desiredRetention, int newCardsPerDay, int maximumReviewsPerDay, string timeZoneId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

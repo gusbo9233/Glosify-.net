@@ -19,6 +19,22 @@ public sealed class AnkiControllerLanguageTests
     private const string UserId = "anki-controller-user";
     private static readonly DateTimeOffset Now = new(2026, 8, 17, 12, 0, 0, TimeSpan.Zero);
 
+    [Theory]
+    [InlineData("invalid")]
+    [InlineData("")]
+    public async Task Invalid_direction_returns_validation_feedback_without_changing_the_collection(string direction)
+    {
+        await using var context = CreateContext();
+        var collection = await CreateCollectionService(context).CreateAsync(new("Study", "English", "Polish", "UTC"), UserId);
+        var original = (await context.AnkiCollections.SingleAsync()).DefaultDirection;
+        var controller = CreateController(context, "Polish");
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Direction(collection.Id, direction, default));
+        Assert.Equal(nameof(AnkiController.Collection), result.ActionName);
+        Assert.Equal(collection.Id, result.RouteValues!["id"]);
+        Assert.NotEmpty(Assert.IsType<string>(controller.TempData["AnkiMessage"]));
+        Assert.Equal(original, (await context.AnkiCollections.SingleAsync()).DefaultDirection);
+    }
+
     [Fact]
     public async Task Index_only_shows_collections_for_the_current_app_language()
     {

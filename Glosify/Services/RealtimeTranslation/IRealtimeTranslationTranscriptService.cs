@@ -60,7 +60,8 @@ public sealed record TranscriptTextPageRequest(
     DateTimeOffset? AtTime = null,
     string? Stream = null,
     int? Limit = null,
-    int MaximumCharacters = 12_000);
+    int MaximumCharacters = 12_000,
+    int CharacterOffset = 0);
 
 /// <summary>
 /// A window of transcript text plus everything needed to name it: which page it belongs
@@ -85,10 +86,12 @@ public sealed record TranscriptTextPage(
     DateTimeOffset? StartsAt,
     DateTimeOffset? EndsAt,
     int SourceSegmentCount,
-    int TranslationSegmentCount)
+    int TranslationSegmentCount,
+    int CharacterOffset = 0,
+    int NextCharacterOffset = 0)
 {
     /// <summary>Where to resume when the character budget or explicit limit cut the page short.</summary>
-    public int NextOffset => Offset + Segments.Count;
+    public int NextOffset => Offset + Segments.Count - (NextCharacterOffset > 0 ? 1 : 0);
 }
 
 public sealed record TranscriptPageSpan(int Page, DateTimeOffset StartsAt, DateTimeOffset EndsAt);

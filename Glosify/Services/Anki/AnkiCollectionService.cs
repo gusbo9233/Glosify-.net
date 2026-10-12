@@ -235,6 +235,51 @@ public sealed class AnkiCollectionService : IAnkiCollectionService
         }, cancellationToken);
     }
 
+    public Task<bool> SetDirectionAsync(Guid collectionId, string direction, string userId,
+        CancellationToken cancellationToken = default)
+    {
+        if (direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource))
+            throw new AnkiValidationException("Choose source-to-target or target-to-source.");
+        return ExecuteAtomicallyAsync(async () =>
+        {
+            var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
+            if (collection is null) return false;
+            await SyncCollectionAsync(collectionId, cancellationToken);
+            var links = await _context.AnkiQuizLinks.Where(link => link.AnkiCollectionId == collectionId).ToListAsync(cancellationToken);
+            var notes = await _context.AnkiNotes.Include(note => note.Cards)
+                .Where(note => note.AnkiCollectionId == collectionId).ToListAsync(cancellationToken);
+            var forward = direction == PracticeDirection.SourceToTarget;
+            foreach (var note in notes)
+            {
+                var included = note.Cards.Any(card => card.IsActive);
+                var direct = note.Cards.Any(card => card.DirectlyIncluded);
+                var excluded = note.Cards.Any(card => card.ExcludedFromQuizLink) && !included;
+                foreach (var card in note.Cards) card.DirectlyIncluded = false;
+                // Keep removed notes removed in the new direction too.
+                var existing = note.Cards.FirstOrDefault(card => card.Direction == direction);
+                var selected = existing ?? EnsureCard(note, direction);
+                if (existing is null) _context.AnkiCards.Add(selected);
+                selected.DirectlyIncluded = direct;
+                selected.ExcludedFromQuizLink = excluded;
+            }
+            foreach (var link in links)
+            {
+                var words = link.WordsSourceToTarget || link.WordsTargetToSource;
+                var sentences = link.SentencesSourceToTarget || link.SentencesTargetToSource;
+                link.WordsSourceToTarget = words && forward;
+                link.WordsTargetToSource = words && !forward;
+                link.SentencesSourceToTarget = sentences && forward;
+                link.SentencesTargetToSource = sentences && !forward;
+                link.UpdatedAt = _timeProvider.GetUtcNow();
+            }
+            collection.DefaultDirection = direction;
+            collection.UpdatedAt = _timeProvider.GetUtcNow();
+            await _context.SaveChangesAsync(cancellationToken);
+            await SyncCollectionAsync(collectionId, cancellationToken);
+            return true;
+        }, cancellationToken);
+    }
+
     public async Task<bool> RenameAsync(
         Guid collectionId,
         string name,

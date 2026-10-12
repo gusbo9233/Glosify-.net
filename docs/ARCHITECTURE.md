@@ -76,23 +76,23 @@ image input to the same fixed model.
 
 ## Assistant
 
-The assistant is application-owned end to end:
+The assistant is application-owned end to end and runs as durable **runs**
+advanced by a background worker in the web app; see
+[assistant-runtime.md](assistant-runtime.md).
 
-- `AssistantProfileInstructions` contains four active profiles: the language quiz
-  assistant, language librarian, Freestyle quiz assistant, and Freestyle librarian.
-- `AssistantPromptBuilder` appends trusted, turn-specific quiz, language,
-  document, transcript, and book context.
-- `AssistantToolRegistry` and the per-tool classes define schemas and execute
-  tools locally.
-- `AssistantToolNarrowing` limits the offered surface based on the inferred
-  intent and active context.
-- `AssistantTurnRunner` preserves Responses function call IDs, executes local
-  calls, and caps a run at 24 tool turns.
-
-Read tools execute immediately. Mutating tools build application-side pending
-changes; the user must apply or reject them. The historical pending-change
-staging table remains mapped so existing rows are not destroyed, but it is not a
-model callback or remote tool surface.
+- `AssistantRunStore` starts runs, serves their views, and applies Stop,
+  steering, approval, answers, and Resume. `AssistantRunExecutor` advances a run
+  one checkpointed step at a time; `AssistantRunWorker` claims runs under leases.
+- Messages are split into parts (text, tool calls, app context, notes).
+  `AssistantConversation` rebuilds the provider history from them for every model
+  call and bounds it by pruning old tool output, then summarizing.
+- The system prompt (`Prompts/*.md`) and each mode's tool list are static, so
+  requests share a cacheable prefix; per-message facts travel with the message and
+  per-step state is sent last.
+- `AssistantToolbox` holds the typed tools. Write tools propose changes;
+  `ChangeApplier` saves them and journals them for Undo. Deletions and moves wait
+  for approval.
+- `AssistantSyncAdapter` serves the request-reply endpoints from the same runtime.
 
 ## Realtime subtitles
 

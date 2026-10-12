@@ -1,5 +1,5 @@
 using Glosify.Services.Ai.Assistant;
-using Glosify.Services.Ai.Generation;
+using Glosify.Services.Ai.Assistant.Tools;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -41,30 +41,6 @@ public sealed class AssistantIntentResolverTests
         AssistantOperationKind expected) =>
         Assert.Equal(expected, _resolver.Resolve(message).OperationKind);
 
-    // Operation is recorded, never enforced: it must not remove a tool the page allowed.
-    [Theory]
-    [InlineData("Create a quiz with five words.")]
-    [InlineData("Add five words.")]
-    [InlineData("Why does this take the dative case?")]
-    public void Operation_intent_never_narrows_the_tool_surface(string message)
-    {
-        IReadOnlyList<AgentToolDeclaration> declarations =
-        [
-            new("add_word", "Adds a word.", new { }),
-            new("create_vocabulary_quiz", "Creates a quiz.", new { }),
-        ];
-        var intent = _resolver.Resolve(message);
-
-        var allowed = AssistantToolNarrowing.AllowedNames(
-            declarations,
-            intent);
-        var withoutOperation = AssistantToolNarrowing.AllowedNames(
-            declarations,
-            intent with { OperationKind = AssistantOperationKind.Auto });
-
-        Assert.Equal(withoutOperation.OrderBy(name => name), allowed.OrderBy(name => name));
-    }
-
     [Theory]
     [InlineData("Create a normal Polish quiz about travel.", AssistantArtifactKind.StandardQuiz)]
     [InlineData("Create a quiz about travel.", AssistantArtifactKind.StandardQuiz)]
@@ -93,65 +69,23 @@ public sealed class AssistantIntentResolverTests
     public void An_empty_message_decides_nothing() =>
         Assert.Equal(AssistantIntent.Unknown, _resolver.Resolve("   "));
 
-    [Fact]
-    public void Sentence_intent_withdraws_the_word_addition_tools()
+    // The content intent is enforced where content is filed: a request that names one kind
+    // refuses the other kind in add_items and create_quiz, whichever tool the model chose.
+    [Theory]
+    [InlineData(AssistantContentKind.Sentences, true, false, false)]
+    [InlineData(AssistantContentKind.Sentences, false, true, true)]
+    [InlineData(AssistantContentKind.Words, false, true, false)]
+    [InlineData(AssistantContentKind.Words, true, false, true)]
+    [InlineData(AssistantContentKind.Both, true, true, true)]
+    [InlineData(AssistantContentKind.Auto, true, true, true)]
+    public void Content_intent_refuses_only_the_kind_the_user_did_not_ask_for(
+        AssistantContentKind requested,
+        bool hasWords,
+        bool hasSentences,
+        bool allowed)
     {
-        var allowed = Narrow(AssistantContentKind.Sentences, AssistantArtifactKind.Auto);
+        var context = new ToolContext { UserId = "user", Mode = AssistantMode.Language, RequestedContentKind = requested };
 
-        Assert.DoesNotContain("add_word", allowed);
-        Assert.DoesNotContain("add_words", allowed);
-        Assert.Contains("add_sentence", allowed);
-        Assert.Contains("add_sentences", allowed);
-        // Editing and deleting need existing ids, so they are unaffected by content intent.
-        Assert.Contains("edit_word", allowed);
-        Assert.Contains("delete_word", allowed);
+        Assert.Equal(allowed, QuizContent.WrongContentKind(context, hasWords, hasSentences) is null);
     }
-
-    [Fact]
-    public void Word_intent_withdraws_the_sentence_addition_tools()
-    {
-        var allowed = Narrow(AssistantContentKind.Words, AssistantArtifactKind.Auto);
-
-        Assert.DoesNotContain("add_sentence", allowed);
-        Assert.DoesNotContain("add_sentences", allowed);
-        Assert.Contains("add_word", allowed);
-    }
-
-    [Fact]
-    public void Standard_quiz_intent_keeps_standard_creation()
-    {
-        var allowed = Narrow(AssistantContentKind.Auto, AssistantArtifactKind.StandardQuiz);
-
-        Assert.Contains("create_vocabulary_quiz", allowed);
-    }
-
-    [Fact]
-    public void Narrowing_never_adds_a_tool_the_profile_did_not_offer()
-    {
-        var declarations = new[] { Declaration("add_word") };
-
-        var allowed = AssistantToolNarrowing.AllowedNames(
-            declarations,
-            new AssistantIntent(AssistantArtifactKind.Auto, AssistantContentKind.Both));
-
-        Assert.Equal(["add_word"], allowed);
-    }
-
-    private static IReadOnlySet<string> Narrow(
-        AssistantContentKind content,
-        AssistantArtifactKind artifact)
-    {
-        var declarations = new[]
-        {
-            "add_word", "add_words", "add_sentence", "add_sentences", "edit_word",
-            "delete_word", "create_vocabulary_quiz",
-        }.Select(Declaration).ToArray();
-
-        return AssistantToolNarrowing.AllowedNames(
-            declarations,
-            new AssistantIntent(artifact, content));
-    }
-
-    private static AgentToolDeclaration Declaration(string name) =>
-        new(name, name, new { type = "object", properties = new { } });
 }

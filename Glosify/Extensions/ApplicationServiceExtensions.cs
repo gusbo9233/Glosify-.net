@@ -4,6 +4,7 @@ using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
+using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Anki;
 using Glosify.Services.Auth;
@@ -187,20 +188,23 @@ public static class ApplicationServiceExtensions
         services.AddOptions<JevOptions>().Bind(configuration.GetSection("Jev"))
             .Configure(o => o.ApiKey = configuration["TYPESAFE_API_KEY"] ?? o.ApiKey)
             .ValidateDataAnnotations().ValidateOnStart();
-        services.AddScoped<AssistantTaskStore>();
-        services.AddScoped<AssistantDurableAdapter>();
-        services.AddScoped<AssistantRuntimeContext>();
-        services.AddScoped<AssistantTaskExecutor>();
-        services.AddScoped<AssistantReadPrefetcher>();
-        services.AddScoped<AssistantTaskEvaluationWorker>();
+        services.AddSingleton<AssistantRunSignals>();
+        services.AddScoped<AssistantRunStore>();
+        services.AddScoped<AssistantRunContext>();
+        services.AddScoped<AssistantConversation>();
+        services.AddScoped<AssistantRunExecutor>();
+        services.AddScoped<AssistantSyncAdapter>();
+        services.AddSingleton<IAssistantRunWaiter, SignalRunWaiter>();
+        services.AddScoped<AssistantUndoService>();
+        services.AddScoped<IAssistantRunService, AssistantRunService>();
+        services.AddScoped<AssistantEvaluationWorker>();
         services.AddHttpClient<IToolUseEvaluator, JevToolUseEvaluator>();
-        services.AddHostedService<AssistantTaskWorker>();
+        services.AddHostedService<AssistantRunWorker>();
         services.AddAssistantTools();
         services.AddScoped<IChangeApplier, ChangeApplier>();
         services.AddScoped<AssistantContextResolver>();
         services.AddScoped<AssistantContextOptionsProvider>();
         services.AddScoped<AssistantMessagePresenter>();
-        services.AddScoped<AssistantPromptBuilder>();
         services.AddSingleton<AssistantIntentResolver>();
         services.AddScoped<AssistantTelemetryDeletionQueue>();
         services.AddScoped<AssistantThreadStore>();
@@ -225,8 +229,6 @@ public static class ApplicationServiceExtensions
                 options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
             });
         services.AddHostedService<AssistantTelemetryDeletionService>();
-        services.AddScoped<IAssistantTurnLeaseService, AssistantTurnLeaseService>();
-        services.AddScoped<AssistantTurnRunner>();
         services.AddScoped<AssistantChangeWorkflow>();
         services.AddScoped<IAssistantOrchestrator, AssistantOrchestrator>();
 

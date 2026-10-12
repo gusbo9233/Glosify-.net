@@ -73,6 +73,8 @@ internal sealed class AssistantMessagePresenter
 
         try
         {
+            if (LearningChanges.Handles(change.Kind) && change.Payload.TryGetProperty("title", out var title))
+                return title.GetString() ?? change.Kind;
             return change.Kind switch
             {
                 PendingChangeKinds.AddWord => BuildAddWordSummary(change.Payload),

@@ -677,28 +677,29 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
                 apiQuizRequests++;
         };
 
-        await Page.RouteAsync("**/Assistant/Chats/*/Send", route => route.FulfillAsync(new RouteFulfillOptions
+        // Old saved proposals remain applicable after the durable-run rewrite.
+        await Page.RouteAsync("**/Assistant/Chats/*/History", route => route.FulfillAsync(new()
         {
-            Status = 200,
             ContentType = "application/json",
-            Body = JsonSerializer.Serialize(new
+            Body = JsonSerializer.Serialize(new { messages = new[]
             {
-                threadId = new Uri(route.Request.Url).Segments[^2].Trim('/'),
-                assistantMessageId,
-                assistantText = "I prepared a travel quiz.",
-                toolEvents = Array.Empty<object>(),
-                // Both content types in one standard-quiz proposal, which is the shape the
-                // review card has to render since starter sentences became part of creation.
-                pendingChanges = new[]
+                new
                 {
-                    new
+                    id = assistantMessageId,
+                    role = "model",
+                    text = "I prepared a travel quiz.",
+                    toolEvents = Array.Empty<object>(),
+                    pendingChanges = new[]
                     {
-                        kind = "create_quiz",
-                        summary = "Create quiz \"Travel Polish\" with 5 words and 5 sentences (English -> Polish)",
+                        new
+                        {
+                            kind = "create_quiz",
+                            summary = "Create quiz \"Travel Polish\" with 5 words and 5 sentences (English -> Polish)",
+                        },
                     },
+                    status = "active",
                 },
-                status = "active",
-            }),
+            }}),
         }));
         await Page.RouteAsync("**/Assistant/Apply/*", route =>
         {
@@ -785,8 +786,6 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         var assistantSubmit = Page.Locator("[data-assistant-submit]");
         await Expect(assistantInput).ToBeEditableAsync();
         await Expect(assistantSubmit).ToBeEnabledAsync();
-        await assistantInput.FillAsync("Create a travel quiz");
-        await assistantSubmit.ClickAsync();
         await Expect(Page.Locator("[data-assistant-pending-card]")).ToBeVisibleAsync();
 
         var pendingCard = Page.Locator("[data-assistant-pending-card]");

@@ -235,7 +235,8 @@ test('flashcards allow only one rating request and restore controls after failur
     }
 
     vm.runInNewContext(flashcardQuizScript, {
-        document: { querySelector: () => container },
+        document: { querySelector: () => container, addEventListener() {} },
+        performance: { now: () => 100 },
         fetch: () => {
             const response = responses[fetchCount];
             fetchCount += 1;
@@ -270,3 +271,39 @@ test('flashcards allow only one rating request and restore controls after failur
     await container.listeners.submit(submitEvent(form, { name: 'rating', value: 'again' }));
     assert.equal(fetchCount, 2);
 });
+
+for (const [mode, rightRating] of [['regular', 'good'], ['anki', 'easy']]) {
+    test(`${mode} swipes reveal first, then grade; vertical and cancelled drags do not grade`, () => {
+        const card = element();
+        card.closest = selector => selector === '.flashcard' ? card : null;
+        const submitted = [];
+        const buttons = new Map(['again', 'hard', 'good', 'easy'].map(value => [value, { value, closest: () => ({ requestSubmit: button => submitted.push(button.value) }) }]));
+        const container = element();
+        container.querySelector = selector => {
+            if (selector === '[data-right-rating]') return { dataset: { rightRating } };
+            if (selector === '[data-card-reveal-form]') return { requestSubmit: () => { card.classList.add('is-revealed'); submitted.push('reveal'); } };
+            const rating = /value="(\w+)"/.exec(selector)?.[1];
+            return buttons.get(rating) || null;
+        };
+        container.querySelectorAll = () => [];
+        vm.runInNewContext(flashcardQuizScript, {
+            document: { querySelector: () => container, addEventListener() {} },
+            performance: { now: () => 0 }, window: {},
+        });
+        const swipe = (dx, dy = 0, cancel = false) => {
+            const event = { target: card, pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 };
+            container.listeners.pointerdown(event);
+            container.listeners.pointermove({ ...event, clientX: 100 + dx, clientY: 100 + dy });
+            container.listeners[cancel ? 'pointercancel' : 'pointerup'](event);
+        };
+        swipe(100);
+        assert.deepEqual(submitted, ['reveal']);
+        swipe(100);
+        swipe(-100);
+        assert.deepEqual(submitted, ['reveal', rightRating, 'again']);
+        swipe(5);
+        swipe(40, 100);
+        swipe(100, 0, true);
+        assert.deepEqual(submitted, ['reveal', rightRating, 'again']);
+    });
+}

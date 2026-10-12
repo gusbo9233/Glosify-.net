@@ -1,12 +1,18 @@
 (() => {
+    let bindings;
+    const initialize = () => {
+    bindings?.abort();
+    bindings = new AbortController();
+    const listenDocument = (type, callback, options = {}) => document.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
+    const listenWindow = (type, callback, options = {}) => window.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
     const menus = [...document.querySelectorAll('[data-item-menu]')];
     menus.forEach(menu => menu.addEventListener('toggle', () => {
         if (menu.open) menus.filter(other => other !== menu).forEach(other => other.removeAttribute('open'));
     }));
-    document.addEventListener('click', event => {
+    listenDocument('click', event => {
         menus.filter(menu => menu.open && !menu.contains(event.target)).forEach(menu => menu.removeAttribute('open'));
     });
-    document.addEventListener('keydown', event => {
+    listenDocument('keydown', event => {
         if (event.key !== 'Escape') return;
         menus.filter(menu => menu.open).forEach(menu => { menu.removeAttribute('open'); menu.querySelector('summary')?.focus(); });
     });
@@ -27,9 +33,7 @@
     ankiDialog?.querySelector('[data-close-anki-item]')?.addEventListener('click', () => ankiDialog.close());
     ankiDialog?.addEventListener('close', () => ankiTrigger?.focus());
     ankiDialog?.addEventListener('click', event => { if (event.target === ankiDialog) ankiDialog.close(); });
-
-    document.querySelectorAll('[data-confirm]').forEach(form => form.addEventListener('submit', event => {
-        if (!window.confirm(form.dataset.confirm)) event.preventDefault();
-    }));
-
+    };
+    initialize();
+    window.addEventListener('learning:updated', initialize);
 })();

@@ -24,6 +24,7 @@ public static class ApiExceptionMapper
         QuizJsonImportValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
         QuizJsonImportAiUnprocessableException => Error(422, ApiErrorCodes.UnprocessableEntity, exception),
         AssistantTurnInProgressException => Error(409, ApiErrorCodes.Conflict, exception),
+        Glosify.Services.Ai.Assistant.Runtime.AssistantRunConflictException => Error(409, ApiErrorCodes.Conflict, exception),
         AssistantFeedbackValidationException => Error(400, ApiErrorCodes.BadRequest, exception),
         AssistantTurnNotFoundException => new ApiError(
             404,

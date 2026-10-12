@@ -1,5 +1,6 @@
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
+using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.Ai;
 using Glosify.Services.Quizzes;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -27,11 +28,15 @@ public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     [Theory]
-    [InlineData(typeof(AssistantTaskStore))]
-    [InlineData(typeof(AssistantTaskExecutor))]
-    [InlineData(typeof(AssistantTaskEvaluationWorker))]
+    [InlineData(typeof(AssistantRunStore))]
+    [InlineData(typeof(AssistantRunExecutor))]
+    [InlineData(typeof(AssistantEvaluationWorker))]
+    [InlineData(typeof(AssistantSyncAdapter))]
+    [InlineData(typeof(AssistantUndoService))]
+    [InlineData(typeof(IAssistantRunService))]
+    [InlineData(typeof(IAssistantOrchestrator))]
     [InlineData(typeof(IToolUseEvaluator))]
-    [InlineData(typeof(IAssistantTools))]
+    [InlineData(typeof(AssistantToolbox))]
     [InlineData(typeof(IQuizJsonImportService))]
     [InlineData(typeof(IQuizJsonImportRepairService))]
     public void Split_services_resolve_from_a_request_scope(Type serviceType)
@@ -42,18 +47,20 @@ public sealed class ServiceGraphTests : IClassFixture<WebApplicationFactory<Prog
     }
 
     /// <summary>
-    /// Every tool the registry can hand out is constructible. Assembly-scanned registration
-    /// means a tool with a dependency nobody registered compiles fine and only fails when
-    /// the model happens to call it.
+    /// Every tool the toolbox can hand out is constructible and declared. Assembly-scanned
+    /// registration means a tool with a dependency nobody registered compiles fine and only
+    /// fails when the model happens to call it.
     /// </summary>
-    [Fact]
-    public void Every_registered_assistant_tool_is_constructible()
+    [Theory]
+    [InlineData(AssistantMode.Language)]
+    [InlineData(AssistantMode.Freestyle)]
+    public void Every_registered_assistant_tool_is_constructible(AssistantMode mode)
     {
         using var scope = _factory.Services.CreateScope();
-        var tools = scope.ServiceProvider
-            .GetRequiredService<IAssistantTools>();
+        var toolbox = scope.ServiceProvider.GetRequiredService<AssistantToolbox>();
 
-        Assert.NotEmpty(tools.GlobalDeclarations);
-        Assert.All(tools.GlobalDeclarations, declaration => Assert.False(string.IsNullOrWhiteSpace(declaration.Name)));
+        var declarations = toolbox.Declarations(mode);
+        Assert.NotEmpty(declarations);
+        Assert.All(declarations, declaration => Assert.False(string.IsNullOrWhiteSpace(declaration.Name)));
     }
 }

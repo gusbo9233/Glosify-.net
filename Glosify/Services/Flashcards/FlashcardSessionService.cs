@@ -67,6 +67,8 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
         if (session.CurrentIndex >= session.Cards.Count)
             return;
 
+        if (rating?.Trim().ToLowerInvariant() is not ("again" or "good" or "easy"))
+            throw new ArgumentException("Choose Again or Got it.", nameof(rating));
         var currentCard = session.Cards[session.CurrentIndex];
 
         switch (rating?.Trim().ToLowerInvariant())
@@ -74,9 +76,6 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
             case "again":
                 session.AgainCount++;
                 session.AgainCards.Add(currentCard);
-                break;
-            case "skip":
-                session.SkippedCount++;
                 break;
             default:
                 session.RememberedCount++;
