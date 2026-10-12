@@ -1,10 +1,5 @@
 (() => {
-    let bindings;
     const initialize = () => {
-    bindings?.abort();
-    bindings = new AbortController();
-    const listenDocument = (type, callback, options = {}) => document.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
-    const listenWindow = (type, callback, options = {}) => window.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
     const library = document.querySelector('[data-quiz-library]');
     if (!library) {
         return;

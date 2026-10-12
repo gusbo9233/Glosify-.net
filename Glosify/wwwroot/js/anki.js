@@ -1,10 +1,5 @@
 (() => {
-    let bindings;
     const initialize = () => {
-    bindings?.abort();
-    bindings = new AbortController();
-    const listenDocument = (type, callback, options = {}) => document.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
-    const listenWindow = (type, callback, options = {}) => window.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
     const createButton = document.querySelector('[data-open-create-anki]');
     const createDialog = document.querySelector('[data-create-anki-dialog]');
     const closeButton = document.querySelector('[data-close-create-anki]');
