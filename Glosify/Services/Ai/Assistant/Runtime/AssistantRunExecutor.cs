@@ -635,17 +635,7 @@ internal sealed class AssistantRunExecutor(
                     });
                 }
 
-                foreach (var deleted in applied.Journal.Where(c => c.Kind is "delete_quiz" or "anki_delete"))
-                {
-                    if (!Guid.TryParse(deleted.EntityId, out var deletedId)) continue;
-                    if (deleted.Kind == "delete_quiz")
-                    {
-                        state.Fingerprints.Remove(deletedId);
-                        state.Placements.Remove(deletedId);
-                        if (state.Facts?.QuizId == deletedId) state.Facts = state.Facts with { QuizId = null };
-                    }
-                    else if (state.Facts?.AnkiCollectionId == deletedId) state.Facts = state.Facts with { AnkiCollectionId = null };
-                }
+                AssistantRunChangeState.RemoveDeletedResources(state, applied.Journal);
                 current.SavedChanges += applied.Journal.Count;
                 AssistantRunTelemetry.SavedChanges.Add(applied.Journal.Count);
                 if (applied.CreatedQuizId is Guid createdId)
@@ -864,18 +854,8 @@ internal sealed class AssistantRunExecutor(
                         });
                     }
 
-                    foreach (var deleted in applied.Journal.Where(c => c.Kind is "delete_quiz" or "anki_delete"))
-                {
-                    if (!Guid.TryParse(deleted.EntityId, out var deletedId)) continue;
-                    if (deleted.Kind == "delete_quiz")
-                    {
-                        state.Fingerprints.Remove(deletedId);
-                        state.Placements.Remove(deletedId);
-                        if (state.Facts?.QuizId == deletedId) state.Facts = state.Facts with { QuizId = null };
-                    }
-                    else if (state.Facts?.AnkiCollectionId == deletedId) state.Facts = state.Facts with { AnkiCollectionId = null };
-                }
-                current.SavedChanges += applied.Journal.Count;
+                    AssistantRunChangeState.RemoveDeletedResources(state, applied.Journal);
+                    current.SavedChanges += applied.Journal.Count;
                     continue;
                 }
 

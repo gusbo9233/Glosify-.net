@@ -1,16 +1,22 @@
+import { transcriptPresentation } from './transcript.js';
+import { preserveConversation } from './retention.js';
+import { setupFloatingChat } from './chat-panel.js';
 import { AvatarAudio } from './audio.js';
 import { createConversationMemory } from './memory.js';
 import { VoiceConnection } from './connection.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
+setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize') });
+let transcriptStatus = null, savingTranscript = false, transcriptStatusRequest = 0;
+let lastTranscript = null, clearedChatTurn, chatRevision = 0;
 let sessionStore;
 try { sessionStore = globalThis.sessionStorage; } catch { /* Storage may be disabled. */ }
 const memory = createConversationMemory(document.body?.dataset.speechUser, sessionStore);
 const preferences = memory.preferences();
 const helpKey = document.body?.dataset.speechUser ? `glosify.avatar.help.${document.body.dataset.speechUser}` : null;
 const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked });
-let replyHelp = null, spaceHeld = false;
+let replyHelp = null, spaceHeld = false, spaceRecording = false;
 try {
     const saved = JSON.parse(helpKey && sessionStore?.getItem(helpKey) || '{}');
     el('translate').checked = saved?.translateReplies === true;
@@ -24,7 +30,8 @@ function renderHelp() {
     el('translation').textContent = translation || ''; el('translation').hidden = !translation;
     el('suggestion-text').textContent = suggestion || ''; el('suggestion').hidden = !suggestion;
     el('suggestion-translation').textContent = suggestionTranslation || ''; el('suggestion-translation').hidden = !suggestionTranslation;
-    el('dialogue').hidden = el('caption').hidden && !translation && !suggestion;
+    el('chat-current').hidden = el('caption').hidden && !translation && !suggestion;
+    el('chat-empty').hidden = !!lastTranscript || !el('chat-current').hidden;
 }
 for (const name of ['translate', 'suggest']) el(name).addEventListener('change', () => {
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
@@ -49,6 +56,21 @@ function setState(value) {
     visual?.setState(value);
     refreshStart();
 }
+function positionSettingsToggle() {
+    const viewportWidth = document.documentElement?.clientWidth || window.innerWidth;
+    const rtl = document.documentElement?.dir === 'rtl';
+    const bounds = el('settings').getBoundingClientRect();
+    const offset = el('settings').hidden ? 0 : rtl ? bounds.left + 8 : viewportWidth - bounds.right + 8;
+    const style = el('settings-toggle').style;
+    const edge = rtl ? 'left' : 'right';
+    style[edge === 'left' ? 'right' : 'left'] = 'auto';
+    style[edge] = `${Math.max(0, Math.min(viewportWidth - 44, offset))}px`;
+}
+const settingsGeometry = new ResizeObserver(positionSettingsToggle);
+settingsGeometry.observe(el('workspace')); settingsGeometry.observe(el('settings'));
+const appMain = document.querySelector('.app-main');
+if (appMain) settingsGeometry.observe(appMain);
+window.addEventListener('resize', positionSettingsToggle);
 function toggleSettings(open) {
     const toggle = el('settings-toggle');
     el('settings').hidden = !open;
@@ -56,8 +78,13 @@ function toggleSettings(open) {
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', `${open ? 'Close' : 'Open'} conversation settings`);
     toggle.title = `${open ? 'Close' : 'Open'} settings`;
+    positionSettingsToggle();
 }
-el('settings-toggle').addEventListener('click', () => toggleSettings(el('settings').hidden));
+el('settings-toggle').addEventListener('click', () => {
+    const open = el('settings').hidden;
+    toggleSettings(open);
+    if (open) el('settings').scrollIntoView({ block: 'start', behavior: 'instant' });
+});
 el('settings').addEventListener('keydown', event => {
     if (event.key === 'Escape') {
         event.preventDefault(); toggleSettings(false); el('settings-toggle').focus();
@@ -68,29 +95,48 @@ function notice(text = '') {
     if (text) toggleSettings(true);
 }
 function caption(text, speaker = 'assistant') {
+    const body = el('chat-body'), follow = body.scrollHeight - body.scrollTop - body.clientHeight < 48;
+    el('chat-speaker').textContent = speaker === 'user' ? 'You' : character().name;
+    el('chat-current').dataset.speaker = speaker;
     el('caption').textContent = text; el('caption').dataset.speaker = speaker;
     el('caption').hidden = !text.trim();
     if (!text.trim() || speaker === 'user') replyHelp = null;
     renderHelp();
+    if (follow) body.scrollTop = body.scrollHeight;
 }
 function transcript(speaker, text) {
+    const body = el('chat-body'), follow = body.scrollHeight - body.scrollTop - body.clientHeight < 48;
     const item = document.createElement('li'), who = document.createElement('strong');
+    item.dataset.speaker = speaker === 'You' ? 'user' : 'assistant';
     who.textContent = speaker + ' '; item.append(who, document.createTextNode(text));
     el('transcript').append(item);
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
+    lastTranscript = { speaker, text };
+    if (el('caption').textContent === text && el('chat-speaker').textContent === speaker) el('caption').hidden = true;
+    renderHelp();
+    if (follow) body.scrollTop = body.scrollHeight;
 }
+function clearChat() {
+    clearedChatTurn = turnId ?? undefined; ++chatRevision;
+    el('transcript').replaceChildren(); lastTranscript = null; caption('');
+}
+el('chat-clear').addEventListener('click', clearChat);
 function refreshStart() {
     const handsFree = mode() === 'hands-free', reconnecting = state === 'reconnecting';
     // A hands-free error stops listening until the explicit retry.
     const recording = holding || (handsFree && !!audio && !muted && state !== 'error');
-    // The name stays fixed so assistive technology reads recording from aria-pressed.
-    const label = handsFree ? 'Microphone' : 'Hold to record';
-    // An active hold keeps the button enabled, even while starting over, so its release arrives.
-    el('talk').disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || reconnecting));
-    el('talk').setAttribute('aria-label', label);
-    el('talk').setAttribute('aria-pressed', String(recording));
-    el('talk').title = reconnecting ? 'Start over' : holding ? 'Release to send'
-        : handsFree ? (recording ? 'Pause microphone' : 'Start microphone') : label;
+    const disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || reconnecting));
+    el('talk').hidden = handsFree;
+    el('talk').disabled = handsFree || disabled;
+    el('talk').setAttribute('aria-label', 'Hold to record');
+    el('talk').setAttribute('aria-pressed', String(!handsFree && holding));
+    el('talk').title = reconnecting ? 'Start over' : holding ? 'Release to send' : 'Hold to record';
+    el('hands-free').setAttribute('aria-label', 'Hands-free conversation');
+    el('hands-free').hidden = !handsFree;
+    el('hands-free').disabled = !handsFree || disabled;
+    el('hands-free').setAttribute('aria-pressed', String(handsFree && recording));
+    el('hands-free').textContent = reconnecting ? 'Restart hands-free' : recording ? 'Pause hands-free' : 'Start hands-free';
+    el('hands-free').title = el('hands-free').textContent;
     el('quiz').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('character').disabled = characterLoading || !!ending || changingQuiz || (!!audio && !ready) || pageLeaving;
 }
@@ -99,6 +145,13 @@ async function chooseCharacter() {
         el('character').value = characterId; return;
     }
     const selected = el('character').value;
+    const previous = selection();
+    // The select has already changed; the active character is still the old one.
+    if (selected !== characterId && config && memory.get(previous)) {
+        changingQuiz = true; refreshStart();
+        try { if (!await prepareConversationChange(previous)) { el('character').value = characterId; return; } }
+        finally { changingQuiz = false; refreshStart(); }
+    }
     characterId = Object.hasOwn(characters, selected) ? selected : 'rain';
     el('character').value = characterId;
     const generation = ++modelEpoch;
@@ -134,7 +187,8 @@ async function requestJson(path, options = {}, timeout = 10000) {
         const response = await fetch(path, { credentials: 'same-origin', ...options, signal: controller.signal });
         if (!response.ok) {
             const problem = await response.json().catch(() => ({}));
-            throw new Error(problem.detail || problem.title || 'The voice request failed. Please retry.');
+            const error = new Error(problem.detail || problem.title || 'The voice request failed. Please retry.');
+            error.status = response.status; throw error;
         }
         return response.status === 204 ? null : await response.json();
     } catch (error) {
@@ -145,21 +199,147 @@ async function requestJson(path, options = {}, timeout = 10000) {
 function api(path, body, timeout) {
     return requestJson(path, { method: 'POST', headers: { 'Content-Type': 'application/json', RequestVerificationToken: token }, body: JSON.stringify(body) }, timeout);
 }
+function showTranscriptStatus(status) {
+    if (status && status.conversationId !== memory.get(selection())) return;
+    if (status && transcriptStatus?.conversationId === status.conversationId
+        && (status.revision ?? 0) < (transcriptStatus.revision ?? 0)) return;
+    if (status && transcriptStatus?.conversationId === status.conversationId)
+        status = { ...status, turnCount: Math.max(status.turnCount, transcriptStatus.turnCount),
+            savedTurns: status.transcriptId && status.transcriptId === transcriptStatus.transcriptId
+                ? Math.max(status.savedTurns, transcriptStatus.savedTurns) : status.savedTurns };
+    transcriptStatus = status;
+    const view = transcriptPresentation(status);
+    el('ask').disabled = el('make-quiz').disabled = !view.enabled;
+    el('save').disabled = !view.enabled || savingTranscript;
+    el('save').textContent = view.label;
+    el('save-status').textContent = view.message;
+    el('saved-link').hidden = !view.href;
+    if (view.href) el('saved-link').href = view.href;
+}
+async function refreshTranscriptStatus() {
+    const id = memory.get(selection());
+    if (!id) { showTranscriptStatus(null); return; }
+    const request = ++transcriptStatusRequest;
+    try {
+        const status = await requestJson(`/api/avatar/conversations/${id}/transcript`);
+        if (request === transcriptStatusRequest) showTranscriptStatus(status);
+    }
+    catch { /* Preserve known state; navigation resolves unknown state before leaving. */ }
+}
+async function saveTranscript() {
+    const id = memory.get(selection());
+    if (!id || savingTranscript) return;
+    ++transcriptStatusRequest; // An earlier GET cannot overwrite the save result.
+    savingTranscript = true; showTranscriptStatus(transcriptStatus);
+    try { showTranscriptStatus(await api(`/api/avatar/conversations/${id}/transcript`, {})); }
+    catch (error) { if (memory.get(selection()) === id) el('save-status').textContent = error.message; }
+    finally { savingTranscript = false; el('save').disabled = !transcriptStatus?.turnCount; }
+}
+el('save').addEventListener('click', () => { void saveTranscript(); });
+for (const name of ['ask', 'make-quiz']) el(name).addEventListener('click', () => {
+    const conversationId = memory.get(selection());
+    if (conversationId) window.dispatchEvent(new CustomEvent('assistant:avatar', { detail: { conversationId, quiz: name === 'make-quiz' } }));
+});
+window.addEventListener('assistant:opened', () => {
+    muted = true; holding = false; spaceRecording = false; audio?.mute(true);
+    ++captureEpoch; awaitingCommit = false; flushing = false; preRoll = [];
+    if (state === 'listening' || state === 'connecting') interrupt();
+    else setState(state);
+});
+el('autosave').addEventListener('change', async () => {
+    const enabled = el('autosave').checked;
+    el('autosave').disabled = true;
+    try {
+        await api('/api/avatar/preferences', { autoSaveConversations: enabled });
+        if (enabled) await saveTranscript();
+    } catch (error) { el('autosave').checked = !enabled; notice(error.message); }
+    finally { el('autosave').disabled = false; }
+});
+el('new-conversation').addEventListener('click', async () => {
+    if (pageLeaving || changingQuiz || ending) return;
+    changingQuiz = true; el('new-conversation').disabled = true; refreshStart();
+    try {
+        if (!await prepareConversationChange(selection())) return;
+        memory.save(selection(), '');
+        clearChat(); showTranscriptStatus(null);
+        notice('New conversation ready. Saved transcripts are kept.');
+    } finally { changingQuiz = false; el('new-conversation').disabled = false; refreshStart(); }
+});
+function chooseUnsavedConversation() {
+    const dialog = el('unsaved-dialog');
+    return new Promise(resolve => {
+        const complete = () => resolve(dialog.returnValue || 'cancel');
+        dialog.addEventListener('close', complete, { once: true });
+        dialog.returnValue = 'cancel'; dialog.showModal();
+    });
+}
+async function prepareConversationChange(context) {
+    const id = memory.get(context);
+    if (!id) { if (audio || sessionId) await end(); return true; }
+    const pendingTurn = ['connecting', 'listening', 'thinking', 'speaking'].includes(state);
+    if (audio) {
+        muted = true; holding = false; spaceRecording = false; audio.mute(true);
+        if (state === 'listening' || state === 'connecting') interrupt();
+        else setState(state);
+    }
+    try {
+        const accepted = await preserveConversation(id, {
+            status: value => requestJson(`/api/avatar/conversations/${value}/transcript`),
+            choose: chooseUnsavedConversation,
+            pendingTurn, stop: end,
+            save: value => api(`/api/avatar/conversations/${value}/transcript`, {}),
+            forget: value => api(`/api/avatar/memories/${value}/forget`, {})
+        });
+        if (!accepted) return false;
+        memory.save(context, '');
+        clearChat(); showTranscriptStatus(null);
+        window.dispatchEvent(new CustomEvent('assistant:avatar-ended', { detail: { conversationId: id } }));
+        return true;
+    } catch (error) {
+        notice(error.message);
+        // A reference that expired or disappeared cannot block starting over.
+        // Keep missing references for a possible language change in another tab.
+        if (error.status === 410) memory.save(context, '');
+        if (error.status === 404 || error.status === 410) { showTranscriptStatus(null); return true; }
+        return false;
+    }
+}
+// Normal navigation offers the same save decision as switching partner or quiz.
+// Refresh/closing uses the browser's own warning; the reference remains resumable.
+document.addEventListener('click', event => {
+    const link = event.target?.closest?.('a[href]');
+    if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey
+        || link.target === '_blank' || link.hasAttribute('download') || link.getAttribute('href')?.startsWith('#')) return;
+    if (!memory.get(selection())) return;
+    if (transcriptStatus && transcriptStatus.turnCount <= transcriptStatus.savedTurns
+        && !['connecting', 'listening', 'thinking', 'speaking'].includes(state)) return;
+    event.preventDefault();
+    if (changingQuiz) return;
+    changingQuiz = true; refreshStart();
+    void prepareConversationChange(selection()).then(accepted => { if (accepted) location.assign(link.href); })
+        .finally(() => { changingQuiz = false; refreshStart(); });
+}, { capture: true });
+window.addEventListener('beforeunload', event => {
+    if (memory.get(selection()) && (!transcriptStatus || transcriptStatus.turnCount > transcriptStatus.savedTurns)) {
+        event.preventDefault(); event.returnValue = '';
+    }
+});
 function selectMemory() {
     const discarded = memory.select(selection());
+    if (discarded) showTranscriptStatus(null);
+    void refreshTranscriptStatus();
     if (!discarded) return;
-    el('transcript').replaceChildren(); caption('');
-    // Clear the reference immediately, including offline; an old selection must
-    // never recover its previous context. Server memory also expires on its own.
-    void api(`/api/avatar/memories/${discarded}/forget`, {}).catch(() => {});
+    el('transcript').replaceChildren(); lastTranscript = null; caption('');
+    // Selection can also change in another tab. Keep its opaque reference until
+    // an explicit Save/Discard decision; switching back can resume that context.
 }
 function connectionLost() {
     ++captureEpoch;
-    ready = false; holding = false; awaitingCommit = false; flushing = false;
+    ready = false; holding = false; spaceRecording = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; cancelledTurn = turnId; turnId = null; currentReply = '';
     audio?.stop(); audio?.mute(true); muted = true;
     caption(''); setState('reconnecting');
-    notice('Connection lost. Reconnecting… Use the microphone to start over instead. Interrupted audio will not be replayed.');
+    notice('Connection lost. Reconnecting… Use the conversation control to start over instead. Interrupted audio will not be replayed.');
 }
 function listen(preserveCapture = false) {
     if (!ready || muted) return;
@@ -211,10 +391,14 @@ function frame({ pcm, rms }) {
 }
 async function onMessage(message, generation) {
     if (generation !== epoch) return;
+    if (message.type === 'transcript-status') { showTranscriptStatus(message.status); return; }
+    if (message.type === 'transcript-save-error') {
+        void refreshTranscriptStatus().then(() => { el('save-status').textContent = message.detail; }); return;
+    }
     if (message.type === 'connected') {
         ready = true; setState('idle');
         if (message.resumed) {
-            notice('Connection restored. Use the microphone to continue; please repeat the interrupted turn.');
+            notice('Connection restored. Use the conversation control to continue; please repeat the interrupted turn.');
         }
         if (mode() === 'hands-free' && !muted) listen();
         // A pending flush may still deliver the only audio of a short first press.
@@ -231,6 +415,7 @@ async function onMessage(message, generation) {
     }
     if (message.type === 'connecting') { turnId = message.turnId; setState('connecting'); return; }
     if (message.turnId && (message.turnId !== turnId || message.turnId === cancelledTurn)) return;
+    const showChat = !turnId || turnId !== clearedChatTurn;
     switch (message.type) {
         case 'listening':
             setState('listening');
@@ -238,15 +423,19 @@ async function onMessage(message, generation) {
             for (const pcm of preRoll) { if (socket.send(pcm) === false) break; } preRoll = [];
             if (awaitingCommit && !flushing) commit();
             break;
-        case 'partial': caption(message.text, 'user'); break;
-        case 'transcript': caption(message.text, 'user'); transcript('You', message.text); break;
+        case 'partial': if (showChat) caption(message.text, 'user'); break;
+        case 'transcript': if (showChat) { caption(message.text, 'user'); transcript('You', message.text); } break;
         case 'thinking': setState('thinking'); break;
-        case 'reply': currentReply = message.text; replyHelp = message; caption(message.text); visual?.setReply(message.text); setState('speaking'); break;
+        case 'reply':
+            currentReply = message.text;
+            if (showChat) { replyHelp = message; caption(message.text); }
+            visual?.setReply(message.text); setState('speaking'); break;
         case 'audio': audio?.play(message.pcm); break;
         case 'audio-end': {
-            const id = turnId, text = currentReply;
+            const id = turnId, text = currentReply, revision = chatRevision;
             if (await audio.finished() && generation === epoch && id === turnId) {
-                transcript(character().name, text); send({ type: 'played', turnId: id });
+                if (showChat && revision === chatRevision) transcript(character().name, text);
+                send({ type: 'played', turnId: id });
             }
             break;
         }
@@ -262,7 +451,7 @@ async function onMessage(message, generation) {
 }
 async function start() {
     if (!canStart()) return;
-    const generation = ++epoch; ready = false; notice(); caption(''); setState('connecting');
+    const generation = ++epoch; ready = false; muted = false; notice(); caption(''); setState('connecting');
     el('spending').textContent = 'Current session · 0 credits';
     const context = selection();
     const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
@@ -274,6 +463,7 @@ async function start() {
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         memory.save(context, result.memoryId);
+        void refreshTranscriptStatus();
         el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
         const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         socket = new VoiceConnection(url, {
@@ -292,7 +482,7 @@ function end() {
     if (ending) return ending;
     const generation = ++epoch;
     ++captureEpoch;
-    ready = false; holding = false; awaitingCommit = false; flushing = false;
+    ready = false; holding = false; spaceRecording = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; muted = false; turnId = null;
     const oldSession = sessionId, oldAudio = audio; sessionId = null; audio = null;
     socket?.close(); socket = null;
@@ -328,6 +518,14 @@ function startOver() {
     return ended.then(() => start());
 }
 function press(event) {
+    if (mode() !== 'push-to-talk') return;
+    activateConversation(event);
+}
+function toggleHandsFree(event) {
+    if (mode() !== 'hands-free') return;
+    activateConversation(event);
+}
+function activateConversation(event) {
     if (ending || changingQuiz || pageLeaving) return;
     if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
     if (!ready && !canStart()) return;
@@ -375,12 +573,16 @@ async function release() {
 async function chooseQuiz() {
     if (changingQuiz || pageLeaving || ending) return;
     changingQuiz = true; refreshStart();
+    const previous = memory.preferences();
     try {
-        if (audio || sessionId) await end();
+        if (previous && !await prepareConversationChange(previous)) {
+            el('quiz').value = previous.quizId || ''; return;
+        }
         if (!pageLeaving) selectMemory();
     } finally { changingQuiz = false; refreshStart(); }
 }
 el('quiz').addEventListener('change', () => { void chooseQuiz(); });
+el('hands-free').addEventListener('click', toggleHandsFree);
 el('talk').addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;
     el('talk').setPointerCapture(event.pointerId); press(event);
@@ -393,27 +595,40 @@ el('talk').addEventListener('keydown', event => {
     if (event.code === 'Enter') { event.preventDefault(); if (!event.repeat) press(event); }
 });
 el('talk').addEventListener('keyup', event => { if (event.code === 'Enter') { event.preventDefault(); void release(); } });
-// Space works from the scene or page, while native controls keep their own keys.
+// Space controls recording on the page and microphone. Controls, editors and
+// dialogs keep their native keyboard behavior, including checkbox/radio toggles.
+function isTypingSpace(event) {
+    if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
+        || event.target?.isContentEditable) return true;
+    if (event.target === el('talk')) return false;
+    return !!event.target?.closest?.('button, input, textarea, select, a[href], summary, dialog, [role="dialog"], [data-assistant-panel], [contenteditable], [role="textbox"], [role="combobox"], [role="button"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], [role="spinbutton"], [role="listbox"]');
+}
 document.addEventListener('keydown', event => {
-    if (event.code !== 'Space') return;
-    if (spaceHeld) { event.preventDefault(); return; }
-    if (event.defaultPrevented || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || pageLeaving) return;
-    const target = event.target;
-    if (target !== el('talk') && (target?.isContentEditable || target?.closest?.('input, textarea, select, button, a, summary, [contenteditable], [role="button"], [role="textbox"], [role="combobox"], [role="dialog"], dialog'))) return;
-    // Also suppress scrolling while the microphone is still getting ready.
-    event.preventDefault();
-    if (event.repeat || el('talk').disabled) return;
-    spaceHeld = true; press();
-});
+    if (event.code !== 'Space' || pageLeaving) return;
+    if (!spaceHeld && (event.defaultPrevented || isTypingSpace(event))) return;
+    event.preventDefault(); event.stopPropagation();
+    if (spaceHeld || event.repeat) return;
+    spaceHeld = true;
+    const handsFree = mode() === 'hands-free';
+    if (el(handsFree ? 'hands-free' : 'talk').disabled) return;
+    if (handsFree) toggleHandsFree();
+    else {
+        const wasHolding = holding;
+        press(); spaceRecording = !wasHolding && holding;
+    }
+}, { capture: true });
 document.addEventListener('keyup', event => {
-    if (event.code !== 'Space' || !spaceHeld) return;
-    event.preventDefault(); spaceHeld = false; void release();
-});
-function releaseKeyboard() { spaceHeld = false; void release(); }
+    if (event.code !== 'Space' || (!spaceHeld && isTypingSpace(event))) return;
+    event.preventDefault(); event.stopPropagation();
+    const releaseHold = spaceHeld && spaceRecording;
+    spaceHeld = false; spaceRecording = false;
+    if (releaseHold) void release();
+}, { capture: true });
+function releaseKeyboard() { spaceHeld = false; spaceRecording = false; void release(); }
 window.addEventListener('blur', releaseKeyboard);
 document.querySelectorAll('input[name="avatar-mode"]').forEach(input => input.addEventListener('change', () => {
-    holding = false;
-    // A mode selection pauses existing capture too; only the microphone starts it.
+    spaceHeld = false; spaceRecording = false; holding = false;
+    // A mode selection pauses capture; the matching button or Space starts it.
     if (audio) { muted = true; audio.mute(true); }
     if (ready) interrupt();
     else { ++captureEpoch; awaitingCommit = false; flushing = false; preRoll = []; }
@@ -442,6 +657,7 @@ async function initialize() {
         const next = await requestJson('/api/avatar/config');
         if (pageLeaving || generation !== configEpoch) return;
         config = next;
+        el('autosave').checked = !!config.autoSaveConversations;
         el('caption').lang = config.language || '';
         el('suggestion-text').lang = config.language || '';
         el('language').textContent = config.languageName ? `Practicing ${config.languageName}` : 'Choose a learning language in the sidebar.';

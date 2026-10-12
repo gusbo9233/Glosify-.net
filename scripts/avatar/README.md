@@ -1,7 +1,9 @@
 # Avatar assets and verification
 
 The admin-only `/Avatar` page is implemented inside the Glosify MVC application.
-It ships with `Avatar:Enabled=true`; apply `AddAvatarUsageOperations` through the normal deployment migration bundle before serving traffic. The existing
+It ships with `Avatar:Enabled=true`; apply pending migrations, including
+`AddAvatarUsageOperations` and `AvatarConversationTranscripts`, through the normal
+deployment migration bundle before serving traffic. The existing
 `Admin:UserIds` allowlist controls the page, HTTP API, and WebSocket. No shared game
 authentication or separate game deployment is required.
 
@@ -10,15 +12,14 @@ authentication or separate game deployment is required.
 Push-to-talk is the default on every page visit. The first hold of the microphone
 button requests microphone permission and opens the voice connection; there is
 no separate Start action. Choose Hands-free explicitly to use continuous capture,
-then use the microphone button to start it. Changing modes pauses existing capture
-and waits for the microphone button; choosing a mode never opens the microphone.
+then select Start hands-free to begin. The microphone button is only for push-to-talk. Changing modes pauses existing capture
+and waits for the selected mode’s start control; choosing a mode never opens the microphone.
 Merely loading the page does not open the microphone or submit provider requests.
 After a release during initial connection setup, the button stays disabled until the
 connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
-supports holding Enter. Holding Space anywhere outside form controls also records,
-without scrolling the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, the same
-button pauses/resumes capture; pausing during a reply lets the reply finish. The
+supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Buttons, checkboxes, radios, links, editors, selects and dialogs retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
+Start/Pause hands-free button replaces the microphone and pauses/resumes capture; pausing during a reply lets the reply finish. The
 button keeps a fixed accessible name and reports recording through `aria-pressed`.
 There are no separate Mute/End controls or Space hint. Each account has one live
 conversation: starting in another tab ends the earlier tab's conversation.
@@ -27,12 +28,17 @@ Leaving the page stops capture. Returning in the same tab/browser session restor
 conversation context on the next talk action. Only an opaque reference and the
 selected partner/quiz/language and help preferences are kept in account-scoped `sessionStorage`; the
 transcript remains in process-local server memory. Changing partner, language or
-quiz discards the previous reference instead of keeping separate conversations.
-Changing partner or quiz stops the old capture automatically. Captions show only turns heard during the current visit.
+quiz asks to Save / Discard / Cancel before dropping unsaved turns. Failed saves
+preserve the old context. Unexpected selection changes retain opaque references
+for resuming when that selection is restored. Changing partner or quiz stops the
+old capture automatically. The floating conversation chat shows only turns heard during the current visit. Drag its header to move it or its lower-right handle to resize it. Both handles support arrow keys (Shift for larger steps). Clear chat removes visible messages and live help without ending the voice session or erasing server conversation memory. The window stays inside the stage, above the voice controls, and follows stage resizing. Messages are bounded to 48 turns and auto-scroll only when the reader is already near the bottom. Chat geometry is not persisted.
 
-Server memory is owner/context-checked, bounded to 128 conversations and 24 turns /
-24,000 serialized characters each, and expires after eight hours without a saved
-turn or a new visit claiming it. Capacity eviction and application restarts can also discard it. An old
+Server memory is owner/context-checked. Model history is bounded to 24 turns /
+24,000 serialized characters; the separate spoken archive permits 2,000 turns /
+500,000 characters. All archives share a 128-conversation / 8,000,000-character cap.
+Capacity reclaims only fully saved idle archives; unsaved archives are never evicted
+for capacity. Memory expires after eight hours without activity and application
+restarts discard it. Save transcripts to retain them durably. An old
 connection cannot overwrite memory after a newer visit has claimed it. Existing
 30-minute connection limits and 45-second transport recovery limits still apply.
 
@@ -133,8 +139,8 @@ backoff for up to 45 seconds. The server retains the owned session and conversat
 context for 45 seconds after the old connection finishes cancelling its turn.
 Reconnect still checks authentication, origin and session ownership, allows only
 one socket, and never extends the original 30-minute lifetime. Restored sessions
-keep the microphone paused until the user uses the microphone button again. While
-reconnecting, the microphone button can instead start over with a new session that
+keep the microphone paused until the user uses the selected mode’s control again. While
+reconnecting, that control can instead start over with a new session that
 restores remembered context, for example after mobile suspension outlasted the
 server's grace period; a push-to-talk hold that starts over records like a first
 press. Interrupted audio and

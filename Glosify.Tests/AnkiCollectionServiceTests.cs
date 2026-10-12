@@ -45,6 +45,41 @@ public sealed class AnkiCollectionServiceTests
         Assert.Equal("Polish", collection.TargetLanguage);
     }
 
+    [Theory]
+    [InlineData(PracticeDirection.SourceToTarget)]
+    [InlineData(PracticeDirection.TargetToSource)]
+    public async Task Direction_switch_keeps_each_linked_direction_exclusion_independent(string removedDirection)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.CreateAsync(new("Both directions", "English", "Polish", "UTC"), UserId);
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, true, false, false), UserId);
+        var removed = await f.Context.AnkiCards.SingleAsync(card => card.Note.WordId == f.Word.Id && card.Direction == removedDirection);
+        var retained = await f.Context.AnkiCards.SingleAsync(card => card.Note.WordId == f.Word.Id && card.Direction != removedDirection);
+        removed.ReviewCount = 4;
+        removed.Stability = 11;
+        await f.Context.SaveChangesAsync();
+        Assert.True(await f.Collections.RemoveCardAsync(removed.Id, UserId));
+        Assert.True(retained.IsActive);
+
+        await f.Collections.SetDirectionAsync(collection.Id, retained.Direction, UserId);
+        await f.Collections.SetDirectionAsync(collection.Id, removed.Direction, UserId);
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.True(removed.ExcludedFromQuizLink);
+        Assert.False(removed.IsActive);
+        Assert.False(retained.ExcludedFromQuizLink);
+        Assert.Equal(4, removed.ReviewCount);
+        Assert.Equal(11, removed.Stability);
+
+        // Selecting an excluded side temporarily leaves this note inactive, but must not
+        // erase the independent inclusion of its other side on the next switch.
+        await f.Collections.SetDirectionAsync(collection.Id, retained.Direction, UserId);
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.True(retained.IsActive);
+        Assert.False(retained.ExcludedFromQuizLink);
+        Assert.False(removed.IsActive);
+        Assert.True(removed.ExcludedFromQuizLink);
+    }
+
     [Fact]
     public async Task Direction_switch_preserves_direct_only_membership()
     {

@@ -232,7 +232,8 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
             {
                 transcript = await _context.RealtimeTranslationTranscripts.SingleOrDefaultAsync(item =>
                     item.Id == transcriptId.Value
-                    && item.UserId == userId,
+                    && item.UserId == userId
+                    && item.SourceKind == RealtimeTranslationTranscriptSourceKinds.Subtitles,
                     cancellationToken)
                     ?? throw new RealtimeTranslationNotFoundException("Saved transcript not found.");
                 if (!string.Equals(

@@ -132,18 +132,17 @@ internal sealed class AssistantEvaluationWorker(
     TimeProvider clock)
 {
     internal static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(5);
-    private static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(2);
+    internal static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(2);
+    internal static readonly TimeSpan SettlementTimeout = TimeSpan.FromSeconds(30);
     public async Task EvaluateOneAsync(CancellationToken cancellationToken)
     {
-        if (!jev.Value.Enabled)
-        {
-            return;
-        }
-
+        var allowEvaluation = jev.Value.Enabled;
         var now = clock.GetUtcNow().UtcDateTime;
         var eligible = db.AssistantToolEvaluations.AsNoTracking()
-            .Where(candidate => (candidate.Status == "pending"
-                    || (candidate.Status == "evaluating" && (candidate.LeaseUntil == null || candidate.LeaseUntil <= now)))
+            .Where(candidate => (allowEvaluation || candidate.Status == "settling")
+                && (candidate.Status == "pending"
+                    || ((candidate.Status == "evaluating" || candidate.Status == "settling")
+                        && (candidate.LeaseUntil == null || candidate.LeaseUntil <= now)))
                 && db.AssistantRuns.Any(run => run.Id == candidate.RunId
                     && (run.Status == AssistantRunStatus.Completed || run.Status == AssistantRunStatus.Cancelled || run.Status == AssistantRunStatus.Failed)));
         var evaluation = await eligible.OrderBy(candidate => candidate.CreatedAt).ThenBy(candidate => candidate.Id)
@@ -155,30 +154,44 @@ internal sealed class AssistantEvaluationWorker(
 
         // Claim/reclaim atomically. A unique lease fences a delayed old worker's result.
         var lease = Guid.NewGuid();
+        var resumingSettlement = evaluation.Status == "settling";
         if (await eligible.Where(candidate => candidate.Id == evaluation.Id)
-                .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.Status, "evaluating")
+                .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.Status, resumingSettlement ? "settling" : "evaluating")
                     .SetProperty(candidate => candidate.LeaseId, lease)
                     .SetProperty(candidate => candidate.LeaseUntil, now + LeaseDuration), cancellationToken) == 0)
         {
             return;
         }
 
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(EvaluationTimeout);
-        var token = deadline.Token;
+        if (resumingSettlement)
+        {
+            // The provider already returned and was paid. Recover only the database debit,
+            // even after shutdown, timeout or a failed settlement transaction.
+            using var recovery = new CancellationTokenSource(SettlementTimeout, clock);
+            var retained = RunJson.Read<ToolUseEvaluation>(evaluation.EvaluationJson!);
+            var outstanding = await OutstandingReservations().Select(r => r.ReservationId).SingleOrDefaultAsync(recovery.Token);
+            await CompleteAsync(retained, outstanding, recovery.Token);
+            return;
+        }
+
+        using var deadline = new CancellationTokenSource(EvaluationTimeout, clock);
+        using var evaluationCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
+        var token = evaluationCancellation.Token;
         Guid? reservationId = null;
         ToolUseEvaluation result;
+        // OperationId durably ties reservations to this evaluation even if the process
+        // dies before ReserveAsync returns. Retire the previous attempt before reserving
+        // again, including when pricing/credits no longer allow another evaluation.
+        // Cleanup failures must leave the lease recoverable. They are not provider failures:
+        // marking this row unavailable would strand the previous attempt's credit holds.
+        if (!await WithOwnedLeaseAsync(async () =>
+        {
+            var abandoned = await OutstandingReservations().Select(r => r.ReservationId!.Value).ToListAsync(token);
+            foreach (var id in abandoned) await credits.ReleaseAsync(id, token);
+        }, token)) return;
+
         try
         {
-            // OperationId durably ties reservations to this evaluation even if the process
-            // dies before ReserveAsync returns. Retire the previous attempt before reserving
-            // again, including when pricing/credits no longer allow another evaluation.
-            if (!await WithOwnedLeaseAsync(async () =>
-            {
-                var abandoned = await OutstandingReservations().Select(r => r.ReservationId!.Value).ToListAsync(token);
-                foreach (var id in abandoned) await credits.ReleaseAsync(id, token);
-            }, token)) return;
-
             var userId = await db.AssistantRuns.Where(run => run.Id == evaluation.RunId).Select(run => run.UserId).SingleAsync(token);
             var snapshot = RunJson.Read<ToolDecisionSnapshot>(evaluation.SnapshotJson);
             var estimate = RunJson.Write(JevToolUseEvaluator.BuildState(snapshot)).Length / 3 + 1500;
@@ -204,32 +217,54 @@ internal sealed class AssistantEvaluationWorker(
                 }, token)) return;
                 result = await evaluator.EvaluateAsync(snapshot, token);
                 if (result.Status == "evaluated" && result.Tokens <= 0) result = Unavailable();
-                if (await CompleteAsync(result, reservationId, token)) reservationId = null;
-                return;
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             db.ChangeTracker.Clear();
             // Graceful shutdown retries immediately; a process crash retries on lease expiry.
+            using var cleanup = new CancellationTokenSource(SettlementTimeout, clock);
             await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, "pending")
-                .SetProperty(e => e.LeaseId, (Guid?)null).SetProperty(e => e.LeaseUntil, (DateTime?)null), CancellationToken.None);
+                .SetProperty(e => e.LeaseId, (Guid?)null).SetProperty(e => e.LeaseUntil, (DateTime?)null), cleanup.Token);
+            if (reservationId is Guid interrupted) await credits.ReleaseAsync(interrupted, cleanup.Token);
             throw;
         }
         catch (Exception)
         {
-            // Settlement can have saved tracked credit state inside a rolled-back transaction.
             db.ChangeTracker.Clear();
             // Provider failures/timeouts are advisory and never block the original run.
             result = Unavailable();
         }
-        finally
-        {
-            if (reservationId is Guid outstanding)
-                await credits.ReleaseAsync(outstanding, CancellationToken.None);
-        }
 
-        await CompleteAsync(result, null, cancellationToken);
+        // The evaluation deadline and host shutdown must not cancel settlement after a
+        // successful paid response. Persist the result before debiting so a failed
+        // settlement can resume without repeating the provider call or releasing its hold.
+        using var settlement = new CancellationTokenSource(SettlementTimeout, clock);
+        if (result.Status == "evaluated")
+        {
+            var json = RunJson.Write(result);
+            if (await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, "settling")
+                    .SetProperty(e => e.EvaluationJson, json)
+                    .SetProperty(e => e.LeaseUntil, clock.GetUtcNow().UtcDateTime + LeaseDuration), settlement.Token) == 0)
+            {
+                if (reservationId is Guid stale) await credits.ReleaseAsync(stale, settlement.Token);
+                return;
+            }
+            // Exceptions deliberately leave the durable result and reservation for recovery.
+            await CompleteAsync(result, reservationId, settlement.Token);
+        }
+        else
+        {
+            try
+            {
+                if (await CompleteAsync(result, reservationId, settlement.Token)) reservationId = null;
+            }
+            finally
+            {
+                db.ChangeTracker.Clear();
+                if (reservationId is Guid unused) await credits.ReleaseAsync(unused, settlement.Token);
+            }
+        }
 
         IQueryable<AiCreditTransaction> OutstandingReservations() => db.AiCreditTransactions.AsNoTracking()
             .Where(r => r.OperationId == evaluation.Id && r.Feature == AiUsageFeatures.Assistant
@@ -281,7 +316,7 @@ internal sealed class AssistantEvaluationWorker(
         }
 
         IQueryable<AssistantToolEvaluation> OwnedLease() => db.AssistantToolEvaluations
-            .Where(e => e.Id == evaluation.Id && e.Status == "evaluating" && e.LeaseId == lease
+            .Where(e => e.Id == evaluation.Id && (e.Status == "evaluating" || e.Status == "settling") && e.LeaseId == lease
                 && e.LeaseUntil > clock.GetUtcNow().UtcDateTime);
         ToolUseEvaluation Unavailable() => new("unavailable", jev.Value.Model, JevToolUseEvaluator.RubricVersion, []);
 

@@ -39,6 +39,20 @@ export function affectsStudy(run, { studyQuizId, studyAnkiCollectionId, studyCar
     });
 }
 
+// Deleted quiz/folder detail routes redirect to their own library. Treat only
+// that exact same-origin destination as removal; login or unrelated redirects
+// must never replace learning content with another page's response.
+export function isRemovedItemRedirect(response, requestUrl) {
+    if (!response.ok || !response.redirected) return false;
+    try {
+        const original = new URL(requestUrl), destination = new URL(response.url);
+        const resource = original.pathname.match(/^\/(quiz|anki)\/(?:details|collection|settings)(?:\/|$)/i)?.[1];
+        return !!resource && destination.origin === original.origin
+            && new RegExp(`^/${resource}(?:/index)?/?$`, 'i').test(destination.pathname)
+            && !destination.search && !destination.hash;
+    } catch { return false; }
+}
+
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('glosify-learning-changes') : null;
     window.addEventListener('assistant:changes', event => channel?.postMessage({ id: event.detail.id, changeRevision: event.detail.changeRevision, resourceChanges: event.detail.resourceChanges }));
@@ -89,7 +103,7 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
                 const html = response.ok ? await response.text() : '';
                 if (!isCurrent() || version !== requestVersion || location.href !== url) return;
                 if (dirty || screen.querySelector('dialog[open]')) { message('Saved changes are available. Finish editing before updating this view.', true); return; }
-                if (response.status === 404) {
+                if (response.status === 404 || isRemovedItemRedirect(response, url)) {
                     screen.replaceChildren();
                     const text = document.createElement('p'); text.textContent = 'This item was removed.';
                     const link = document.createElement('a'); link.href = /^\/anki/i.test(location.pathname) ? '/Anki' : '/Quiz'; link.textContent = 'Back to library';

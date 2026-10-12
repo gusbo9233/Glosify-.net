@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant.Tools;
@@ -55,7 +56,7 @@ internal sealed class ManageAnkiTool(GlosifyContext db) : AssistantTool<ManageAn
     public override string Name => "manage_anki";
     public override AssistantToolKind Kind => AssistantToolKind.Write;
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
-    protected override string Describe(AssistantMode mode) => "Manage Anki study collections and card membership. Read inspect_anki first. direction replaces active directions, retaining inactive review history; source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz uses all four direction flags; add_item uses direction. Deletion is permanent. Removals/deletion require approval. settings changes only supplied values.";
+    protected override string Describe(AssistantMode mode) => "Manage Anki study collections and card membership. Read inspect_anki first. direction replaces active directions, retaining inactive review history; source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz requires at least one of its four direction flags; add_item uses direction and item_type (word/words, sentence/sentences; omitted defaults to words). Deletion is permanent. Removals/deletion require approval. settings changes only supplied values.";
     protected override async Task<ToolResult> RunAsync(ManageAnkiArgs args, ToolContext context, CancellationToken ct)
     {
         args = args with { CollectionId = args.Action == "create" ? null : args.CollectionId ?? context.AnkiCollectionId,
@@ -67,6 +68,30 @@ internal sealed class ManageAnkiTool(GlosifyContext db) : AssistantTool<ManageAn
             return ToolResult.Fail("Invalid direction", "Use source-to-target or target-to-source.");
         if (args.Action is "create" or "rename" && string.IsNullOrWhiteSpace(args.Name)) return ToolResult.Fail("Name required", "Provide a collection name.");
         if (args.Action is "add_quiz" or "remove_quiz" or "add_item" && args.QuizId is null) return ToolResult.Fail("Quiz required", "Provide quiz_id from list_library.");
+        if (args.Action == "remove_card" && (args.CardId is null || args.CardId == Guid.Empty))
+            return ToolResult.Fail("Card required", "Provide card_id from inspect_anki.");
+        if (args.Action == "add_quiz" && args.WordsSourceToTarget != true && args.WordsTargetToSource != true
+            && args.SentencesSourceToTarget != true && args.SentencesTargetToSource != true)
+            return ToolResult.Fail("Direction required", "Choose at least one content type and direction.");
+        if (args.Action == "add_item")
+        {
+            var itemType = args.ItemType?.Trim().ToLowerInvariant() ?? PracticeItemType.Words;
+            if (itemType is not ("word" or "words" or "sentence" or "sentences"))
+                return ToolResult.Fail("Invalid item type", "Use words or sentences.");
+            if (string.IsNullOrWhiteSpace(args.ItemId))
+                return ToolResult.Fail("Item required", "Provide item_id from the selected quiz.");
+            var sentence = itemType is "sentence" or "sentences";
+            args = args with { ItemType = sentence ? PracticeItemType.Sentences : PracticeItemType.Words };
+            var exists = sentence
+                ? Guid.TryParse(args.ItemId, out var sentenceId) && await db.QuizSentences.AnyAsync(item => item.Id == sentenceId
+                    && item.QuizId == args.QuizId && db.Quizzes.Any(quiz => quiz.Id == item.QuizId && quiz.UserId == context.UserId), ct)
+                : await db.Words.AnyAsync(item => item.Id == args.ItemId && item.QuizId == args.QuizId
+                    && db.Quizzes.Any(quiz => quiz.Id == item.QuizId && quiz.UserId == context.UserId), ct);
+            if (!exists) return ToolResult.Fail("Item not found", "Read the owned quiz and provide an item_id matching its content type.");
+        }
+        if (args.Action == "remove_card" && !await db.AnkiCards.AnyAsync(card => card.Id == args.CardId
+                && card.Note.AnkiCollectionId == args.CollectionId && card.Note.Collection.UserId == context.UserId, ct))
+            return ToolResult.Fail("Card not found", "Use inspect_anki to find a card in this owned collection.");
         var collectionOnly = args.Action is "rename" or "settings";
         var snapshot = args.Action == "create" ? [] : await LearningChanges.SnapshotAsync(db, "anki", args.CollectionId ?? Guid.Empty, context.UserId, ct, collectionOnly);
         if (args.Action != "create" && snapshot.Count == 0) return ToolResult.Fail("Collection not found", "Use inspect_anki to find an owned collection.");
@@ -206,15 +231,25 @@ internal sealed class OpenPracticeTool(GlosifyContext db) : AssistantTool<OpenPr
 {
     public override string Name => "open_practice";
     public override AssistantToolKind Kind => AssistantToolKind.Read;
-    protected override string Describe(AssistantMode mode) => "Return a practice link for an owned quiz or Anki collection. Mode: flashcards, typing, or anki. Include the returned link in your reply. Does not submit answers for the learner.";
+    protected override string Describe(AssistantMode mode) => "Return a practice link for an owned quiz or Anki collection in the current app language. Mode: flashcards, typing, or anki. Include the returned link in your reply. Does not submit answers for the learner.";
     protected override async Task<ToolResult> RunAsync(OpenPracticeArgs args, ToolContext context, CancellationToken ct)
     {
         if (args.Mode is not ("flashcards" or "typing" or "anki") || args.Direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource)
             || args.ItemType is not ("words" or "sentences") || args.Count < 1 || args.Count > QuizSessionLimits.MaxItems)
             return ToolResult.Fail("Invalid settings", "Choose flashcards/typing/anki, source-to-target/target-to-source, words/sentences and a count from 1 to 1000.");
-        var owned = args.Mode == "anki" ? await db.AnkiCollections.AnyAsync(c => c.Id == args.Id && c.UserId == context.UserId, ct)
-            : await db.Quizzes.AnyAsync(q => q.Id == args.Id && q.UserId == context.UserId, ct);
-        if (!owned) return ToolResult.Fail("Not found", "Read the library to choose an owned quiz or collection.");
+        var target = args.Mode == "anki"
+            ? await db.AnkiCollections.Where(c => c.Id == args.Id && c.UserId == context.UserId).Select(c => c.TargetLanguage).SingleOrDefaultAsync(ct)
+            : await db.Quizzes.Where(q => q.Id == args.Id && q.UserId == context.UserId).Select(q => q.TargetLanguage).SingleOrDefaultAsync(ct);
+        if (target is null) return ToolResult.Fail("Not found", "Read the library to choose an owned quiz or collection.");
+        // Selected reading material may use another language, and a queued run may outlive
+        // a preference change. Practice routes use the current app selection instead.
+        var selected = await db.Users.Where(user => user.Id == context.UserId)
+            .Select(user => user.SelectedQuizLanguageCode).SingleOrDefaultAsync(ct);
+        var language = QuizLanguageCatalog.Find(selected);
+        if (language is null && args.Mode == "anki")
+            return ToolResult.Fail("Choose a language", "Select a learning language before opening Anki practice.");
+        if (language is not null && QuizLanguageCatalog.Find(target)?.Code != language.Code)
+            return ToolResult.Fail("Different learning language", $"Switch the app's learning language to {target} before opening this practice.");
         var url = args.Mode == "anki" ? $"/Anki/Study?id={args.Id}" : $"/Quiz/{(args.Mode == "typing" ? "Type" : "Flashcard")}?id={args.Id}&wordCount={args.Count}&practiceDirection={args.Direction}&practiceItemType={args.ItemType}";
         return ToolResult.Ok("Open practice", new { url });
     }

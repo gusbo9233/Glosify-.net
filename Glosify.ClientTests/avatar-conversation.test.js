@@ -1,34 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import { preserveConversation } from '../Glosify/wwwroot/js/avatar/retention.js';
+import { transcriptPresentation } from '../Glosify/wwwroot/js/avatar/transcript.js';
 import { createConversationMemory } from '../Glosify/wwwroot/js/avatar/memory.js';
 import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', import.meta.url), 'utf8');
 function setup(mode = 'push-to-talk') {
-    const elements = new Map(), sent = [], listeners = {}, windowListeners = {};
+    const elements = new Map(), sent = [], listeners = {}, listenerOptions = {}, windowListeners = {};
     const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
     const element = id => {
         if (['avatar-new', 'avatar-memory', 'avatar-balance', 'avatar-rates', 'avatar-mute', 'avatar-end', 'avatar-hint'].includes(id)) return null;
-        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, textContent: '', options: [], attributes: {}, listeners: {}, classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener(name, action) { this.listeners[name] = action; }, setAttribute(name, value) { this.attributes[name] = value; }, setPointerCapture() {} });
+        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, style: {}, getBoundingClientRect() { return { left: 900, right: 1200 }; }, textContent: '', options: [], attributes: {}, listeners: {}, classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener(name, action) { this.listeners[name] = action; }, setAttribute(name, value) { this.attributes[name] = value; }, setPointerCapture() {} });
         return elements.get(id);
     };
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
-            querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action) => { listeners[name] = action; } },
-        window: { addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, createConversationMemory,
+            querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action, options) => { listeners[name] = action; listenerOptions[name] = options; } },
+        ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
         setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
         Option: class { constructor(text, value) { this.text = text; this.value = value; } },
-        createAvatar: () => new Promise(() => {}), fetch: () => new Promise(() => {}),
+        setupFloatingChat() {}, createAvatar: () => new Promise(() => {}), fetch: path => path.endsWith('/transcript') ? Promise.resolve({ ok: true, json: async () => ({ turnCount: 0, savedTurns: 0 }) }) : new Promise(() => {}),
         wire: value => sent.push(value),
     });
     vm.runInContext(source.replace(/^import .*;\n/gm, ''), context);
     vm.runInContext(`VoiceConnection = class { constructor(url, handlers) {
         const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
     } };`, context);
-    vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire }; audio = { stop() {}, flush: async () => {} };", context);
-    return { sent, elements, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
+    vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire, close() {} }; audio = { stop() {}, mute() {}, flush: async () => {} };", context);
+    return { sent, elements, listenerOptions, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => Object.prototype.toString.call(x) === '[object ArrayBuffer]').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
@@ -256,16 +258,16 @@ test('lost connection pauses capture, clears pending audio and resumes muted wit
     h.run(`audio.mute = value => wire({ muted: value }); turnId = 'old-turn';
         preRoll = [new ArrayBuffer(10)]; holding = true; awaitingCommit = true; currentReply = 'old reply';`);
     h.run('connectionLost()');
-    assert.equal(h.elements.get('avatar-talk').disabled, false);
-    assert.equal(h.elements.get('avatar-talk').title, 'Start over');
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-hands-free').disabled, false);
+    assert.equal(h.elements.get('avatar-hands-free').title, 'Restart hands-free');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
     assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
     assert.equal(h.run('preRoll.length'), 0);
     assert.equal(h.run('turnId'), null);
     assert.equal(h.run('awaitingCommit'), false);
     await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
-    assert.equal(h.elements.get('avatar-talk').disabled, false);
-    assert.match(h.elements.get('avatar-notice').textContent, /Use the microphone to continue/);
+    assert.equal(h.elements.get('avatar-hands-free').disabled, false);
+    assert.match(h.elements.get('avatar-notice').textContent, /Use the conversation control to continue/);
     assert.deepEqual(h.commands(), []);
     h.frame(1); assert.deepEqual(h.binary(), []);
 });
@@ -469,7 +471,7 @@ test('denied microphone permission leaves the talk button available for an expli
     assert.equal(h.sent.filter(x => x.microphoneClosed).length, 1);
 });
 
-test('returning to the same selection submits its memory and changing selection clears it', async () => {
+test('returning to a selection retains its unsaved memory after an external selection change', async () => {
     const h = setup(); prepareFirstPress(h);
     h.run("memory.save(selection(), 'prior-memory'); press();"); await tick();
     assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.memoryId, 'prior-memory');
@@ -478,10 +480,10 @@ test('returning to the same selection submits its memory and changing selection 
     await h.run('end()');
     h.elements.get('avatar-quiz').value = 'new-quiz';
     h.run('selectMemory()');
-    assert.equal(h.sent.filter(x => x.path === '/api/avatar/memories/prior-memory/forget').length, 1);
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/memories/prior-memory/forget').length, 0);
     h.elements.get('avatar-quiz').value = '';
     h.run('selectMemory()');
-    assert.equal(h.run('memory.get(selection())'), undefined);
+    assert.equal(h.run('memory.get(selection())'), 'prior-memory');
 });
 
 test('leaving the actual page stops capture but retains memory for the next visit', async () => {
@@ -498,17 +500,17 @@ test('leaving the actual page stops capture but retains memory for the next visi
 
 
 for (const speakingMode of ['push-to-talk', 'hands-free']) {
-    test(`the microphone resumes ${speakingMode} after reconnect without a separate Unmute control`, async () => {
+    test(`the selected control resumes ${speakingMode} after reconnect`, async () => {
         const h = setup(speakingMode);
         h.run('audio.mute = value => wire({ muted: value }); connectionLost();');
         await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
         assert.equal(h.run('muted'), true);
         assert.deepEqual(h.commands(), []);
-        h.run('press()');
+        h.run(speakingMode === 'hands-free' ? 'toggleHandsFree()' : 'press()');
         assert.equal(h.run('muted'), false);
         assert.equal(h.sent.at(-2).muted, false);
         assert.deepEqual(h.commands(), ['listen']);
-        assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+        assert.equal(h.elements.get(speakingMode === 'hands-free' ? 'avatar-hands-free' : 'avatar-talk').attributes['aria-pressed'], 'true');
     });
 }
 
@@ -540,19 +542,19 @@ test('secondary pointers cannot start recording and keyboard focus loss releases
     assert.equal(h.run('holding'), false);
 });
 
-test('the single microphone can pause and resume explicitly selected hands-free capture', () => {
+test('the dedicated hands-free control pauses and resumes continuous capture', () => {
     const h = setup('hands-free');
-    h.run("audio.mute = value => wire({ muted: value }); setState('listening'); press();");
+    h.run("audio.mute = value => wire({ muted: value }); setState('listening'); toggleHandsFree();");
     assert.equal(h.run('muted'), true);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Microphone');
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
-    assert.equal(h.elements.get('avatar-talk').title, 'Start microphone');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-label'], 'Hands-free conversation');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-hands-free').title, 'Start hands-free');
     h.frame(1); assert.deepEqual(h.binary(), []);
-    h.run('press()');
+    h.run('toggleHandsFree()');
     assert.equal(h.run('muted'), false);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-label'], 'Microphone');
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
-    assert.equal(h.elements.get('avatar-talk').title, 'Pause microphone');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-label'], 'Hands-free conversation');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'true');
+    assert.equal(h.elements.get('avatar-hands-free').title, 'Pause hands-free');
     assert.deepEqual(h.commands(), ['interrupt', 'listen']);
 });
 
@@ -561,7 +563,7 @@ test('changing partner closes active capture and loads the new partner without E
     h.run(`config = { available: true, language: 'sv' }; sessionId = 'session'; modelReady = true;
         memory.save(selection(), 'old-memory');
         audio.close = async () => wire({ microphoneClosed: true }); socket.close = () => wire({ socketClosed: true });
-        api = async path => wire({ path }); requestJson = async () => { throw Error('offline'); };
+        api = async path => wire({ path }); requestJson = async () => ({ turnCount: 0, savedTurns: 0 });
         createAvatar = async (_, id) => { wire({ model: id }); return { setState() {}, dispose() {} }; };
         refreshStart();`);
     assert.equal(h.elements.get('avatar-character').disabled, false);
@@ -582,7 +584,7 @@ test('changing quiz closes active capture and blocks recording until cleanup com
         audio.close = async () => {}; socket.close = () => {};
         let finishCleanup;
         api = (path) => { wire({ path }); return path.endsWith('/end') ? new Promise(resolve => { finishCleanup = resolve; }) : Promise.resolve(); };
-        requestJson = async () => { throw Error('offline'); }; refreshStart();`);
+        requestJson = async () => ({ turnCount: 0, savedTurns: 0 }); refreshStart();`);
     h.elements.get('avatar-quiz').value = 'quiz';
     const change = h.run('chooseQuiz()'); await tick();
     assert.equal(h.elements.get('avatar-talk').disabled, true);
@@ -597,16 +599,16 @@ for (const replyState of ['thinking', 'speaking']) {
     test(`pausing hands-free while ${replyState} keeps the reply and waits for the microphone`, async () => {
         const h = setup('hands-free');
         h.run(`audio.mute = value => wire({ muted: value }); audio.stop = () => wire({ stoppedAudio: true });
-            turnId = 'turn'; setState('${replyState}'); press();`);
+            turnId = 'turn'; setState('${replyState}'); toggleHandsFree();`);
         assert.equal(h.run('muted'), true);
         assert.equal(h.run('turnId'), 'turn');
         assert.deepEqual(h.commands(), []);
         assert.equal(h.sent.filter(x => x.stoppedAudio).length, 0);
-        assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+        assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
         await h.run("onMessage({ type: 'idle' }, epoch)");
         assert.equal(h.elements.get('avatar-status').textContent, 'Microphone muted');
         assert.deepEqual(h.commands(), []);
-        h.run('press()');
+        h.run('toggleHandsFree()');
         assert.deepEqual(h.commands(), ['listen']);
     });
 }
@@ -614,7 +616,7 @@ for (const replyState of ['thinking', 'speaking']) {
 test('unpausing hands-free during a reply re-enables interruption without cutting it off', async () => {
     const h = setup('hands-free');
     h.run(`audio.mute = () => {}; audio.stop = () => wire({ stoppedAudio: true });
-        turnId = 'turn'; setState('speaking'); press(); press();`);
+        turnId = 'turn'; setState('speaking'); toggleHandsFree(); toggleHandsFree();`);
     assert.equal(h.run('muted'), false);
     assert.equal(h.elements.get('avatar-status').textContent, 'Speaking');
     assert.deepEqual(h.commands(), []);
@@ -625,7 +627,7 @@ test('unpausing hands-free during a reply re-enables interruption without cuttin
 
 test('pausing hands-free when its interrupt cannot be sent keeps the reconnecting state', () => {
     const h = setup('hands-free');
-    h.run("audio.mute = () => {}; setState('listening'); socket.send = () => { connectionLost(); return false; }; press();");
+    h.run("audio.mute = () => {}; setState('listening'); socket.send = () => { connectionLost(); return false; }; toggleHandsFree();");
     assert.equal(h.elements.get('avatar-status').textContent, 'Reconnecting');
     assert.equal(h.run('ready'), false);
 });
@@ -633,13 +635,13 @@ test('pausing hands-free when its interrupt cannot be sent keeps the reconnectin
 test('a hands-free listening error shows the microphone as off until it is retried', async () => {
     const h = setup('hands-free');
     h.run("audio.mute = () => {}; turnId = 'turn'; setState('listening');");
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'true');
     await h.run("onMessage({ type: 'error', turnId: 'turn', detail: 'Listening paused after 45 seconds.' }, epoch)");
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
-    assert.equal(h.elements.get('avatar-talk').title, 'Start microphone');
-    h.run('press()');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-hands-free').title, 'Start hands-free');
+    h.run('toggleHandsFree()');
     assert.deepEqual(h.commands(), ['listen']);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'true');
 });
 
 test('choosing Hands-free in settings does not open the microphone before the button is used', async () => {
@@ -647,8 +649,8 @@ test('choosing Hands-free in settings does not open the microphone before the bu
     h.chooseMode('hands-free'); await tick();
     assert.equal(h.sent.filter(x => x.microphoneOpened).length, 0);
     assert.equal(h.sent.filter(x => x.path).length, 0);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
-    h.run('press()'); await tick();
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
+    h.run('toggleHandsFree()'); await tick();
     assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
     assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
 });
@@ -707,7 +709,7 @@ test('releasing before the restarted microphone opens records nothing and leaves
 
 test('starting over in hands-free listens on the new session without a second press', async () => {
     const h = setup('hands-free'); loseConnection(h);
-    h.run('press()'); await tick(); await tick();
+    h.run('toggleHandsFree()'); await tick(); await tick();
     assert.equal(h.run('holding'), false);
     h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
@@ -730,19 +732,19 @@ test('the first connection keeps a short press whose only audio is still being f
 });
 
 
-test('choosing Hands-free on a ready session waits for an explicit microphone press', async () => {
+test('choosing Hands-free on a ready session waits for Start hands-free', async () => {
     const h = setup();
     h.run("audio.mute = value => wire({ muted: value }); setState('idle');");
     h.chooseMode('hands-free'); h.frame(1);
     await h.run("onMessage({ type: 'idle' }, epoch)");
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
     assert.deepEqual(h.binary(), []);
     assert.deepEqual(h.commands(), ['interrupt']);
-    h.run('press()');
+    h.run('toggleHandsFree()');
     await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(2);
     assert.deepEqual(h.commands(), ['interrupt', 'listen']);
     assert.deepEqual(h.binary(), [2]);
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'true');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'true');
 });
 
 test('choosing Hands-free during first setup discards the previous pending hold and waits for a press', async () => {
@@ -753,9 +755,9 @@ test('choosing Hands-free during first setup discards the previous pending hold 
     h.chooseMode('hands-free'); h.frame(2);
     h.run("finishStart({ sessionId: 'session', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
-    assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
+    assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
     assert.deepEqual(h.commands(), []);
-    h.run('press()');
+    h.run('toggleHandsFree()');
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     h.run('finishFlush()'); await released; h.frame(3);
     assert.deepEqual(h.commands(), ['listen']);
@@ -764,7 +766,7 @@ test('choosing Hands-free during first setup discards the previous pending hold 
 
 function space(overrides = {}) {
     return { code: 'Space', repeat: false, defaultPrevented: false,
-        preventDefault() { this.defaultPrevented = true; }, ...overrides };
+        preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.propagationStopped = true; }, ...overrides };
 }
 test('page Space prevents scroll and records one hold despite repeat keys and a changed release target', async () => {
     const h = setup(); h.run('refreshStart()');
@@ -781,7 +783,7 @@ test('page Space prevents scroll and records one hold despite repeat keys and a 
     assert.deepEqual(h.commands(), ['listen', 'commit']);
     assert.deepEqual(h.binary(), [7]);
 });
-test('Space leaves text input, focused controls, composing text and modified shortcuts alone', () => {
+test('Space leaves text editing, native selects, composing text and modified shortcuts alone', () => {
     const h = setup(); h.run('refreshStart()');
     for (const options of [{ target: { closest: () => ({}) } }, { target: { isContentEditable: true } },
         { altKey: true }, { ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { isComposing: true }]) {
@@ -811,13 +813,30 @@ test('Space held through the first connection sends a short utterance once', asy
     assert.deepEqual(h.binary(), [2]);
     assert.deepEqual(h.commands(), ['listen', 'commit']);
 });
-test('hands-free Space repeats do not repeatedly toggle the microphone', () => {
+test('push-to-talk pointer and Enter controls cannot toggle hands-free capture', () => {
     const h = setup('hands-free'); h.run('muted = true; audio.mute = () => {}; refreshStart()');
-    h.documentEvent('keydown', space());
-    h.documentEvent('keydown', space({ repeat: true }));
-    h.documentEvent('keyup', space());
-    assert.equal(h.run('muted'), false);
+    h.buttonEvent('pointerdown', { isPrimary: true, button: 0, pointerId: 1, preventDefault() {} });
+    h.buttonEvent('keydown', { code: 'Enter', repeat: false, preventDefault() {} });
+    assert.equal(h.run('muted'), true);
+    assert.deepEqual(h.commands(), []);
+    assert.equal(h.elements.get('avatar-talk').hidden, true);
+    assert.equal(h.elements.get('avatar-talk').disabled, true);
+    assert.equal(h.elements.get('avatar-hands-free').hidden, false);
+    h.elements.get('avatar-hands-free').listeners.click();
     assert.deepEqual(h.commands(), ['listen']);
+    assert.equal(h.run('holding'), false);
+});
+test('hands-free automatically listens again after a reply without a microphone press', async () => {
+    const h = setup('hands-free');
+    h.run("audio.mute = () => {}; muted = true; setState('idle');");
+    h.elements.get('avatar-hands-free').listeners.click();
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(1);
+    h.run("setState('speaking')");
+    await h.run("onMessage({ type: 'idle' }, epoch)");
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(2);
+    assert.deepEqual(h.commands(), ['listen', 'listen']);
+    assert.deepEqual(h.binary(), [1, 2]);
+    assert.equal(h.run('holding'), false);
 });
 test('conversation help is opt-in and independently included in every new turn', () => {
     const h = setup(); h.run('listen()');
@@ -853,12 +872,12 @@ test('reply help obeys toggles and clears for user speech, stale turns, reconnec
     assert.equal(h.elements.get('avatar-suggestion').hidden, true);
     assert.equal(h.elements.get('avatar-caption').textContent, 'Hej');
     await h.run(reply); h.run('connectionLost()');
-    assert.equal(h.elements.get('avatar-dialogue').hidden, true);
+    assert.equal(h.elements.get('avatar-chat-current').hidden, true);
     h.run("turnId = 'new'; cancelledTurn = null; socket = { close() {} }; audio.close = async () => {}; api = async () => {}; caption('');");
     await h.run("onMessage({ type: 'reply', turnId: 'new', text: 'New', suggestion: 'Answer' }, epoch)");
     assert.equal(h.elements.get('avatar-suggestion').hidden, false);
     await h.run('end()');
-    assert.equal(h.elements.get('avatar-dialogue').hidden, true);
+    assert.equal(h.elements.get('avatar-chat-current').hidden, true);
 });
 
 test('Space while the microphone is unavailable suppresses repeat scrolling without starting capture', () => {
@@ -868,4 +887,231 @@ test('Space while the microphone is unavailable suppresses repeat scrolling with
         assert.equal(event.defaultPrevented, true);
     }
     assert.deepEqual(h.commands(), []);
+});
+
+test('chat retains completed messages, removes duplicate live captions, and respects reading scroll position', () => {
+    const h = setup();
+    h.run(`
+        const messages = [];
+        el('transcript').children = messages;
+        el('transcript').append = item => messages.push(item);
+        el('transcript').replaceChildren = () => { messages.length = 0; };
+        Object.defineProperty(el('transcript'), 'firstChild', { get: () => ({ remove: () => messages.shift() }) });
+        document.createElement = () => ({ dataset: {}, append() {} });
+        document.createTextNode = text => text;
+        el('chat-body').scrollHeight = 1000; el('chat-body').clientHeight = 200; el('chat-body').scrollTop = 50;
+        caption('Hej', 'user'); transcript('You', 'Hej');
+    `);
+    assert.equal(h.run("el('transcript').children.length"), 1);
+    assert.equal(h.elements.get('avatar-caption').hidden, true);
+    h.run("caption('Hej', 'user');");
+    assert.equal(h.elements.get('avatar-caption').hidden, false, 'a repeated utterance must have a live caption');
+    assert.equal(h.elements.get('avatar-chat-empty').hidden, true);
+    assert.equal(h.elements.get('avatar-chat-body').scrollTop, 50);
+    h.run("caption('Hur mår du?');");
+    assert.equal(h.elements.get('avatar-caption').hidden, false);
+    assert.equal(h.elements.get('avatar-chat-speaker').textContent, 'Rain');
+    h.run("for(let i=0;i<55;i++) transcript('Rain', String(i));");
+    assert.equal(h.run("el('transcript').children.length"), 48);
+    h.run("sessionId = 'active-session'; holding = true;");
+    h.elements.get('avatar-chat-clear').listeners.click();
+    assert.equal(h.run("el('transcript').children.length"), 0);
+    assert.equal(h.elements.get('avatar-chat-current').hidden, true);
+    assert.equal(h.elements.get('avatar-chat-empty').hidden, false);
+    assert.equal(h.run('sessionId'), 'active-session');
+    assert.equal(h.run('holding'), true);
+    assert.deepEqual(h.commands(), []);
+});
+
+test('a Space release from before a mode change cannot end a new pointer hold', async () => {
+    const h = setup(); h.run('audio.mute = () => {}');
+    h.documentEvent('keydown', space());
+    h.chooseMode('hands-free'); h.chooseMode('push-to-talk');
+    h.buttonEvent('pointerdown', { isPrimary: true, button: 0, pointerId: 5, preventDefault() {} });
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    h.documentEvent('keyup', space());
+    assert.equal(h.run('holding'), true);
+    assert.equal(h.commands().includes('commit'), false);
+    await h.buttonEvent('pointerup');
+    assert.equal(h.commands().at(-1), 'commit');
+});
+
+for (const clearDuringPlayback of [false, true]) {
+    test(`clear chat suppresses the active turn and still acknowledges playback (clear during wait: ${clearDuringPlayback})`, async () => {
+        const h = setup();
+        h.run(`visual = { setState() {}, setReply() {} }; turnId = 'old';
+            let finishPlayback; audio.finished = () => new Promise(resolve => { finishPlayback = resolve; });
+            transcript = (speaker, text) => wire({ chatText: text });`);
+        await h.run("onMessage({ type: 'reply', turnId: 'old', text: 'Old reply' }, epoch)");
+        if (!clearDuringPlayback) h.elements.get('avatar-chat-clear').listeners.click();
+        const playback = h.run("onMessage({ type: 'audio-end', turnId: 'old' }, epoch)");
+        if (clearDuringPlayback) h.elements.get('avatar-chat-clear').listeners.click();
+        h.run('finishPlayback(true)'); await playback;
+        await h.run("onMessage({ type: 'partial', turnId: 'old', text: 'Old words' }, epoch)");
+        await h.run("onMessage({ type: 'transcript', turnId: 'old', text: 'Old words' }, epoch)");
+        await h.run("onMessage({ type: 'reply', turnId: 'old', text: 'Old reply', suggestion: 'Old help' }, epoch)");
+        assert.equal(h.elements.get('avatar-chat-current').hidden, true);
+        assert.equal(h.sent.some(x => x.chatText), false);
+        assert.equal(h.commands().at(-1), 'played');
+        await h.run("onMessage({ type: 'connecting', turnId: 'new' }, epoch)");
+        await h.run("onMessage({ type: 'reply', turnId: 'new', text: 'New reply' }, epoch)");
+        assert.equal(h.elements.get('avatar-caption').textContent, 'New reply');
+        assert.equal(h.elements.get('avatar-caption').hidden, false);
+    });
+}
+
+test('page Space controls hands-free once and suppresses repeated key activation', () => {
+        const h = setup('hands-free'); h.run("muted = true; audio.mute = () => {}; refreshStart();");
+        const target = { closest: () => null };
+        const down = space({ target }); h.documentEvent('keydown', down);
+        h.documentEvent('keydown', space({ target, repeat: true }));
+        const up = space({ target }); h.documentEvent('keyup', up);
+        assert.equal(h.run('muted'), false);
+        assert.deepEqual(h.commands(), ['listen']);
+        assert.equal(down.defaultPrevented, true); assert.equal(up.defaultPrevented, true);
+        assert.equal(down.propagationStopped, true); assert.equal(up.propagationStopped, true);
+        assert.equal(h.listenerOptions.keydown.capture, true); assert.equal(h.listenerOptions.keyup.capture, true);
+        h.documentEvent('keydown', space({ target })); h.documentEvent('keyup', space({ target }));
+        assert.equal(h.run('muted'), true);
+        assert.deepEqual(h.commands(), ['listen', 'interrupt']);
+});
+test('Space preserves checkbox, radio, button and speech-dialog keyboard actions in both modes', () => {
+    for (const mode of ['push-to-talk', 'hands-free']) {
+        const h = setup(mode); h.run('refreshStart()');
+        for (const selector of ['input', 'button', 'select', 'a[href]', 'summary', 'dialog', '[role="dialog"]', '[role="checkbox"]', '[role="radio"]', '[role="switch"]']) {
+            const target = { closest: selectors => selectors.split(', ').includes(selector) ? target : null };
+            const down = space({ target }); h.documentEvent('keydown', down);
+            const up = space({ target }); h.documentEvent('keyup', up);
+            assert.equal(down.defaultPrevented, false, `${mode}: ${selector} keydown`);
+            assert.equal(up.defaultPrevented, false, `${mode}: ${selector} keyup`);
+            assert.equal(down.propagationStopped, undefined);
+        }
+        assert.deepEqual(h.commands(), []);
+        assert.equal(h.run('spaceHeld'), false);
+    }
+});
+test('Space release does not finish an independently started pointer hold', async () => {
+    const h = setup(); h.run('refreshStart(); press()');
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    h.documentEvent('keydown', space()); h.documentEvent('keyup', space()); await tick();
+    assert.equal(h.run('holding'), true);
+    assert.deepEqual(h.commands(), ['listen']);
+});
+test('settings toggle stays at the drawer edge when open and viewport edge when closed', () => {
+    const h = setup();
+    h.run('toggleSettings(true)');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '8px');
+    h.run('toggleSettings(false)');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '0px');
+    h.run("window.innerWidth = 390; el('settings').getBoundingClientRect = () => ({ left: 48, right: 375 }); toggleSettings(true)");
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '23px');
+    h.run("document.documentElement = { clientWidth: 375 }; positionSettingsToggle();");
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '8px');
+});
+
+test('Space starts hands-free from off and key release leaves it listening', async () => {
+    const h = setup(); prepareFirstPress(h); h.chooseMode('hands-free');
+    h.documentEvent('keydown', space()); await tick();
+    h.documentEvent('keydown', space({ repeat: true }));
+    h.documentEvent('keyup', space());
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+    h.run("finishStart({ sessionId: 'hands-free-session', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.deepEqual(h.commands(), ['listen']);
+    assert.equal(h.run('holding'), false);
+    assert.equal(h.run('muted'), false);
+});
+
+test('RTL settings toggle uses the edge opposite the sidebar and follows the left drawer', () => {
+    const h = setup();
+    h.run("document.documentElement = { dir: 'rtl', clientWidth: 390 }; el('settings').getBoundingClientRect = () => ({ left: 0, right: 340 }); toggleSettings(false)");
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, '0px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, 'auto');
+    h.run('toggleSettings(true)');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, '8px');
+    h.run("document.documentElement.dir = 'ltr'; toggleSettings(false)");
+    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '0px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, 'auto');
+});
+
+
+test('reopening settings reveals its panel after the page has scrolled', () => {
+    const h = setup();
+    let revealed = 0;
+    const settings = h.elements.get('avatar-settings');
+    settings.scrollIntoView = options => { assert.equal(options.block, 'start'); revealed++; };
+    h.run('toggleSettings(false)');
+    h.elements.get('avatar-settings-toggle').listeners.click();
+    assert.equal(settings.hidden, false);
+    assert.equal(revealed, 1);
+    h.elements.get('avatar-settings-toggle').listeners.click();
+    assert.equal(settings.hidden, true);
+    assert.equal(revealed, 1);
+});
+
+
+test('opening the assistant pauses microphone capture and requires an explicit resume', () => {
+    const h = setup('hands-free');
+    h.run("audio.mute = () => {}; setState('listening')");
+    h.windowEvent('assistant:opened');
+    assert.equal(h.run('muted'), true);
+    assert.equal(h.commands().at(-1), 'interrupt');
+    h.frame(1);
+    assert.deepEqual(h.binary(), []);
+    h.run('toggleHandsFree()');
+    assert.equal(h.run('muted'), false);
+    assert.equal(h.commands().at(-1), 'listen');
+});
+
+test('late transcript status cannot replace a new conversation or lose newer turns', () => {
+    const h = setup();
+    h.run("config = { language: 'sv' }; memory.save(selection(), 'current')");
+    h.run("showTranscriptStatus({ conversationId: 'current', turnCount: 10, savedTurns: 2, transcriptId: 'saved' })");
+    h.run("showTranscriptStatus({ conversationId: 'current', turnCount: 8, savedTurns: 8, transcriptId: 'saved' })");
+    assert.equal(h.elements.get('avatar-save-status').textContent, '2 unsaved spoken turns');
+    h.run("showTranscriptStatus({ conversationId: 'old', turnCount: 50, savedTurns: 50 })");
+    assert.equal(h.elements.get('avatar-save').textContent, 'Update transcript');
+    assert.equal(h.run('transcriptStatus.conversationId'), 'current');
+});
+
+for (const choice of ['cancel', 'save', 'discard']) test(`partner transition honors ${choice} for unsaved turns`, async () => {
+    const h = setup();
+    h.run(`config = { available: true, language: 'sv' }; audio = null; ready = false; modelReady = true;
+        memory.save(selection(), 'unsaved'); requestJson = async () => ({ turnCount: 20, savedTurns: 0 });
+        chooseUnsavedConversation = async () => '${choice}';
+        api = async path => wire({ path }); createAvatar = async () => ({ setState() {}, dispose() {} }); refreshStart();`);
+    h.elements.get('avatar-character').value = 'rowan'; await h.run('chooseCharacter()');
+    assert.equal(h.run('characterId'), choice === 'cancel' ? 'rain' : 'rowan');
+    assert.equal(h.sent.some(x => x.path?.endsWith('/forget')), choice !== 'cancel');
+    assert.equal(h.sent.some(x => x.path?.endsWith('/transcript')), choice === 'save');
+    if (choice === 'cancel') assert.equal(h.run('memory.get(selection())'), 'unsaved');
+});
+test('offline save status cancels a quiz switch without forgetting the source', async () => {
+    const h = setup(); h.run(`config = { available: true, language: 'sv' }; audio = null; ready = false; modelReady = true;
+        memory.save(selection(), 'unsaved'); requestJson = async () => { throw Error('offline'); }; api = async path => wire({ path });`);
+    h.elements.get('avatar-quiz').value = 'other'; await h.run('chooseQuiz()');
+    assert.equal(h.elements.get('avatar-quiz').value, ''); assert.equal(h.run('memory.get(selection())'), 'unsaved');
+    assert.equal(h.sent.some(x => x.path?.endsWith('/forget')), false);
+});
+
+test('an old pre-save status request cannot remove a successful saved link', async () => {
+    const h = setup(); h.run(`config = { language: 'sv' }; memory.save(selection(), 'source');
+        let finishStatus; requestJson = () => new Promise(resolve => { finishStatus = resolve; });
+        api = async () => ({ conversationId: 'source', turnCount: 2, savedTurns: 2, transcriptId: 'saved', revision: 3 });`);
+    const before = h.run('refreshTranscriptStatus()'); await h.run('saveTranscript()');
+    h.run(`finishStatus({ conversationId: 'source', turnCount: 2, savedTurns: 0, transcriptId: null, revision: 1 })`);
+    await before; assert.equal(h.run('transcriptStatus.transcriptId'), 'saved');
+    h.run(`showTranscriptStatus({ conversationId: 'source', turnCount: 2, savedTurns: 0, transcriptId: null, revision: 1 })`);
+    assert.equal(h.run('transcriptStatus.transcriptId'), 'saved');
+    h.run(`showTranscriptStatus({ conversationId: 'source', turnCount: 2, savedTurns: 0, transcriptId: null, revision: 4 })`);
+    assert.equal(h.run('transcriptStatus.transcriptId'), null); // A real newer deletion is respected.
+});
+test('navigation with unknown status checks retention and stays put on failure', async () => {
+    const h = setup(); h.run(`config = { language: 'sv' }; audio = null; socket = null; memory.save(selection(), 'source');
+        requestJson = async () => { throw Error('offline'); }; location.assign = () => wire({ navigated: true });`);
+    const link = { target: '', hasAttribute: () => false, getAttribute: () => '/Languages', href: '/Languages' };
+    let prevented = false;
+    h.documentEvent('click', { button: 0, target: { closest: () => link }, preventDefault() { prevented = true; } });
+    await tick(); assert.equal(prevented, true); assert.equal(h.sent.some(x => x.navigated), false);
+    assert.equal(h.run('memory.get(selection())'), 'source');
 });

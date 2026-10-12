@@ -1704,4 +1704,8 @@
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← À nouveau · Je savais →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← À nouveau · Facile →</value></data>
   <data name="Layout.Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Conversation avec l’avatar</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Conversation avec l’avatar · {0}</value></data>
+  <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} prise de parole</value></data>
+  <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} prises de parole</value></data>
 </root>

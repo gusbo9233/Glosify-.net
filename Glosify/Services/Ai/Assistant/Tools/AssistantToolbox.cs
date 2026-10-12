@@ -48,6 +48,7 @@ internal sealed class AssistantToolbox
         "search_book_pages",
         "list_saved_transcripts",
         "get_saved_transcript",
+        "read_avatar_conversation",
         "list_saved_translation_sessions",
         "get_saved_translation_session",
         "read_source",

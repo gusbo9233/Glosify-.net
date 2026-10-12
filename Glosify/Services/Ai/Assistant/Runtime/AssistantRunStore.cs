@@ -20,7 +20,8 @@ internal sealed class AssistantRunStore(
     AssistantContextResolver resolver,
     AssistantMessagePresenter presenter,
     AssistantRunSignals signals,
-    TimeProvider clock)
+    TimeProvider clock,
+    Glosify.Services.Avatar.AvatarAssistantContext? avatarContext = null)
 {
     private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(2);
 
@@ -59,6 +60,47 @@ internal sealed class AssistantRunStore(
             throw new ArgumentException($"That chat belongs to another language. Reload the page to start a {language} chat.");
         }
 
+        Guid? avatarSnapshotId = null;
+        int? avatarTurnCount = null;
+        if (input.Request.AvatarConversationId is { } conversationId)
+        {
+            if (input.Request.TranscriptId is not null || input.Request.BookDocumentId is not null || input.Request.DocumentContext is not null)
+                throw new ArgumentException("Select one reading material for this request.");
+            var code = await resolver.ResolveLanguageCodeAsync(userId, cancellationToken);
+            if (avatarContext is null) throw new ArgumentException("Avatar conversations are not available.");
+            avatarContext.EnsureAvailable(userId);
+            Glosify.Services.Avatar.AvatarTranscriptSnapshot? live;
+            try { live = avatarContext.Capture(conversationId, userId, code ?? ""); }
+            catch (Glosify.Services.Avatar.AvatarException ex) when (ex.Status is 404 or 410)
+            {
+                // A live session can end, expire, or disappear on restart. Only a source
+                // already shared in this owned, same-language chat may be reused.
+                var retained = await db.AssistantAvatarSnapshots.AsNoTracking()
+                    .Where(s => s.ThreadId == threadId && s.ConversationId == conversationId && s.Language == code)
+                    .OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.TurnCount)
+                    .Select(s => new { s.Id, s.TurnCount }).FirstOrDefaultAsync(cancellationToken);
+                if (retained is null) throw;
+                avatarSnapshotId = retained.Id;
+                avatarTurnCount = retained.TurnCount;
+                live = null;
+            }
+            if (live is not null)
+            {
+                var json = RunJson.Write(live);
+                var sourceHash = RunJson.Hash(json);
+                var saved = await db.AssistantAvatarSnapshots.AsNoTracking()
+                    .Where(s => s.ThreadId == threadId && s.ContentHash == sourceHash)
+                    .Select(s => new { s.Id, s.TurnCount }).SingleOrDefaultAsync(cancellationToken);
+                avatarSnapshotId = saved?.Id ?? Guid.NewGuid();
+                avatarTurnCount = live.Turns.Length;
+                if (saved is null) db.AssistantAvatarSnapshots.Add(new AssistantAvatarSnapshot
+                {
+                    Id = avatarSnapshotId.Value, ThreadId = threadId, ConversationId = conversationId,
+                    Language = live.Language, TurnCount = live.Turns.Length, ContentHash = sourceHash,
+                    ContentJson = json, CreatedAt = Now
+                });
+            }
+        }
         await StopWaitingElsewhereAsync(userId, threadId, cancellationToken);
         var now = Now;
         var message = input.Request.Message.Trim();
@@ -84,6 +126,8 @@ internal sealed class AssistantRunStore(
             Mode = mode,
             Status = AssistantRunStatus.Queued,
             RequestJson = requestJson,
+            AvatarSnapshotId = avatarSnapshotId,
+            AvatarConversationTurnCount = avatarTurnCount,
             StateJson = RunJson.Write(new AssistantRunState()),
             TurnId = Guid.NewGuid(),
             UserMessageId = userMessage.Id,

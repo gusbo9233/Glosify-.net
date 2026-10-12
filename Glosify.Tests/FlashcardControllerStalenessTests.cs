@@ -16,9 +16,10 @@ namespace Glosify.Tests;
 public sealed class FlashcardControllerStalenessTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Sentence_cards_reveal_with_loader_ids_and_reject_changed_content(bool changed)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Sentence_cards_reveal_with_loader_ids_and_reject_changed_content(bool changed, bool selected)
     {
         await using var db = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -33,8 +34,14 @@ public sealed class FlashcardControllerStalenessTests
         var sessions = new FlashcardSessionService(cache, new QuizSessionRegistry(cache));
         var session = sessions.StartSession("user", quiz.Id, quiz.Name, "English", "Polish", 10,
             loaded.Select(c => new FlashcardCardData { Id = c.Id, Lemma = c.Lemma, Translation = c.Translation }).ToList(),
-            practiceItemType: "sentences");
+            practiceItemType: "sentences", selectedWordIds: selected ? sentence.Id.ToString() : null);
         sessions.SaveSession(session);
+        var other = selected ? sessions.StartSession("user", quiz.Id, quiz.Name, "English", "Polish", 10,
+            loaded.Select(c => new FlashcardCardData { Id = c.Id, Lemma = c.Lemma, Translation = c.Translation }).ToList(),
+            practiceItemType: "sentences") : null;
+        if (other is not null) sessions.SaveSession(other);
+        sessions.RemoveSession(session.SessionId, "another-user");
+        Assert.Same(session, sessions.FindSession(session.SessionId, "user"));
         if (changed) { sentence.Text = "Edited after starting"; await db.SaveChangesAsync(); }
         var controller = new FlashcardQuizController(new QuizService(db, null!, null!), words, sessions, null!)
         {
@@ -49,6 +56,11 @@ public sealed class FlashcardControllerStalenessTests
             Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
             Assert.False(session.IsAnswerRevealed);
             Assert.Null(sessions.FindSession(session.SessionId, "user"));
+            if (other is not null)
+            {
+                Assert.Same(other, sessions.FindSession(other.SessionId, "user"));
+                Assert.Same(other, sessions.FindResumableSession("user", quiz.Id, null, "sentences", 10));
+            }
         }
         else
         {

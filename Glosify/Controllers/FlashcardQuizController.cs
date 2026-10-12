@@ -127,7 +127,7 @@ public class FlashcardQuizController : Controller
         if (session == null)
             return RedirectToAction(nameof(Index));
 
-        if (rating is not ("again" or "good" or "easy"))
+        if (rating is not ("again" or "good" or "easy" or "skip"))
             return Problem(statusCode: 400, detail: "Choose Again or Got it.");
         var cardIndex = session.CurrentIndex;
         if (!await CurrentCardExistsAsync(session, cardIndex, userId, cancellationToken))
@@ -135,7 +135,7 @@ public class FlashcardQuizController : Controller
         bool justCompleted;
         lock (session)
         {
-            if (cardIndex != session.CurrentIndex || (expectedIndex.HasValue && (expectedIndex != session.CurrentIndex || !session.IsAnswerRevealed)))
+            if (cardIndex != session.CurrentIndex || (expectedIndex.HasValue && (expectedIndex != session.CurrentIndex || (rating != "skip" && !session.IsAnswerRevealed))))
                 return Problem(statusCode: 409, detail: "This card changed. Reopen the quiz to continue.");
             _sessionService.ApplyRating(session, rating);
             justCompleted = session.CurrentIndex >= session.Cards.Count && !session.AttemptRecorded;
@@ -160,17 +160,13 @@ public class FlashcardQuizController : Controller
 
     private async Task<bool> CurrentCardExistsAsync(FlashcardSessionData session, int index, string userId, CancellationToken ct)
     {
-        var exists = await _quizService.GetQuizByIdAsync(session.QuizId, userId, ct) is not null;
         var card = session.Cards.ElementAtOrDefault(index);
-        if (exists && card is not null)
-        {
-            exists = PracticeItemType.IsSentences(session.PracticeItemType)
-                ? (await _wordService.GetSentencesAsync(session.QuizId, ct)).Any(c => Guid.TryParse(card.Id, out var sentenceId) && c.Id == sentenceId && c.Text == card.Lemma && c.Translation == card.Translation)
-                : (await _wordService.GetWordsAsync(session.QuizId, ct)).Any(c => c.Id == card.Id && c.Lemma == card.Lemma && c.Translation == card.Translation);
-        }
+        var exists = card is null
+            ? await _quizService.GetQuizByIdAsync(session.QuizId, userId, ct) is not null
+            : await _wordService.CardMatchesAsync(session.QuizId, userId, card.Id, card.Lemma,
+                card.Translation, PracticeItemType.IsSentences(session.PracticeItemType), ct);
         if (!exists)
-            _sessionService.ResetSession(userId, session.QuizId, session.PracticeDirection, session.PracticeItemType,
-                session.WordCount, session.WordRangeStart, session.WordRangeEnd);
+            _sessionService.RemoveSession(session.SessionId, userId);
         return exists;
     }
 

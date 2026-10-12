@@ -144,3 +144,12 @@ test('multiple answers stay selectable and can be deselected before one submissi
     h.answers[0].resolve({});
     await answer;
 });
+
+for (const status of ['completed', 'failed', 'cancelled']) test(`duplicate ${status} render keeps its saved history reload valid`, async () => {
+    const h = harness(); const terminal = { ...run('A', status), revision: 3 };
+    h.renderRun(terminal); const history = h.loadHistory(h.selection, false);
+    h.renderRun(terminal);
+    h.requests[0].resolve(response([{ id: 'saved', role: 'model', text: 'Completed reply' }]));
+    assert.equal(await history, true);
+    assert.ok(h.transcript.children.some(row => row.dataset.messageId === 'saved'));
+});

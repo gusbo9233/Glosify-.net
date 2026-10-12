@@ -15,6 +15,10 @@
     var totalPages = Math.Max(1, (int)Math.Ceiling(Model.Transcript.TotalSegments / (double)Model.Transcript.PageSize));
     var learningLanguage = Glosify.Services.Language.QuizLanguageCatalog.Find(Model.Transcript.TargetLanguage)?.Name
         ?? Model.Transcript.TargetLanguage.ToUpperInvariant();
+    var isAvatar = Model.Transcript.SourceKind == RealtimeTranslationTranscriptSourceKinds.Avatar;
+    var countLabel = isAvatar
+        ? (Model.Transcript.TotalSegments == 1 ? Text["Transcripts.SpokenTurnOne", Model.Transcript.TotalSegments] : Text["Transcripts.SpokenTurnMany", Model.Transcript.TotalSegments])
+        : (Model.Transcript.TotalSegments == 1 ? Text["Transcripts.CaptionOne", Model.Transcript.TotalSegments] : Text["Transcripts.CaptionMany", Model.Transcript.TotalSegments]);
     var isSource = Model.Transcript.Stream == Glosify.Models.Entities.RealtimeTranslationTranscriptStreams.Source;
     var showingTranslation = Model.Transcript.SelectedStream
         == Glosify.Models.Entities.RealtimeTranslationTranscriptStreams.Translation;
@@ -42,9 +46,9 @@
 
     <header class="transcript-detail-header">
         <div>
-            <p class="transcripts-eyebrow">@(isSource ? Text["Transcripts.OriginalFor", QuizLanguageDisplay.Name(learningLanguage)] : Text["Transcripts.LegacyFor", QuizLanguageDisplay.Name(learningLanguage)])</p>
+            <p class="transcripts-eyebrow">@(isAvatar ? Text["Transcripts.AvatarConversationFor", QuizLanguageDisplay.Name(learningLanguage)] : isSource ? Text["Transcripts.OriginalFor", QuizLanguageDisplay.Name(learningLanguage)] : Text["Transcripts.LegacyFor", QuizLanguageDisplay.Name(learningLanguage)])</p>
             <h1>@Model.Transcript.Title</h1>
-            <p>@(Model.Transcript.TotalSegments == 1 ? Text["Transcripts.CaptionOne", Model.Transcript.TotalSegments] : Text["Transcripts.CaptionMany", Model.Transcript.TotalSegments]) · @Text["Transcripts.Started"] <time datetime="@Model.Transcript.CreatedAt.ToString("O")" data-local="datetime">@Model.Transcript.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
+            <p>@countLabel · @Text["Transcripts.Started"] <time datetime="@Model.Transcript.CreatedAt.ToString("O")" data-local="datetime">@Model.Transcript.CreatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></p>
         </div>
         <div class="transcript-actions">
             <form method="post" asp-action="Rename" asp-route-id="@Model.Transcript.Id" class="transcript-rename">
@@ -94,7 +98,7 @@
         {
             <section class="transcript-segment">
                 <time datetime="@segment.CapturedAt.ToString("O")" data-local="time">@segment.CapturedAt.UtcDateTime.ToString("HH:mm:ss")</time>
-                <p dir="auto">@segment.Text</p>
+                <p dir="auto">@if (segment.Speaker is not null) { <strong>@segment.Speaker: </strong> }@segment.Text</p>
             </section>
         }
     </article>

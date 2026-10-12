@@ -22,7 +22,7 @@ internal sealed class ListSavedTranscriptsTool(GlosifyContext db) : AssistantToo
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
 
     protected override string Describe(AssistantMode mode) =>
-        $"List the user's saved live-subtitle transcripts with title, language, date, caption count, and id. Use it when the user refers to a saved session without identifying it. Returns up to {PageSize} per call.";
+        $"List the user's saved subtitle and avatar conversation transcripts with title, language, date, caption count, and id. Use it when the user refers to a saved session without identifying it. Returns up to {PageSize} per call.";
 
     protected override async Task<ToolResult> RunAsync(ListSavedTranscriptsArgs args, ToolContext context, CancellationToken cancellationToken)
     {
@@ -45,6 +45,7 @@ internal sealed class ListSavedTranscriptsTool(GlosifyContext db) : AssistantToo
                 title = transcript.Title,
                 learning_language = transcript.TargetLanguage,
                 stream = transcript.Stream,
+                source_kind = transcript.SourceKind,
                 created_at = transcript.CreatedAt,
                 updated_at = transcript.UpdatedAt,
                 segment_count = transcript.Segments.Count(segment => segment.Stream == transcript.Stream),
@@ -141,7 +142,7 @@ internal sealed class GetSavedTranscriptTool(IRealtimeTranslationTranscriptServi
             learning_language = page.TargetLanguage,
             stream = page.SelectedStream,
             available_streams = streams,
-            captions = page.Segments.Select(segment => new { captured_at = segment.CapturedAt, text = segment.Text }).ToList(),
+            captions = page.Segments.Select(segment => new { captured_at = segment.CapturedAt, text = segment.Text, speaker = segment.Speaker }).ToList(),
             page_number = page.Page,
             page_size = page.PageSize,
             total_pages = page.TotalPages,

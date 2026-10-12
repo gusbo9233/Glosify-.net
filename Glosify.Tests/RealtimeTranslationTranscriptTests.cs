@@ -14,6 +14,20 @@ namespace Glosify.Tests;
 public sealed class RealtimeTranslationTranscriptTests
 {
     [Fact]
+    public async Task SubtitleAppendCannotMixCaptionsIntoAvatarConversation()
+    {
+        await using var context = CreateContext();
+        var transcript = new RealtimeTranslationTranscript { UserId = "user-1", Title = "Avatar", TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source, SourceKind = "avatar", AvatarConversationId = Guid.NewGuid() };
+        context.RealtimeTranslationTranscripts.Add(transcript);
+        var session = Session(Guid.NewGuid(), "user-1", transcript.Id, DateTimeOffset.UtcNow);
+        context.RealtimeTranslationSessions.Add(session); await context.SaveChangesAsync();
+        var service = new RealtimeTranslationTranscriptService(context, Clock(), Cache());
+        await service.AppendAsync(session.Id, [new(1, "subtitle-event", "Not spoken to the avatar", DateTimeOffset.UtcNow)]);
+        Assert.Empty(await context.RealtimeTranslationTranscriptSegments.ToListAsync());
+    }
+
+    [Fact]
     public async Task Append_IsOptInOnlyAndIdempotent()
     {
         await using var context = CreateContext();

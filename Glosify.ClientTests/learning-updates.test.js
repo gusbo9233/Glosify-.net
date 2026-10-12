@@ -75,3 +75,51 @@ test('cross-tab notifications preserve affected resources without broadcasting c
     listeners.get('assistant:changes')({ detail: { id: 'run', changeRevision: 'revision', resourceChanges: resources, message: 'private chat' } });
     assert.equal(JSON.stringify(sent), JSON.stringify([{ id: 'run', changeRevision: 'revision', resourceChanges: resources }]));
 });
+
+function refreshHarness(response, path = '/Quiz/Details/deleted') {
+    const callbacks = [], listeners = new Map();
+    const node = tag => ({ tag, children: [], hidden: false, textContent: '',
+        setAttribute() {}, addEventListener() {},
+        replaceChildren(...children) { this.children = children; }, append(...children) { this.children.push(...children); } });
+    const old = node('old-quiz'), screen = node('screen'); screen.children = [old];
+    screen.dataset = { learningController: path.startsWith('/Anki') ? 'anki' : 'quiz' };
+    screen.querySelector = () => null; screen.querySelectorAll = () => [];
+    let notice;
+    screen.before = value => { notice = value; };
+    const location = new URL(path, 'https://glosify.test');
+    vm.runInNewContext(readFileSync(new URL('../Glosify/wwwroot/js/learning-updates.js', import.meta.url), 'utf8')
+        .replaceAll('export function', 'function'), {
+        window: { scrollX: 0, scrollY: 50, scrollTo() {},
+            addEventListener(type, listener) { const group = listeners.get(type) || []; group.push(listener); listeners.set(type, group); } },
+        document: { querySelector: () => screen, createElement: node, createTextNode: text => ({ textContent: text }) },
+        URL, location, setTimeout: callback => { callbacks.push(callback); return callbacks.length; }, clearTimeout() {},
+        fetch: async () => ({ text: async () => '<html>redirected library</html>', ...response }),
+        DOMParser: class { parseFromString() { assert.fail('Removed or unexpected redirects must not inject their response HTML'); } },
+    });
+    return { screen, old, notice: () => notice, refresh: async () => {
+        for (const listener of listeners.get('assistant:changes')) listener({ detail: { id: 'run', changeRevision: 'deleted' } });
+        await callbacks.at(-1)();
+    }};
+}
+
+for (const [path, destination] of [
+    ['/Quiz/Details/deleted', 'https://glosify.test/Quiz'],
+    ['/Quiz/Collection/deleted', 'https://glosify.test/Quiz/Index'],
+    ['/Anki/Collection/deleted', 'https://glosify.test/Anki'],
+]) test(`a deleted ${path} redirect replaces stale content while keeping the chat shell`, async () => {
+    const h = refreshHarness({ ok: true, redirected: true, status: 200, url: destination }, path);
+    await h.refresh();
+    assert.equal(h.screen.children.length, 2);
+    assert.equal(h.screen.children[0].textContent, 'This item was removed.');
+    assert.equal(h.screen.children[1].href, path.startsWith('/Anki') ? '/Anki' : '/Quiz');
+    assert.equal(h.notice().hidden, true);
+});
+
+for (const destination of ['https://glosify.test/login', 'https://other.test/Quiz', 'https://glosify.test/Anki', 'https://glosify.test/Quiz?redirect=login'])
+    test(`unexpected refresh redirect ${destination} preserves the page and offers retry`, async () => {
+        const h = refreshHarness({ ok: true, redirected: true, status: 200, url: destination });
+        await h.refresh();
+        assert.deepEqual(h.screen.children, [h.old]);
+        assert.equal(h.notice().hidden, false);
+        assert.equal(h.notice().children.at(-1).textContent, 'Update view');
+    });

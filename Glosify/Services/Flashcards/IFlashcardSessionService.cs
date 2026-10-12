@@ -6,6 +6,7 @@ public interface IFlashcardSessionService
     FlashcardSessionData? FindSession(string sessionId, string userId);
     FlashcardSessionData? FindResumableSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
     void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100);
+    void RemoveSession(string sessionId, string userId);
     void SaveSession(FlashcardSessionData session);
     void ApplyRating(FlashcardSessionData session, string rating);
     void RevealAnswer(FlashcardSessionData session);

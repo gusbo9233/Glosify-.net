@@ -6,7 +6,7 @@ namespace Glosify.Models.Entities;
 /// One assistant request, executed durably by the background worker.
 /// </summary>
 /// <remarks>
-/// A run owns no conversation state of its own: the messages and parts it writes are the
+/// A run retains its immutable external source snapshot; the messages and parts it writes are the
 /// conversation, and the provider history is derived from them each step. The run only keeps
 /// the bookkeeping that makes execution resumable — lease, revision, budget, and a small
 /// loop state. Timestamps are UTC <see cref="DateTime"/> values because leases are compared
@@ -49,6 +49,13 @@ public sealed class AssistantRun
 
     [Column("request_json")]
     public string RequestJson { get; set; } = "{}";
+
+    // The immutable source is stored once per thread/version, outside hot run checkpoints.
+    [Column("avatar_snapshot_id")]
+    public Guid? AvatarSnapshotId { get; set; }
+
+    [Column("avatar_conversation_turn_count")]
+    public int? AvatarConversationTurnCount { get; set; }
 
     [Column("state_json")]
     public string StateJson { get; set; } = "{}";

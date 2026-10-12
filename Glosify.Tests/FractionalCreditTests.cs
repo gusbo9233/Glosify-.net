@@ -168,9 +168,11 @@ public sealed class FractionalCreditTests
         await db.Database.EnsureDeletedAsync();
         var migrator = db.GetService<IMigrator>();
         await migrator.MigrateAsync("20260911151434_DurableAbuseControls");
-        db.Users.Add(new ApplicationUser { Id = "legacy", UserName = "legacy" });
-        await db.SaveChangesAsync();
+        // Seed the historical schema explicitly: the current ApplicationUser model may
+        // contain columns introduced after the migration under test.
         await db.Database.ExecuteSqlRawAsync("""
+            INSERT INTO AspNetUsers(Id,UserName,EmailConfirmed,PhoneNumberConfirmed,TwoFactorEnabled,LockoutEnabled,AccessFailedCount)
+            VALUES ('legacy','legacy',0,0,0,0,0);
             INSERT INTO AiCreditAccounts(UserId,BalanceCredits,ReservedCredits,CreatedAt,UpdatedAt)
             VALUES ('legacy',2147483647,17,SYSUTCDATETIME(),SYSUTCDATETIME());
             INSERT INTO AiCreditTransactions(Id,UserId,Kind,CreditAmount,BalanceAfterCredits,ReservedAfterCredits,CreatedAt,Note)

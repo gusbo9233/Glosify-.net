@@ -260,7 +260,10 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
                 var selected = existing ?? EnsureCard(note, direction);
                 if (existing is null) _context.AnkiCards.Add(selected);
                 selected.DirectlyIncluded = direct;
-                selected.ExcludedFromQuizLink = excluded;
+                // An existing direction keeps its own removal decision. Only a new
+                // direction inherits a fully removed note's exclusion; an inactive
+                // opposite direction may still be intentionally included.
+                selected.ExcludedFromQuizLink = existing?.ExcludedFromQuizLink ?? excluded;
             }
             foreach (var link in links)
             {

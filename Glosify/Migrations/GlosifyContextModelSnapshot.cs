@@ -563,6 +563,9 @@ namespace Glosify.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("NEWID()");
 
+                    b.Property<bool>("AutoSaveAvatarConversations")
+                        .HasColumnType("bit");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -642,6 +645,48 @@ namespace Glosify.Migrations
 
                             t.HasCheckConstraint("CK_AspNetUsers_SelectedQuizLanguageCode", "[SelectedQuizLanguageCode] IS NULL OR [SelectedQuizLanguageCode] IN ('af', 'ar', 'hy', 'as', 'az', 'bn', 'bs', 'bg', 'my', 'yue', 'ca', 'zh-Hans', 'hr', 'cs', 'da', 'nl', 'en', 'et', 'fil', 'fi', 'fr', 'gl', 'ka', 'de', 'el', 'gu', 'ha', 'he', 'hi', 'hu', 'is', 'id', 'it', 'ja', 'kn', 'kk', 'ko', 'ky', 'lv', 'lt', 'mk', 'ms', 'ml', 'mt', 'mi', 'mr', 'ne', 'nb', 'or', 'fa', 'pl', 'pt', 'pa', 'ro', 'ru', 'sr-Latn', 'sk', 'sl', 'es', 'sw', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'uz', 'vi', 'cy', 'free')");
                         });
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantAvatarSnapshot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("ContentJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ConversationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TurnCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId", "ContentHash")
+                        .IsUnique();
+
+                    b.HasIndex("ThreadId", "ConversationId", "Language", "CreatedAt");
+
+                    b.ToTable("assistant_avatar_snapshots");
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantChange", b =>
@@ -1128,6 +1173,14 @@ namespace Glosify.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("active_user_id");
+
+                    b.Property<int?>("AvatarConversationTurnCount")
+                        .HasColumnType("int")
+                        .HasColumnName("avatar_conversation_turn_count");
+
+                    b.Property<Guid?>("AvatarSnapshotId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("avatar_snapshot_id");
 
                     b.Property<long>("CachedInputTokens")
                         .HasColumnType("bigint")
@@ -2320,8 +2373,18 @@ namespace Glosify.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("AvatarConversationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SourceKind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)")
+                        .HasDefaultValue("subtitles");
 
                     b.Property<string>("Stream")
                         .IsRequired()
@@ -2347,6 +2410,10 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AvatarConversationId")
+                        .IsUnique()
+                        .HasFilter("[AvatarConversationId] IS NOT NULL");
 
                     b.HasIndex("UserId", "TargetLanguage", "UpdatedAt");
 
@@ -2375,6 +2442,10 @@ namespace Glosify.Migrations
 
                     b.Property<Guid>("SessionId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Speaker")
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<string>("Stream")
                         .IsRequired()
@@ -3274,6 +3345,15 @@ namespace Glosify.Migrations
                     b.Navigation("Card");
 
                     b.Navigation("Collection");
+                });
+
+            modelBuilder.Entity("Glosify.Models.Entities.AssistantAvatarSnapshot", b =>
+                {
+                    b.HasOne("Glosify.Models.Entities.AssistantThread", null)
+                        .WithMany()
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Glosify.Models.Entities.AssistantChange", b =>

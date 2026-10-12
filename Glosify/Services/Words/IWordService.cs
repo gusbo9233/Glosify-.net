@@ -13,6 +13,7 @@ public interface IWordService
     Task<bool> AddWordAsync(Guid quizId, string word, string translation, CancellationToken cancellationToken = default);
     Task<Word?> DeleteWordAsync(string wordId, string userId, CancellationToken cancellationToken = default);
     Task<QuizSentence?> DeleteSentenceAsync(Guid sentenceId, string userId, CancellationToken cancellationToken = default);
+    Task<bool> CardMatchesAsync(Guid quizId, string userId, string cardId, string text, string translation, bool isSentence, CancellationToken cancellationToken = default);
     Task<bool> WordExistsAsync(Guid quizId, string word, CancellationToken cancellationToken = default);
 }
 

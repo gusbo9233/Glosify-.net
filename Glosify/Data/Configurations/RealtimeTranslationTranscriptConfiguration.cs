@@ -9,6 +9,8 @@ internal sealed class RealtimeTranslationTranscriptConfiguration : IEntityTypeCo
     public void Configure(EntityTypeBuilder<RealtimeTranslationTranscript> entity)
     {
         entity.HasKey(transcript => transcript.Id);
+        entity.Property(transcript => transcript.SourceKind).HasMaxLength(24).HasDefaultValue(RealtimeTranslationTranscriptSourceKinds.Subtitles);
+        entity.HasIndex(transcript => transcript.AvatarConversationId).IsUnique().HasFilter("[AvatarConversationId] IS NOT NULL");
         entity.Property(transcript => transcript.UserId).HasMaxLength(450).IsRequired();
         entity.Property(transcript => transcript.Title).HasMaxLength(160).IsRequired();
         entity.Property(transcript => transcript.TargetLanguage).HasMaxLength(16).IsRequired();

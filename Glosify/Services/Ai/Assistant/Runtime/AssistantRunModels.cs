@@ -49,7 +49,8 @@ public sealed record AssistantRunInput(
     Guid? TranscriptId = null,
     Guid? BookDocumentId = null,
     AssistantTranscriptPageContext? TranscriptContext = null,
-    Guid? ContextAnkiCollectionId = null);
+    Guid? ContextAnkiCollectionId = null,
+    Guid? AvatarConversationId = null);
 
 public sealed record AssistantRunStartInput(
     [param: Required, StringLength(100, MinimumLength = 1)] string IdempotencyKey,

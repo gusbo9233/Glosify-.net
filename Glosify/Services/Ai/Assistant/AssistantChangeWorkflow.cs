@@ -117,19 +117,10 @@ internal sealed class AssistantChangeWorkflow(
                 BeforeJson = entry.Before is null ? null : RunJson.Write(entry.Before),
                 AfterJson = entry.After is null ? null : RunJson.Write(entry.After), CreatedAt = now,
             });
-            if (Guid.TryParse(entry.EntityId, out var id))
-            {
-                if (entry.Kind == PendingChangeKinds.CreateQuiz) state.CreatedQuizzes.Add(id);
-                if (entry.Kind == "delete_quiz")
-                {
-                    state.Fingerprints.Remove(id);
-                    state.Placements.Remove(id);
-                    if (state.Facts?.QuizId == id) state.Facts = state.Facts with { QuizId = null };
-                }
-                if (entry.Kind == "anki_delete" && state.Facts?.AnkiCollectionId == id)
-                    state.Facts = state.Facts with { AnkiCollectionId = null };
-            }
+            if (entry.Kind == PendingChangeKinds.CreateQuiz && Guid.TryParse(entry.EntityId, out var id))
+                state.CreatedQuizzes.Add(id);
         }
+        AssistantRunChangeState.RemoveDeletedResources(state, result.Journal);
         run.SavedChanges += result.Journal.Count;
         run.Revision++;
         run.UpdatedAt = now;

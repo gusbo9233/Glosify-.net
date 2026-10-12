@@ -503,6 +503,31 @@ public sealed class RealtimeTranslationServiceTests
     }
 
     [Fact]
+    public async Task Reconnect_RejectsAvatarTranscriptEvenForItsOwner()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var transcriptId = Guid.NewGuid();
+        context.RealtimeTranslationTranscripts.Add(new RealtimeTranslationTranscript
+        {
+            Id = transcriptId,
+            UserId = "user-1",
+            SourceKind = "avatar",
+            Title = "Private",
+            TargetLanguage = "pl",
+            Stream = RealtimeTranslationTranscriptStreams.Source,
+        });
+        await context.SaveChangesAsync();
+        var service = CreateService(context, new ManualTimeProvider(TestNow), new FakeRelayTokenStore());
+
+        await Assert.ThrowsAsync<RealtimeTranslationNotFoundException>(() => service.CreateSessionAsync(
+            "user-1",
+            "pl",
+            saveTranscript: true,
+            transcriptId: transcriptId));
+    }
+
+    [Fact]
     public async Task ReserveMinute_IsIdempotentAndStopReleasesIt()
     {
         await using var context = CreateContext();

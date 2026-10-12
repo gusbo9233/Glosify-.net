@@ -17,15 +17,15 @@ test('a later page visit remembers only the opaque reference and selection, scop
     assert.deepEqual(JSON.parse([...store.values.values()][0]), { preferences: choice, id: 'reference' });
 });
 for (const change of [{ language: 'en' }, { characterId: 'rowan' }, { quizId: 'quiz' }]) {
-    test(`changing ${Object.keys(change)[0]} discards memory even when returning to the old choice`, () => {
+    test(`changing ${Object.keys(change)[0]} retains the reference when returning to the old choice`, () => {
         const memory = createConversationMemory('owner', storage());
         memory.save(choice, 'reference');
         assert.equal(memory.select(choice), undefined);
         assert.equal(memory.get(choice), 'reference');
         assert.equal(memory.select({ ...choice, ...change }), 'reference');
-        assert.equal(memory.get(choice), undefined);
+        assert.equal(memory.get(choice), 'reference');
         memory.select(choice);
-        assert.equal(memory.get(choice), undefined);
+        assert.equal(memory.get(choice), 'reference');
     });
 }
 test('a failed storage write cannot later restore the discarded selection or reference', () => {
@@ -36,7 +36,7 @@ test('a failed storage write cannot later restore the discarded selection or ref
     assert.equal(memory.select(next), 'reference');
     assert.deepEqual(memory.preferences(), next);
     assert.equal(memory.select(next), undefined);
-    assert.equal(memory.get(choice), undefined);
+    assert.equal(memory.get(choice), 'reference');
 });
 test('blocked or malformed session storage does not prevent a conversation', () => {
     for (const store of [undefined, { getItem() { throw Error(); }, setItem() { throw Error(); } },
@@ -46,6 +46,6 @@ test('blocked or malformed session storage does not prevent a conversation', () 
         memory.save(choice, 'reference');
         assert.equal(memory.get(choice), 'reference');
         assert.equal(memory.select({ ...choice, quizId: 'quiz' }), 'reference');
-        assert.equal(memory.get(choice), undefined);
+        assert.equal(memory.get(choice), 'reference');
     }
 });

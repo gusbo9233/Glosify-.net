@@ -35,11 +35,15 @@
     <div class="transcript-grid">
         @foreach (var transcript in Model.Library.Items)
         {
+            var isAvatar = transcript.SourceKind == RealtimeTranslationTranscriptSourceKinds.Avatar;
+            var countLabel = isAvatar
+                ? (transcript.SegmentCount == 1 ? Text["Transcripts.SpokenTurnOne", transcript.SegmentCount] : Text["Transcripts.SpokenTurnMany", transcript.SegmentCount])
+                : (transcript.SegmentCount == 1 ? Text["Transcripts.CaptionOne", transcript.SegmentCount] : Text["Transcripts.CaptionMany", transcript.SegmentCount]);
             <a class="transcript-card" asp-action="Details" asp-route-id="@transcript.Id">
-                <span class="material-symbols-outlined" aria-hidden="true">subtitles</span>
+                <span class="material-symbols-outlined" aria-hidden="true">@(isAvatar ? "forum" : "subtitles")</span>
                 <div>
                     <h2>@transcript.Title</h2>
-                    <p>@QuizLanguageDisplay.Name(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @transcript.Stream · @(transcript.SegmentCount == 1 ? Text["Transcripts.CaptionOne", transcript.SegmentCount] : Text["Transcripts.CaptionMany", transcript.SegmentCount])</p>
+                    <p>@QuizLanguageDisplay.Name(Glosify.Services.Language.QuizLanguageCatalog.Find(transcript.TargetLanguage)?.Name ?? transcript.TargetLanguage.ToUpperInvariant()) · @(isAvatar ? Text["Transcripts.AvatarConversation"] : transcript.Stream) · @countLabel</p>
                     <small>@Text["Transcripts.Updated"] <time datetime="@transcript.UpdatedAt.ToString("O")" data-local="datetime">@transcript.UpdatedAt.UtcDateTime.ToString("MMM d, yyyy · HH:mm")</time></small>
                 </div>
                 <span class="material-symbols-outlined transcript-card-arrow" aria-hidden="true">arrow_forward</span>

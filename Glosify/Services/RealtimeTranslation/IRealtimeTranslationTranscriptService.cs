@@ -20,7 +20,8 @@ public sealed record TranscriptLibraryItem(
     string Stream,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    int SegmentCount);
+    int SegmentCount,
+    string SourceKind = RealtimeTranslationTranscriptSourceKinds.Subtitles);
 
 public sealed record TranscriptLibraryPage(
     IReadOnlyList<TranscriptLibraryItem> Items,
@@ -42,9 +43,10 @@ public sealed record TranscriptDetailPage(
     bool HasActiveSession,
     string SelectedStream,
     int SourceSegmentCount,
-    int TranslationSegmentCount);
+    int TranslationSegmentCount,
+    string SourceKind = RealtimeTranslationTranscriptSourceKinds.Subtitles);
 
-public sealed record TranscriptTextSegment(int Sequence, string Text, DateTimeOffset CapturedAt);
+public sealed record TranscriptTextSegment(int Sequence, string Text, DateTimeOffset CapturedAt, string? Speaker = null);
 
 /// <summary>
 /// How a caller wants to enter a transcript. <see cref="AtTime"/> wins, then

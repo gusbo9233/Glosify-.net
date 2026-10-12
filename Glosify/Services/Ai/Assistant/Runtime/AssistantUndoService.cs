@@ -272,7 +272,8 @@ internal sealed class AssistantUndoService(
                 }
 
                 var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken);
-                if (quiz is null || after is null || !JsonElement.DeepEquals(after.Value, JsonSerializer.SerializeToElement(LearningChanges.CreationState(quiz), RunJson.Options)))
+                if (quiz is null || !CreationMatches(after, LearningChanges.CreationState(quiz),
+                        new { name = quiz.Name, collection_id = quiz.CollectionId, is_public = quiz.IsPublic }))
                     return false;
 
                 await db.SaveChangesAsync(cancellationToken);
@@ -289,7 +290,8 @@ internal sealed class AssistantUndoService(
                 }
 
                 var collection = await OwnedCollectionAsync(change, userId, cancellationToken);
-                if (collection is null || after is null || !JsonElement.DeepEquals(after.Value, JsonSerializer.SerializeToElement(LearningChanges.CreationState(collection), RunJson.Options)))
+                if (collection is null || !CreationMatches(after, LearningChanges.CreationState(collection),
+                        new { name = collection.Name, parent_collection_id = collection.ParentCollectionId, is_public = collection.IsPublic }))
                     return false;
 
                 await db.SaveChangesAsync(cancellationToken);
@@ -362,6 +364,14 @@ internal sealed class AssistantUndoService(
 
     private Task<bool> OwnsQuizAsync(Guid quizId, string userId, CancellationToken cancellationToken) =>
         db.Quizzes.AnyAsync(quiz => quiz.Id == quizId && quiz.UserId == userId, cancellationToken);
+
+    // Runs have no Undo expiry. Accept exactly the old three-field creation snapshot as
+    // well as the complete current schema; partial or extended snapshots must not weaken
+    // the comparison for newer runs. Ownership and empty-container checks still apply.
+    private static bool CreationMatches(JsonElement? recorded, object current, object legacy) =>
+        recorded is JsonElement value
+        && (JsonElement.DeepEquals(value, JsonSerializer.SerializeToElement(current, RunJson.Options))
+            || JsonElement.DeepEquals(value, JsonSerializer.SerializeToElement(legacy, RunJson.Options)));
 
     private static JsonElement? Read(string? json) =>
         string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<JsonElement>(json);
