@@ -27,13 +27,27 @@ sculpt = [
     ('mouth-upperlip-volume-incr.target', .32), ('mouth-upperlip-height-incr.target', .24), ('mouth-lowerlip-volume-incr.target', .2)
 ]
 if male:
-    sculpt = [('caucasian-male-young.target', 1), ('universal-male-young-averagemuscle-averageweight.target', 1), ('head-oval.target', .15)]
+    # A young-adult, angular face: broad jaw, high cheekbones, hooded eyes and
+    # a defined cupid's bow. Fit the eyes, brows and facial rig to this anatomy.
+    sculpt = [
+        ('caucasian-male-young.target', 1), ('universal-male-young-averagemuscle-averageweight.target', 1),
+        ('head-square.target', .38), ('chin-width-incr.target', .16),
+        ('chin-prominent-incr.target', .18), ('chin-height-decr.target', .08),
+        ('mouth-scale-horiz-incr.target', .22), ('mouth-cupidsbow-incr.target', .18),
+        ('mouth-upperlip-volume-incr.target', .12), ('mouth-lowerlip-volume-incr.target', .22),
+        ('eyebrows-trans-down.target', .16), ('eyebrows-angle-up.target', .16),
+        ('nose-width2-decr.target', .12), ('nose-width3-decr.target', .10)
+    ]
 for side in ['l', 'r']:
-    sculpt += [(side+'-cheek-bones-incr.target', .15), (side+'-eye-scale-incr.target', .08)]
-rig = human.build_character(targets=sculpt, eye_color='brown' if male else 'brownlight',
+    sculpt += [(side+'-cheek-bones-incr.target', .58 if male else .15),
+               (side+'-eye-scale-incr.target', .04 if male else .08)]
+    if male:
+        sculpt += [(side+'-cheek-volume-decr.target', .20), (side+'-cheek-trans-up.target', .16),
+                   (side+'-eye-height1-decr.target', .10), (side+'-eye-corner2-up.target', .12)]
+rig = human.build_character(targets=sculpt, eye_color='lightblue' if male else 'brownlight',
     height_metres=1.72, skin_path=human.SOURCE/('system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png' if male else 'system/skins/young_caucasian_female/young_lightskinned_female_diffuse.png'),
     asset_specs=[('Ivory blouse', 'clothes/female_elegantsuit01', 'female_elegantsuit01', .75, False),
-                 ('Chestnut hair', 'hair/short02' if male else 'hair/elvs_hazel_hair', 'short02' if male else 'elvs_hazel_hair', .5, True),
+                 ('Chestnut hair', 'hair/short01' if male else 'hair/elvs_hazel_hair', 'short01' if male else 'elvs_hazel_hair', .5, True),
                  ('Eyebrows', 'eyebrows/eyebrow001', 'eyebrow001', .85, True),
                  ('Eyelashes', 'eyelashes/eyelashes01', 'eyelashes01', .8, True),
                  ('Teeth', 'teeth/teeth_base', 'teeth_base', .4, False),
@@ -41,6 +55,26 @@ rig = human.build_character(targets=sculpt, eye_color='brown' if male else 'brow
 
 # Hair follows the head, not the shoulders sampled by generic clothing weights.
 hair = bpy.data.objects['Chestnut hair']
+if male:
+    # Bend the quiff forward into a loose fringe. Keep the rooted sides fitted;
+    # the source's separate textured locks provide the broken silhouette.
+    pivot = Vector((0, -.035, 1.68))
+    for vertex in hair.data.vertices:
+        x, y, z = vertex.co
+        front = max(0, min(1, (-y+.015)/.065))
+        top = max(0, min(1, (z-1.64)/.035))
+        weight = front*top
+        angle = .18*weight
+        vertex.co = pivot + Matrix.Rotation(angle, 3, 'X') @ (vertex.co-pivot)
+        vertex.co.x += .006*weight
+        vertex.co.y -= .011*weight  # Keep the bent locks above the forehead.
+    hair.data.update()
+    # Fuller dark brows, tapered at the ends rather than a uniform heavy strip.
+    brows = bpy.data.objects['Eyebrows']
+    center_z = sum(v.co.z for v in brows.data.vertices)/len(brows.data.vertices)
+    for vertex in brows.data.vertices:
+        vertex.co.z = center_z + (vertex.co.z-center_z)*1.32
+    brows.data.update()
 hair.vertex_groups.clear()
 hair.vertex_groups.new(name='head').add(list(range(len(hair.data.vertices))), 1, 'REPLACE')
 
@@ -79,14 +113,15 @@ def shoulders(angle):
 
 # Closed-mouth resting smile: opening the lips and jaw belongs only to speech.
 for side in ['Left','Right']:
-    expression('Mouth'+side+'PullUp',.28)
+    expression('Mouth'+side+'PullUp',(.19 if side=='Left' else .25) if male else .28)
     expression(side+'CheekUp',.08)
-    expression(side+'InnerBrowUp',.08)
-    expression(side+'OuterBrowUp',.12)
+    expression(side+'InnerBrowUp',.025 if male else .08)
+    expression(side+'OuterBrowUp',.05 if male else .12)
 rotate('head',(0,1,0),.025)
 
 # Keep high-resolution skin, soft highlights and textured chestnut hair.
-for name, tint in [('Skin', (.94,.86,.76)), ('Eyebrows', (.42,.29,.19))]:
+for name, tint in [('Skin', (.96,.90,.84) if male else (.94,.86,.76)),
+                   ('Eyebrows', (.16,.12,.10) if male else (.42,.29,.19))]:
     mat = bpy.data.materials[name]; nodes=mat.node_tree.nodes; links=mat.node_tree.links
     bsdf=nodes.get('Principled BSDF'); tex=next(n for n in nodes if n.type=='TEX_IMAGE')
     mix=nodes.new('ShaderNodeMix'); mix.data_type='RGBA'; mix.blend_type='MULTIPLY'; mix.inputs['Factor'].default_value=1
@@ -94,13 +129,21 @@ for name, tint in [('Skin', (.94,.86,.76)), ('Eyebrows', (.42,.29,.19))]:
     bsdf.inputs['Roughness'].default_value=.58 if name=='Skin' else .8
     if name=='Skin': bsdf.inputs['Subsurface Weight'].default_value=.06
 
-# Retain strand normal/alpha maps, with a uniform warm brown base instead of red dye.
+# Keep Rowan's strand texture under an espresso tint; Rain retains her warm base.
 hair_material=bpy.data.materials['Chestnut hair']
 hair_shader=hair_material.node_tree.nodes.get('Principled BSDF')
 for link in list(hair_shader.inputs['Base Color'].links): hair_material.node_tree.links.remove(link)
-hair_shader.inputs['Base Color'].default_value=(.045,.022,.013,1)
+if male:
+    texture=next(n for n in hair_material.node_tree.nodes if n.type=='TEX_IMAGE')
+    tint=hair_material.node_tree.nodes.new('ShaderNodeMix')
+    tint.data_type='RGBA'; tint.blend_type='MULTIPLY'; tint.inputs['Factor'].default_value=1
+    tint.inputs[7].default_value=(.90,.79,.70,1)
+    hair_material.node_tree.links.new(texture.outputs['Color'],tint.inputs[6])
+    hair_material.node_tree.links.new(tint.outputs[2],hair_shader.inputs['Base Color'])
+else:
+    hair_shader.inputs['Base Color'].default_value=(.045,.022,.013,1)
 hair_shader.inputs['Specular IOR Level'].default_value=.3
-hair_shader.inputs['Roughness'].default_value=.46
+hair_shader.inputs['Roughness'].default_value=.62 if male else .46
 
 eye=bpy.data.objects['Eyes'].active_material.node_tree.nodes.get('Principled BSDF')
 eye.inputs['Roughness'].default_value=.14
@@ -178,12 +221,17 @@ from academia_outfit import dress
 dress(bpy.data.objects['Ivory blouse'], rig, male=male)
 # Dark scalp below the transparent hair roots avoids a pale rim at the crown.
 body=bpy.data.objects['Face, neck and hands']
-scalp=bpy.data.materials.new('Hair roots');scalp.diffuse_color=(.055,.026,.012,1);scalp.use_nodes=True
-scalp.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(.055,.026,.012,1)
+scalp_color=(.024,.016,.012,1) if male else (.055,.026,.012,1)
+scalp=bpy.data.materials.new('Hair roots');scalp.diffuse_color=scalp_color;scalp.use_nodes=True
+scalp.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=scalp_color
 scalp.node_tree.nodes.get('Principled BSDF').inputs['Roughness'].default_value=.7
 body.data.materials.append(scalp)
+# Keep Rowan's painted roots behind the textured hairline so no dark scalp
+# triangles show through the fine strands around the temples.
+root_top = 1.702 if male else 1.692
+root_back = -.035 if male else -.04
 for poly in body.data.polygons:
-    if all(body.data.vertices[i].co.z > 1.692 or (body.data.vertices[i].co.z > 1.62 and body.data.vertices[i].co.y > -.04) for i in poly.vertices): poly.material_index=1
+    if all(body.data.vertices[i].co.z > root_top or (body.data.vertices[i].co.z > 1.62 and body.data.vertices[i].co.y > root_back) for i in poly.vertices): poly.material_index=1
 
 originals = [o for o in bpy.data.collections['Player'].objects if o.type=='MESH']
 for obj in originals:

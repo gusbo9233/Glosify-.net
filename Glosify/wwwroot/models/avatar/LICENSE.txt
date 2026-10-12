@@ -4,7 +4,8 @@ Anatomy, skin, eyes, clothing and facial pose references: MakeHuman Community.
 CC0 1.0 Universal — see MAKEHUMAN-LICENSE.md.
 https://www.makehumancommunity.org/
 
-Rowan's short02 hair is a MakeHuman core asset under CC0.
+Rowan's short01 hair is a MakeHuman core asset under CC0.
+Adaptation: forward fringe, dark-brown strand tint and head-attached movement morphs.
 
 Rain's Hazel Hair (elvs_hazel_hair) by Elvaerwyn, licensed CC-BY by its author.
 Original asset: https://www.makehumancommunity.org/node/2816
