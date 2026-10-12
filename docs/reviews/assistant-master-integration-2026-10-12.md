@@ -33,3 +33,32 @@ skipped. The final Qodo review uses operation
 DeepSource has no result for this unpushed branch. Copilot/Greptile remain
 unavailable under the repository's temporary credits policy. Nothing was
 pushed, deployed or applied to a database.
+
+## Final review follow-up
+
+Qodo operation `2331502e-28c5-4a78-a21d-b2ba72f264ab` completed with auto
+full coverage and no skipped files. Its one finding,
+`efe476d6-6a89-4fb1-aed0-7b5ecd730a06` (Correctness/remediation_recommended),
+was valid: any change notification interrupted an active study session, even
+for an unrelated resource. The follow-up retains resource IDs in local and
+cross-tab notifications and checks the current study quiz, Anki collection and
+card before scheduling an interruption. Metadata-only changes do not stop study.
+Anki's current card includes its source quiz ID so source edits are scoped too.
+Legacy notifications and changes whose affected contents are unknown (folder
+deletions or quiz-link snapshots without collection IDs) remain conservative.
+The client regressions cover related/unrelated edits, deletions, direction and
+membership changes, mixed batches, coalescing, and cross-tab resource forwarding
+without forwarding chat content.
+
+The follow-up full solution run passed **1,421 .NET tests**, with **42**
+environment-dependent tests and **41** application-browser tests skipped.
+All **258 client tests** passed. `git diff --check` passed.
+
+The final follow-up Qodo operation
+`73836f54-b220-4e82-9950-b3af0a93577f` ended in a terminal service error:
+`managed agent 'pre-pr-review' could not be reached or failed in transport`.
+The same repository/base had completed the preceding review successfully;
+there is no evidence of a local repository or authentication problem to fix.
+This is an unavailable follow-up review, not clean coverage of the correction.
+The completed review, local inspection and regression results remain recorded
+above. No further review was submitted merely to obtain a clean result.

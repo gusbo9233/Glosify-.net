@@ -324,6 +324,7 @@ public sealed class AnkiCollectionServiceTests
         await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, true), UserId);
 
         var first = (await fixture.Study.GetNextAsync(collection.Id, UserId))!.Card!;
+        Assert.Equal(fixture.Quiz.Id, first.QuizId);
         var token = Guid.NewGuid();
         var rating = new RateAnkiCardInput(collection.Id, first.CardId, AnkiRatings.Easy, token, first.RowVersion, 250);
         Assert.True(await fixture.Study.RateAsync(rating, UserId));

@@ -1,5 +1,5 @@
 // Refetch server-rendered content after committed assistant changes; keep the chat shell alive.
-export function createLearningUpdates({ refresh, schedule = (fn, ms) => setTimeout(fn, ms), cancel = clearTimeout }) {
+export function createLearningUpdates({ refresh, accept = () => true, schedule = (fn, ms) => setTimeout(fn, ms), cancel = clearTimeout }) {
     const revisions = new Map();
     let timer;
     let generation = 0;
@@ -7,6 +7,7 @@ export function createLearningUpdates({ refresh, schedule = (fn, ms) => setTimeo
         receive(run) {
             if (!run.changeRevision || revisions.get(run.id) === run.changeRevision) return;
             revisions.set(run.id, run.changeRevision);
+            if (!accept(run)) return;
             const current = ++generation;
             cancel(timer);
             timer = schedule(() => refresh(() => current === generation), 180);
@@ -14,9 +15,33 @@ export function createLearningUpdates({ refresh, schedule = (fn, ms) => setTimeo
     };
 }
 
+// Unknown/legacy change payloads remain conservative. Known unrelated resources do not
+// interrupt a study session; source edits still invalidate Anki cards from that quiz.
+export function affectsStudy(run, { studyQuizId, studyAnkiCollectionId, studyCardId } = {}) {
+    if (!Array.isArray(run.resourceChanges) || !run.resourceChanges.length) return true;
+    if (!studyQuizId && !studyAnkiCollectionId) return true;
+    const metadataOnly = new Set(['rename_quiz', 'rename_collection', 'move_quiz', 'move_collection',
+        'quiz_visibility', 'collection_visibility', 'anki_rename', 'rename_anki_collection',
+        'create_quiz', 'create_collection', 'copy_quiz', 'copy_collection', 'create_anki_collection', 'anki_create']);
+    return run.resourceChanges.some(change => {
+        if (metadataOnly.has(change.kind)) return false;
+        if (['word', 'sentence', 'quiz'].includes(change.entityType)) {
+            const quizId = change.quizId || (change.entityType === 'quiz' ? change.entityId : null);
+            return !quizId || !studyQuizId || quizId === studyQuizId;
+        }
+        if (['anki', 'anki_collection'].includes(change.entityType))
+            return !!studyAnkiCollectionId && change.entityId === studyAnkiCollectionId;
+        if (change.entityType === 'anki_card')
+            return !!studyAnkiCollectionId && (!studyCardId || change.entityId === studyCardId);
+        if (change.entityType === 'anki_quiz_link') return !!studyAnkiCollectionId;
+        // A deleted folder can contain the current quiz, including a nested folder.
+        return true;
+    });
+}
+
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('glosify-learning-changes') : null;
-    window.addEventListener('assistant:changes', event => channel?.postMessage({ id: event.detail.id, changeRevision: event.detail.changeRevision }));
+    window.addEventListener('assistant:changes', event => channel?.postMessage({ id: event.detail.id, changeRevision: event.detail.changeRevision, resourceChanges: event.detail.resourceChanges }));
     const screen = document.querySelector('[data-learning-screen]');
     if (screen && ['quiz', 'anki', 'flashcardquiz', 'typingquiz'].includes(screen.dataset.learningController)) {
         let dirty = false;
@@ -88,9 +113,13 @@ if (typeof window !== 'undefined' && typeof document !== 'undefined') {
                 if (version === requestVersion) message('Your changes were saved, but this view could not update.', true);
             }
         };
-        const coordinator = createLearningUpdates({ refresh });
+        const coordinator = createLearningUpdates({ refresh, accept: run => {
+            if (!screen.querySelector('[data-flashcard-session], [data-typing-quiz]')) return true;
+            const study = screen.querySelector('[data-study-quiz-id], [data-study-anki-collection-id]');
+            return affectsStudy(run, study?.dataset);
+        } });
         window.addEventListener('assistant:changes', event => {
-            const change = { id: event.detail.id, changeRevision: event.detail.changeRevision };
+            const change = { id: event.detail.id, changeRevision: event.detail.changeRevision, resourceChanges: event.detail.resourceChanges };
             coordinator.receive(change);
         });
         if (channel) channel.onmessage = event => {
