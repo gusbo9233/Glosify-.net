@@ -79,7 +79,7 @@ internal sealed class AssistantToolEvaluationConfiguration : IEntityTypeConfigur
         entity.Property(evaluation => evaluation.ToolName).HasMaxLength(64).IsRequired();
         entity.Property(evaluation => evaluation.Status).HasMaxLength(32).IsRequired();
         entity.Property(evaluation => evaluation.SnapshotHash).HasMaxLength(64).IsRequired();
-        entity.HasIndex(evaluation => new { evaluation.Status, evaluation.CreatedAt });
+        entity.HasIndex(evaluation => new { evaluation.Status, evaluation.LeaseUntil, evaluation.CreatedAt });
         entity.HasIndex(evaluation => evaluation.PartId).IsUnique();
         entity.HasOne<AssistantRun>()
             .WithMany()

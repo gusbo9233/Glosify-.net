@@ -1,4 +1,10 @@
 (() => {
+    let bindings;
+    const initialize = () => {
+    bindings?.abort();
+    bindings = new AbortController();
+    const listenDocument = (type, callback, options = {}) => document.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
+    const listenWindow = (type, callback, options = {}) => window.addEventListener(type, callback, { ...(typeof options === 'boolean' ? { capture: options } : options), signal: bindings.signal });
     const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
     document.querySelectorAll('[data-browser-timezone]').forEach(input => {
         input.value = Intl.DateTimeFormat().resolvedOptions().timeZone || input.value || 'UTC';
@@ -291,4 +297,7 @@
 
         updateCount();
     }
+    };
+    initialize();
+    window.addEventListener('learning:updated', initialize);
 })();

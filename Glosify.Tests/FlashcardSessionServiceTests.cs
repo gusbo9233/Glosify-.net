@@ -9,6 +9,21 @@ namespace Glosify.Tests;
 public class FlashcardSessionServiceTests
 {
     [Theory]
+    [InlineData("hard")]
+    [InlineData("unknown")]
+    public void Unsupported_ratings_do_not_advance_or_score(string rating)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var service = new FlashcardSessionService(cache, new QuizSessionRegistry(cache));
+        var session = service.StartSession("user", Guid.NewGuid(), "Quiz", "English", "Polish", 1,
+            [new FlashcardCardData { Id = "1", Lemma = "dom", Translation = "house" }]);
+        Assert.Throws<ArgumentException>(() => service.ApplyRating(session, rating));
+        Assert.Equal(0, session.CurrentIndex);
+        Assert.Equal(0, session.RememberedCount);
+        Assert.Empty(session.AgainCards);
+    }
+
+    [Theory]
     [InlineData(PracticeDirection.SourceToTarget, "Largest human organ", "Skin")]
     [InlineData(PracticeDirection.TargetToSource, "Skin", "Largest human organ")]
     public void Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(

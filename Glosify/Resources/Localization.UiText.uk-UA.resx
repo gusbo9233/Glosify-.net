@@ -1699,4 +1699,8 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>Гра</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Використання гри</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Використання аватара</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>Пам’ятаю</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>Важко</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Ще раз · Пам’ятаю →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Ще раз · Легко →</value></data>
 </root>

@@ -339,6 +339,50 @@ public sealed class RealtimeTranslationTranscriptTests
             StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task AssistantTools_ResumeEveryCharacterOfAnOversizedCaption(int captionCount)
+    {
+        await using var context = CreateContext();
+        var transcriptId = Guid.NewGuid();
+        AddPagedTranscript(context, transcriptId, sourceSegments: captionCount, translationSegments: 0);
+        var captions = context.ChangeTracker.Entries<RealtimeTranslationTranscriptSegment>().OrderBy(e => e.Entity.Sequence).ToList();
+        var original = new string('x', 11999) + "😀" + new string('y', 13000);
+        captions[0].Entity.Text = original;
+        if (captionCount > 1) captions[1].Entity.Text = "Final caption.";
+        await context.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(context);
+        var toolContext = Context(transcriptId);
+        var chunks = new List<string>();
+        var offset = 0;
+        var characterOffset = 0;
+        var completed = false;
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var result = await ReadAsync(tools, toolContext, new { offset, character_offset = characterOffset });
+            var text = string.Concat(result.GetProperty("captions").EnumerateArray().Select(c => c.GetProperty("text").GetString()));
+            Assert.InRange(text.Length, 1, 12000);
+            Assert.False(char.IsHighSurrogate(text[^1]));
+            Assert.False(char.IsLowSurrogate(text[0]));
+            chunks.Add(text);
+            var nextOffset = result.GetProperty("next_offset").GetInt32();
+            var nextCharacterOffset = result.GetProperty("next_character_offset").GetInt32();
+            Assert.True(nextOffset > offset || nextOffset == offset && nextCharacterOffset > characterOffset);
+            if (!result.GetProperty("has_more").GetBoolean())
+            {
+                Assert.True(result.GetProperty("page_complete").GetBoolean());
+                completed = true;
+                break;
+            }
+            Assert.False(result.GetProperty("page_complete").GetBoolean());
+            offset = nextOffset;
+            characterOffset = nextCharacterOffset;
+        }
+        Assert.True(completed);
+        Assert.Equal(original + (captionCount > 1 ? "Final caption." : ""), string.Concat(chunks));
+    }
+
     [Fact]
     public async Task AssistantTools_ClampAPageBeyondTheEnd()
     {

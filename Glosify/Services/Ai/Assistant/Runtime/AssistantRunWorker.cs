@@ -128,8 +128,11 @@ internal sealed class AssistantEvaluationWorker(
     IToolUseEvaluator evaluator,
     IOptions<JevOptions> jev,
     IAiCreditService credits,
-    IOptions<AiUsageOptions> usage)
+    IOptions<AiUsageOptions> usage,
+    TimeProvider clock)
 {
+    internal static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(2);
     public async Task EvaluateOneAsync(CancellationToken cancellationToken)
     {
         if (!jev.Value.Enabled)
@@ -137,79 +140,150 @@ internal sealed class AssistantEvaluationWorker(
             return;
         }
 
-        var evaluation = await db.AssistantToolEvaluations
-            .Where(candidate => candidate.Status == "pending"
+        var now = clock.GetUtcNow().UtcDateTime;
+        var eligible = db.AssistantToolEvaluations.AsNoTracking()
+            .Where(candidate => (candidate.Status == "pending"
+                    || (candidate.Status == "evaluating" && (candidate.LeaseUntil == null || candidate.LeaseUntil <= now)))
                 && db.AssistantRuns.Any(run => run.Id == candidate.RunId
-                    && (run.Status == AssistantRunStatus.Completed || run.Status == AssistantRunStatus.Cancelled || run.Status == AssistantRunStatus.Failed)))
-            .OrderBy(candidate => candidate.CreatedAt)
+                    && (run.Status == AssistantRunStatus.Completed || run.Status == AssistantRunStatus.Cancelled || run.Status == AssistantRunStatus.Failed)));
+        var evaluation = await eligible.OrderBy(candidate => candidate.CreatedAt).ThenBy(candidate => candidate.Id)
             .FirstOrDefaultAsync(cancellationToken);
         if (evaluation is null)
         {
             return;
         }
 
-        // Claim it first so a second worker does not review the same call.
-        if (await db.AssistantToolEvaluations
-                .Where(candidate => candidate.Id == evaluation.Id && candidate.Status == "pending")
-                .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.Status, "evaluating"), cancellationToken) == 0)
+        // Claim/reclaim atomically. A unique lease fences a delayed old worker's result.
+        var lease = Guid.NewGuid();
+        if (await eligible.Where(candidate => candidate.Id == evaluation.Id)
+                .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.Status, "evaluating")
+                    .SetProperty(candidate => candidate.LeaseId, lease)
+                    .SetProperty(candidate => candidate.LeaseUntil, now + LeaseDuration), cancellationToken) == 0)
         {
             return;
         }
 
-        var userId = await db.AssistantRuns.Where(run => run.Id == evaluation.RunId).Select(run => run.UserId).SingleAsync(cancellationToken);
-        var snapshot = RunJson.Read<ToolDecisionSnapshot>(evaluation.SnapshotJson);
-        var estimate = RunJson.Write(JevToolUseEvaluator.BuildState(snapshot)).Length / 3 + 1500;
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(EvaluationTimeout);
+        var token = deadline.Token;
+        Guid? reservationId = null;
         ToolUseEvaluation result;
-        if (usage.Value.MonthlyBudget.Enabled
-            && (!usage.Value.MonthlyBudget.MetersProvider("typesafe") || !usage.Value.MonthlyBudget.HasTokenPrice(jev.Value.Model)))
+        try
         {
-            result = new ToolUseEvaluation("unavailable", jev.Value.Model, JevToolUseEvaluator.RubricVersion, []);
-        }
-        else
-        {
-            Guid? reservationId = null;
-            try
+            // OperationId durably ties reservations to this evaluation even if the process
+            // dies before ReserveAsync returns. Retire the previous attempt before reserving
+            // again, including when pricing/credits no longer allow another evaluation.
+            if (!await WithOwnedLeaseAsync(async () =>
             {
-                var reservation = await credits.ReserveAsync(
-                    new AiUsageContext(userId, AiUsageFeatures.Assistant, "tool_use_evaluation", Guid.NewGuid(), "assistant_run", evaluation.RunId.ToString()),
-                    "typesafe",
-                    jev.Value.Model,
-                    estimate,
-                    cancellationToken);
-                reservationId = reservation.ReservationId;
-                result = await evaluator.EvaluateAsync(snapshot, cancellationToken);
-                if (result.Status == "evaluated")
-                {
-                    await credits.CommitUsageAsync(reservation.ReservationId, new AiTokenUsage(result.Tokens, 0, 0, 0, result.Tokens), cancellationToken);
-                }
-                else
-                {
-                    await credits.ReleaseAsync(reservation.ReservationId, CancellationToken.None);
-                }
+                var abandoned = await OutstandingReservations().Select(r => r.ReservationId!.Value).ToListAsync(token);
+                foreach (var id in abandoned) await credits.ReleaseAsync(id, token);
+            }, token)) return;
 
-                reservationId = null;
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            var userId = await db.AssistantRuns.Where(run => run.Id == evaluation.RunId).Select(run => run.UserId).SingleAsync(token);
+            var snapshot = RunJson.Read<ToolDecisionSnapshot>(evaluation.SnapshotJson);
+            var estimate = RunJson.Write(JevToolUseEvaluator.BuildState(snapshot)).Length / 3 + 1500;
+            if (usage.Value.MonthlyBudget.Enabled
+                && (!usage.Value.MonthlyBudget.MetersProvider("typesafe") || !usage.Value.MonthlyBudget.HasTokenPrice(jev.Value.Model)))
             {
-                throw;
+                result = Unavailable();
             }
-            catch (Exception)
+            else
             {
-                // Credit or budget outages only leave the review unavailable.
-                result = new ToolUseEvaluation("unavailable", jev.Value.Model, JevToolUseEvaluator.RubricVersion, []);
-            }
-            finally
-            {
-                if (reservationId is Guid outstanding)
+                if (!await WithOwnedLeaseAsync(async () =>
                 {
-                    await credits.ReleaseAsync(outstanding, CancellationToken.None);
-                }
+                    // A transient commit failure may have committed the reservation. Reuse it
+                    // when retrying this transaction instead of reserving twice.
+                    reservationId = await OutstandingReservations().Select(r => r.ReservationId).SingleOrDefaultAsync(token);
+                    if (reservationId is null)
+                    {
+                        var reservation = await credits.ReserveAsync(
+                            new AiUsageContext(userId, AiUsageFeatures.Assistant, "tool_use_evaluation", evaluation.Id, "assistant_run", evaluation.RunId.ToString()),
+                            "typesafe", jev.Value.Model, estimate, token);
+                        reservationId = reservation.ReservationId;
+                    }
+                }, token)) return;
+                result = await evaluator.EvaluateAsync(snapshot, token);
+                if (result.Status == "evaluated" && result.Tokens <= 0) result = Unavailable();
+                if (await CompleteAsync(result, reservationId, token)) reservationId = null;
+                return;
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            db.ChangeTracker.Clear();
+            // Graceful shutdown retries immediately; a process crash retries on lease expiry.
+            await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, "pending")
+                .SetProperty(e => e.LeaseId, (Guid?)null).SetProperty(e => e.LeaseUntil, (DateTime?)null), CancellationToken.None);
+            throw;
+        }
+        catch (Exception)
+        {
+            // Settlement can have saved tracked credit state inside a rolled-back transaction.
+            db.ChangeTracker.Clear();
+            // Provider failures/timeouts are advisory and never block the original run.
+            result = Unavailable();
+        }
+        finally
+        {
+            if (reservationId is Guid outstanding)
+                await credits.ReleaseAsync(outstanding, CancellationToken.None);
+        }
 
-        AssistantRunTelemetry.Evaluations.Add(1, new KeyValuePair<string, object?>("status", result.Status));
-        evaluation.Status = result.Status;
-        evaluation.EvaluationJson = RunJson.Write(result);
-        await db.SaveChangesAsync(cancellationToken);
+        await CompleteAsync(result, null, cancellationToken);
+
+        IQueryable<AiCreditTransaction> OutstandingReservations() => db.AiCreditTransactions.AsNoTracking()
+            .Where(r => r.OperationId == evaluation.Id && r.Feature == AiUsageFeatures.Assistant
+                && r.Operation == "tool_use_evaluation" && r.Kind == AiCreditTransactionKinds.Reservation
+                && r.ReservationId != null && !db.AiCreditTransactions.Any(t => t.ReservationId == r.ReservationId
+                    && (t.Kind == AiCreditTransactionKinds.UsageDebit || t.Kind == AiCreditTransactionKinds.Release)));
+
+        async Task<bool> WithOwnedLeaseAsync(Func<Task> action, CancellationToken ct) =>
+            await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                db.ChangeTracker.Clear();
+                await using var transaction = db.Database.IsRelational()
+                    ? await db.Database.BeginTransactionAsync(ct) : null;
+                // A conditional write holds the evaluation row until the credit changes
+                // commit. An expired worker cannot reserve after a replacement claimed it.
+                if (await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.LeaseUntil, e => e.LeaseUntil), ct) == 0)
+                    return false;
+                await action();
+                if (transaction is not null) await transaction.CommitAsync(ct);
+                return true;
+            });
+
+        async Task<bool> CompleteAsync(ToolUseEvaluation completed, Guid? reservation, CancellationToken ct)
+        {
+            // AiCreditService shares this scoped context. Fence the lease, save the result and
+            // settle its credits in one transaction: a crash can commit all of them or none.
+            // Retry database settlement only, never another paid provider call.
+            var saved = await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                db.ChangeTracker.Clear();
+                await using var transaction = db.Database.IsRelational()
+                    ? await db.Database.BeginTransactionAsync(ct) : null;
+                var json = RunJson.Write(completed);
+                if (await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.Status, completed.Status)
+                        .SetProperty(e => e.EvaluationJson, json).SetProperty(e => e.LeaseId, (Guid?)null)
+                        .SetProperty(e => e.LeaseUntil, (DateTime?)null), ct) == 0) return false;
+                if (reservation is Guid id)
+                {
+                    if (completed.Status == "evaluated")
+                        await credits.CommitUsageAsync(id, new AiTokenUsage(completed.Tokens, 0, 0, 0, completed.Tokens), ct);
+                    else
+                        await credits.ReleaseAsync(id, ct);
+                }
+                if (transaction is not null) await transaction.CommitAsync(ct);
+                return true;
+            });
+            if (saved) AssistantRunTelemetry.Evaluations.Add(1, new KeyValuePair<string, object?>("status", completed.Status));
+            return saved;
+        }
+
+        IQueryable<AssistantToolEvaluation> OwnedLease() => db.AssistantToolEvaluations
+            .Where(e => e.Id == evaluation.Id && e.Status == "evaluating" && e.LeaseId == lease
+                && e.LeaseUntil > clock.GetUtcNow().UtcDateTime);
+        ToolUseEvaluation Unavailable() => new("unavailable", jev.Value.Model, JevToolUseEvaluator.RubricVersion, []);
+
     }
 }

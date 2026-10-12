@@ -206,7 +206,9 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             .Take(Math.Min(limit, DetailPageSize - (skip % DetailPageSize)))
             .Select(segment => new TranscriptTextSegment(segment.Sequence, segment.Text, segment.CapturedAt))
             .ToListAsync(cancellationToken);
-        var bounded = BoundByCharacters(rows, maximumCharacters);
+        var characterOffset = request.Page is null && request.AtTime is null ? Math.Max(0, request.CharacterOffset) : 0;
+        var (bounded, nextCharacterOffset) = BoundByCharacters(rows, maximumCharacters, characterOffset);
+        var nextOffset = skip + bounded.Count - (nextCharacterOffset > 0 ? 1 : 0);
         var pageStart = skip / DetailPageSize * DetailPageSize;
         var pageEnd = Math.Min(pageStart + DetailPageSize, total);
 
@@ -222,12 +224,14 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             totalPages,
             skip,
             total,
-            skip + bounded.Count >= pageEnd,
-            skip + bounded.Count < total,
+            nextOffset >= pageEnd,
+            nextOffset < total,
             rows.Count == 0 ? null : rows[0].CapturedAt,
             rows.Count == 0 ? null : rows[^1].CapturedAt,
             transcript.SourceCount,
-            transcript.TranslationCount);
+            transcript.TranslationCount,
+            characterOffset,
+            nextCharacterOffset);
     }
 
     /// <summary>
@@ -312,25 +316,30 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
     /// Stops one read filling a context window, however long the captions turn out to be.
     /// Always yields at least one segment so a caller can never stall on a long caption.
     /// </summary>
-    private static List<TranscriptTextSegment> BoundByCharacters(
+    private static (List<TranscriptTextSegment> Segments, int NextCharacterOffset) BoundByCharacters(
         IReadOnlyList<TranscriptTextSegment> rows,
-        int maximumCharacters)
+        int maximumCharacters,
+        int characterOffset)
     {
         var bounded = new List<TranscriptTextSegment>(rows.Count);
         var characters = 0;
         foreach (var row in rows)
         {
-            if (bounded.Count > 0 && characters + row.Text.Length > maximumCharacters)
+            var start = bounded.Count == 0 ? Math.Min(characterOffset, row.Text.Length) : 0;
+            var remaining = row.Text.Length - start;
+            if (bounded.Count > 0 && characters + remaining > maximumCharacters)
             {
                 break;
             }
-            var text = row.Text.Length <= maximumCharacters
-                ? row.Text
-                : row.Text[..maximumCharacters];
+            var length = Math.Min(remaining, maximumCharacters - characters);
+            if (length > 0 && start + length < row.Text.Length
+                && char.IsHighSurrogate(row.Text[start + length - 1]) && char.IsLowSurrogate(row.Text[start + length])) length--;
+            var text = row.Text.Substring(start, length);
             bounded.Add(row with { Text = text });
             characters += text.Length;
+            if (length < remaining) return (bounded, start + length);
         }
-        return bounded;
+        return (bounded, 0);
     }
 
     public async Task RenameAsync(

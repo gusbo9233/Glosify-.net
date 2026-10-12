@@ -119,6 +119,12 @@ public sealed class ChangeApplier : IChangeApplier
 
         foreach (var change in changes)
         {
+            if (LearningChanges.Handles(change.Kind))
+            {
+                journal.Add(await new LearningChanges(_context, _quizService, _collectionService, _ankiCollections).ApplyAsync(change, userId, cancellationToken));
+                applied++;
+                continue;
+            }
             var (quiz, batch) = RequiresQuizContext(change)
                 ? targets[Target(change)!.Value]
                 : (null, QuizContentBatch.Empty);
@@ -258,6 +264,19 @@ public sealed class ChangeApplier : IChangeApplier
             // part of this operation and must be journaled before a later link Undo.
             foreach (var card in (await cards.ToListAsync(cancellationToken)).Where(c => !beforeIds.Contains(c.Id)))
                 journal.Add(new(PendingChangeKinds.SyncAnkiCard, AppliedEntityTypes.AnkiCard, card.Id.ToString(), null, null, AnkiCardState.From(card)));
+        }
+        // Include associations created automatically by existing quiz links in the baseline.
+        // A later user inclusion or review must survive Undo of the source item.
+        var study = await ItemStudyState.CaptureAsync(_context,
+            journal.Where(entry => entry.Kind is PendingChangeKinds.AddWord or PendingChangeKinds.AddSentence)
+                .Select(entry => (entry.Kind, entry.EntityId)), cancellationToken);
+        for (var index = 0; index < journal.Count; index++)
+        {
+            var entry = journal[index];
+            if (!study.TryGetValue(ItemStudyState.Key(entry.Kind, entry.EntityId), out var hash)) continue;
+            var after = JsonSerializer.SerializeToNode(entry.After)!.AsObject();
+            after["anki_state_hash"] = hash;
+            journal[index] = entry with { After = after };
         }
         return new AssistantApplyResult(
             applied,
@@ -612,7 +631,7 @@ public sealed class ChangeApplier : IChangeApplier
         batch.ReleaseWordLemma(word.Lemma);
         _context.Words.Remove(word);
         journal.Add(new AppliedChange(PendingChangeKinds.DeleteWord, AppliedEntityTypes.Word, word.Id, quiz.Id,
-            new { word = word.Lemma, translation = word.Translation }, null));
+            new { word = word.Lemma, translation = word.Translation, created_at = word.CreatedAt }, null));
         return true;
     }
 
@@ -683,7 +702,7 @@ public sealed class ChangeApplier : IChangeApplier
             collectionId, cancellationToken: ct);
 
         journal.Add(new AppliedChange(PendingChangeKinds.CreateQuiz, AppliedEntityTypes.Quiz, quiz.Id.ToString(), quiz.Id,
-            null, new { name = quiz.Name, collection_id = quiz.CollectionId, is_public = quiz.IsPublic }));
+            null, LearningChanges.CreationState(quiz)));
         AddStarterWords(payload, quiz, journal);
         AddStarterSentences(payload, quiz, journal);
         return new CreatedQuizResult(
@@ -710,7 +729,7 @@ public sealed class ChangeApplier : IChangeApplier
             userId,
             parentCollectionId, cancellationToken: ct);
         journal.Add(new AppliedChange(PendingChangeKinds.CreateCollection, AppliedEntityTypes.Collection, collection.Id.ToString(), null,
-            null, new { name = collection.Name, parent_collection_id = collection.ParentCollectionId, is_public = collection.IsPublic }));
+            null, LearningChanges.CreationState(collection)));
         return collection.Id;
     }
 

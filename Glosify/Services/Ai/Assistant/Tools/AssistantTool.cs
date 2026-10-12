@@ -94,6 +94,7 @@ internal sealed record ToolContext
 
     /// <summary>The quiz the chat is attached to, if any. Content tools default to it.</summary>
     public Guid? QuizId { get; init; }
+    public Guid? AnkiCollectionId { get; init; }
 
     /// <summary>The learning language's display name, such as "Polish".</summary>
     public string? TargetLanguage { get; init; }

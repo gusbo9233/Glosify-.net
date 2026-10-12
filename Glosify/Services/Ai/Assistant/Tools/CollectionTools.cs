@@ -23,9 +23,9 @@ internal sealed class CreateCollectionTool(GlosifyContext db) : AssistantTool<Cr
     {
         const string title = "Could not create the collection";
         var language = context.IsFreestyle ? QuizLanguageCatalog.FreestyleName : context.TargetLanguage;
-        if (string.IsNullOrWhiteSpace(args.Name))
+        if (string.IsNullOrWhiteSpace(args.Name) || args.Name.Trim().Length > 160)
         {
-            return ToolResult.Fail(title, "name is required.");
+            return ToolResult.Fail(title, "name must be between 1 and 160 characters.");
         }
 
         if (string.IsNullOrWhiteSpace(language))
@@ -88,9 +88,9 @@ internal sealed class RenameCollectionTool(GlosifyContext db) : AssistantTool<Re
     {
         const string title = "Could not rename the collection";
         var name = args.Name.Trim();
-        if (name.Length == 0)
+        if (name.Length is 0 or > 160)
         {
-            return ToolResult.Fail(title, "name is required.");
+            return ToolResult.Fail(title, "name must be between 1 and 160 characters.");
         }
 
         var collection = await CollectionRules.FindAsync(db, context, args.CollectionId, cancellationToken);

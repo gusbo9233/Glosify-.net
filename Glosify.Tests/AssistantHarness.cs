@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
+using Glosify.Services.Abuse;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
@@ -17,6 +18,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -123,10 +125,11 @@ internal sealed class AssistantHarness : IAsyncDisposable
     }
 
     /// <summary>A fresh context on the same database, as another request would use.</summary>
-    public GlosifyContext Db()
+    public GlosifyContext Db(bool accountResources = false)
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>(_options).AddInterceptors(Interceptors).Options;
-        return _connection is null ? new GlosifyContext(options) : new SqliteTestContext(options);
+        var abuse = accountResources ? Microsoft.Extensions.Options.Options.Create(new AbuseOptions()) : null;
+        return _connection is null ? new GlosifyContext(options, abuse) : new SqliteTestContext(options, abuse);
     }
 
     /// <summary>Everything a request showed the model, decoded: text, call arguments, tool results, notes.</summary>
@@ -333,7 +336,7 @@ internal sealed class AssistantHarness : IAsyncDisposable
 /// SQLite cannot order by <see cref="DateTimeOffset"/>, which the chat list does, so tests store
 /// it as a sortable number. SQL Server keeps its native type.
 /// </summary>
-internal sealed class SqliteTestContext(DbContextOptions<GlosifyContext> options) : GlosifyContext(options)
+internal sealed class SqliteTestContext(DbContextOptions<GlosifyContext> options, IOptions<AbuseOptions>? abuse = null) : GlosifyContext(options, abuse)
 {
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {

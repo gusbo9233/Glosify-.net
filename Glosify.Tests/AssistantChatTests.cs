@@ -4,6 +4,7 @@ using Glosify.Models.Library;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Xunit;
 
 namespace Glosify.Tests;
@@ -77,6 +78,88 @@ public sealed class AssistantChatTests
         await using var db = h.Db();
         Assert.Empty(await db.Words.ToListAsync());
         Assert.Equal(AssistantMessageStatus.Applied, (await db.AssistantMessages.SingleAsync(message => message.Id == response.AssistantMessageId)).Status);
+        var storedRun = await db.AssistantRuns.SingleAsync();
+        var view = await h.ViewAsync(storedRun.Id);
+        Assert.True(view.CanUndo);
+        Assert.Equal(1, view.SavedChanges);
+        Assert.Single(await db.AssistantChanges.Where(c => c.RunId == storedRun.Id).ToListAsync());
+        Assert.Equal(0, (await h.OrchestrateAsync(chats => chats.ApplyPendingChangesAsync(response.AssistantMessageId, AssistantHarness.UserId))).Applied);
+        Assert.Equal(1, (await h.UndoAsync(storedRun.Id)).Undone);
+        await using var after = h.Db();
+        Assert.Equal("dom", (await after.Words.SingleAsync()).Lemma);
+        Assert.False((await h.ViewAsync(storedRun.Id)).CanUndo);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Classic_apply_cannot_mutate_a_running_or_undone_run(bool undone)
+    {
+        await using var h = await AssistantHarness.CreateAsync(db => db.Words.Add(new Word { Id = "w1", QuizId = Guid.Empty, Lemma = "dom", Translation = "house" }));
+        h.Model.ThenCall("delete_items", new { word_ids = new[] { "w1" } }).ThenText("Apply to remove dom.");
+        var response = await h.OrchestrateAsync(chats => chats.SendMessageAsync(h.QuizId, AssistantHarness.UserId, "Remove dom"));
+        await using (var db = h.Db())
+        {
+            var run = await db.AssistantRuns.SingleAsync();
+            if (undone) run.UndoneAt = h.Clock.GetUtcNow().UtcDateTime;
+            else run.Status = AssistantRunStatus.Running;
+            await db.SaveChangesAsync();
+        }
+        await Assert.ThrowsAsync<AssistantRunConflictException>(() => h.OrchestrateAsync(chats => chats.ApplyPendingChangesAsync(response.AssistantMessageId, AssistantHarness.UserId)));
+        await using var after = h.Db();
+        Assert.Equal("dom", (await after.Words.SingleAsync()).Lemma);
+        Assert.Empty(await after.AssistantChanges.ToListAsync());
+        Assert.Equal(AssistantMessageStatus.Active, (await after.AssistantMessages.SingleAsync(m => m.Id == response.AssistantMessageId)).Status);
+    }
+
+    [Fact]
+    public async Task Classic_apply_rolls_back_the_mutation_when_its_undo_journal_cannot_be_saved()
+    {
+        await using var h = await AssistantHarness.CreateAsync(db => db.Words.Add(new Word { Id = "w1", QuizId = Guid.Empty, Lemma = "dom", Translation = "house" }));
+        h.Model.ThenCall("delete_items", new { word_ids = new[] { "w1" } }).ThenText("Apply to remove dom.");
+        var response = await h.OrchestrateAsync(chats => chats.SendMessageAsync(h.QuizId, AssistantHarness.UserId, "Remove dom"));
+        h.Interceptors.Add(new RejectJournalSave());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => h.OrchestrateAsync(chats => chats.ApplyPendingChangesAsync(response.AssistantMessageId, AssistantHarness.UserId)));
+        await using (var db = h.Db())
+        {
+            Assert.Equal("dom", (await db.Words.SingleAsync()).Lemma);
+            Assert.Empty(await db.AssistantChanges.ToListAsync());
+            Assert.Equal(0, (await db.AssistantRuns.SingleAsync()).SavedChanges);
+            Assert.Equal(AssistantMessageStatus.Active, (await db.AssistantMessages.SingleAsync(m => m.Id == response.AssistantMessageId)).Status);
+        }
+        h.Interceptors.Clear();
+        Assert.Equal(1, (await h.OrchestrateAsync(chats => chats.ApplyPendingChangesAsync(response.AssistantMessageId, AssistantHarness.UserId))).Applied);
+    }
+
+    private sealed class RejectJournalSave : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context!.ChangeTracker.Entries<AssistantChange>().Any(e => e.State == EntityState.Added))
+                throw new InvalidOperationException("Injected journal write failure.");
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    [Theory]
+    [InlineData("delete_quiz")]
+    [InlineData("delete_collection")]
+    [InlineData("anki_delete")]
+    public async Task History_and_live_view_agree_that_permanent_only_changes_cannot_be_undone(string kind)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        h.Model.ThenText("Deleted.");
+        var run = await h.RunAsync("Delete the resource");
+        await using (var db = h.Db())
+        {
+            var part = await db.AssistantParts.FirstAsync(p => p.RunId == run.Id);
+            db.AssistantChanges.Add(new AssistantChange { Id = Guid.NewGuid(), RunId = run.Id, PartId = part.Id, UserId = AssistantHarness.UserId,
+                Kind = kind, EntityType = "resource", EntityId = Guid.NewGuid().ToString(), CreatedAt = h.Clock.GetUtcNow().UtcDateTime });
+            await db.SaveChangesAsync();
+        }
+        Assert.False((await h.ViewAsync(run.Id)).CanUndo);
+        var history = await h.OrchestrateAsync(chats => chats.GetChatHistoryAsync(run.ThreadId, AssistantHarness.UserId));
+        Assert.False(history.Messages.Single(m => m.Id == run.MessageId).CanUndo);
     }
 
     [Fact]

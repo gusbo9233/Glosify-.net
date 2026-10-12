@@ -1699,4 +1699,8 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>Trò chơi</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Mức sử dụng trò chơi</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Mức sử dụng avatar</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>Đã nhớ</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>Khó</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Lại · Đã nhớ →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Lại · Dễ →</value></data>
 </root>

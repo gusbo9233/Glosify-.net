@@ -343,6 +343,12 @@ public sealed class AssistantToolEvaluation
     [Column("evaluation_json")]
     public string? EvaluationJson { get; set; }
 
+    [Column("lease_id")]
+    public Guid? LeaseId { get; set; }
+
+    [Column("lease_until")]
+    public DateTime? LeaseUntil { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 }

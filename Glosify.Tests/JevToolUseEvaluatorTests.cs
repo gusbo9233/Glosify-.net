@@ -78,6 +78,22 @@ public sealed class JevToolUseEvaluatorTests
     private static ToolDecisionSnapshot Snapshot(string word, string translation) => new("Add all words and sentences", [],
         new { quizId = "quiz", isFreestyle = false }, new[] { new { name = "add_word" }, new { name = "add_sentence" } },
         "add_word", JsonSerializer.SerializeToElement(new { word, translation }), []);
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("{}")]
+    [InlineData("{\"input_tokens\":0}")]
+    [InlineData("{\"input_tokens\":-1}")]
+    [InlineData("{\"input_tokens\":2147483648}")]
+    [InlineData("{\"input_tokens\":\"100\"}")]
+    public async Task Missing_or_invalid_usage_cannot_be_an_evaluated_result(string? usage)
+    {
+        var handler = new RecordingHandler { OverrideUsage = true, Usage = usage };
+        var result = await Create(handler).EvaluateAsync(Snapshot("dom", "house"), default);
+        Assert.Equal("unavailable", result.Status);
+        Assert.Empty(result.Findings);
+        Assert.Single(handler.Requests);
+    }
     private static JevToolUseEvaluator Create(HttpMessageHandler handler) => new(new HttpClient(handler),
         Options.Create(new JevOptions { Enabled = true, ApiKey = "test-only" }));
     private sealed class RecordingHandler : HttpMessageHandler
@@ -88,6 +104,8 @@ public sealed class JevToolUseEvaluatorTests
         public double Confidence { get; init; } = .95;
         public int Status { get; init; } = 200;
         public bool MissingAnswer { get; init; }
+        public bool OverrideUsage { get; init; }
+        public string? Usage { get; init; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
         {
             Uri = request.RequestUri!.ToString();
@@ -97,7 +115,10 @@ public sealed class JevToolUseEvaluatorTests
                 type = "choice", choice = x == Violation ? "violation" : "pass", confidence = Confidence,
                 probabilities = new { violation = x == Violation ? .99 : .01, pass = x == Violation ? .01 : .99, uncertain = 0 },
             });
-            return new((HttpStatusCode)Status) { Content = new StringContent(JsonSerializer.Serialize(new { model = "jev-1.13.0", answers, usage = new { input_tokens = 100 } })) };
+            var body = new Dictionary<string, object> { ["model"] = "jev-1.13.0", ["answers"] = answers };
+            if (!OverrideUsage) body["usage"] = new { input_tokens = 100 };
+            else if (Usage is not null) body["usage"] = JsonSerializer.Deserialize<JsonElement>(Usage);
+            return new((HttpStatusCode)Status) { Content = new StringContent(JsonSerializer.Serialize(body)) };
         }
     }
 }

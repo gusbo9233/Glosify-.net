@@ -1,0 +1,51 @@
+@model Glosify.Models.ViewModels.StudyCardViewModel
+<p class="page-message flashcard-request-status" data-flashcard-status role="status" aria-live="polite" hidden></p>
+@if (Model.Revealed)
+{
+    <article class="flashcard is-revealed" aria-live="polite">
+        <span class="card-label">@Model.PromptLanguage → @Model.AnswerLanguage</span>
+        <h2 class="card-word" dir="auto">@Model.Prompt</h2>
+        @if (Model.Pronunciation)
+        {
+            <button class="btn-icon-tts" aria-pressed="false" type="button" data-tts="@Model.Prompt" data-tts-lang="@Model.PromptLanguage" aria-label="@Text["Quiz.PlayPronunciation", Model.Prompt]"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span></button>
+        }
+        <div class="card-answer revealed">
+            <div class="translation" dir="auto">@Model.Answer</div>
+            @if (Model.Pronunciation)
+            {
+                <button class="btn-icon-tts" aria-pressed="false" type="button" data-tts="@Model.Answer" data-tts-lang="@Model.AnswerLanguage" aria-label="@Text["Quiz.PlayPronunciation", Model.Answer]"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span></button>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Example)) { <div class="example" dir="auto">@Model.Example</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.ExampleTranslation)) { <div class="example" dir="auto">@Model.ExampleTranslation</div> }
+        </div>
+    </article>
+    <form class="controls" method="post" action="@Model.RateUrl" data-flashcard-form data-right-rating="@Model.RightRating">
+        @Html.AntiForgeryToken()
+        @foreach (var field in Model.Fields) { <input type="hidden" name="@field.Key" value="@field.Value" /> }
+        <input type="hidden" name="DurationMilliseconds" data-study-duration />
+        <div class="rating-row revealed" style="grid-template-columns:repeat(@Model.Ratings.Count,minmax(0,1fr))">
+            @for (var i = 0; i < Model.Ratings.Count; i++)
+            {
+                var rating = Model.Ratings[i];
+                <button class="btn-rating @rating.Value" type="submit" name="rating" value="@rating.Value" data-rating-key="@(i + 1)"><span>@Text[rating.LabelKey]</span>@if (rating.Interval is not null) { <small class="study-interval">@rating.Interval</small> }</button>
+            }
+        </div>
+        <p class="swipe-hint">@Text[Model.RightRating == "easy" ? "Quiz.AnkiSwipeHint" : "Quiz.TwoChoiceSwipeHint"]</p>
+    </form>
+}
+else
+{
+    <form class="card-reveal-form" method="post" action="@Model.RevealUrl" data-flashcard-form data-card-reveal-form>
+        @Html.AntiForgeryToken()
+        @foreach (var field in Model.Fields) { <input type="hidden" name="@field.Key" value="@field.Value" /> }
+        <button class="flashcard flashcard-clickable" type="submit" aria-label="@Text["Quiz.RevealAnswer", Model.Prompt]">
+            <span class="card-label">@Model.PromptLanguage → @Model.AnswerLanguage</span>
+            <span class="card-word" dir="auto">@Model.Prompt</span>
+            <span class="swipe-hint">@Text["Quiz.ShowAnswer"]</span>
+        </button>
+        @if (Model.Pronunciation)
+        {
+            <button class="btn-icon-tts card-preview-tts" aria-pressed="false" type="button" data-tts="@Model.Prompt" data-tts-lang="@Model.PromptLanguage" aria-label="@Text["Quiz.PlayPronunciation", Model.Prompt]"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span></button>
+        }
+    </form>
+}

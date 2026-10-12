@@ -31,7 +31,7 @@
             <a class="anki-collection-card" asp-action="Collection" asp-route-id="@collection.Id">
                 <div class="anki-card-topline">
                     <span class="anki-card-icon material-symbols-outlined" aria-hidden="true">style</span>
-                    <span class="anki-language-pair">@collection.SourceLanguage <span aria-hidden="true">&rarr;</span> @collection.TargetLanguage</span>
+                    <span class="anki-language-pair">@Glosify.Models.PracticeDirection.PromptLanguage(collection.DefaultDirection, collection.SourceLanguage, collection.TargetLanguage) <span aria-hidden="true">&rarr;</span> @Glosify.Models.PracticeDirection.AnswerLanguage(collection.DefaultDirection, collection.SourceLanguage, collection.TargetLanguage)</span>
                 </div>
                 <div class="anki-card-title"><h2>@collection.Name</h2></div>
                 <dl class="anki-counts">

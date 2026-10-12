@@ -36,6 +36,7 @@ internal sealed class ListSavedTranscriptsTool(GlosifyContext db) : AssistantToo
         var total = await query.CountAsync(cancellationToken);
         var transcripts = await query
             .OrderByDescending(transcript => transcript.UpdatedAt)
+            .ThenByDescending(transcript => transcript.Id)
             .Skip(offset)
             .Take(PageSize)
             .Select(transcript => new
@@ -74,7 +75,8 @@ internal sealed record GetSavedTranscriptArgs(
     [property: Description("ISO-8601 timestamp copied from captured_at or starts_at. Returns the page covering that moment; use it, not page or offset, to look at the same passage in the other stream.")] string? AtTime = null,
     [property: Description("Captions to skip. Only for resuming a page that came back with page_complete false: pass next_offset.")] int? Offset = null,
     [property: Description("Maximum captions. Null for a full page.")] int? Limit = null,
-    [property: Description("'source' for the original speech or 'translation' for the live translation of the same audio. Null for the transcript's stored stream. Request 'translation' only to cross-check a garbled passage: it recovers meaning, not exact wording.")] TranscriptStreamChoice? Stream = null);
+    [property: Description("'source' for the original speech or 'translation' for the live translation of the same audio. Null for the transcript's stored stream. Request 'translation' only to cross-check a garbled passage: it recovers meaning, not exact wording.")] TranscriptStreamChoice? Stream = null,
+    [property: Description("Characters to skip within the caption at offset. Resume using next_character_offset together with next_offset, leaving page and at_time null. Null for 0.")] int? CharacterOffset = null);
 
 internal sealed class GetSavedTranscriptTool(IRealtimeTranslationTranscriptService transcripts) : AssistantTool<GetSavedTranscriptArgs>
 {
@@ -85,7 +87,7 @@ internal sealed class GetSavedTranscriptTool(IRealtimeTranslationTranscriptServi
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
 
     protected override string Describe(AssistantMode mode) =>
-        $"Read one page of a saved transcript. Pages match the reader, {RealtimeTranslationTranscriptService.DetailPageSize} captions each, so \"the first page\" means page 1 to both of you. New transcripts hold original source speech; legacy ones may hold translations — check stream. When page_complete is false, call again with next_offset to finish the same page; move to the next page only when page_complete is true.";
+        $"Read one page of a saved transcript. Pages match the reader, {RealtimeTranslationTranscriptService.DetailPageSize} captions each, so \"the first page\" means page 1 to both of you. New transcripts hold original source speech; legacy ones may hold translations — check stream. When page_complete is false, call again with offset=next_offset and character_offset=next_character_offset, leaving page and at_time null, to finish the same page; move to the next page only when page_complete is true.";
 
     protected override async Task<ToolResult> RunAsync(GetSavedTranscriptArgs args, ToolContext context, CancellationToken cancellationToken)
     {
@@ -118,7 +120,8 @@ internal sealed class GetSavedTranscriptTool(IRealtimeTranslationTranscriptServi
                     TranscriptStreamChoice.Translation => RealtimeTranslationTranscriptStreams.Translation,
                     _ => null,
                 },
-                Limit: args.Limit),
+                Limit: args.Limit,
+                CharacterOffset: args.CharacterOffset ?? 0),
             cancellationToken);
         if (page is null)
         {
@@ -149,6 +152,8 @@ internal sealed class GetSavedTranscriptTool(IRealtimeTranslationTranscriptServi
             total_segments = page.TotalSegments,
             has_more = page.HasMore,
             next_offset = page.NextOffset,
+            character_offset = page.CharacterOffset,
+            next_character_offset = page.NextCharacterOffset,
         });
     }
 
@@ -216,7 +221,9 @@ internal sealed record GetSavedTranslationSessionArgs(
 internal sealed class GetSavedTranslationSessionTool(GlosifyContext db) : AssistantTool<GetSavedTranslationSessionArgs>
 {
     private const int MaximumEntries = 20;
-    private const int MaximumCharacters = 12_000;
+    // Keep each source/translation pair intact. This is a batch target; one entry may
+    // exceed it, bounded by the saved-translation limits (8,000 + 16,000 + 500 chars).
+    private const int TargetPageCharacters = 12_000;
 
     public override string Name => "get_saved_translation_session";
 
@@ -247,10 +254,6 @@ internal sealed class GetSavedTranslationSessionTool(GlosifyContext db) : Assist
         }
 
         var offset = Math.Max(0, args.Offset ?? 0);
-        if (session.Count > 0 && offset >= session.Count)
-        {
-            offset = session.Count - 1;
-        }
 
         var candidates = await db.SavedTranslations.AsNoTracking()
             .Where(item => item.SessionId == session.Id && item.UserId == context.UserId)
@@ -275,7 +278,7 @@ internal sealed class GetSavedTranslationSessionTool(GlosifyContext db) : Assist
         foreach (var candidate in candidates)
         {
             var size = candidate.source_text.Length + candidate.translated_text.Length + (candidate.preferences?.Length ?? 0);
-            if (translations.Count > 0 && characters + size > MaximumCharacters)
+            if (translations.Count > 0 && characters + size > TargetPageCharacters)
             {
                 break;
             }

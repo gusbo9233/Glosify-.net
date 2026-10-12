@@ -539,4 +539,8 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>Spel</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Spelanvändning</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Avataranvändning</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>Kunde det</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>Svårt</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Igen · Kunde det →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Igen · Lätt →</value></data>
 </root>

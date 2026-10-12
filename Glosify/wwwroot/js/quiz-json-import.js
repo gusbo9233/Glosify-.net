@@ -364,4 +364,5 @@ function initialize() {
 
 if (typeof document !== 'undefined') {
     initialize();
+    window.addEventListener('learning:updated', initialize);
 }

@@ -539,4 +539,8 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>Game</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Game usage</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Avatar usage</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>Got it</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>Hard</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Again · Got it →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Again · Easy →</value></data>
 </root>

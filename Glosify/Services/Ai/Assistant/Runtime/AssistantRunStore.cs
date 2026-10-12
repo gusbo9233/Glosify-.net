@@ -207,9 +207,11 @@ internal sealed class AssistantRunStore(
             .Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == userId)
             .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name, quiz.ProcessingStatus))
             .ToListAsync(cancellationToken);
+        var changes = await db.AssistantChanges.AsNoTracking().Where(c => c.RunId == run.Id)
+            .OrderBy(c => c.Sequence).Select(c => new AssistantResourceChange(c.EntityType, c.EntityId, c.QuizId, c.Kind, c.Status)).ToListAsync(cancellationToken);
         var canUndo = AssistantRunStatus.IsTerminal(run.Status)
             && run.UndoneAt is null
-            && await db.AssistantChanges.AnyAsync(change => change.RunId == run.Id && change.Status == AssistantChangeStatus.Applied, cancellationToken);
+            && await LearningChanges.Undoable(db.AssistantChanges).AnyAsync(change => change.RunId == run.Id, cancellationToken);
         return new AssistantRunView(
             run.Id,
             run.ThreadId,
@@ -227,7 +229,12 @@ internal sealed class AssistantRunStore(
             question is null ? null : Question(question),
             approval is null ? null : await ApprovalAsync(approval, userId, cancellationToken),
             parts.Select(part => PartView(part, reviews.GetValueOrDefault(part.Id))).ToList(),
-            artifacts);
+            artifacts)
+        {
+            ResourceChanges = changes,
+            ChangeRevision = changes.Count == 0 ? "" : RunJson.Hash(RunJson.Write(changes)),
+            PermanentChanges = changes.Count(c => LearningChanges.Permanent(c.Kind)),
+        };
     }
 
     internal static AssistantPartView PartView(AssistantPart part, AssistantToolEvaluation? review = null) => new(
@@ -645,6 +652,7 @@ internal sealed class AssistantRunStore(
                 && (run.Status == AssistantRunStatus.Queued || run.Status == AssistantRunStatus.Running || run.Status == AssistantRunStatus.RetryWait))
             .ExecuteUpdateAsync(set => set
                 .SetProperty(run => run.LeaseId, lease)
+                .SetProperty(run => run.Revision, run => run.Revision + 1)
                 .SetProperty(run => run.LeaseUntil, now.Add(LeaseDuration))
                 .SetProperty(run => run.Status, AssistantRunStatus.Running), cancellationToken);
         return claimed == 1 ? (candidate.Value, lease) : null;
@@ -658,6 +666,7 @@ internal sealed class AssistantRunStore(
 /// <summary>What a tool part carries for the UI and for decisions made after it ran.</summary>
 internal sealed record PartMetadata
 {
+    public int? ProposedChangeCount { get; init; }
     public IReadOnlyList<PendingChange>? Changes { get; init; }
     public Guid? QuizId { get; init; }
     public JsonElement? Output { get; init; }
@@ -678,6 +687,8 @@ internal static class AssistantPermissions
     [
         PendingChangeKinds.RemoveAnkiCards,
         PendingChangeKinds.UnlinkAnkiQuiz,
+        "delete_quiz", "delete_collection", "quiz_visibility", "collection_visibility",
+        "anki_delete", "anki_remove_quiz", "anki_remove_card",
         PendingChangeKinds.DeleteWord,
         PendingChangeKinds.DeleteSentence,
         PendingChangeKinds.MoveQuiz,
