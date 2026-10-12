@@ -121,6 +121,7 @@ export function createAssistantRuns({
                 if (!['cancel', 'steer'].includes(name) || error.status !== 409 || attempt === 2) throw error;
                 const latest = await request(`${base}/${current.id}`);
                 publish(latest);
+                if (isTerminal(latest.status)) throw error;
                 revision = latest.revision;
             }
         }
@@ -174,7 +175,15 @@ export function createAssistantRuns({
                     return pending ? pending.then(() => this.send(threadId, input))
                         : answer(threadId, { message: input.message });
                 }
-                case 'steer': return command(threadId, 'steer', { message: input.message });
+                case 'steer': return command(threadId, 'steer', { message: input.message }).catch(error => {
+                    const latest = runs.get(threadId);
+                    // The run can finish between the cached update and this follow-up. Only
+                    // restart after a confirmed conflict on that same finished run.
+                    if (error.status === 409 && latest?.id === run.id && isTerminal(latest.status)) {
+                        return this.start(threadId, input);
+                    }
+                    throw error;
+                });
                 default: return this.start(threadId, input);
             }
         },

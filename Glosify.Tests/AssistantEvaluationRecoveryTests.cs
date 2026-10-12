@@ -136,9 +136,68 @@ public sealed class AssistantEvaluationRecoveryTests
         Assert.Equal(0m, (await after.AiCreditAccounts.SingleAsync()).ReservedCredits);
     }
 
-    private static AiCreditService RealCredits(AssistantHarness h, GlosifyContext db)
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Reclaim_releases_crashed_reservations_and_monthly_budget_before_retry(bool canRetry)
     {
-        var usage = Options.Create(new AiUsageOptions { MonthlyBudget = new() { Enabled = false } });
+        await using var h = await SeedAsync();
+        var settings = new AiUsageOptions
+        {
+            MonthlyBudget = new()
+            {
+                Enabled = true, TimeZoneId = "UTC", Providers = ["typesafe"],
+                Models = [new() { Deployment = new JevOptions().Model, InputSekPerMillionTokens = 100, OutputSekPerMillionTokens = 100 }],
+            },
+        };
+        Guid abandoned;
+        Guid unrelated;
+        await using (var db = h.Db())
+        {
+            var date = db.Model.FindEntityType(typeof(AiCreditAccount))!.FindProperty(nameof(AiCreditAccount.CreatedAt))!
+                .GetTypeMapping().Converter!.ConvertToProvider(h.Clock.GetUtcNow());
+            var period = h.Clock.GetUtcNow().ToString("yyyy-MM", System.Globalization.CultureInfo.InvariantCulture);
+            await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO AiCreditAccounts (UserId, BalanceCredits, ReservedCredits, CreatedAt, UpdatedAt, RowVersion) VALUES ('user', 10, 0, {date}, {date}, X'00')");
+            await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO AiMonthlyBudgets (PeriodKey, LimitMicros, SpentMicros, ReservedMicros, OverrunMicros, CreatedAt, UpdatedAt, RowVersion) VALUES ({period}, 300000000, 0, 0, 0, {date}, {date}, X'00')");
+            var row = await db.AssistantToolEvaluations.SingleAsync();
+            row.Status = "evaluating";
+            row.LeaseId = Guid.NewGuid();
+            row.LeaseUntil = h.Clock.GetUtcNow().UtcDateTime.AddMinutes(-1);
+            await db.SaveChangesAsync();
+            var credits = RealCredits(h, db, settings);
+            abandoned = (await credits.ReserveAsync(new(AssistantHarness.UserId, AiUsageFeatures.Assistant,
+                "tool_use_evaluation", row.Id), "typesafe", new JevOptions().Model, 9000)).ReservationId;
+            unrelated = (await credits.ReserveAsync(new(AssistantHarness.UserId, AiUsageFeatures.Assistant,
+                "tool_use_evaluation", Guid.NewGuid()), "typesafe", new JevOptions().Model, 500)).ReservationId;
+            Assert.Equal(9.5m, (await db.AiCreditAccounts.SingleAsync()).ReservedCredits);
+            // Dispose without releasing, as a process crash after ReserveAsync would do.
+        }
+
+        await using (var db = h.Db())
+        {
+            var workerSettings = canRetry ? settings : new AiUsageOptions(); // no typesafe price configured
+            var worker = new AssistantEvaluationWorker(db, new Evaluator(_ => Task.FromResult(Result("recovered") with { Tokens = 1000 })),
+                Options.Create(new JevOptions { Enabled = true }), RealCredits(h, db, settings), Options.Create(workerSettings), h.Clock);
+            await worker.EvaluateOneAsync(default);
+        }
+
+        await using var after = h.Db();
+        Assert.Equal(canRetry ? "evaluated" : "unavailable", (await after.AssistantToolEvaluations.SingleAsync()).Status);
+        var release = await after.AiCreditTransactions.SingleAsync(t => t.ReservationId == abandoned && t.Kind == AiCreditTransactionKinds.Release);
+        Assert.Equal(9m, release.CreditAmount);
+        Assert.True(release.BudgetAmountMicros > 0);
+        Assert.False(await after.AiCreditTransactions.AnyAsync(t => t.ReservationId == unrelated && t.Kind == AiCreditTransactionKinds.Release));
+        var account = await after.AiCreditAccounts.SingleAsync();
+        Assert.Equal(0.5m, account.ReservedCredits);
+        Assert.Equal(canRetry ? 9m : 10m, account.BalanceCredits);
+        var budget = await after.AiMonthlyBudgets.SingleAsync();
+        Assert.Equal((await after.AiCreditTransactions.SingleAsync(t => t.ReservationId == unrelated)).BudgetAmountMicros, budget.ReservedMicros);
+        Assert.Equal(canRetry, budget.SpentMicros > 0);
+    }
+
+    private static AiCreditService RealCredits(AssistantHarness h, GlosifyContext db, AiUsageOptions? settings = null)
+    {
+        var usage = Options.Create(settings ?? new AiUsageOptions { MonthlyBudget = new() { Enabled = false } });
         var pricing = new CreditPricingResolver(Options.Create(new CreditPricingOptions { DefaultModelMultiplier = 1m }), usage, Options.Create(new RealtimeTranslationOptions()));
         return new(db, new ContextFactory(h), usage, pricing, new TrialEligibilityService(db), h.Clock);
     }

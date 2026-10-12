@@ -117,13 +117,39 @@ public sealed class AssistantReviewRegressionTests
         Assert.InRange(JsonSerializer.Serialize(rows).Length - emptySize, 0, 10);
         var rootOnly = await LearningChanges.SnapshotAsync(db, "anki", collection.Id, "user", default, collectionOnly: true);
         Assert.Equal(nameof(AnkiCollection), Assert.Single(rootOnly).Type);
-        var result = await AssistantToolFactory.Create(db).RunAsync("inspect_anki", JsonSerializer.Serialize(new { collection_id = collection.Id }), Context);
+        for (var i = 0; i < 1000; i++)
+        {
+            var wordId = $"summary-{i}";
+            db.Words.Add(new Word { Id = wordId, QuizId = quiz.Id, Lemma = wordId, Translation = "summary" });
+            db.AnkiNotes.Add(new AnkiNote
+            {
+                Id = Guid.NewGuid(), AnkiCollectionId = collection.Id, QuizId = quiz.Id, WordId = wordId,
+                Cards = [new AnkiCard
+                {
+                    Id = Guid.NewGuid(), IsActive = i % 5 != 0,
+                    State = new[] { "new", "learning", "relearning", "review" }[i % 4],
+                    DueAt = i % 4 == 0 ? null : i % 4 == 2 ? now.AddDays(1) : now.AddDays(-1),
+                }],
+            });
+        }
+        await db.SaveChangesAsync();
+        commands.Cards.Clear();
+        var result = await new InspectAnkiTool(db, clock).ExecuteAsync(JsonSerializer.Serialize(new { collection_id = collection.Id, offset = 100 }), Context, default);
         Assert.False(result.IsError);
         var output = JsonSerializer.SerializeToElement(result.Output);
         Assert.Equal(2000, output.GetProperty("total_reviews").GetInt32());
         Assert.Equal(2, output.GetProperty("studied_today").GetInt32());
         Assert.Equal(2, output.GetProperty("reviews_last_30_days").GetInt32());
         Assert.Equal(50, output.GetProperty("retention_percent_last_30_days").GetDouble());
+        Assert.Equal(1001, output.GetProperty("total_cards").GetInt32());
+        Assert.Equal(801, output.GetProperty("active_cards").GetInt32());
+        Assert.Equal(201, output.GetProperty("new_cards").GetInt32());
+        Assert.Equal(400, output.GetProperty("due_cards").GetInt32());
+        Assert.Equal(400, output.GetProperty("learning_cards").GetInt32());
+        Assert.Equal(100, output.GetProperty("cards").GetArrayLength());
+        Assert.NotEmpty(commands.Cards);
+        Assert.All(commands.Cards, sql => Assert.True(sql.Contains("COUNT(", StringComparison.OrdinalIgnoreCase)
+            || sql.Contains("LIMIT", StringComparison.OrdinalIgnoreCase), "Card reads must aggregate or page: " + sql));
         Assert.NotEmpty(commands.Sql);
         Assert.All(commands.Sql, sql => Assert.Contains("COUNT(", sql, StringComparison.OrdinalIgnoreCase));
     }
@@ -477,10 +503,12 @@ public sealed class AssistantReviewRegressionTests
     private sealed class ReviewCommands : DbCommandInterceptor
     {
         public List<string> Sql { get; } = [];
+        public List<string> Cards { get; } = [];
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
             InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
             if (command.CommandText.Contains("AnkiReviews", StringComparison.Ordinal)) Sql.Add(command.CommandText);
+            if (command.CommandText.Contains("AnkiCards", StringComparison.Ordinal)) Cards.Add(command.CommandText);
             return ValueTask.FromResult(result);
         }
     }

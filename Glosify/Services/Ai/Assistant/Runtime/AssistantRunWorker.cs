@@ -170,6 +170,15 @@ internal sealed class AssistantEvaluationWorker(
         ToolUseEvaluation result;
         try
         {
+            // OperationId durably ties reservations to this evaluation even if the process
+            // dies before ReserveAsync returns. Retire the previous attempt before reserving
+            // again, including when pricing/credits no longer allow another evaluation.
+            if (!await WithOwnedLeaseAsync(async () =>
+            {
+                var abandoned = await OutstandingReservations().Select(r => r.ReservationId!.Value).ToListAsync(token);
+                foreach (var id in abandoned) await credits.ReleaseAsync(id, token);
+            }, token)) return;
+
             var userId = await db.AssistantRuns.Where(run => run.Id == evaluation.RunId).Select(run => run.UserId).SingleAsync(token);
             var snapshot = RunJson.Read<ToolDecisionSnapshot>(evaluation.SnapshotJson);
             var estimate = RunJson.Write(JevToolUseEvaluator.BuildState(snapshot)).Length / 3 + 1500;
@@ -180,10 +189,19 @@ internal sealed class AssistantEvaluationWorker(
             }
             else
             {
-                var reservation = await credits.ReserveAsync(
-                    new AiUsageContext(userId, AiUsageFeatures.Assistant, "tool_use_evaluation", evaluation.Id, "assistant_run", evaluation.RunId.ToString()),
-                    "typesafe", jev.Value.Model, estimate, token);
-                reservationId = reservation.ReservationId;
+                if (!await WithOwnedLeaseAsync(async () =>
+                {
+                    // A transient commit failure may have committed the reservation. Reuse it
+                    // when retrying this transaction instead of reserving twice.
+                    reservationId = await OutstandingReservations().Select(r => r.ReservationId).SingleOrDefaultAsync(token);
+                    if (reservationId is null)
+                    {
+                        var reservation = await credits.ReserveAsync(
+                            new AiUsageContext(userId, AiUsageFeatures.Assistant, "tool_use_evaluation", evaluation.Id, "assistant_run", evaluation.RunId.ToString()),
+                            "typesafe", jev.Value.Model, estimate, token);
+                        reservationId = reservation.ReservationId;
+                    }
+                }, token)) return;
                 result = await evaluator.EvaluateAsync(snapshot, token);
                 if (result.Status == "evaluated" && result.Tokens <= 0) result = Unavailable();
                 if (await CompleteAsync(result, reservationId, token)) reservationId = null;
@@ -212,6 +230,27 @@ internal sealed class AssistantEvaluationWorker(
         }
 
         await CompleteAsync(result, null, cancellationToken);
+
+        IQueryable<AiCreditTransaction> OutstandingReservations() => db.AiCreditTransactions.AsNoTracking()
+            .Where(r => r.OperationId == evaluation.Id && r.Feature == AiUsageFeatures.Assistant
+                && r.Operation == "tool_use_evaluation" && r.Kind == AiCreditTransactionKinds.Reservation
+                && r.ReservationId != null && !db.AiCreditTransactions.Any(t => t.ReservationId == r.ReservationId
+                    && (t.Kind == AiCreditTransactionKinds.UsageDebit || t.Kind == AiCreditTransactionKinds.Release)));
+
+        async Task<bool> WithOwnedLeaseAsync(Func<Task> action, CancellationToken ct) =>
+            await db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+            {
+                db.ChangeTracker.Clear();
+                await using var transaction = db.Database.IsRelational()
+                    ? await db.Database.BeginTransactionAsync(ct) : null;
+                // A conditional write holds the evaluation row until the credit changes
+                // commit. An expired worker cannot reserve after a replacement claimed it.
+                if (await OwnedLease().ExecuteUpdateAsync(set => set.SetProperty(e => e.LeaseUntil, e => e.LeaseUntil), ct) == 0)
+                    return false;
+                await action();
+                if (transaction is not null) await transaction.CommitAsync(ct);
+                return true;
+            });
 
         async Task<bool> CompleteAsync(ToolUseEvaluation completed, Guid? reservation, CancellationToken ct)
         {

@@ -99,15 +99,15 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         var now = clock.GetUtcNow();
         var dayStart = Glosify.Services.Anki.AnkiCollectionService.StartOfCollectionDay(collection.TimeZoneId, now);
         var reviews = await ReviewSummaryAsync(db, id, dayStart, now.AddDays(-30), ct);
-        var active = await cards.Where(c => c.IsActive).Select(c => new { c.State, c.DueAt }).ToListAsync(ct);
+        var active = await CardSummaryAsync(db, id, now, ct);
         return ToolResult.Ok("Anki collection details", new
         {
             collection.Id, collection.Name, collection.SourceLanguage, collection.TargetLanguage, collection.DefaultDirection,
             collection.DesiredRetention, collection.NewCardsPerDay, collection.MaximumReviewsPerDay, collection.TimeZoneId,
-            total_cards = await cards.CountAsync(ct), active_cards = active.Count, total_reviews = reviews.Total,
-            due_cards = active.Count(c => c.State != "new" && c.DueAt <= now),
-            new_cards = active.Count(c => c.State == "new"),
-            learning_cards = active.Count(c => c.State is "learning" or "relearning"),
+            total_cards = await cards.CountAsync(ct), active_cards = active.Active, total_reviews = reviews.Total,
+            due_cards = active.Due,
+            new_cards = active.New,
+            learning_cards = active.Learning,
             studied_today = reviews.Today,
             reviews_last_30_days = reviews.Recent,
             retention_percent_last_30_days = reviews.Recent == 0 ? 0 : 100d * reviews.Passed / reviews.Recent,
@@ -115,6 +115,39 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
             cards = await cards.OrderBy(c => c.Id).Skip(Math.Max(0, args.Offset)).Take(100).Select(c => new
             { c.Id, c.Direction, c.State, c.IsActive, c.DueAt, c.DirectlyIncluded, c.ExcludedFromQuizLink, c.Note.QuizId, c.Note.ItemType, c.Note.WordId, c.Note.SentenceId, c.Note.TargetText, c.Note.SourceText }).ToListAsync(ct)
         });
+    }
+
+    internal sealed class CardSummary
+    {
+        public long Active { get; set; }
+        public long Due { get; set; }
+        public long New { get; set; }
+        public long Learning { get; set; }
+    }
+
+    private static async Task<CardSummary> CardSummaryAsync(GlosifyContext db, Guid id, DateTimeOffset now, CancellationToken ct)
+    {
+        if (db.Database.ProviderName?.Contains("Sqlite", StringComparison.Ordinal) == true
+            && db.Model.FindEntityType(typeof(Glosify.Models.Entities.AnkiCard))!
+                .FindProperty(nameof(Glosify.Models.Entities.AnkiCard.DueAt))!.GetTypeMapping().Converter is null)
+        {
+            return await db.Database.SqlQuery<CardSummary>($"""
+                SELECT COUNT(*) AS Active,
+                    COALESCE(SUM(CASE WHEN c.State <> 'new' AND julianday(c.DueAt) <= julianday({now}) THEN 1 ELSE 0 END), 0) AS Due,
+                    COALESCE(SUM(CASE WHEN c.State = 'new' THEN 1 ELSE 0 END), 0) AS New,
+                    COALESCE(SUM(CASE WHEN c.State IN ('learning', 'relearning') THEN 1 ELSE 0 END), 0) AS Learning
+                FROM AnkiCards c INNER JOIN AnkiNotes n ON n.Id = c.AnkiNoteId
+                WHERE n.AnkiCollectionId = {id} AND c.IsActive = 1
+                """).SingleAsync(ct);
+        }
+        var active = db.AnkiCards.Where(c => c.Note.AnkiCollectionId == id && c.IsActive);
+        return new CardSummary
+        {
+            Active = await active.LongCountAsync(ct),
+            Due = await active.LongCountAsync(c => c.State != "new" && c.DueAt <= now, ct),
+            New = await active.LongCountAsync(c => c.State == "new", ct),
+            Learning = await active.LongCountAsync(c => c.State == "learning" || c.State == "relearning", ct),
+        };
     }
 
     internal sealed class ReviewSummary

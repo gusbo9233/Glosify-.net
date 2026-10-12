@@ -277,6 +277,33 @@ public sealed class AssistantRunTests
         Assert.Contains("\"answer\":\"Travel\"", AssistantHarness.Transcript(h.Model.Requests[1]));
     }
 
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1001)]
+    [InlineData(12000)]
+    public async Task Long_questions_preserve_the_full_text_without_overflowing_the_status_reason(int length)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        var question = new string('q', length);
+        h.Model.ThenCall("ask_user", new { question, options = new[] { "Food", "Travel" }, multiple = false })
+            .ThenText("Travel it is.");
+        var run = await h.RunAsync("Make me a quiz");
+
+        Assert.Equal(AssistantRunStatus.AwaitingInput, run.Status);
+        Assert.Equal(question, run.Question!.Question);
+        Assert.Equal("Waiting for your answer.", run.Reason);
+        await using var db = h.Db();
+        var saved = await db.AssistantRuns.SingleAsync(r => r.Id == run.Id);
+        var maxReason = db.Model.FindEntityType(typeof(AssistantRun))!.FindProperty(nameof(AssistantRun.Reason))!.GetMaxLength();
+        Assert.InRange(saved.Reason!.Length, 1, maxReason!.Value);
+
+        await h.WithAsync(services => services.GetRequiredService<AssistantRunStore>().CommandAsync(
+            run.Id, AssistantHarness.UserId, "answer", new AssistantRunCommand(run.Revision, Answers: ["Travel"]), default));
+        await h.DrainAsync();
+        Assert.Equal(AssistantRunStatus.Completed, (await h.ViewAsync(run.Id)).Status);
+        Assert.Contains("\"answer\":\"Travel\"", AssistantHarness.Transcript(h.Model.Requests[1]));
+    }
+
     [Fact]
     public async Task Steering_supersedes_calls_not_yet_made_and_continues_in_a_new_reply()
     {

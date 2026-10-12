@@ -240,7 +240,7 @@ internal sealed class AssistantRunExecutor(
                 var now = store.Now;
                 await db.AssistantParts.Where(part => prune.Contains(part.Id))
                     .ExecuteUpdateAsync(set => set.SetProperty(part => part.CompactedAt, now), cancellationToken);
-            }, cancellationToken, release: false);
+            }, cancellationToken, release: false, fenceBeforeAction: true);
             snapshot = await conversation.LoadAsync(run.ThreadId, cancellationToken);
             history = conversation.Build(snapshot, run, state);
             request = BuildRequest(history);
@@ -668,7 +668,7 @@ internal sealed class AssistantRunExecutor(
                 }
 
                 await SettleAsync(current, state, tracked, ToolResult.Ok(title, SavedOutput(changes, applied, toolOutput)), cancellationToken, progressed: applied.Journal.Count > 0);
-            }, cancellationToken, isolation: IsolationLevel.Serializable);
+            }, cancellationToken, isolation: IsolationLevel.Serializable, fenceBeforeAction: true);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or QuizNotFoundException
             && ex is not (InsufficientAiCreditsException or MonthlyAiBudgetExceededException or AssistantRunConflictException))
@@ -892,7 +892,7 @@ internal sealed class AssistantRunExecutor(
                 current.Status = AssistantRunStatus.AwaitingApproval;
                 current.Reason = "The quiz is ready. Approve publishing it into the collection you asked for.";
             }
-        }, cancellationToken);
+        }, cancellationToken, fenceBeforeAction: true);
     }
 
     private async Task<AssistantPart> AddSyntheticToolAsync(
@@ -937,7 +937,7 @@ internal sealed class AssistantRunExecutor(
             part.State = AssistantToolStates.AwaitingInput;
             part.MetadataJson = RunJson.Write(new PartMetadata { Question = ask.Question, Options = ask.Options, Multiple = ask.Multiple });
             run.Status = AssistantRunStatus.AwaitingInput;
-            run.Reason = ask.Question;
+            run.Reason = "Waiting for your answer.";
             return;
         }
 
@@ -1493,9 +1493,10 @@ internal sealed class AssistantRunExecutor(
         .SingleOrDefaultAsync(run => run.Id == id && run.LeaseId == lease && run.LeaseUntil > store.Now && run.Status == AssistantRunStatus.Running, cancellationToken);
 
     /// <summary>
-    /// Runs one checkpoint: re-reads the run under its lease, bumps the revision to take the row
-    /// lock and fence concurrent commands, applies the change, and commits. The lease is handed
-    /// back afterwards unless the step continues.
+    /// Runs one checkpoint under its lease and revision. Preparation only changes tracked entities,
+    /// so the final save can fence concurrent commands without holding accounting locks while
+    /// preparing the checkpoint. Actions that write directly or save content midway must fence
+    /// first, preserving lock order and rolling back all their writes together.
     /// </summary>
     private async Task AtomicAsync(
         AssistantRun expected,
@@ -1503,7 +1504,8 @@ internal sealed class AssistantRunExecutor(
         Func<AssistantRun, AssistantRunState, Task> action,
         CancellationToken cancellationToken,
         bool release = true,
-        IsolationLevel isolation = IsolationLevel.ReadCommitted)
+        IsolationLevel isolation = IsolationLevel.ReadCommitted,
+        bool fenceBeforeAction = false)
     {
         var strategy = db.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -1528,7 +1530,10 @@ internal sealed class AssistantRunExecutor(
             }
 
             run.Revision++;
-            await db.SaveChangesAsync(cancellationToken);
+            if (fenceBeforeAction)
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
             var state = RunJson.Read<AssistantRunState>(run.StateJson);
             var status = run.Status;
             await action(run, state);

@@ -167,6 +167,69 @@ test('Stop retries against the latest revision, a decision does not', async () =
     assert.deepEqual(calls.filter(call => call.url.endsWith('/cancel')).map(call => call.body.revision), [1, 4]);
 });
 
+for (const status of ['completed', 'cancelled', 'failed']) test(`a stale follow-up starts a new run after the server confirms ${status}`, async () => {
+    const input = { message: 'Also add food', quizId: 'quiz-1', documentContext: { bookId: 'book-1', page: 3 } };
+    const h = harness({
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+        'POST /Assistant/Runs/run-1/steer': () => { throw Object.assign(new Error('ended'), { status: 409 }); },
+        'GET /Assistant/Runs/run-1': () => run({ status, revision: 3 }),
+        'POST /Assistant/Runs/chats/chat-1': () => run({ id: 'run-2', status: 'queued' }),
+    });
+    await h.runs.discover('chat-1');
+    const next = await h.runs.send('chat-1', input);
+    assert.equal(next.id, 'run-2');
+    const posts = h.calls.filter(call => call.method === 'POST');
+    assert.deepEqual(posts.map(call => call.url), ['/Assistant/Runs/run-1/steer', '/Assistant/Runs/chats/chat-1']);
+    assert.deepEqual(posts[1].body, { idempotencyKey: 'key-1', request: input });
+    assert.equal(h.runs.get('chat-1').id, 'run-2');
+});
+
+test('a stale follow-up reuses the new submission key after a lost start response', async () => {
+    let starts = 0;
+    const h = harness({
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+        'POST /Assistant/Runs/run-1/steer': () => { throw Object.assign(new Error('ended'), { status: 409 }); },
+        'GET /Assistant/Runs/run-1': () => run({ status: 'completed', revision: 3 }),
+        'POST /Assistant/Runs/chats/chat-1': () => {
+            if (++starts === 1) throw new TypeError('Failed to fetch');
+            return run({ id: 'run-2', status: 'queued' });
+        },
+    });
+    await h.runs.discover('chat-1');
+    const input = { message: 'Also food' };
+    await assert.rejects(h.runs.send('chat-1', input), /Failed to fetch/);
+    await h.runs.send('chat-1', input);
+    assert.deepEqual(h.calls.filter(call => call.method === 'POST' && call.url.endsWith('/chat-1'))
+        .map(call => call.body.idempotencyKey), ['key-1', 'key-1']);
+});
+
+test('an active-run conflict retries steering without starting another run', async () => {
+    let attempts = 0;
+    const h = harness({
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+        'POST /Assistant/Runs/run-1/steer': () => {
+            if (++attempts === 1) throw Object.assign(new Error('changed'), { status: 409 });
+            return run({ status: 'queued', revision: 4 });
+        },
+        'GET /Assistant/Runs/run-1': () => run({ revision: 3 }),
+    });
+    await h.runs.discover('chat-1');
+    const next = await h.runs.send('chat-1', { message: 'Also food' });
+    assert.equal(next.id, 'run-1');
+    assert.deepEqual(h.calls.filter(call => call.method === 'POST').map(call => call.body.revision), [1, 3]);
+});
+
+test('a steering network failure does not start a duplicate run', async () => {
+    const h = harness({
+        'GET /Assistant/Runs/chats/chat-1': () => run(),
+        'POST /Assistant/Runs/run-1/steer': () => { throw new TypeError('Failed to fetch'); },
+    });
+    await h.runs.discover('chat-1');
+    await assert.rejects(h.runs.send('chat-1', { message: 'Also food' }), /Failed to fetch/);
+    assert.equal(h.calls.filter(call => call.method === 'POST').length, 1);
+    assert.equal(h.runs.get('chat-1').id, 'run-1');
+});
+
 test('without server-sent events the run is polled until it finishes', async () => {
     let polls = 0;
     const { runs, updates, scheduled } = harness({
