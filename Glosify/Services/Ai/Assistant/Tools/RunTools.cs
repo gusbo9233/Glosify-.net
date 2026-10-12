@@ -18,7 +18,8 @@ internal sealed record ReadSourceArgs(
 internal sealed class ReadSourceTool(GlosifyContext db, AssistantMessagePresenter presenter) : AssistantTool<ReadSourceArgs>
 {
     private const int MaximumLines = 150;
-    private const int MaximumCharacters = 12_000;
+    // Keep whole numbered logical lines for source coverage; SourceText bounds each line.
+    private const int TargetPageCharacters = 12_000;
 
     public override string Name => "read_source";
 
@@ -70,7 +71,7 @@ internal sealed class ReadSourceTool(GlosifyContext db, AssistantMessagePresente
         var read = args.FromLine - 1;
         foreach (var (number, line) in source.Range(args.FromLine, last))
         {
-            if (read >= args.FromLine && text.Length + line.Length > MaximumCharacters)
+            if (read >= args.FromLine && text.Length + line.Length > TargetPageCharacters)
             {
                 break;
             }

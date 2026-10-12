@@ -117,16 +117,18 @@ the model re-reads before trying again.
 
 The system prompt (`Services/Ai/Assistant/Prompts/*.md`, versioned by
 `AssistantPrompts.Version`) and the tool list are identical for every request in a
-mode. Per-message facts live in the stored context part; per-step state (the
-checklist, unread lines, recent errors, the step-limit instruction) is sent as a
-trailing developer message and never stored. Earlier requests are therefore a
-strict prefix of later ones, which is what OpenAI's prompt cache reuses. A caller
+mode. Per-message facts live in the stored context part. Context, summaries,
+synthetic tool results, progress notes, checklist text, quiz names and errors replay
+as user-role data. Code-owned per-step instructions and numeric/ID progress facts
+use the trailing developer message. The stable prompt and tools remain a reusable
+prefix for OpenAI's prompt cache. A caller
 that needs a narrower tool set passes `AllowedToolNames`, sent as `allowed_tools`
 rather than by removing definitions. Cached input tokens are recorded on each
 model invocation (`cached_prompt_tokens`) and summed on the run.
 
-Credits are charged per token, so history is bounded by
-`AssistantRuntime:ContextTokenBudget` (32,000 estimated tokens). Above half the
+Context compaction uses `AssistantRuntime:ContextTokenBudget` (32,000 estimated
+input tokens), counting history, system/context instructions, tool schemas and
+the trailing instruction together. Above half the
 budget, settled tool output older than the newest
 `ProtectedToolOutputTokens` (8,000) is cleared and replaced with a note. Above
 that rolling tail, the latest distinct read results in the active run are retained
@@ -162,6 +164,14 @@ With `Jev:Enabled`, each settled tool call gets an `assistant_tool_evaluations`
 row holding a decision snapshot (request, steering, context, offered tools,
 arguments, recent results, outcome). The worker reviews them with the TypeSafe Jev
 judge while idle, after the run has ended, and records findings against the call.
+The supplied evidence can include learner source excerpts, including `read_source`
+results; the opt-in evaluator receives more than tool names and resource IDs.
+Evaluation claims expire after five minutes, with a two-minute work deadline;
+expired claims recover after interruption and lease identity fences late results.
+The terminal result and credit settlement commit in one database transaction, so
+reclaiming interrupted work cannot charge again for an already committed result.
+Missing or nonpositive evaluator token usage is unavailable; its reservation is
+released rather than inventing billable usage.
 Reviews never block, change, or undo work; missing configuration, pricing,
 credits, or an outage leave them unavailable. Configure `TYPESAFE_API_KEY`,
 the pinned `Jev:Model`, and its token prices under
@@ -169,14 +179,9 @@ the pinned `Jev:Model`, and its token prices under
 
 ## Deployment
 
-Apply the `AssistantRunsAndParts` migration before deploying. It only adds tables
-and nullable columns. Keep the already-deployed `AddDurableAssistantTasks` and
-`AddAssistantTaskAttempts` migrations unchanged: their legacy tables and data remain
-in place for compatibility and recovery, but the new worker does not resume old
-tasks. Existing chat messages remain available; unfinished legacy tasks must be
-submitted again as new runs. The production workflow stops the old application,
-applies the migration bundle, and verifies the new artifact before reopening
-traffic. The worker runs in the web app, so the existing
+Apply pending migrations, including `AssistantRunsAndParts` and
+`AssistantEvaluationLeases`, before deploying. The evaluation lease migration
+adds two nullable claim fields and updates their index. The worker runs in the web app, so the existing
 single-instance deployment ADR applies. There is no feature flag and no second
 runtime: rolling back means redeploying the previous build. Runs and their parts,
 changes, and evaluations cascade away with their chat, and count toward storage
@@ -201,3 +206,42 @@ analytics, and the prompt-prefix invariant. `AssistantToolsTests` checks strict
 schemas and tool behavior; `AssistantRunApiTests` covers the HTTP contract and the
 event stream. No live-model run has been recorded for this runtime; the scripted
 tests do not establish model quality.
+
+## Learning management and live screens
+
+The assistant also exposes `manage_quiz_library`, `browse_public_library`,
+`inspect_anki`, `manage_anki`, and `open_practice`. These cover quiz renaming,
+whole-resource deletion, visibility, public copies, Anki settings and membership,
+and practice links. Library folders and Anki study collections remain distinct.
+An optional `contextAnkiCollectionId` on run requests is ownership-validated and
+retained in the saved run facts for subsequent requests in that chat.
+
+Deletions, removals, moves and visibility changes use the approval gate. Whole
+quiz/folder/Anki collection deletion is permanent and excluded from Undo;
+other management changes use owned aggregate snapshots. Approvals compare the
+current snapshot with the preview; Undo also refuses to overwrite later edits
+or reviews. Permanent changes are identified separately in run responses.
+
+Changing Anki direction changes linked-quiz flags and directly included cards,
+retains inactive directional scheduling history, and reuses reverse cards when
+present. Stored learning/translation languages and source quiz content stay intact.
+
+Run responses contain `changeRevision`, `resourceChanges`, and `permanentChanges`.
+The revision comes from committed journal rows and their Undo status. The client
+coalesces these events, refetches authenticated page fragments with
+`X-Learning-Refresh`, and replaces the learning-content region. The assistant
+shell and drafts survive; dirty page forms defer replacement. BroadcastChannel
+notifies other open tabs without transmitting content. Page initializers abort
+old document listeners before attaching to refreshed controls. Study screens
+stop submission after content changes rather than silently swapping the card.
+
+Both flashcard modes render `_StudyCard` and use `flashcard-quiz.js`. Regular
+cards offer Again / Got it and no Skip; legacy `easy` still counts as remembered.
+Anki retains all four FSRS grades and interval previews. Swiping hidden cards
+reveals only; revealed-card swipes map left to Again and right to Got it (regular)
+or Easy (Anki). Number keys select displayed ratings. Expected regular-card
+indices and Anki review tokens/row versions guard stale or duplicate submissions.
+
+Transcript tool continuations include `next_offset` (caption index) and
+`next_character_offset` (position within that caption). Pass both cursors without
+a page or timestamp to retrieve every character of a bounded read.

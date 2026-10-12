@@ -52,6 +52,7 @@ import {
     let quizId = pageQuizId;
     let activeThreadId = null;
     let chatSelection = null;
+    const historyGate = createLatestRequestGate();
     let activeSelectionPromise = Promise.resolve();
     const pendingSends = new Set();
     const sendErrors = new Map();
@@ -242,6 +243,7 @@ import {
     };
 
     const resetTranscript = (message) => {
+        historyGate.next();
         if (!transcript) {
             return;
         }
@@ -479,6 +481,11 @@ import {
             return;
         }
         selection.historyLoaded = true;
+        // Streams may advance while reopening a chat. Their updates stay cached until
+        // its initial history is installed, so they cannot invalidate that initial load.
+        const currentRun = runs.get(threadId);
+        if (currentRun && !isTerminal(currentRun.status)) renderRun(currentRun);
+        else if (currentRun) void loadHistory(selection, false);
         submit.disabled = pendingSends.has(threadId);
         if (!contextPersisted) setStatus('Could not save chat context.', true);
         else if (pendingSends.has(threadId)) setStatus(t('Client.AssistantRunWorking', 'Working…'));
@@ -626,6 +633,7 @@ import {
         if (!message.text && !hasPendingChanges && !hasParts) {
             return;
         }
+        historyGate.next();
 
         if (empty) empty.remove();
 
@@ -844,6 +852,7 @@ import {
         if (!createdQuizId || !transcript) {
             return;
         }
+        historyGate.next();
 
         if (empty) empty.remove();
 
@@ -949,6 +958,10 @@ import {
             }
             const data = await response.json();
             replaceActionsWithTag(card, `${t('Client.Correct', 'Done')} (${data.applied})`, 'success');
+            if (data.applied > 0) {
+                window.dispatchEvent(new CustomEvent('assistant:changes', { detail: { id: messageId, changeRevision: String(data.applied) } }));
+                void loadContextOptions();
+            }
             if (data.createdQuizId) {
                 const contextSaved = await selectCreatedQuiz(data.createdQuiz || {
                     id: data.createdQuizId,
@@ -961,8 +974,7 @@ import {
                     ? 'Quiz created.'
                     : 'Quiz created, but its chat context could not be saved.', !contextSaved);
             } else {
-                setStatus('Changes applied. Reloading...');
-                window.setTimeout(() => window.location.reload(), 600);
+                setStatus('Changes applied.');
             }
             await loadChats();
         } catch (err) {
@@ -1066,6 +1078,20 @@ import {
     const renderQuestion = (run) => {
         const card = document.createElement('div');
         card.className = 'assistant-question';
+        let submitting = false;
+        const answer = async values => {
+            if (submitting) return;
+            submitting = true;
+            const controls = card.querySelectorAll('button');
+            controls.forEach(control => { control.disabled = true; });
+            try {
+                await runs.answer(run.threadId, values);
+            } catch (error) {
+                submitting = false;
+                controls.forEach(control => { control.disabled = false; });
+                throw error;
+            }
+        };
         const question = document.createElement('p');
         question.dir = 'auto';
         question.textContent = run.question.question;
@@ -1077,7 +1103,7 @@ import {
             for (const option of run.question.options) {
                 const choice = button(option, 'btn-secondary', async () => {
                     if (!run.question.multiple) {
-                        await runs.answer(run.threadId, [option]);
+                        await answer([option]);
                         return;
                     }
                     if (chosen.has(option)) chosen.delete(option);
@@ -1089,7 +1115,7 @@ import {
             }
             card.appendChild(options);
             if (run.question.multiple) {
-                card.appendChild(button(t('Client.AssistantAnswer', 'Answer'), 'btn-submit', () => runs.answer(run.threadId, [...chosen])));
+                card.appendChild(button(t('Client.AssistantAnswer', 'Answer'), 'btn-submit', () => answer([...chosen])));
             }
         }
         const hint = document.createElement('small');
@@ -1130,6 +1156,7 @@ import {
     // One card per run, rebuilt from each update: the server's view is the whole truth.
     const renderRun = (run) => {
         if (!transcript) return;
+        historyGate.next();
         let row = transcript.querySelector(`[data-live-run="${run.id}"]`);
         if (!row) {
             // A reply already in the history for this run is replaced by the live card.
@@ -1158,6 +1185,7 @@ import {
             const saved = document.createElement('span');
             saved.className = 'assistant-run-saved';
             saved.textContent = t('Client.AssistantSaved', '{0} saved', run.savedChanges);
+            if (run.permanentChanges > 0) saved.textContent += ` · ${run.permanentChanges} permanent (not included in Undo)`;
             footer.appendChild(saved);
         }
         if (!isTerminal(run.status)) {
@@ -1171,6 +1199,14 @@ import {
     };
 
     const runs = createAssistantRuns({
+        onChanges: run => {
+            for (const change of run.resourceChanges || []) {
+                if (change.kind === 'delete_quiz' && change.entityId === quizId) void setQuizContext(null, 'GlobeGlotter');
+                if (change.kind === 'anki_delete' && change.entityId === panel.dataset.ankiCollectionId) delete panel.dataset.ankiCollectionId;
+            }
+            window.dispatchEvent(new CustomEvent('assistant:changes', { detail: run }));
+            void loadContextOptions();
+        },
         request: async (url, options = {}) => {
             const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST' && !!options.body) });
             // Drain empty responses too, so the browser can finish the request normally.
@@ -1186,6 +1222,7 @@ import {
         },
         isCurrent: threadId => activeThreadId === threadId,
         onUpdate: async run => {
+            if (!chatSelection?.historyLoaded) return;
             renderRun(run);
             submit.disabled = false;
             if (isTerminal(run.status)) {
@@ -1200,6 +1237,7 @@ import {
 
     const loadHistory = async (selection, discover = true) => {
         if (!ownsSelection(selection)) return false;
+        const requestVersion = historyGate.next();
         const { threadId } = selection;
         try {
             const response = await fetch(chatHistoryUrl(threadId), {
@@ -1207,14 +1245,15 @@ import {
             });
             if (!response.ok) return false;
             const data = await response.json();
-            if (!ownsSelection(selection) || !Array.isArray(data?.messages)) return false;
+            if (!ownsSelection(selection) || !historyGate.isCurrent(requestVersion) || !Array.isArray(data?.messages)) return false;
             resetTranscript(defaultEmptyText);
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
             if (discover) {
+                const discoveryVersion = historyGate.next();
                 void runs.discover(threadId)
-                    .then(run => { if (run && !isTerminal(run.status) && ownsSelection(selection)) renderRun(run); })
+                    .then(run => { if (run && !isTerminal(run.status) && ownsSelection(selection) && historyGate.isCurrent(discoveryVersion)) renderRun(run); })
                     .catch(() => { /* The next open reconnects to the run. */ });
             }
             return true;
@@ -1388,6 +1427,7 @@ import {
             const run = await runs.send(threadId, {
                 message,
                 contextQuizId: quizId,
+                contextAnkiCollectionId: panel.dataset.ankiCollectionId || null,
                 focusedWordId,
                 transcriptId: materialKind === 'transcript' ? materialId : null,
                 bookDocumentId: materialKind === 'book' ? materialId : null,

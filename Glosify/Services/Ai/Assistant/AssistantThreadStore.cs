@@ -381,9 +381,9 @@ internal sealed class AssistantThreadStore(
         var runIds = runs.Values.Select(run => run.Id).ToList();
         var undoable = runIds.Count == 0
             ? new HashSet<Guid>()
-            : (await context.AssistantChanges
+            : (await LearningChanges.Undoable(context.AssistantChanges)
                 .AsNoTracking()
-                .Where(change => runIds.Contains(change.RunId) && change.Status == AssistantChangeStatus.Applied)
+                .Where(change => runIds.Contains(change.RunId))
                 .Select(change => change.RunId)
                 .Distinct()
                 .ToListAsync(cancellationToken))

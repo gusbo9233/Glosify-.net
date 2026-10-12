@@ -1,0 +1,23 @@
+@model AnkiStudyViewModel
+@{ var card = Model.State.Card; var collectionZone = TimeZoneInfo.FindSystemTimeZoneById(Model.State.TimeZoneId); }
+<div class="flash-shell" data-anki-study data-study-quiz-id="@card?.QuizId" data-study-anki-collection-id="@card?.CollectionId" data-study-card-id="@card?.CardId">
+    @if (card is null)
+    {
+        <section class="anki-complete"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span><p class="eyebrow is-primary">Session complete</p><h1>You’re done for now</h1>@if (Model.State.NextDueAt.HasValue) { <p>Next card is due @TimeZoneInfo.ConvertTime(Model.State.NextDueAt.Value, collectionZone).ToString("g").</p> } else { <p>No active cards are waiting.</p> }<a class="btn-submit anki-primary-action" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Back to collections</a></section>
+    }
+    else
+    {
+        <header class="anki-study-header"><a asp-action="Collection" asp-route-id="@card.CollectionId"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> @card.CollectionName</a><div class="anki-session-counts"><span><strong>@card.DueRemaining</strong> due</span><span><strong>@card.NewRemaining</strong> new</span></div></header>
+        <div class="card-stage">
+        @await Html.PartialAsync("_StudyCard", new Glosify.Models.ViewModels.StudyCardViewModel(
+            card.Prompt, card.Answer, card.PromptLanguage, card.AnswerLanguage, Model.AnswerRevealed,
+            Url.Action("Reveal", "Anki")!, Url.Action("Rate", "Anki")!,
+            new Dictionary<string, string> { ["id"] = card.CollectionId.ToString(), ["CollectionId"] = card.CollectionId.ToString(),
+                ["CardId"] = card.CardId.ToString(), ["ClientToken"] = Model.ClientToken.ToString(), ["RowVersion"] = card.RowVersion },
+            new[] { new Glosify.Models.ViewModels.StudyRating("again", "Quiz.Again", card.Intervals.GetValueOrDefault("again")),
+                new Glosify.Models.ViewModels.StudyRating("hard", "Quiz.Hard", card.Intervals.GetValueOrDefault("hard")),
+                new Glosify.Models.ViewModels.StudyRating("good", "Quiz.Good", card.Intervals.GetValueOrDefault("good")),
+                new Glosify.Models.ViewModels.StudyRating("easy", "Quiz.Easy", card.Intervals.GetValueOrDefault("easy")) }, "easy"))
+        </div>
+    }
+</div>

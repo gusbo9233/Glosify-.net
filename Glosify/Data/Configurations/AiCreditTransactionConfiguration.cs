@@ -24,6 +24,15 @@ internal sealed class AiCreditTransactionConfiguration : IEntityTypeConfiguratio
         entity.Property(transaction => transaction.RelatedEntityId).HasMaxLength(255);
         entity.Property(transaction => transaction.BudgetPeriodKey).HasMaxLength(7);
         entity.HasIndex(transaction => new { transaction.UserId, transaction.CreatedAt });
+        // Seek the report's date range without scanning non-Avatar ledger history.
+        entity.HasIndex(transaction => transaction.CreatedAt)
+            .HasDatabaseName("IX_AiCreditTransactions_AvatarReservations_CreatedAt")
+            .HasFilter("[Kind] = 'reservation' AND [RelatedEntityType] = 'AvatarSession' AND [RelatedEntityId] IS NOT NULL AND [ReservationId] IS NOT NULL")
+            .IncludeProperties(transaction => new
+            {
+                transaction.UserId, transaction.ReservationId, transaction.RelatedEntityId,
+                transaction.Provider, transaction.Model, transaction.Operation
+            });
         entity.HasIndex(transaction => transaction.ReservationId);
         entity.HasIndex(transaction => transaction.OperationId);
         entity.HasIndex(transaction => transaction.AssistantTurnId);

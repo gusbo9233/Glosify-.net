@@ -39,7 +39,8 @@ function settings({ words, sentences = 201, start = 0, end = 100, translations =
             : elements.get(selector) ?? null,
         createTextNode: text => text,
     };
-    vm.runInNewContext(script, { document, window: {
+    vm.runInNewContext(script, { document, AbortController, window: {
+        addEventListener() {},
         glosifyText: (key, fallback) => translations[key] ?? fallback,
     }, Intl });
     return { all, number, label, startButton, selectSentences() {

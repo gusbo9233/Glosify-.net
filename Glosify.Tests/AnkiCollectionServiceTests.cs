@@ -16,6 +16,68 @@ public sealed class AnkiCollectionServiceTests
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public async Task Direction_switch_preserves_history_exclusions_and_sync_membership()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.CreateAsync(new("Direction", "English", "Polish", "UTC"), UserId);
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, false, false, false), UserId);
+        var cards = await f.Context.AnkiCards.OrderBy(c => c.Id).ToListAsync();
+        var learned = cards[0];
+        learned.ReviewCount = 7;
+        learned.Stability = 12;
+        await f.Context.SaveChangesAsync();
+        await f.Collections.RemoveCardAsync(cards[1].Id, UserId);
+        Assert.False(await f.Collections.SetDirectionAsync(collection.Id, PracticeDirection.TargetToSource, "someone-else"));
+        Assert.True(await f.Collections.SetDirectionAsync(collection.Id, PracticeDirection.TargetToSource, UserId));
+        await f.Collections.SyncQuizAsync(f.Quiz.Id);
+        var active = await f.Context.AnkiCards.Where(c => c.IsActive).ToListAsync();
+        var reverse = Assert.Single(active);
+        Assert.Equal(PracticeDirection.TargetToSource, reverse.Direction);
+        Assert.Equal(learned.AnkiNoteId, reverse.AnkiNoteId);
+        Assert.Equal(0, reverse.ReviewCount);
+        Assert.False(learned.IsActive);
+        Assert.Equal(7, learned.ReviewCount);
+        Assert.True(await f.Collections.SetDirectionAsync(collection.Id, PracticeDirection.SourceToTarget, UserId));
+        var restored = Assert.Single(await f.Context.AnkiCards.Where(c => c.IsActive).ToListAsync());
+        Assert.Equal(learned.Id, restored.Id);
+        Assert.Equal(12, restored.Stability);
+        Assert.Equal("English", collection.SourceLanguage);
+        Assert.Equal("Polish", collection.TargetLanguage);
+    }
+
+    [Fact]
+    public async Task Direction_switch_preserves_direct_only_membership()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.CreateAsync(new("Direct", "English", "Polish", "UTC"), UserId);
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "words", f.Word.Id, true, false), UserId);
+        await f.Collections.SetDirectionAsync(collection.Id, PracticeDirection.TargetToSource, UserId);
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        var card = Assert.Single(await f.Context.AnkiCards.Where(c => c.IsActive).ToListAsync());
+        Assert.True(card.DirectlyIncluded);
+        Assert.Equal(PracticeDirection.TargetToSource, card.Direction);
+        Assert.Empty(await f.Context.AnkiQuizLinks.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Direction_switch_keeps_direct_membership_when_source_is_temporarily_removed()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.CreateAsync(new("Direct", "English", "Polish", "UTC"), UserId);
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "words", f.Word.Id, true, false), UserId);
+        f.Context.Words.Remove(f.Word);
+        await f.Context.SaveChangesAsync();
+        await f.Collections.SetDirectionAsync(collection.Id, PracticeDirection.TargetToSource, UserId);
+        Assert.Empty(await f.Context.AnkiCards.Where(c => c.IsActive).ToListAsync());
+        var selected = await f.Context.AnkiCards.SingleAsync(c => c.Direction == PracticeDirection.TargetToSource);
+        Assert.True(selected.DirectlyIncluded);
+        f.Context.Words.Add(f.Word);
+        await f.Context.SaveChangesAsync();
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.Equal(selected.Id, (await f.Context.AnkiCards.SingleAsync(c => c.IsActive)).Id);
+    }
+
+    [Fact]
     public async Task Whole_quiz_add_is_idempotent_and_syncs_add_edit_and_removal()
     {
         await using var fixture = await Fixture.CreateAsync();
@@ -262,6 +324,7 @@ public sealed class AnkiCollectionServiceTests
         await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, true), UserId);
 
         var first = (await fixture.Study.GetNextAsync(collection.Id, UserId))!.Card!;
+        Assert.Equal(fixture.Quiz.Id, first.QuizId);
         var token = Guid.NewGuid();
         var rating = new RateAnkiCardInput(collection.Id, first.CardId, AnkiRatings.Easy, token, first.RowVersion, 250);
         Assert.True(await fixture.Study.RateAsync(rating, UserId));

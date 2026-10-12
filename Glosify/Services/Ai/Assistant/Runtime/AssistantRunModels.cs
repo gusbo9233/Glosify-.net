@@ -48,7 +48,8 @@ public sealed record AssistantRunInput(
     AssistantDocumentContext? DocumentContext = null,
     Guid? TranscriptId = null,
     Guid? BookDocumentId = null,
-    AssistantTranscriptPageContext? TranscriptContext = null);
+    AssistantTranscriptPageContext? TranscriptContext = null,
+    Guid? ContextAnkiCollectionId = null);
 
 public sealed record AssistantRunStartInput(
     [param: Required, StringLength(100, MinimumLength = 1)] string IdempotencyKey,
@@ -78,7 +79,14 @@ public sealed record AssistantRunView(
     AssistantQuestionView? Question,
     AssistantApprovalView? Approval,
     IReadOnlyList<AssistantPartView> Parts,
-    IReadOnlyList<AssistantRunArtifact> Artifacts);
+    IReadOnlyList<AssistantRunArtifact> Artifacts)
+{
+    public string ChangeRevision { get; init; } = "";
+    public IReadOnlyList<AssistantResourceChange> ResourceChanges { get; init; } = [];
+    public int PermanentChanges { get; init; }
+}
+
+public sealed record AssistantResourceChange(string EntityType, string EntityId, Guid? QuizId, string Kind, string Status);
 
 /// <summary>One visible part of a reply: text, or a line of tool activity.</summary>
 public sealed record AssistantPartView(
@@ -172,7 +180,8 @@ internal sealed record RunFacts(
     Guid? TranscriptId,
     Guid? BookDocumentId,
     AssistantContentKind RequestedContentKind,
-    int? SourceLines);
+    int? SourceLines,
+    Guid? AnkiCollectionId = null);
 
 internal static class RunJson
 {

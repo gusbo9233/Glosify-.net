@@ -22,6 +22,7 @@ export const sendAction = run => {
 export function createAssistantRuns({
     request,
     onUpdate,
+    onChanges = () => {},
     isCurrent,
     openEvents = url => (typeof EventSource === 'function' ? new EventSource(url) : null),
     schedule = (callback, delay) => setTimeout(callback, delay),
@@ -31,12 +32,23 @@ export function createAssistantRuns({
     const runs = new Map();
     const streams = new Map();
     const submissions = new Map();
+    const seenRuns = new Set();
 
-    const publish = run => {
+    const publish = (run, forceChanges = false) => {
         if (!run) return;
         const current = runs.get(run.threadId);
+        if (current && current.id !== run.id) {
+            // A late stream/command response or historical Undo must not replace a newer run.
+            if (forceChanges || seenRuns.has(run.id)) {
+                if (forceChanges && run.changeRevision) onChanges(run);
+                return;
+            }
+            stop(run.threadId);
+        }
         if (!newer(current, run)) return;
+        seenRuns.add(run.id);
         runs.set(run.threadId, run);
+        if (run.changeRevision && run.changeRevision !== current?.changeRevision && (forceChanges || current || !isTerminal(run.status))) onChanges(run);
         if (isTerminal(run.status)) stop(run.threadId);
         if (isCurrent(run.threadId)) onUpdate(run);
     };
@@ -52,7 +64,7 @@ export function createAssistantRuns({
     // Server-sent events carry every checkpoint as it happens. Browsers reconnect on their own,
     // sending the last revision seen; polling covers browsers without EventSource.
     const watch = run => {
-        if (!run || isTerminal(run.status) || streams.has(run.threadId)) return;
+        if (!run || runs.get(run.threadId)?.id !== run.id || isTerminal(run.status) || streams.has(run.threadId)) return;
         const source = openEvents(`${base}/${run.id}/events`);
         if (!source) {
             poll(run.threadId);
@@ -61,6 +73,7 @@ export function createAssistantRuns({
         const stream = { close: () => source.close() };
         streams.set(run.threadId, stream);
         source.addEventListener('run', event => {
+            if (streams.get(run.threadId) !== stream) return;
             try { publish(JSON.parse(event.data)); } catch { /* A malformed event is skipped. */ }
         });
         source.onerror = () => {
@@ -80,11 +93,11 @@ export function createAssistantRuns({
         const tick = async () => {
             if (stream.closed) return;
             const run = runs.get(threadId);
-            if (!run || !isCurrent(threadId)) { streams.delete(threadId); return; }
-            try { publish(await request(`${base}/${run.id}`)); } catch { /* Try again on the next tick. */ }
+            if (!run) { streams.delete(threadId); return; }
+            try { const next = await request(`${base}/${run.id}`); if (!stream.closed) publish(next); } catch { /* Try again on the next tick. */ }
             const latest = runs.get(threadId);
             if (!stream.closed && latest && !isTerminal(latest.status)) schedule(tick, isWaiting(latest.status) ? 5000 : 2500);
-            else streams.delete(threadId);
+            else if (streams.get(threadId) === stream) streams.delete(threadId);
         };
         schedule(tick, 1500);
     };
@@ -108,17 +121,28 @@ export function createAssistantRuns({
                 if (!['cancel', 'steer'].includes(name) || error.status !== 409 || attempt === 2) throw error;
                 const latest = await request(`${base}/${current.id}`);
                 publish(latest);
+                if (isTerminal(latest.status)) throw error;
                 revision = latest.revision;
             }
         }
         return null;
     };
 
+    const pendingAnswers = new Map();
+    const answer = (threadId, body) => {
+        if (pendingAnswers.has(threadId)) return pendingAnswers.get(threadId);
+        const pending = command(threadId, 'answer', body).finally(() => pendingAnswers.delete(threadId));
+        pendingAnswers.set(threadId, pending);
+        return pending;
+    };
+
     return {
         get: threadId => runs.get(threadId) || null,
 
         async discover(threadId) {
+            const previous = runs.get(threadId);
             const run = await request(`${base}/chats/${threadId}`);
+            if (runs.get(threadId) !== previous) return runs.get(threadId);
             if (!run) { runs.delete(threadId); return null; }
             publish(run);
             watch(run);
@@ -154,8 +178,22 @@ export function createAssistantRuns({
             if (submissions.has(JSON.stringify({ threadId, input }))) return this.start(threadId, input);
             const run = runs.get(threadId);
             switch (sendAction(run)) {
-                case 'answer': return command(threadId, 'answer', { message: input.message });
-                case 'steer': return command(threadId, 'steer', { message: input.message });
+                case 'answer': {
+                    // A typed follow-up is distinct content. Preserve it after an in-flight
+                    // option answer instead of silently treating it as a duplicate click.
+                    const pending = pendingAnswers.get(threadId);
+                    return pending ? pending.then(() => this.send(threadId, input))
+                        : answer(threadId, { message: input.message });
+                }
+                case 'steer': return command(threadId, 'steer', { message: input.message }).catch(error => {
+                    const latest = runs.get(threadId);
+                    // The run can finish between the cached update and this follow-up. Only
+                    // restart after a confirmed conflict on that same finished run.
+                    if (error.status === 409 && latest?.id === run.id && isTerminal(latest.status)) {
+                        return this.start(threadId, input);
+                    }
+                    throw error;
+                });
                 default: return this.start(threadId, input);
             }
         },
@@ -164,11 +202,11 @@ export function createAssistantRuns({
         resume: threadId => command(threadId, 'resume'),
         approve: (threadId, always = false) => command(threadId, 'approve', { always }),
         reject: (threadId, message) => command(threadId, 'reject', { message: message || null }),
-        answer: (threadId, answers, message) => command(threadId, 'answer', { answers, message: message || null }),
+        answer: (threadId, answers, message) => answer(threadId, { answers, message: message || null }),
 
         async undo(runId) {
             const result = await request(`${base}/${runId}/undo`, { method: 'POST' });
-            if (result?.run) publish(result.run);
+            if (result?.run) publish(result.run, true);
             return result;
         },
 

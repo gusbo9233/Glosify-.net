@@ -58,14 +58,28 @@ internal sealed class AssistantUndoService(
                         await anki.SyncQuizAsync(quizId, cancellationToken);
                 touched.Clear();
             }
+            var studyUnchanged = new Dictionary<Guid, bool>();
+            var checkedParts = new HashSet<Guid>();
             foreach (var change in changes)
             {
+                // Synchronized cards are journaled separately from their source additions.
+                // Compare the whole batch before Undo removes its own synchronized cards;
+                // later tool batches have already been reverted in reverse order.
+                if (checkedParts.Add(change.PartId))
+                {
+                    var additions = changes.Where(item => item.PartId == change.PartId
+                        && item.Kind is PendingChangeKinds.AddWord or PendingChangeKinds.AddSentence).ToList();
+                    var hashes = await ItemStudyState.CaptureAsync(db, additions.Select(item => (item.Kind, item.EntityId)), cancellationToken);
+                    foreach (var addition in additions)
+                        studyUnchanged[addition.Id] = hashes[ItemStudyState.Key(addition.Kind, addition.EntityId)]
+                            == (Value(Read(addition.AfterJson), "anki_state_hash") ?? ItemStudyState.EmptyHash);
+                }
                 // Flush reversed source batches before comparing earlier Anki snapshots.
                 // Flushing after each item could recreate just-undone cards for the other
                 // items in the same batch before their source rows have been removed.
                 if (change.EntityType is AppliedEntityTypes.AnkiCard or AppliedEntityTypes.AnkiQuizLink or AppliedEntityTypes.AnkiCollection)
                     await SynchronizeSourcesAsync();
-                var reverted = await RevertAsync(change, userId, cancellationToken);
+                var reverted = await RevertAsync(change, userId, studyUnchanged.GetValueOrDefault(change.Id, true), cancellationToken);
                 change.Status = reverted ? AssistantChangeStatus.Undone : AssistantChangeStatus.Kept;
                 undone += reverted ? 1 : 0;
                 await db.SaveChangesAsync(cancellationToken);
@@ -90,7 +104,7 @@ internal sealed class AssistantUndoService(
                     Type = AssistantPartTypes.Reminder,
                     Text = kept == 0
                         ? "The user undid every change from this request, so none of them are in place any more."
-                        : $"The user undid this request's changes: {undone} reverted, {kept} kept because the user had changed those items afterwards.",
+                        : $"The user undid this request's changes: {undone} reverted, {kept} kept because they were permanent or changed afterwards.",
                     CreatedAt = store.Now,
                 });
             }
@@ -108,8 +122,10 @@ internal sealed class AssistantUndoService(
         return result;
     }
 
-    private async Task<bool> RevertAsync(AssistantChange change, string userId, CancellationToken cancellationToken)
+    private async Task<bool> RevertAsync(AssistantChange change, string userId, bool studyUnchanged, CancellationToken cancellationToken)
     {
+        if (LearningChanges.Handles(change.Kind))
+            return await new LearningChanges(db, quizzes, collections, anki).UndoAsync(change, userId, cancellationToken);
         var before = Read(change.BeforeJson);
         var after = Read(change.AfterJson);
         switch (change.Kind)
@@ -131,7 +147,8 @@ internal sealed class AssistantUndoService(
             case PendingChangeKinds.AddWord:
             {
                 var word = await OwnedWordAsync(change, userId, cancellationToken);
-                if (word is null || !Matches(after, "word", word.Lemma) || !Matches(after, "translation", word.Translation))
+                if (word is null || !Matches(after, "word", word.Lemma) || !Matches(after, "translation", word.Translation)
+                    || !studyUnchanged)
                 {
                     return false;
                 }
@@ -143,7 +160,8 @@ internal sealed class AssistantUndoService(
             case PendingChangeKinds.AddSentence:
             {
                 var sentence = await OwnedSentenceAsync(change, userId, cancellationToken);
-                if (sentence is null || !Matches(after, "text", sentence.Text) || !Matches(after, "translation", sentence.Translation))
+                if (sentence is null || !Matches(after, "text", sentence.Text) || !Matches(after, "translation", sentence.Translation)
+                    || !studyUnchanged)
                 {
                     return false;
                 }
@@ -160,13 +178,13 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
-                var original = Value(before, "word") ?? word.Lemma;
-                if (await db.Words.AnyAsync(other => other.QuizId == word.QuizId && other.Id != word.Id && other.Lemma == original, cancellationToken))
+                var originalLemma = Value(before, "word") ?? word.Lemma;
+                if (await db.Words.AnyAsync(other => other.QuizId == word.QuizId && other.Id != word.Id && other.Lemma == originalLemma, cancellationToken))
                 {
                     return false;
                 }
 
-                word.Lemma = original;
+                word.Lemma = originalLemma;
                 word.Translation = Value(before, "translation") ?? word.Translation;
                 return true;
             }
@@ -179,13 +197,13 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
-                var original = Value(before, "text") ?? sentence.Text;
-                if (await db.QuizSentences.AnyAsync(other => other.QuizId == sentence.QuizId && other.Id != sentence.Id && other.Text == original, cancellationToken))
+                var originalText = Value(before, "text") ?? sentence.Text;
+                if (await db.QuizSentences.AnyAsync(other => other.QuizId == sentence.QuizId && other.Id != sentence.Id && other.Text == originalText, cancellationToken))
                 {
                     return false;
                 }
 
-                sentence.Text = original;
+                sentence.Text = originalText;
                 sentence.Translation = Value(before, "translation") ?? sentence.Translation;
                 return true;
             }
@@ -204,7 +222,12 @@ internal sealed class AssistantUndoService(
                     return false;
                 }
 
-                db.Words.Add(new Word { Id = change.EntityId, QuizId = quizId, Lemma = lemma, Translation = Value(before, "translation") ?? string.Empty });
+                db.Words.Add(new Word
+                {
+                    Id = change.EntityId, QuizId = quizId, Lemma = lemma,
+                    Translation = Value(before, "translation") ?? string.Empty,
+                    CreatedAt = before?.TryGetProperty("created_at", out var created) == true && created.TryGetDateTimeOffset(out var at) ? at : DateTimeOffset.UtcNow,
+                });
                 return true;
             }
 
@@ -240,16 +263,17 @@ internal sealed class AssistantUndoService(
                 // left is content the user added, which must survive.
                 if (!Guid.TryParse(change.EntityId, out var quizId)
                     || await db.Words.AnyAsync(word => word.QuizId == quizId, cancellationToken)
-                    || await db.QuizSentences.AnyAsync(sentence => sentence.QuizId == quizId, cancellationToken))
+                    || await db.QuizSentences.AnyAsync(sentence => sentence.QuizId == quizId, cancellationToken)
+                    || await db.AnkiQuizLinks.AnyAsync(link => link.QuizId == quizId, cancellationToken)
+                    || await db.AnkiNotes.AnyAsync(note => note.QuizId == quizId, cancellationToken)
+                    || await db.QuizAttempts.AnyAsync(attempt => attempt.QuizId == quizId, cancellationToken))
                 {
                     return false;
                 }
 
-                var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == quizId && candidate.UserId == userId, cancellationToken);
-                if (quiz is null || !Matches(after, "name", quiz.Name) || !MatchesVisibility(after, quiz.IsPublic) || quiz.CollectionId != IdOf(after, "collection_id"))
-                {
+                var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken);
+                if (quiz is null || after is null || !JsonElement.DeepEquals(after.Value, JsonSerializer.SerializeToElement(LearningChanges.CreationState(quiz), RunJson.Options)))
                     return false;
-                }
 
                 await db.SaveChangesAsync(cancellationToken);
                 return await quizzes.DeleteQuizAsync(quizId, userId, cancellationToken) is not null;
@@ -265,11 +289,8 @@ internal sealed class AssistantUndoService(
                 }
 
                 var collection = await OwnedCollectionAsync(change, userId, cancellationToken);
-                if (collection is null || !Matches(after, "name", collection.Name) || !MatchesVisibility(after, collection.IsPublic)
-                    || collection.ParentCollectionId != IdOf(after, "parent_collection_id"))
-                {
+                if (collection is null || after is null || !JsonElement.DeepEquals(after.Value, JsonSerializer.SerializeToElement(LearningChanges.CreationState(collection), RunJson.Options)))
                     return false;
-                }
 
                 await db.SaveChangesAsync(cancellationToken);
                 return await collections.DeleteCollectionAsync(collectionId, userId, cancellationToken);
@@ -350,11 +371,6 @@ internal sealed class AssistantUndoService(
 
     private static Guid? IdOf(JsonElement? element, string property) =>
         Guid.TryParse(Value(element, property), out var id) ? id : null;
-
-    private static bool MatchesVisibility(JsonElement? element, bool current) =>
-        element?.TryGetProperty("is_public", out var value) == true
-            && value.ValueKind is JsonValueKind.True or JsonValueKind.False
-            && value.GetBoolean() == current;
 
     private static bool Matches(JsonElement? element, string property, string current) =>
         string.Equals(Value(element, property), current, StringComparison.Ordinal);

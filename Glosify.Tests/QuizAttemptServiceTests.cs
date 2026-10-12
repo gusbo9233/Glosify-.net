@@ -99,6 +99,8 @@ public sealed class QuizAttemptServiceTests
         sessions.ApplyRating(session, "good");
         sessions.ApplyRating(session, "again");
         sessions.ApplyRating(session, "skip");
+        Assert.Equal(1, session.SkippedCount);
+        Assert.Equal(1, session.RememberedCount);
         await new QuizAttemptService(context).RecordFlashcardAttemptAsync(session);
         var items = await context.QuizAttemptItems.OrderBy(i => i.Sequence).ToListAsync();
         Assert.Equal(new[] { "known", "weak", "skipped" }, items.Select(i => i.ItemId));

@@ -73,6 +73,8 @@ internal sealed class AssistantMessagePresenter
 
         try
         {
+            if (LearningChanges.Handles(change.Kind) && change.Payload.TryGetProperty("title", out var title))
+                return title.GetString() ?? change.Kind;
             return change.Kind switch
             {
                 PendingChangeKinds.RenameAnkiCollection or PendingChangeKinds.RemoveAnkiCards or PendingChangeKinds.UnlinkAnkiQuiz => GetString(change.Payload, "summary"),

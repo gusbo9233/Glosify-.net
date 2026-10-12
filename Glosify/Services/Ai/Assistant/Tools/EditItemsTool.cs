@@ -48,7 +48,8 @@ internal sealed class EditItemsTool(GlosifyContext db) : AssistantTool<EditItems
             return ToolResult.Fail("Could not edit the quiz", target.Error!);
         }
 
-        if (wordEdits.FirstOrDefault(edit => QuizContent.IsOutsideFocus(context, edit.Id)) is not null)
+        if (wordEdits.Any(edit => QuizContent.IsOutsideFocus(context, edit.Id))
+            || (sentenceEdits.Count > 0 && !string.IsNullOrWhiteSpace(context.FocusedWordId)))
         {
             return ToolResult.Fail("Could not edit the quiz", QuizContent.FocusError(context));
         }

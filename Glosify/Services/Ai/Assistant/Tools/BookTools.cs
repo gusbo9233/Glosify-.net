@@ -31,6 +31,7 @@ internal sealed class ListBooksTool(GlosifyContext db) : AssistantTool<ListBooks
         var total = await query.CountAsync(cancellationToken);
         var books = await query
             .OrderByDescending(book => book.CreatedAt)
+            .ThenByDescending(book => book.Id)
             .Skip(offset)
             .Take(PageSize)
             .Select(book => new
@@ -55,6 +56,7 @@ internal sealed class ListBooksTool(GlosifyContext db) : AssistantTool<ListBooks
 
 internal sealed record GetBookPagesArgs(
     [property: Description("Book id. Null for the book selected for this chat.")] string? BookId = null,
+    [property: Description("Characters already read in from_page. Null for 0; use next_offset when a page is incomplete.")] int? Offset = null,
     [property: Description("First page to read, counting from 1. Null for 1.")] int? FromPage = null,
     [property: Description("Maximum pages, 1 to 10. Null for 3. A long page may cut the run short; check next_page.")] int? Limit = null);
 
@@ -68,7 +70,7 @@ internal sealed class GetBookPagesTool(GlosifyContext db) : AssistantTool<GetBoo
     public override AssistantToolKind Kind => AssistantToolKind.Read;
 
     protected override string Describe(AssistantMode mode) =>
-        "Read a run of pages from one of the user's books, in order. Defaults to the book selected for this chat. Page forward with next_page while has_more is true.";
+        "Read a run of pages from one of the user's books, in order. Defaults to the book selected for this chat. Continue with next_page and next_offset while has_more is true. An incomplete page keeps the same page number.";
 
     protected override async Task<ToolResult> RunAsync(GetBookPagesArgs args, ToolContext context, CancellationToken cancellationToken)
     {
@@ -88,20 +90,26 @@ internal sealed class GetBookPagesTool(GlosifyContext db) : AssistantTool<GetBoo
             .ToListAsync(cancellationToken);
         var pages = new List<object>(rows.Count);
         var characters = 0;
+        var nextPage = fromPage;
+        var nextOffset = 0;
+        var last = fromPage;
         foreach (var row in rows)
         {
-            if (pages.Count > 0 && characters + row.Text.Length > MaximumCharacters)
-            {
-                break;
-            }
-
-            var text = row.Text.Length <= MaximumCharacters ? row.Text : row.Text[..MaximumCharacters];
-            pages.Add(new { page_number = row.PageNumber, text, warning = row.ExtractionWarning });
-            characters += text.Length;
+            if (characters == MaximumCharacters) break;
+            var offset = row.PageNumber == fromPage ? Math.Clamp(args.Offset ?? 0, 0, row.Text.Length) : 0;
+            var length = Math.Min(row.Text.Length - offset, MaximumCharacters - characters);
+            if (length > 0 && offset + length < row.Text.Length
+                && char.IsHighSurrogate(row.Text[offset + length - 1]) && char.IsLowSurrogate(row.Text[offset + length])) length--;
+            var text = row.Text.Substring(offset, length);
+            var complete = offset + length == row.Text.Length;
+            pages.Add(new { page_number = row.PageNumber, text, warning = row.ExtractionWarning, offset, page_complete = complete });
+            characters += length;
+            last = row.PageNumber;
+            nextPage = complete ? row.PageNumber + 1 : row.PageNumber;
+            nextOffset = complete ? 0 : offset + length;
+            if (!complete) break;
         }
 
-        var nextPage = pages.Count == 0 ? fromPage : rows[pages.Count - 1].PageNumber + 1;
-        var last = nextPage - 1;
         return ToolResult.Ok(
             pages.Count == 0
                 ? $"Read no pages of “{book.Title}”"
@@ -115,6 +123,7 @@ internal sealed class GetBookPagesTool(GlosifyContext db) : AssistantTool<GetBoo
                 page_count = book.PageCount,
                 has_more = nextPage <= book.PageCount,
                 next_page = nextPage,
+                next_offset = nextOffset,
             });
     }
 }

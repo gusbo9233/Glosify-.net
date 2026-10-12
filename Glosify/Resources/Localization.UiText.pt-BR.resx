@@ -1699,4 +1699,9 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>Jogo</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Uso do jogo</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Uso do avatar</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>Lembrei</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>Difícil</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← De novo · Lembrei →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← De novo · Fácil →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>Menu</value></data>
 </root>

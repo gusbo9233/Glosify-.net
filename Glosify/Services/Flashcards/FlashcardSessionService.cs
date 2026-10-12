@@ -67,6 +67,9 @@ public class FlashcardSessionService : QuizSessionStore<FlashcardSessionData>, I
         if (session.CurrentIndex >= session.Cards.Count)
             return;
 
+        // Keep legacy skip ratings readable; the current controller exposes two choices.
+        if (rating?.Trim().ToLowerInvariant() is not ("again" or "good" or "easy" or "skip"))
+            throw new ArgumentException("Choose Again or Got it.", nameof(rating));
         var currentCard = session.Cards[session.CurrentIndex];
 
         var normalizedRating = rating?.Trim().ToLowerInvariant();

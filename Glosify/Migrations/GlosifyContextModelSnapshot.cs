@@ -159,6 +159,12 @@ namespace Glosify.Migrations
 
                     b.HasIndex("BudgetPeriodKey");
 
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_AiCreditTransactions_AvatarReservations_CreatedAt")
+                        .HasFilter("[Kind] = 'reservation' AND [RelatedEntityType] = 'AvatarSession' AND [RelatedEntityId] IS NOT NULL AND [ReservationId] IS NOT NULL");
+
+                    SqlServerIndexBuilderExtensions.IncludeProperties(b.HasIndex("CreatedAt"), new[] { "UserId", "ReservationId", "RelatedEntityId", "Provider", "Model", "Operation" });
+
                     b.HasIndex("OperationId");
 
                     b.HasIndex("ReservationId");
@@ -1435,6 +1441,14 @@ namespace Glosify.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("evaluation_json");
 
+                    b.Property<Guid?>("LeaseId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("lease_id");
+
+                    b.Property<DateTime?>("LeaseUntil")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("lease_until");
+
                     b.Property<Guid>("PartId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("part_id");
@@ -1477,7 +1491,7 @@ namespace Glosify.Migrations
 
                     b.HasIndex("RunId");
 
-                    b.HasIndex("Status", "CreatedAt");
+                    b.HasIndex("Status", "LeaseUntil", "CreatedAt");
 
                     b.ToTable("assistant_tool_evaluations");
                 });

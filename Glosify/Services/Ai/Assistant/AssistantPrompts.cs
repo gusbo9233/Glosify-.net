@@ -17,7 +17,7 @@ namespace Glosify.Services.Ai.Assistant;
 internal static class AssistantPrompts
 {
     /// <summary>Recorded on every turn so replies stay attributable to the wording that produced them.</summary>
-    internal const string Version = "20260930.runtime-v2.6";
+    internal const string Version = "20261011.review-fixes-v5";
 
     /// <summary>A request longer than this is stored as numbered source lines instead of being inlined.</summary>
     internal const int InlineSourceCharacters = 6_000;
@@ -78,13 +78,17 @@ internal static class AssistantPrompts
 
         if (facts.Page is { } page)
         {
+            var length = Math.Min(page.Text.Length, InlineSourceCharacters);
+            if (length > 0 && length < page.Text.Length && char.IsHighSurrogate(page.Text[length - 1]) && char.IsLowSurrogate(page.Text[length])) length--;
             var text = string.IsNullOrWhiteSpace(page.Text)
                 ? $"[{page.Warning ?? "No selectable text on this page."}]"
-                : page.Text;
+                : page.Text[..length];
             note.AppendLine($"- The user is reading page {page.PageNumber} of \"{page.Title}\" now. \"This page\" and \"what I am reading\" mean this text:");
             note.AppendLine("---");
             note.AppendLine(text);
             note.AppendLine("---");
+            if (length < page.Text.Length)
+                note.AppendLine($"- Page preview is incomplete. Read the rest with get_book_pages: from_page={page.PageNumber}, offset={length}; follow next_page and next_offset.");
         }
 
         if (facts.SourceLines is int lines)

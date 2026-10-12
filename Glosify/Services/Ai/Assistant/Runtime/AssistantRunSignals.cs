@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 
 namespace Glosify.Services.Ai.Assistant.Runtime;
@@ -10,25 +9,45 @@ namespace Glosify.Services.Ai.Assistant.Runtime;
 /// </summary>
 internal sealed class AssistantRunSignals
 {
-    private readonly ConcurrentDictionary<Guid, TaskCompletionSource> _waiters = new();
+    private readonly object _gate = new();
+    private readonly Dictionary<Guid, Waiter> _waiters = [];
+    internal int WaitingRunCount { get { lock (_gate) return _waiters.Count; } }
+
+    private sealed class Waiter
+    {
+        public TaskCompletionSource Signal { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int Readers { get; set; }
+    }
 
     public void Notify(Guid runId)
     {
-        if (_waiters.TryRemove(runId, out var waiter))
-        {
-            waiter.TrySetResult();
-        }
+        Waiter? waiter;
+        lock (_gate) _waiters.Remove(runId, out waiter);
+        waiter?.Signal.TrySetResult();
     }
 
     public async Task WaitAsync(Guid runId, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        var waiter = _waiters.GetOrAdd(runId, static _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        Waiter waiter;
+        lock (_gate)
+        {
+            if (!_waiters.TryGetValue(runId, out waiter!)) _waiters[runId] = waiter = new Waiter();
+            waiter.Readers++;
+        }
         try
         {
-            await waiter.Task.WaitAsync(timeout, cancellationToken);
+            await waiter.Signal.Task.WaitAsync(timeout, cancellationToken);
         }
         catch (TimeoutException)
         {
+        }
+        finally
+        {
+            lock (_gate)
+            {
+                if (--waiter.Readers == 0 && _waiters.TryGetValue(runId, out var current) && ReferenceEquals(current, waiter))
+                    _waiters.Remove(runId);
+            }
         }
     }
 }
