@@ -93,6 +93,14 @@ public abstract class QuizSessionStore<TSession> where TSession : class, IQuizSe
         return active == null ? null : FindSession(active.SessionId, userId);
     }
 
+    public void RemoveSession(string sessionId, string userId)
+    {
+        if (FindSession(sessionId, userId) is null)
+            return;
+        _registry.Deregister(userId, sessionId, removeSessionData: true);
+        _cache.Remove(CacheKey(sessionId));
+    }
+
     public void ResetSession(string userId, Guid quizId, string? practiceDirection, string? practiceItemType, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100)
     {
         var active = FindActive(userId, quizId, practiceDirection, practiceItemType, wordCount, rangeStartPercent, rangeEndPercent);

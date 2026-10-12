@@ -226,9 +226,13 @@ internal sealed class AssistantRunExecutor(
         }
 
         var facts = state.Facts!;
+        var finalCall = run.Steps + 1 >= settings.MaxModelCalls;
+        var created = await CreatedQuizzesAsync(run, state, cancellationToken);
+        var plan = AssistantRunStore.ReadPlan(run.PlanJson);
         var snapshot = await conversation.LoadAsync(run.ThreadId, cancellationToken);
         var history = conversation.Build(snapshot, run, state);
-        var prune = conversation.PlanPruning(snapshot, AssistantConversation.EstimateTokens(history), run.Id);
+        var request = BuildRequest(history);
+        var prune = conversation.PlanPruning(snapshot, AssistantConversation.EstimateTokens(request), run.Id);
         if (prune.Count > 0)
         {
             await AtomicAsync(run, lease, async (_, _) =>
@@ -236,28 +240,27 @@ internal sealed class AssistantRunExecutor(
                 var now = store.Now;
                 await db.AssistantParts.Where(part => prune.Contains(part.Id))
                     .ExecuteUpdateAsync(set => set.SetProperty(part => part.CompactedAt, now), cancellationToken);
-            }, cancellationToken, release: false);
+            }, cancellationToken, release: false, fenceBeforeAction: true);
             snapshot = await conversation.LoadAsync(run.ThreadId, cancellationToken);
             history = conversation.Build(snapshot, run, state);
+            request = BuildRequest(history);
         }
 
-        if (conversation.PlanSummary(snapshot, run, AssistantConversation.EstimateTokens(history)) is int through)
+        if (conversation.PlanSummary(snapshot, run, AssistantConversation.EstimateTokens(request)) is int through)
         {
             await SummarizeAsync(run, lease, snapshot, through, cancellationToken);
             return;
         }
 
-        var finalCall = run.Steps + 1 >= settings.MaxModelCalls;
-        var created = await CreatedQuizzesAsync(run, state, cancellationToken);
-        var request = new AgentRequest(
+        AgentRequest BuildRequest(IReadOnlyList<AgentTurn> turns) => new(
             AssistantPrompts.System(facts.Mode),
-            history,
+            AssistantRunContext.RunData(state, plan, created) is { } data ? [.. turns, data] : turns,
             toolbox.Declarations(facts.Mode),
             facts.Profile,
             CaptureEffectiveRequest: analytics.CaptureContent,
             DurableExecution: true)
         {
-            TrailingInstruction = AssistantRunContext.RunNote(run, state, AssistantRunStore.ReadPlan(run.PlanJson), created, finalCall),
+            TrailingInstruction = AssistantRunContext.RunNote(run, state, plan, created, finalCall),
             ToolChoice = finalCall ? AgentToolChoice.None : AgentToolChoice.Auto,
         };
         var fingerprints = await FingerprintsAsync(state, facts, cancellationToken);
@@ -501,6 +504,23 @@ internal sealed class AssistantRunExecutor(
             }
         }
 
+        if (result.Changes.Count > 0)
+        {
+            // Count proposals once when the tool produces them, independently of approval,
+            // cancellation, conflicts or saving. This checkpoint survives worker restarts.
+            await AtomicAsync(run, lease, async (current, state) =>
+            {
+                var tracked = await db.AssistantParts.SingleAsync(candidate => candidate.Id == part.Id, cancellationToken);
+                var metadata = RunJson.Read<PartMetadata>(tracked.MetadataJson ?? "{}");
+                if (metadata.ProposedChangeCount is null)
+                {
+                    tracked.MetadataJson = RunJson.Write(metadata with { ProposedChangeCount = result.Changes.Count });
+                    var turn = await db.AssistantTurns.SingleAsync(candidate => candidate.Id == current.TurnId, cancellationToken);
+                    turn.ProposedChangeCount += result.Changes.Count;
+                }
+            }, cancellationToken, release: false);
+        }
+
         if (result.IsError || (result.Changes.Count == 0 && result.Effect is null))
         {
             await AtomicAsync(run, lease, async (current, state) =>
@@ -549,7 +569,7 @@ internal sealed class AssistantRunExecutor(
             if (current.Mode == AssistantRunModes.Interactive)
             {
                 tracked.State = AssistantToolStates.AwaitingApproval;
-                tracked.MetadataJson = RunJson.Write(new PartMetadata { Changes = result.Changes, QuizId = result.QuizId, Output = Serialize(result.Output) });
+                tracked.MetadataJson = RunJson.Write(RunJson.Read<PartMetadata>(tracked.MetadataJson ?? "{}") with { Changes = result.Changes, QuizId = result.QuizId, Output = Serialize(result.Output) });
                 current.Status = AssistantRunStatus.AwaitingApproval;
                 current.Reason = result.Title;
                 return;
@@ -615,6 +635,7 @@ internal sealed class AssistantRunExecutor(
                     });
                 }
 
+                AssistantRunChangeState.RemoveDeletedResources(state, applied.Journal);
                 current.SavedChanges += applied.Journal.Count;
                 AssistantRunTelemetry.SavedChanges.Add(applied.Journal.Count);
                 if (applied.CreatedQuizId is Guid createdId)
@@ -642,7 +663,7 @@ internal sealed class AssistantRunExecutor(
                         + (changes.Any(change => change.Kind == PendingChangeKinds.LinkAnkiQuiz) ? " · quiz linked for future additions" : string.Empty)
                     : title;
                 await SettleAsync(current, state, tracked, ToolResult.Ok(savedTitle, SavedOutput(changes, applied, toolOutput)), cancellationToken, progressed: applied.Journal.Count > 0);
-            }, cancellationToken, isolation: IsolationLevel.Serializable);
+            }, cancellationToken, isolation: IsolationLevel.Serializable, fenceBeforeAction: true);
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or QuizNotFoundException
             && ex is not (InsufficientAiCreditsException or MonthlyAiBudgetExceededException or AssistantRunConflictException))
@@ -790,6 +811,12 @@ internal sealed class AssistantRunExecutor(
                 var collection = await db.Collections.AsNoTracking().FirstOrDefaultAsync(candidate => candidate.Id == collectionId && candidate.UserId == current.UserId, cancellationToken);
                 if (quiz is null || collection is null)
                 {
+                    var reason = quiz is null
+                        ? "The quiz could not be moved because it is no longer available."
+                        : $"The destination folder is no longer available. Quiz “{quiz.Name}” was saved in your library without that folder placement.";
+                    var failed = await AddSyntheticToolAsync(current, state, reason, AssistantToolStates.Error, null, cancellationToken);
+                    failed.Output = RunJson.Write(new { error = "placement_target_missing", quiz_id = quizId, collection_id = collectionId });
+                    await AddTextAsync(current, state, reason, cancellationToken);
                     continue;
                 }
 
@@ -827,6 +854,7 @@ internal sealed class AssistantRunExecutor(
                         });
                     }
 
+                    AssistantRunChangeState.RemoveDeletedResources(state, applied.Journal);
                     current.SavedChanges += applied.Journal.Count;
                     continue;
                 }
@@ -849,7 +877,7 @@ internal sealed class AssistantRunExecutor(
                 current.Status = AssistantRunStatus.AwaitingApproval;
                 current.Reason = "The quiz is ready. Approve publishing it into the collection you asked for.";
             }
-        }, cancellationToken);
+        }, cancellationToken, fenceBeforeAction: true);
     }
 
     private async Task<AssistantPart> AddSyntheticToolAsync(
@@ -894,7 +922,7 @@ internal sealed class AssistantRunExecutor(
             part.State = AssistantToolStates.AwaitingInput;
             part.MetadataJson = RunJson.Write(new PartMetadata { Question = ask.Question, Options = ask.Options, Multiple = ask.Multiple });
             run.Status = AssistantRunStatus.AwaitingInput;
-            run.Reason = ask.Question;
+            run.Reason = "Waiting for your answer.";
             return;
         }
 
@@ -1138,7 +1166,7 @@ internal sealed class AssistantRunExecutor(
             StartedAt = new DateTimeOffset(part.CreatedAt, TimeSpan.Zero),
             CompletedAt = new DateTimeOffset(now, TimeSpan.Zero),
             DurationMs = (now - part.CreatedAt).TotalMilliseconds,
-            ProposedChangeCount = result.Changes.Count,
+            ProposedChangeCount = RunJson.Read<PartMetadata>(part.MetadataJson ?? "{}").ProposedChangeCount ?? result.Changes.Count,
         });
 
     private async Task AddEvaluationAsync(AssistantRun run, AssistantRunState state, AssistantPart part, CancellationToken cancellationToken)
@@ -1378,7 +1406,6 @@ internal sealed class AssistantRunExecutor(
         turn.FinalMessageId = run.CurrentMessageId;
         turn.ActualModel = OpenAiModels.Luna;
         turn.ToolCallCount = await db.AssistantParts.CountAsync(part => part.RunId == run.Id && part.Type == AssistantPartTypes.Tool, cancellationToken);
-        turn.ProposedChangeCount = run.SavedChanges;
     }
 
     private async Task RecordInvocationAsync(
@@ -1451,9 +1478,10 @@ internal sealed class AssistantRunExecutor(
         .SingleOrDefaultAsync(run => run.Id == id && run.LeaseId == lease && run.LeaseUntil > store.Now && run.Status == AssistantRunStatus.Running, cancellationToken);
 
     /// <summary>
-    /// Runs one checkpoint: re-reads the run under its lease, bumps the revision to take the row
-    /// lock and fence concurrent commands, applies the change, and commits. The lease is handed
-    /// back afterwards unless the step continues.
+    /// Runs one checkpoint under its lease and revision. Preparation only changes tracked entities,
+    /// so the final save can fence concurrent commands without holding accounting locks while
+    /// preparing the checkpoint. Actions that write directly or save content midway must fence
+    /// first, preserving lock order and rolling back all their writes together.
     /// </summary>
     private async Task AtomicAsync(
         AssistantRun expected,
@@ -1461,7 +1489,8 @@ internal sealed class AssistantRunExecutor(
         Func<AssistantRun, AssistantRunState, Task> action,
         CancellationToken cancellationToken,
         bool release = true,
-        IsolationLevel isolation = IsolationLevel.ReadCommitted)
+        IsolationLevel isolation = IsolationLevel.ReadCommitted,
+        bool fenceBeforeAction = false)
     {
         var strategy = db.Database.CreateExecutionStrategy();
         await strategy.ExecuteAsync(async () =>
@@ -1486,7 +1515,10 @@ internal sealed class AssistantRunExecutor(
             }
 
             run.Revision++;
-            await db.SaveChangesAsync(cancellationToken);
+            if (fenceBeforeAction)
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
             var state = RunJson.Read<AssistantRunState>(run.StateJson);
             var status = run.Status;
             await action(run, state);
@@ -1531,6 +1563,7 @@ internal sealed class AssistantRunExecutor(
         return new
         {
             saved = applied.Journal.Count,
+            resources = applied.Journal.Select(c => new { entity_type = c.EntityType, id = c.EntityId, kind = c.Kind, can_undo = !LearningChanges.Permanent(c.Kind) }).ToArray(),
             words_added = words,
             sentences_added = sentences,
             edited = Saved(PendingChangeKinds.EditWord) + Saved(PendingChangeKinds.EditSentence),

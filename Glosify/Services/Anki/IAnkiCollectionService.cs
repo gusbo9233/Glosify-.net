@@ -90,6 +90,7 @@ public interface IAnkiCollectionService
     Task<AnkiCollectionDetails?> GetDetailsAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollection> CreateAsync(CreateAnkiCollectionInput input, string userId, CancellationToken cancellationToken = default);
     Task<AnkiCollection?> CreateFromQuizAsync(CreateAnkiCollectionFromQuizInput input, string userId, CancellationToken cancellationToken = default);
+    Task<bool> SetDirectionAsync(Guid collectionId, string direction, string userId, CancellationToken cancellationToken = default);
     Task<bool> RenameAsync(Guid collectionId, string name, string userId, CancellationToken cancellationToken = default);
     Task<bool> UpdateSettingsAsync(Guid collectionId, double desiredRetention, int newCardsPerDay, int maximumReviewsPerDay, string timeZoneId, string userId, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);

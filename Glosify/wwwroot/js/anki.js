@@ -1,4 +1,5 @@
 (() => {
+    const initialize = () => {
     const createButton = document.querySelector('[data-open-create-anki]');
     const createDialog = document.querySelector('[data-create-anki-dialog]');
     const closeButton = document.querySelector('[data-close-create-anki]');
@@ -29,29 +30,7 @@
         });
     });
 
-    const startedAt = performance.now();
-    const ratingForm = document.querySelector('[data-anki-rating-form]');
-    ratingForm?.addEventListener('submit', event => {
-        const duration = ratingForm.querySelector('[data-study-duration]');
-        if (duration) duration.value = Math.round(performance.now() - startedAt);
-        // Disabled submit buttons are not successful form controls. Preserve the chosen
-        // grade before locking the buttons so MVC always receives Rating.
-        const submittedRating = event.submitter?.value;
-        if (submittedRating) {
-            const rating = document.createElement('input');
-            rating.type = 'hidden';
-            rating.name = 'Rating';
-            rating.value = submittedRating;
-            ratingForm.appendChild(rating);
-        }
-        ratingForm.querySelectorAll('button').forEach(button => button.disabled = true);
-    });
-    document.addEventListener('keydown', event => {
-        if (!ratingForm || event.metaKey || event.ctrlKey || event.altKey) return;
-        const target = event.target;
-        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName))) return;
-        const button = [...ratingForm.querySelectorAll('[data-rating-key]')]
-            .find(candidate => candidate.dataset.ratingKey === event.key);
-        if (button) { event.preventDefault(); ratingForm.requestSubmit(button); }
-    });
+    };
+    initialize();
+    window.addEventListener('learning:updated', initialize);
 })();

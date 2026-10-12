@@ -1,4 +1,5 @@
 (() => {
+    const initialize = () => {
     const library = document.querySelector('[data-quiz-library]');
     if (!library) {
         return;
@@ -129,5 +130,7 @@
             }
         });
     });
+    };
+    initialize();
+    window.addEventListener('learning:updated', initialize);
 })();
-    

@@ -29,6 +29,28 @@ public class WordService : IWordService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<bool> CardMatchesAsync(Guid quizId, string userId, string cardId, string text, string translation, bool isSentence, CancellationToken cancellationToken = default)
+    {
+        if (isSentence)
+        {
+            if (!Guid.TryParse(cardId, out var sentenceId)) return false;
+            var sentence = await (from item in _context.QuizSentences.AsNoTracking()
+                                  join quiz in _context.Quizzes on item.QuizId equals quiz.Id
+                                  where item.Id == sentenceId && item.QuizId == quizId && quiz.UserId == userId
+                                  select new { item.Text, item.Translation }).SingleOrDefaultAsync(cancellationToken);
+            // Match the card loader's trimming in managed code, preserving ordinal
+            // comparisons even when the database uses a case-insensitive collation.
+            return sentence is not null && !string.IsNullOrWhiteSpace(sentence.Text)
+                && sentence.Text.Trim() == text && sentence.Translation.Trim() == translation;
+        }
+
+        var word = await (from item in _context.Words.AsNoTracking()
+                          join quiz in _context.Quizzes on item.QuizId equals quiz.Id
+                          where item.Id == cardId && item.QuizId == quizId && quiz.UserId == userId
+                          select new { item.Id, item.Lemma, item.Translation }).SingleOrDefaultAsync(cancellationToken);
+        return word is not null && word.Id == cardId && word.Lemma == text && word.Translation == translation;
+    }
+
     public async Task<IReadOnlyList<QuizCardData>> LoadCardsAsync(Guid quizId, int wordCount, int rangeStartPercent = 0, int rangeEndPercent = 100, CancellationToken cancellationToken = default)
     {
         var take = QuizSessionLimits.NormalizeCount(wordCount);

@@ -14,6 +14,94 @@ public sealed class AvatarMemoryTests
     private static readonly QuizLanguage English = QuizLanguageCatalog.Find("en")!;
 
     [Fact]
+    public void BytePressureReclaimsOnlyFullySavedIdleArchives()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var first = sessions.Create("owner", English, "free");
+        sessions.RecordTurn(first, "1", "user", "Keep unsaved"); sessions.Remove(first);
+        Guid savedId = default;
+        for (var i = 0; i < 17; i++)
+        {
+            var session = sessions.Create("owner", English, "free");
+            for (var turn = 0; turn < 40; turn++) sessions.RecordTurn(session, turn.ToString(), "user", new string('x', 12_000));
+            sessions.SetSavedTranscript(session.MemoryId, "owner", Guid.NewGuid(), false, 40);
+            sessions.Remove(session); if (i == 0) savedId = session.MemoryId;
+        }
+        var next = sessions.Create("owner", English, "free"); sessions.CheckTranscriptCapacity(next);
+        Assert.Equal("Keep unsaved", Assert.Single(sessions.Snapshot(first.MemoryId, "owner", "en").Turns).Text);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(savedId, "owner", "en")).Status);
+    }
+
+    [Fact]
+    public void FullCacheRefusesNewConversationInsteadOfEvictingUnsavedTurns()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var ids = new List<Guid>();
+        for (var i = 0; i < 128; i++)
+        {
+            var session = sessions.Create("owner", English, "free");
+            sessions.RecordTurn(session, "1", "user", $"Keep {i}"); ids.Add(session.MemoryId); sessions.Remove(session);
+        }
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("owner", English, "free")).Status);
+        Assert.Equal("Keep 0", Assert.Single(sessions.Snapshot(ids[0], "owner", "en").Turns).Text);
+        sessions.SetSavedTranscript(ids[0], "owner", Guid.NewGuid(), false, 1);
+        var next = sessions.Create("owner", English, "free");
+        Assert.NotEqual(ids[0], next.MemoryId);
+        Assert.Equal("Keep 1", Assert.Single(sessions.Snapshot(ids[1], "owner", "en").Turns).Text);
+    }
+
+    [Theory]
+    [InlineData("new")]
+    [InlineData("owner")]
+    [InlineData("language")]
+    [InlineData("partner")]
+    [InlineData("practice")]
+    public void RejectedReplacementLeavesActiveCallAndArchiveWriterIntact(string difference)
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var foreign = sessions.Create("other", English, "free");
+        sessions.RecordTurn(foreign, "1", "user", "Private"); sessions.Remove(foreign);
+        for (var i = 0; i < 126; i++)
+        {
+            var idle = sessions.Create("owner", English, "free");
+            sessions.RecordTurn(idle, "1", "user", $"Keep {i}"); sessions.Remove(idle);
+        }
+        var active = sessions.Create("owner", English, "free");
+        sessions.Connect(active.Id, "owner");
+        sessions.RecordTurn(active, "1", "user", "Current call");
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("owner",
+            difference == "language" ? QuizLanguageCatalog.Find("sv")! : English,
+            difference == "practice" ? "quiz" : "free",
+            character: difference == "partner" ? AvatarCharacter.Rowan : AvatarCharacter.Rain,
+            memoryId: difference == "new" ? null : difference == "owner" ? foreign.MemoryId : active.MemoryId)).Status);
+        Assert.Same(active, sessions.Get(active.Id, "owner"));
+        Assert.False(active.Lifetime.IsCancellationRequested);
+        sessions.RecordTurn(active, "2", "user", "Still connected");
+        Assert.Equal(new[] { "Current call", "Still connected" }, sessions.Snapshot(active.MemoryId, "owner", "en").Turns.Select(t => t.Text));
+        var resumed = sessions.Create("owner", English, "free", memoryId: active.MemoryId);
+        Assert.True(active.Lifetime.IsCancellationRequested);
+        Assert.Equal(active.MemoryId, resumed.MemoryId);
+        sessions.RecordTurn(active, "stale", "user", "Late old socket");
+        sessions.RecordTurn(resumed, "3", "user", "Accepted replacement");
+        Assert.Equal("Accepted replacement", sessions.Snapshot(resumed.MemoryId, "owner", "en").Turns[^1].Text);
+        Assert.Equal(3, sessions.Snapshot(resumed.MemoryId, "owner", "en").Turns.Length);
+    }
+
+    [Fact]
+    public void FullLiveCapacityStillAllowsReplacingOwnConnection()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var active = Enumerable.Range(0, 16).Select(i => sessions.Create($"owner-{i}", English, "free")).ToArray();
+        foreach (var session in active) sessions.Connect(session.Id, session.UserId);
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("another-owner", English, "free")).Status);
+        Assert.All(active, session => Assert.False(session.Lifetime.IsCancellationRequested));
+        var replacement = sessions.Create("owner-0", English, "free", memoryId: active[0].MemoryId);
+        Assert.Equal(active[0].MemoryId, replacement.MemoryId);
+        Assert.True(active[0].Lifetime.IsCancellationRequested);
+        Assert.All(active.Skip(1), session => Assert.Same(session, sessions.Get(session.Id, session.UserId)));
+    }
+
+    [Fact]
     public void ANewVisitRestoresOwnedContextWithoutReusingTheExpiredConnection()
     {
         var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);

@@ -20,7 +20,8 @@ public sealed record TranscriptLibraryItem(
     string Stream,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    int SegmentCount);
+    int SegmentCount,
+    string SourceKind = RealtimeTranslationTranscriptSourceKinds.Subtitles);
 
 public sealed record TranscriptLibraryPage(
     IReadOnlyList<TranscriptLibraryItem> Items,
@@ -42,9 +43,10 @@ public sealed record TranscriptDetailPage(
     bool HasActiveSession,
     string SelectedStream,
     int SourceSegmentCount,
-    int TranslationSegmentCount);
+    int TranslationSegmentCount,
+    string SourceKind = RealtimeTranslationTranscriptSourceKinds.Subtitles);
 
-public sealed record TranscriptTextSegment(int Sequence, string Text, DateTimeOffset CapturedAt);
+public sealed record TranscriptTextSegment(int Sequence, string Text, DateTimeOffset CapturedAt, string? Speaker = null);
 
 /// <summary>
 /// How a caller wants to enter a transcript. <see cref="AtTime"/> wins, then
@@ -60,7 +62,8 @@ public sealed record TranscriptTextPageRequest(
     DateTimeOffset? AtTime = null,
     string? Stream = null,
     int? Limit = null,
-    int MaximumCharacters = 12_000);
+    int MaximumCharacters = 12_000,
+    int CharacterOffset = 0);
 
 /// <summary>
 /// A window of transcript text plus everything needed to name it: which page it belongs
@@ -85,10 +88,12 @@ public sealed record TranscriptTextPage(
     DateTimeOffset? StartsAt,
     DateTimeOffset? EndsAt,
     int SourceSegmentCount,
-    int TranslationSegmentCount)
+    int TranslationSegmentCount,
+    int CharacterOffset = 0,
+    int NextCharacterOffset = 0)
 {
     /// <summary>Where to resume when the character budget or explicit limit cut the page short.</summary>
-    public int NextOffset => Offset + Segments.Count;
+    public int NextOffset => Offset + Segments.Count - (NextCharacterOffset > 0 ? 1 : 0);
 }
 
 public sealed record TranscriptPageSpan(int Page, DateTimeOffset StartsAt, DateTimeOffset EndsAt);

@@ -20,7 +20,8 @@ internal sealed class AssistantRunStore(
     AssistantContextResolver resolver,
     AssistantMessagePresenter presenter,
     AssistantRunSignals signals,
-    TimeProvider clock)
+    TimeProvider clock,
+    Glosify.Services.Avatar.AvatarAssistantContext? avatarContext = null)
 {
     private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(2);
 
@@ -59,6 +60,47 @@ internal sealed class AssistantRunStore(
             throw new ArgumentException($"That chat belongs to another language. Reload the page to start a {language} chat.");
         }
 
+        Guid? avatarSnapshotId = null;
+        int? avatarTurnCount = null;
+        if (input.Request.AvatarConversationId is { } conversationId)
+        {
+            if (input.Request.TranscriptId is not null || input.Request.BookDocumentId is not null || input.Request.DocumentContext is not null)
+                throw new ArgumentException("Select one reading material for this request.");
+            var code = await resolver.ResolveLanguageCodeAsync(userId, cancellationToken);
+            if (avatarContext is null) throw new ArgumentException("Avatar conversations are not available.");
+            avatarContext.EnsureAvailable(userId);
+            Glosify.Services.Avatar.AvatarTranscriptSnapshot? live;
+            try { live = avatarContext.Capture(conversationId, userId, code ?? ""); }
+            catch (Glosify.Services.Avatar.AvatarException ex) when (ex.Status is 404 or 410)
+            {
+                // A live session can end, expire, or disappear on restart. Only a source
+                // already shared in this owned, same-language chat may be reused.
+                var retained = await db.AssistantAvatarSnapshots.AsNoTracking()
+                    .Where(s => s.ThreadId == threadId && s.ConversationId == conversationId && s.Language == code)
+                    .OrderByDescending(s => s.CreatedAt).ThenByDescending(s => s.TurnCount)
+                    .Select(s => new { s.Id, s.TurnCount }).FirstOrDefaultAsync(cancellationToken);
+                if (retained is null) throw;
+                avatarSnapshotId = retained.Id;
+                avatarTurnCount = retained.TurnCount;
+                live = null;
+            }
+            if (live is not null)
+            {
+                var json = RunJson.Write(live);
+                var sourceHash = RunJson.Hash(json);
+                var saved = await db.AssistantAvatarSnapshots.AsNoTracking()
+                    .Where(s => s.ThreadId == threadId && s.ContentHash == sourceHash)
+                    .Select(s => new { s.Id, s.TurnCount }).SingleOrDefaultAsync(cancellationToken);
+                avatarSnapshotId = saved?.Id ?? Guid.NewGuid();
+                avatarTurnCount = live.Turns.Length;
+                if (saved is null) db.AssistantAvatarSnapshots.Add(new AssistantAvatarSnapshot
+                {
+                    Id = avatarSnapshotId.Value, ThreadId = threadId, ConversationId = conversationId,
+                    Language = live.Language, TurnCount = live.Turns.Length, ContentHash = sourceHash,
+                    ContentJson = json, CreatedAt = Now
+                });
+            }
+        }
         await StopWaitingElsewhereAsync(userId, threadId, cancellationToken);
         var now = Now;
         var message = input.Request.Message.Trim();
@@ -84,6 +126,8 @@ internal sealed class AssistantRunStore(
             Mode = mode,
             Status = AssistantRunStatus.Queued,
             RequestJson = requestJson,
+            AvatarSnapshotId = avatarSnapshotId,
+            AvatarConversationTurnCount = avatarTurnCount,
             StateJson = RunJson.Write(new AssistantRunState()),
             TurnId = Guid.NewGuid(),
             UserMessageId = userMessage.Id,
@@ -207,9 +251,11 @@ internal sealed class AssistantRunStore(
             .Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == userId)
             .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name, quiz.ProcessingStatus))
             .ToListAsync(cancellationToken);
+        var changes = await db.AssistantChanges.AsNoTracking().Where(c => c.RunId == run.Id)
+            .OrderBy(c => c.Sequence).Select(c => new AssistantResourceChange(c.EntityType, c.EntityId, c.QuizId, c.Kind, c.Status)).ToListAsync(cancellationToken);
         var canUndo = AssistantRunStatus.IsTerminal(run.Status)
             && run.UndoneAt is null
-            && await db.AssistantChanges.AnyAsync(change => change.RunId == run.Id && change.Status == AssistantChangeStatus.Applied, cancellationToken);
+            && await LearningChanges.Undoable(db.AssistantChanges).AnyAsync(change => change.RunId == run.Id, cancellationToken);
         return new AssistantRunView(
             run.Id,
             run.ThreadId,
@@ -227,7 +273,12 @@ internal sealed class AssistantRunStore(
             question is null ? null : Question(question),
             approval is null ? null : await ApprovalAsync(approval, userId, cancellationToken),
             parts.Select(part => PartView(part, reviews.GetValueOrDefault(part.Id))).ToList(),
-            artifacts);
+            artifacts)
+        {
+            ResourceChanges = changes,
+            ChangeRevision = changes.Count == 0 ? "" : RunJson.Hash(RunJson.Write(changes)),
+            PermanentChanges = changes.Count(c => LearningChanges.Permanent(c.Kind)),
+        };
     }
 
     internal static AssistantPartView PartView(AssistantPart part, AssistantToolEvaluation? review = null) => new(
@@ -645,6 +696,7 @@ internal sealed class AssistantRunStore(
                 && (run.Status == AssistantRunStatus.Queued || run.Status == AssistantRunStatus.Running || run.Status == AssistantRunStatus.RetryWait))
             .ExecuteUpdateAsync(set => set
                 .SetProperty(run => run.LeaseId, lease)
+                .SetProperty(run => run.Revision, run => run.Revision + 1)
                 .SetProperty(run => run.LeaseUntil, now.Add(LeaseDuration))
                 .SetProperty(run => run.Status, AssistantRunStatus.Running), cancellationToken);
         return claimed == 1 ? (candidate.Value, lease) : null;
@@ -658,6 +710,7 @@ internal sealed class AssistantRunStore(
 /// <summary>What a tool part carries for the UI and for decisions made after it ran.</summary>
 internal sealed record PartMetadata
 {
+    public int? ProposedChangeCount { get; init; }
     public IReadOnlyList<PendingChange>? Changes { get; init; }
     public Guid? QuizId { get; init; }
     public JsonElement? Output { get; init; }
@@ -678,6 +731,8 @@ internal static class AssistantPermissions
     [
         PendingChangeKinds.RemoveAnkiCards,
         PendingChangeKinds.UnlinkAnkiQuiz,
+        "delete_quiz", "delete_collection", "quiz_visibility", "collection_visibility",
+        "anki_delete", "anki_remove_quiz", "anki_remove_card",
         PendingChangeKinds.DeleteWord,
         PendingChangeKinds.DeleteSentence,
         PendingChangeKinds.MoveQuiz,

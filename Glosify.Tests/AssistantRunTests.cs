@@ -157,7 +157,7 @@ public sealed class AssistantRunTests
         await h.RunAsync("Hello");
 
         var history = h.Model.Requests[0].History;
-        Assert.Equal("developer", history[0].Role);
+        Assert.Equal("user", history[0].Role);
         Assert.Contains("Selected quiz: \"Polish basics\"", TextOf(history[0]));
         Assert.Contains("Learning language: Polish", TextOf(history[0]));
         Assert.Contains("Translation language: English", TextOf(history[0]));
@@ -273,6 +273,33 @@ public sealed class AssistantRunTests
             run.Id, AssistantHarness.UserId, "answer", new AssistantRunCommand(waiting.Revision, Answers: ["Travel"]), default));
         await h.DrainAsync();
 
+        Assert.Equal(AssistantRunStatus.Completed, (await h.ViewAsync(run.Id)).Status);
+        Assert.Contains("\"answer\":\"Travel\"", AssistantHarness.Transcript(h.Model.Requests[1]));
+    }
+
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(1001)]
+    [InlineData(12000)]
+    public async Task Long_questions_preserve_the_full_text_without_overflowing_the_status_reason(int length)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        var question = new string('q', length);
+        h.Model.ThenCall("ask_user", new { question, options = new[] { "Food", "Travel" }, multiple = false })
+            .ThenText("Travel it is.");
+        var run = await h.RunAsync("Make me a quiz");
+
+        Assert.Equal(AssistantRunStatus.AwaitingInput, run.Status);
+        Assert.Equal(question, run.Question!.Question);
+        Assert.Equal("Waiting for your answer.", run.Reason);
+        await using var db = h.Db();
+        var saved = await db.AssistantRuns.SingleAsync(r => r.Id == run.Id);
+        var maxReason = db.Model.FindEntityType(typeof(AssistantRun))!.FindProperty(nameof(AssistantRun.Reason))!.GetMaxLength();
+        Assert.InRange(saved.Reason!.Length, 1, maxReason!.Value);
+
+        await h.WithAsync(services => services.GetRequiredService<AssistantRunStore>().CommandAsync(
+            run.Id, AssistantHarness.UserId, "answer", new AssistantRunCommand(run.Revision, Answers: ["Travel"]), default));
+        await h.DrainAsync();
         Assert.Equal(AssistantRunStatus.Completed, (await h.ViewAsync(run.Id)).Status);
         Assert.Contains("\"answer\":\"Travel\"", AssistantHarness.Transcript(h.Model.Requests[1]));
     }
@@ -451,7 +478,8 @@ public sealed class AssistantRunTests
         Assert.Equal(AssistantRunStatus.Completed, run.Status);
         Assert.Equal(3, h.Model.Calls);
         Assert.Equal("in_progress", run.Plan[1].Status);
-        Assert.Contains("[in_progress] Add sentences", h.Model.Requests[1].TrailingInstruction);
+        Assert.Contains("Add sentences", AssistantHarness.Transcript(h.Model.Requests[1]));
+        Assert.DoesNotContain("Add sentences", h.Model.Requests[1].TrailingInstruction);
         Assert.Contains("unfinished items: Add sentences", AssistantHarness.Transcript(h.Model.Requests[2]));
     }
 
@@ -511,7 +539,9 @@ public sealed class AssistantRunTests
         h.Model.ThenCall("create_quiz", new { name = "Travel", source_language = (string?)null, target_language = (string?)null, collection_id = (string?)null, words = new[] { new { word = "pociąg", translation = "train" } }, sentences = (object?)null })
             .Then(request =>
             {
-                Assert.Contains("You created quiz \"Travel\"", request.TrailingInstruction);
+                Assert.Contains("Travel", AssistantHarness.Transcript(request));
+                Assert.Contains("You created quiz id", request.TrailingInstruction);
+                Assert.DoesNotContain("Travel", request.TrailingInstruction);
                 return ScriptedModel.Reply("Created.");
             });
         var run = await h.StartAsync("Create a travel quiz", quizId: Guid.Empty);

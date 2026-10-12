@@ -1,3 +1,4 @@
+import { avatarAssociations } from './assistant/avatar-context.js';
 import { createAssistantRuns, isTerminal, isWaiting } from './assistant/runs.js';
 import { createAssistantApi } from './assistant/api.js';
 import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload as buildMaterialPayload, removeChat, replaceChat, upsertChat } from './assistant/state.js';
@@ -47,11 +48,18 @@ import {
     // Only the transcript reader sets these, and only for the transcript it is showing.
     const pageTranscriptPage = Number(panel.dataset.transcriptPage || 0);
     const pageTranscriptStream = panel.dataset.transcriptStream || null;
+    let avatarStorage;
+    try { avatarStorage = window.sessionStorage; } catch { /* Browser storage may be blocked. */ }
+    const avatarLinks = avatarAssociations(document.body?.dataset.speechUser, avatarStorage);
+    const avatarContexts = avatarLinks.contexts;
+    const avatarThreads = avatarLinks.threads;
+    let avatarOpening = false;
     let materialKind = pageMaterialKind;
     let materialId = pageMaterialId;
     let quizId = pageQuizId;
     let activeThreadId = null;
     let chatSelection = null;
+    const historyGate = createLatestRequestGate();
     let activeSelectionPromise = Promise.resolve();
     const pendingSends = new Set();
     const sendErrors = new Map();
@@ -242,6 +250,7 @@ import {
     };
 
     const resetTranscript = (message) => {
+        historyGate.next();
         if (!transcript) {
             return;
         }
@@ -295,6 +304,11 @@ import {
     const setMaterialContext = (nextKind, nextId, persist = false) => {
         materialId = nextId || null;
         materialKind = materialId ? nextKind : null;
+        if (activeThreadId) {
+            if (materialKind === 'avatar') avatarContexts.set(activeThreadId, materialId);
+            else avatarContexts.delete(activeThreadId);
+            avatarLinks.persist();
+        }
 
         if (materialSelector) {
             materialSelector.value = materialId ? `${materialKind}:${materialId}` : '';
@@ -304,7 +318,7 @@ import {
             if (materialId && !materialSelector.value) {
                 const option = document.createElement('option');
                 option.value = `${materialKind}:${materialId}`;
-                option.dataset.contextLabel = getActiveChat()?.contextBookTitle
+                option.dataset.contextLabel = materialKind === 'avatar' ? 'Current avatar conversation' : getActiveChat()?.contextBookTitle
                     || getActiveChat()?.contextTranscriptTitle
                     || 'Selected material';
                 option.textContent = option.dataset.contextLabel;
@@ -464,7 +478,8 @@ import {
             ? 'transcript'
             : selectedContext.contextBookDocumentId ? 'book' : null;
         const storedId = selectedContext.contextTranscriptId || selectedContext.contextBookDocumentId;
-        setMaterialContext(storedKind, storedId, false);
+        const avatarId = avatarContexts.get(threadId);
+        setMaterialContext(avatarId ? 'avatar' : storedKind, avatarId || storedId, false);
 
         setQuizContext(contextQuizId, contextQuizName, false);
         selection.contextReady = true;
@@ -479,6 +494,11 @@ import {
             return;
         }
         selection.historyLoaded = true;
+        // Streams may advance while reopening a chat. Their updates stay cached until
+        // its initial history is installed, so they cannot invalidate that initial load.
+        const currentRun = runs.get(threadId);
+        if (currentRun && !isTerminal(currentRun.status)) renderRun(currentRun);
+        else if (currentRun) void loadHistory(selection, false);
         submit.disabled = pendingSends.has(threadId);
         if (!contextPersisted) setStatus('Could not save chat context.', true);
         else if (pendingSends.has(threadId)) setStatus(t('Client.AssistantRunWorking', 'Working…'));
@@ -626,6 +646,7 @@ import {
         if (!message.text && !hasPendingChanges && !hasParts) {
             return;
         }
+        historyGate.next();
 
         if (empty) empty.remove();
 
@@ -844,6 +865,7 @@ import {
         if (!createdQuizId || !transcript) {
             return;
         }
+        historyGate.next();
 
         if (empty) empty.remove();
 
@@ -949,6 +971,10 @@ import {
             }
             const data = await response.json();
             replaceActionsWithTag(card, `${t('Client.Correct', 'Done')} (${data.applied})`, 'success');
+            if (data.applied > 0) {
+                window.dispatchEvent(new CustomEvent('assistant:changes', { detail: { id: messageId, changeRevision: String(data.applied) } }));
+                void loadContextOptions();
+            }
             if (data.createdQuizId) {
                 const contextSaved = await selectCreatedQuiz(data.createdQuiz || {
                     id: data.createdQuizId,
@@ -961,8 +987,7 @@ import {
                     ? 'Quiz created.'
                     : 'Quiz created, but its chat context could not be saved.', !contextSaved);
             } else {
-                setStatus('Changes applied. Reloading...');
-                window.setTimeout(() => window.location.reload(), 600);
+                setStatus('Changes applied.');
             }
             await loadChats();
         } catch (err) {
@@ -1066,6 +1091,20 @@ import {
     const renderQuestion = (run) => {
         const card = document.createElement('div');
         card.className = 'assistant-question';
+        let submitting = false;
+        const answer = async values => {
+            if (submitting) return;
+            submitting = true;
+            const controls = card.querySelectorAll('button');
+            controls.forEach(control => { control.disabled = true; });
+            try {
+                await runs.answer(run.threadId, values);
+            } catch (error) {
+                submitting = false;
+                controls.forEach(control => { control.disabled = false; });
+                throw error;
+            }
+        };
         const question = document.createElement('p');
         question.dir = 'auto';
         question.textContent = run.question.question;
@@ -1077,7 +1116,7 @@ import {
             for (const option of run.question.options) {
                 const choice = button(option, 'btn-secondary', async () => {
                     if (!run.question.multiple) {
-                        await runs.answer(run.threadId, [option]);
+                        await answer([option]);
                         return;
                     }
                     if (chosen.has(option)) chosen.delete(option);
@@ -1089,7 +1128,7 @@ import {
             }
             card.appendChild(options);
             if (run.question.multiple) {
-                card.appendChild(button(t('Client.AssistantAnswer', 'Answer'), 'btn-submit', () => runs.answer(run.threadId, [...chosen])));
+                card.appendChild(button(t('Client.AssistantAnswer', 'Answer'), 'btn-submit', () => answer([...chosen])));
             }
         }
         const hint = document.createElement('small');
@@ -1131,6 +1170,9 @@ import {
     const renderRun = (run) => {
         if (!transcript) return;
         let row = transcript.querySelector(`[data-live-run="${run.id}"]`);
+        // send/steer may publish a terminal response before returning it to the
+        // submit handler. Its duplicate render must not invalidate history reload.
+        if (!row || row.dataset.runRevision !== String(run.revision) || row.dataset.runStatus !== run.status) historyGate.next();
         if (!row) {
             // A reply already in the history for this run is replaced by the live card.
             transcript.querySelectorAll(`.assistant-message-model[data-run-id="${run.id}"]`).forEach(node => node.remove());
@@ -1140,6 +1182,8 @@ import {
             row.dataset.liveRun = run.id;
             transcript.appendChild(row);
         }
+        row.dataset.runRevision = String(run.revision);
+        row.dataset.runStatus = run.status;
         row.replaceChildren();
         renderParts(row, run.undone ? run.parts.filter(part => part.type !== 'quiz_link') : run.parts);
         if (run.plan?.length) row.appendChild(renderPlan(run.plan));
@@ -1158,6 +1202,7 @@ import {
             const saved = document.createElement('span');
             saved.className = 'assistant-run-saved';
             saved.textContent = t('Client.AssistantSaved', '{0} saved', run.savedChanges);
+            if (run.permanentChanges > 0) saved.textContent += ` · ${run.permanentChanges} permanent (not included in Undo)`;
             footer.appendChild(saved);
         }
         if (!isTerminal(run.status)) {
@@ -1171,6 +1216,14 @@ import {
     };
 
     const runs = createAssistantRuns({
+        onChanges: run => {
+            for (const change of run.resourceChanges || []) {
+                if (change.kind === 'delete_quiz' && change.entityId === quizId) void setQuizContext(null, 'GlobeGlotter');
+                if (change.kind === 'anki_delete' && change.entityId === panel.dataset.ankiCollectionId) delete panel.dataset.ankiCollectionId;
+            }
+            window.dispatchEvent(new CustomEvent('assistant:changes', { detail: run }));
+            void loadContextOptions();
+        },
         request: async (url, options = {}) => {
             const response = await fetch(url, { ...options, headers: requestHeaders(options.method === 'POST' && !!options.body) });
             // Drain empty responses too, so the browser can finish the request normally.
@@ -1186,6 +1239,7 @@ import {
         },
         isCurrent: threadId => activeThreadId === threadId,
         onUpdate: async run => {
+            if (!chatSelection?.historyLoaded) return;
             renderRun(run);
             submit.disabled = false;
             if (isTerminal(run.status)) {
@@ -1200,6 +1254,7 @@ import {
 
     const loadHistory = async (selection, discover = true) => {
         if (!ownsSelection(selection)) return false;
+        const requestVersion = historyGate.next();
         const { threadId } = selection;
         try {
             const response = await fetch(chatHistoryUrl(threadId), {
@@ -1207,14 +1262,15 @@ import {
             });
             if (!response.ok) return false;
             const data = await response.json();
-            if (!ownsSelection(selection) || !Array.isArray(data?.messages)) return false;
+            if (!ownsSelection(selection) || !historyGate.isCurrent(requestVersion) || !Array.isArray(data?.messages)) return false;
             resetTranscript(defaultEmptyText);
             for (const message of data.messages ?? []) {
                 renderMessage(message);
             }
             if (discover) {
+                const discoveryVersion = historyGate.next();
                 void runs.discover(threadId)
-                    .then(run => { if (run && !isTerminal(run.status) && ownsSelection(selection)) renderRun(run); })
+                    .then(run => { if (run && !isTerminal(run.status) && ownsSelection(selection) && historyGate.isCurrent(discoveryVersion)) renderRun(run); })
                     .catch(() => { /* The next open reconnects to the run. */ });
             }
             return true;
@@ -1258,6 +1314,7 @@ import {
             return;
         }
 
+        window.dispatchEvent(new CustomEvent('assistant:opened'));
         windowEl.hidden = false;
         panel.classList.add('is-open');
         toggle.setAttribute('aria-expanded', 'true');
@@ -1295,6 +1352,41 @@ import {
         toggle.setAttribute('aria-expanded', 'false');
         toggle.focus();
     };
+
+    window.addEventListener('assistant:avatar-ended', event => {
+        const id = event.detail?.conversationId;
+        for (const [threadId, sourceId] of avatarContexts) {
+            if (sourceId === id) avatarContexts.delete(threadId);
+        }
+        avatarLinks.persist();
+        if (materialKind === 'avatar' && materialId === id) {
+            setMaterialContext(null, null, false);
+            setStatus('The live conversation has ended. Any text already shared is still available in this chat.');
+        }
+    });
+
+    window.addEventListener('assistant:avatar', async event => {
+        const id = event.detail?.conversationId;
+        if (!id || avatarOpening) return;
+        avatarOpening = true;
+        try {
+            await openAssistant();
+            let threadId = avatarThreads.get(id);
+            if (!threadId || !chats.some(chat => chat.id === threadId)) {
+                const chat = await createChat({ contextQuizId: null, contextTranscriptId: null, contextBookDocumentId: null });
+                threadId = chat.id;
+                avatarThreads.set(id, threadId);
+            }
+            await selectChat(threadId);
+            if (activeThreadId !== threadId) return;
+            await setMaterialContext('avatar', id, false);
+            await setQuizContext(null, 'GlobeGlotter', false);
+            setStatus('Using your conversation so far. Shared text is retained in this assistant chat.');
+            if (event.detail?.quiz) textarea.value = 'Make a quiz based on this avatar conversation.';
+            textarea.focus();
+        } catch (error) { setStatus(error.message || 'Could not open the assistant.', true); }
+        finally { avatarOpening = false; }
+    });
 
     close?.addEventListener('click', closeAssistant);
 
@@ -1388,8 +1480,10 @@ import {
             const run = await runs.send(threadId, {
                 message,
                 contextQuizId: quizId,
+                contextAnkiCollectionId: panel.dataset.ankiCollectionId || null,
                 focusedWordId,
                 transcriptId: materialKind === 'transcript' ? materialId : null,
+                avatarConversationId: materialKind === 'avatar' ? materialId : null,
                 bookDocumentId: materialKind === 'book' ? materialId : null,
                 documentContext,
                 transcriptContext,
@@ -1406,9 +1500,13 @@ import {
         } catch (err) {
             // fetch rejects with a TypeError worded by the browser ("Failed to fetch"). Show
             // the localized network message then; errors raised here keep their own text.
-            const sendError = err instanceof TypeError || !err?.message
+            let sendError = err instanceof TypeError || !err?.message
                 ? t('Client.AssistantNetwork', 'Network error talking to the assistant.')
                 : err.message;
+            if (ownsSelection(selection) && materialKind === 'avatar' && (err?.status === 404 || err?.status === 410)) {
+                setMaterialContext(null, null, false);
+                sendError = 'This conversation is no longer available. Select a saved transcript, or send your message without it.';
+            }
             if (ownsSelection(selection) && !textarea.value) textarea.value = message;
             // The request may have reached the server before the connection dropped.
             void runs.discover(threadId).catch(() => { /* Reconnect when the user reopens the chat. */ });

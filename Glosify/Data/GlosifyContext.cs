@@ -46,6 +46,7 @@ public class GlosifyContext : IdentityDbContext<ApplicationUser>
     public DbSet<Word> Words { get; set; }
     public DbSet<QuizSentence> QuizSentences { get; set; }
     public DbSet<AssistantRun> AssistantRuns { get; set; }
+    public DbSet<AssistantAvatarSnapshot> AssistantAvatarSnapshots { get; set; }
     public DbSet<AssistantPart> AssistantParts { get; set; }
     public DbSet<AssistantChange> AssistantChanges { get; set; }
     public DbSet<AssistantToolEvaluation> AssistantToolEvaluations { get; set; }

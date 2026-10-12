@@ -18,15 +18,24 @@ async page => {
     await page.waitForFunction(() => document.querySelector('#avatar-transcript').textContent.includes('Rain'));
     const beforeHandsFree = await page.locator('#avatar-transcript li').count();
     await page.getByRole('radio', { name: 'Hands-free' }).check();
-    const microphone = page.getByRole('button', { name: 'Microphone', exact: true });
+    const microphone = page.getByRole('button', { name: 'Hands-free conversation', exact: true });
     if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Mode selection started capture');
-    await microphone.click();
+    const sidebar = page.locator('[data-sidebar-toggle]');
+    const sidebarState = await sidebar.getAttribute('aria-expanded');
+    await sidebar.focus(); await page.keyboard.press('Space');
+    if (await sidebar.getAttribute('aria-expanded') !== sidebarState) throw new Error('Space toggled the sidebar');
     await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
     if (await microphone.getAttribute('aria-pressed') !== 'true') throw new Error('Hands-free microphone was not live');
-    await microphone.click();
+    await page.keyboard.press('Space');
     if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');
     await page.getByRole('combobox', { name: 'Conversation partner', exact: true }).selectOption('rowan');
-    await page.waitForFunction(() => !document.getElementById('avatar-talk').disabled);
+    await page.waitForFunction(() => !document.getElementById('avatar-hands-free').disabled);
+    const arrows = await page.evaluate(() => {
+        const left = document.querySelector('[data-sidebar-toggle]').getBoundingClientRect();
+        const right = document.getElementById('avatar-settings-toggle').getBoundingClientRect();
+        return { aligned: Math.abs(left.top - right.top) < 1, sameSize: left.width === right.width && left.height === right.height };
+    });
+    if (!arrows.aligned || !arrows.sameSize) throw new Error('Settings and sidebar arrows are not aligned');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(500); // Let the shared sidebar's responsive transition finish.
     await page.screenshot({ path: 'output/playwright/avatar-mobile.png', fullPage: true });

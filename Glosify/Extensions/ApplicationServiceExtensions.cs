@@ -269,6 +269,8 @@ public static class ApplicationServiceExtensions
         services.AddScoped<Glosify.Services.Avatar.AvatarUsageReports>();
         services.AddScoped<Glosify.Services.Avatar.IAvatarSpeech, Glosify.Services.Avatar.AvatarSpeech>();
         services.AddScoped<Glosify.Services.Avatar.AvatarConversation>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarTranscriptService>();
+        services.AddScoped<Glosify.Services.Avatar.AvatarAssistantContext>();
         services.AddHostedService<Glosify.Services.Avatar.AvatarMaintenance>();
         services.AddSingleton(TimeProvider.System);
 

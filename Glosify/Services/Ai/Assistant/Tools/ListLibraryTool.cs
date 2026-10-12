@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Glosify.Services.Ai.Assistant.Tools;
 
 internal sealed record ListLibraryArgs(
-    [property: Description("Learning language to list. Null for the current app language.")] string? Language = null);
+    [property: Description("Learning language to list. Null for the current app language.")] string? Language = null,
+    [property: Description("Quiz page offset; use next_offset from the previous response.")] int Offset = 0);
 
 /// <summary>The user's collections and quizzes for one language, with ids.</summary>
 internal sealed class ListLibraryTool(GlosifyContext db) : AssistantTool<ListLibraryArgs>
@@ -45,8 +46,10 @@ internal sealed class ListLibraryTool(GlosifyContext db) : AssistantTool<ListLib
         var quizzes = db.Quizzes.AsNoTracking()
             .Where(quiz => quiz.UserId == context.UserId && (quiz.TargetLanguage == language || quiz.Language == language));
         var total = await quizzes.CountAsync(cancellationToken);
+        var offset = Math.Max(0, args.Offset);
         var rows = await quizzes
-            .OrderBy(quiz => quiz.Name)
+            .OrderBy(quiz => quiz.Name).ThenBy(quiz => quiz.Id)
+            .Skip(offset)
             .Take(MaximumQuizzes)
             .Select(quiz => new
             {
@@ -66,7 +69,9 @@ internal sealed class ListLibraryTool(GlosifyContext db) : AssistantTool<ListLib
                 collections,
                 quizzes = rows,
                 quiz_count = total,
-                quizzes_truncated = total > rows.Count,
+                quizzes_truncated = total > offset + rows.Count,
+                offset,
+                next_offset = total > offset + rows.Count ? (int?)(offset + rows.Count) : null,
                 current_quiz_id = context.QuizId,
             });
     }

@@ -6,6 +6,7 @@
 
     const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
     let submissionInFlight = false;
+    let startedAt = performance.now();
 
     const setRequestError = (message = '') => {
         const status = container.querySelector('[data-flashcard-status]');
@@ -42,6 +43,7 @@
         clickableCard?.classList.add('is-flipping');
 
         const body = new FormData(form);
+        body.set("DurationMilliseconds", String(Math.round(performance.now() - startedAt)));
         if (submitter?.name) {
             body.set(submitter.name, submitter.value);
         }
@@ -58,17 +60,17 @@
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
-            if (response.redirected) {
+            if (response.redirected && !new URL(response.url).pathname.toLowerCase().startsWith("/anki/study")) {
                 window.location.href = response.url;
                 return;
             }
 
             if (response.ok) {
                 container.innerHTML = await response.text();
+                if (submitter?.name === "rating") startedAt = performance.now();
             } else {
-                setRequestError(t(
-                    'Client.GenericError',
-                    'Something went wrong. Please try again.'));
+                const problem = await response.json().catch(() => null);
+                setRequestError(problem?.detail || t('Client.GenericError', 'Something went wrong. Please try again.'));
             }
         } catch {
             setRequestError(t(
@@ -83,7 +85,16 @@
         }
     });
 
-    // Touch swipe: right = Good, left = Again; on a hidden card any swipe reveals.
+    document.addEventListener('keydown', event => {
+        if (submissionInFlight || event.metaKey || event.ctrlKey || event.altKey || event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return;
+        const button = [...container.querySelectorAll('[data-rating-key]')].find(b => b.dataset.ratingKey === event.key);
+        if (button) { event.preventDefault(); button.closest('form').requestSubmit(button); }
+        else if (event.key === ' ' && container.querySelector('[data-card-reveal-form]') && !event.target.closest('button,a')) {
+            event.preventDefault(); container.querySelector('[data-card-reveal-form]').requestSubmit();
+        }
+    });
+
+    // Both modes reveal hidden cards first; revealed-card swipes use the configured rating.
     const SWIPE_THRESHOLD = 70;
     let drag = null;
     let suppressClick = false;
@@ -93,6 +104,7 @@
         if (event.pointerType === 'mouse') {
             return;
         }
+        if (submissionInFlight || event.target.closest('.btn-icon-tts')) return;
         const card = event.target.closest('.flashcard');
         if (!card) {
             return;
@@ -146,7 +158,7 @@
         }
 
         if (card.classList.contains('is-revealed')) {
-            const rating = dx > 0 ? 'good' : 'again';
+            const rating = dx > 0 ? (container.querySelector('[data-right-rating]')?.dataset.rightRating || 'good') : 'again';
             const button = container.querySelector(`[data-flashcard-form] button[name="rating"][value="${rating}"]`);
             if (button) {
                 card.classList.add(dx > 0 ? 'is-swipe-out-right' : 'is-swipe-out-left');

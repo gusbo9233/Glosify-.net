@@ -107,6 +107,24 @@ public sealed class AnkiController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Direction(Guid id, string direction, CancellationToken cancellationToken)
+    {
+        var userId = User.GetUserId();
+        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken)) return NotFound();
+        try
+        {
+            if (!await _collections.SetDirectionAsync(id, direction, userId, cancellationToken))
+                return NotFound();
+        }
+        catch (AnkiValidationException exception)
+        {
+            TempData["AnkiMessage"] = exception.Message;
+        }
+        return RedirectToAction(nameof(Collection), new { id });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Settings(Guid id, double desiredRetention, int newCardsPerDay,
         int maximumReviewsPerDay, string timeZoneId, CancellationToken cancellationToken)
     {
@@ -241,12 +259,16 @@ public sealed class AnkiController : Controller
             return NotFound();
         var state = await _study.GetNextAsync(id, userId, cardId, cancellationToken);
         if (state is null) return NotFound();
-        return View(new AnkiStudyViewModel
+        if (reveal && cardId.HasValue && state.Card?.CardId != cardId.Value)
+            return Problem(statusCode: 409, detail: "This card changed. Reopen the collection to continue.");
+        var model = new AnkiStudyViewModel
         {
             State = state,
             AnswerRevealed = reveal,
             ClientToken = Guid.NewGuid(),
-        });
+        };
+        return Request.Headers["X-Requested-With"] == "XMLHttpRequest"
+            ? PartialView("_StudySession", model) : View(model);
     }
 
     [HttpPost]
@@ -281,12 +303,14 @@ public sealed class AnkiController : Controller
             return NotFound();
         try
         {
-            await _study.RateAsync(new(form.CollectionId, form.CardId, form.Rating,
+            var rated = await _study.RateAsync(new(form.CollectionId, form.CardId, form.Rating,
                 clientToken, form.RowVersion, form.DurationMilliseconds),
                 userId, cancellationToken);
+            if (!rated) return Problem(statusCode: 409, detail: "This card is no longer available. Reopen the collection.");
         }
         catch (AnkiReviewConflictException exception)
         {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest") return Problem(statusCode: 409, detail: exception.Message);
             TempData["AnkiMessage"] = exception.Message;
         }
         return RedirectToAction(nameof(Study), new { id = form.CollectionId });

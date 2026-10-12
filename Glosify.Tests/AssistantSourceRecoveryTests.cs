@@ -48,6 +48,10 @@ public sealed class AssistantSourceRecoveryTests
         var history = AssistantHarness.Transcript(h.Model.Requests[0]);
         Assert.Contains(sourceId.ToString(), history);
         Assert.Contains("Saved source catalog", history);
+        Assert.DoesNotContain(h.Model.Requests[0].History.Where(turn => turn.Role == "developer"),
+            turn => turn.ContentJson.Contains("Wiersz 1:", StringComparison.Ordinal));
+        Assert.Contains(h.Model.Requests[0].History.Where(turn => turn.Role == "user"),
+            turn => turn.ContentJson.Contains("saved_source_catalog", StringComparison.Ordinal) && turn.ContentJson.Contains("Wiersz 1:", StringComparison.Ordinal));
         Assert.DoesNotContain($"Wiersz {lines}:", history);
         var response = h.Model.Requests[1].History.Select(turn => JsonDocument.Parse(turn.ContentJson).RootElement)
             .Where(root => root.TryGetProperty("parts", out _))

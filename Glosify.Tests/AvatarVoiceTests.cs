@@ -55,13 +55,76 @@ public sealed class AvatarVoiceTests
         var session = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin");
         Assert.Single(session.History); // Undelivered assistant text cannot become remembered speech.
         await AvatarWire.SendAsync(socket, new { type = "played", turnId }, timeout.Token);
-        await Until(socket, "idle", timeout.Token);
+        var sawIdle = false;
+        var sawSavedStatus = false;
+        while (!sawIdle || !sawSavedStatus)
+        {
+            using var frame = await AvatarWire.ReadAsync(socket, timeout.Token, 3 * 1024 * 1024);
+            if (frame.RootElement.GetProperty("type").GetString() == "idle") sawIdle = true;
+            if (frame.RootElement.GetProperty("type").GetString() == "transcript-status"
+                && frame.RootElement.GetProperty("status").GetProperty("turnCount").GetInt32() == 2)
+            {
+                Assert.Equal(session.MemoryId, frame.RootElement.GetProperty("status").GetProperty("conversationId").GetGuid());
+                Assert.True(frame.RootElement.GetProperty("status").GetProperty("revision").GetInt64() > 0);
+                sawSavedStatus = true;
+            }
+        }
         Assert.Equal(2, session.History.Count);
+        Assert.Equal(new[] { "user", "assistant" }, app.Services.GetRequiredService<AvatarSessions>()
+            .Snapshot(session.MemoryId, "admin", "sv").Turns.Select(t => t.Role));
         Assert.Contains("Swedish", ai.LastRequest!.SystemInstruction);
         Assert.Contains("You are " + name + ",", ai.LastRequest.SystemInstruction);
         Assert.Empty(ai.LastRequest.Tools);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
         await socket.ReceiveAsync(new byte[4096], timeout.Token);
+    }
+
+    [Fact]
+    public async Task CoalescedTranscriptSavesDoNotDelayVoiceAndDrainLatestTurnsOnEnd()
+    {
+        var ai = new Reply();
+        using var app = App(ai);
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        (await client.PostAsJsonAsync("/api/avatar/preferences", new { autoSaveConversations = true })).EnsureSuccessStatusCode();
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        using var heldWrite = await sessions.LockTranscriptWritesAsync("admin", default);
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request =>
+        {
+            request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single();
+            request.Headers["Origin"] = "https://localhost";
+        };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        for (var i = 0; i < 3; i++)
+        {
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "hands-free" }, timeout.Token);
+            var listening = await Until(socket, "listening", timeout.Token);
+            await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
+            var reply = await Until(socket, "reply", timeout.Token);
+            Assert.Equal("Hej! Hur mår du?", reply.GetProperty("text").GetString());
+            await Until(socket, "audio-end", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "played", turnId = listening.GetProperty("turnId").GetString() }, timeout.Token);
+            await Until(socket, "idle", timeout.Token);
+        }
+        // Six notifications while saves are blocked exceed the one-slot queue.
+        // The last turns are still present when its coalesced update snapshots.
+        await app.Seed(async db => Assert.Empty(await db.RealtimeTranslationTranscriptSegments.ToListAsync()));
+        var memoryId = sessions.Get(id, "admin").MemoryId;
+        await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+        heldWrite.Dispose();
+        while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { }
+        await app.Seed(async db =>
+        {
+            var turns = await db.RealtimeTranslationTranscriptSegments.OrderBy(s => s.Sequence).ToListAsync();
+            Assert.Equal(6, turns.Count);
+            Assert.Equal(Enumerable.Range(1, 6), turns.Select(t => t.Sequence));
+            Assert.Equal(new[] { "You", "Rain", "You", "Rain", "You", "Rain" }, turns.Select(t => t.Speaker));
+        });
+        Assert.Equal(6, sessions.CachedTranscriptStatus(memoryId, "admin", "sv").SavedTurns);
     }
 
     [Fact]
@@ -85,6 +148,9 @@ public sealed class AvatarVoiceTests
         await AvatarWire.SendAsync(socket, new { type = "interrupt" }, timeout.Token);
         await Until(socket, "idle", timeout.Token);
         Assert.True(ai.Cancelled);
+        var interruptedSession = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin");
+        Assert.Equal("user", Assert.Single(app.Services.GetRequiredService<AvatarSessions>()
+            .Snapshot(interruptedSession.MemoryId, "admin", "sv").Turns).Role);
         await AssertNoReservations(app);
         Assert.Single(app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").History);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
@@ -126,6 +192,9 @@ public sealed class AvatarVoiceTests
         }
         else
         {
+            // The independent status delivery has its own ten-second send budget.
+            // Finish it before advancing the fake clock to test the AI deadline.
+            await Until(socket, "transcript-status", timeout.Token);
             for (var i = 0; i < 3; i++)
             {
                 clock.Advance(TimeSpan.FromSeconds(30));
@@ -377,7 +446,7 @@ public sealed class AvatarVoiceTests
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel level, EventId id, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-        { if (level >= LogLevel.Warning) Warnings.Enqueue(formatter(state, exception)); }
+        { if (level >= LogLevel.Warning) Warnings.Enqueue(formatter(state, exception) + (exception is null ? "" : $"\n{exception}")); }
     }
 
     private static AvatarFixture App(Reply reply) => new()

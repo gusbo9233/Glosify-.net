@@ -149,6 +149,23 @@ public sealed class AssistantToolsTests
         Assert.Contains("focused on dom", Error(focused));
     }
 
+    [Theory]
+    [InlineData("edit_items")]
+    [InlineData("delete_items")]
+    public async Task Focused_word_chat_rejects_sentence_changes(string tool)
+    {
+        await using var db = await SeedAsync(words: [("w1", "dom", "house")]);
+        var tools = AssistantToolFactory.Create(db);
+        var id = Guid.NewGuid().ToString();
+        var arguments = tool == "edit_items"
+            ? Json(new { sentences = new[] { new { id, text = "Changed" } } })
+            : Json(new { sentence_ids = new[] { id } });
+        var result = await tools.RunAsync(tool, arguments, Context() with { FocusedWordId = "w1", FocusedWordLabel = "dom" });
+        Assert.True(result.IsError);
+        Assert.Empty(result.Changes);
+        Assert.Contains("focused on dom", Error(result));
+    }
+
     [Fact]
     public async Task Delete_items_labels_what_it_removes_and_skips_unknown_ids()
     {
@@ -319,6 +336,27 @@ public sealed class AssistantToolsTests
             Assert.True(result.IsError);
             Assert.Contains("Rewrite the call", Error(result));
         });
+    }
+
+    [Fact]
+    public async Task Library_pagination_reaches_quizzes_after_the_first_three_hundred()
+    {
+        await using var db = await SeedAsync();
+        db.Quizzes.AddRange(Enumerable.Range(0, 305).Select(index => new Quiz
+        {
+            Id = Guid.NewGuid(), UserId = "user", Name = $"Quiz {index:D3}",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish"
+        }));
+        await db.SaveChangesAsync();
+        var tools = AssistantToolFactory.Create(db);
+        var first = JsonSerializer.SerializeToElement((await tools.RunAsync("list_library", "{}", Context())).Output);
+        var next = first.GetProperty("next_offset").GetInt32();
+        var second = JsonSerializer.SerializeToElement((await tools.RunAsync("list_library", Json(new { offset = next }), Context())).Output);
+        var ids = first.GetProperty("quizzes").EnumerateArray().Concat(second.GetProperty("quizzes").EnumerateArray()).Select(q => q.GetProperty("id").GetGuid()).ToList();
+        Assert.Equal(306, ids.Count);
+        Assert.Equal(306, ids.Distinct().Count());
+        Assert.False(second.GetProperty("quizzes_truncated").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, second.GetProperty("next_offset").ValueKind);
     }
 
     private static void AssertStrict(JsonElement schema, string tool)

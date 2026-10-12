@@ -102,8 +102,10 @@ public sealed class JevToolUseEvaluator(HttpClient client, IOptions<JevOptions> 
                 findings.Add(new(code, verdict, probability, confidence, rubric.Evidence,
                     verdict == "violation" ? rubric.Message : verdict == "uncertain" ? "Insufficient evidence for this check." : "No tool-use issue identified for this check."));
             }
-            var tokens = root.TryGetProperty("usage", out var usage) && usage.TryGetProperty("input_tokens", out var input)
-                ? input.GetInt32() : 0;
+            if (!root.TryGetProperty("usage", out var usage) || usage.ValueKind != JsonValueKind.Object
+                || !usage.TryGetProperty("input_tokens", out var input) || input.ValueKind != JsonValueKind.Number
+                || !input.TryGetInt32(out var tokens) || tokens <= 0)
+                return new("unavailable", config.Model, RubricVersion, []);
             return new("evaluated", root.GetProperty("model").GetString() ?? config.Model, RubricVersion, findings, tokens);
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException

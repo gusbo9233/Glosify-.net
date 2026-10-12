@@ -16,7 +16,10 @@ public sealed record AnkiStudyCard(
     string State,
     IReadOnlyDictionary<string, string> Intervals,
     int DueRemaining,
-    int NewRemaining);
+    int NewRemaining)
+{
+    public Guid QuizId { get; init; }
+}
 
 public sealed record AnkiStudyState(AnkiStudyCard? Card, DateTimeOffset? NextDueAt, string TimeZoneId);
 

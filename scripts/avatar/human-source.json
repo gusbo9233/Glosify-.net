@@ -90,6 +90,26 @@
       "sha256": "9940f7d0b1b223709a19b05156ba6f6e9e4dbdbced02d7574f4d51d72c58967b"
     },
     {
+      "path": "system/eyebrows/eyebrow009/eyebrow009.mhclo",
+      "archivePath": "eyebrows/eyebrow009/eyebrow009.mhclo",
+      "sha256": "14819547ba73a98baac1f6eb445e19c22010d2ea30b8a15ee0ca8767c0f3e509"
+    },
+    {
+      "path": "system/eyebrows/eyebrow009/eyebrow009.mhmat",
+      "archivePath": "eyebrows/eyebrow009/eyebrow009.mhmat",
+      "sha256": "53eca588d5de9378b60f22153d212485e1c76ea907ffc8f5f97b6ca824fe55b0"
+    },
+    {
+      "path": "system/eyebrows/eyebrow009/eyebrow009.obj",
+      "archivePath": "eyebrows/eyebrow009/eyebrow009.obj",
+      "sha256": "037a2edb3252e1fe4a57e63dcb1598916609fd0339f2b453b2f71e9c4cbd481c"
+    },
+    {
+      "path": "system/eyebrows/eyebrow009/eyebrow009.png",
+      "archivePath": "eyebrows/eyebrow009/eyebrow009.png",
+      "sha256": "4d33c85718ca5accf44625652daf0ae6e8cc007ed8138280e4d95601717910c3"
+    },
+    {
       "path": "system/eyelashes/eyelashes01/eyelashes01.mhclo",
       "archivePath": "eyelashes/eyelashes01/eyelashes01.mhclo",
       "sha256": "5a86b29c15649273d723084954b7fa7bf199112571d4f58539b46734d397ee6b"
@@ -378,6 +398,146 @@
       "path": "system/skins/young_caucasian_male/young_lightskinned_male_diffuse.png",
       "sha256": "862a26e335e958b70534cb5f0d7c47ef30ab148a56c42b3e9da969cf76f12963",
       "archivePath": "skins/young_caucasian_male/young_lightskinned_male_diffuse.png"
+    },
+    {
+      "path": "head-square.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-square.target",
+      "sha256": "001d0d135d964daf4ad99ba46a0f77c5bc2378f04e53c2b5a20242ab19cbf265"
+    },
+    {
+      "path": "chin-prominent-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-prominent-incr.target",
+      "sha256": "d2493ca5f69aabeb8557d77a56c49cfcf2062ff90c0cad03073d87990d11448b"
+    },
+    {
+      "path": "mouth-scale-horiz-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-scale-horiz-incr.target",
+      "sha256": "ccfc39cca249883ebc46af6f2c96c4130df13a67ebce30a2550af17a48637770"
+    },
+    {
+      "path": "mouth-cupidsbow-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/mouth/mouth-cupidsbow-incr.target",
+      "sha256": "341055fc0d804cec57f0d2aaccc7a090e7d649a5f1b60dbb7d44e4ff2ce40869"
+    },
+    {
+      "path": "eyebrows-trans-down.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyebrows/eyebrows-trans-down.target",
+      "sha256": "38f7de378d535d51f2e50dc2568121a8769445f9a62423bd0a5e688c47ea3225"
+    },
+    {
+      "path": "nose-width2-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-width2-decr.target",
+      "sha256": "d3301686c7dfd94b0a39fd0693ff26ea66d24b08037488f814e7a8bb340109d9"
+    },
+    {
+      "path": "nose-width3-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-width3-decr.target",
+      "sha256": "eb3e782e1b335f10c68be43ccc75bea98193f330b4d0c7f98f9773f580ce12c3"
+    },
+    {
+      "path": "l-cheek-volume-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-volume-decr.target",
+      "sha256": "527d19395f33c02caf3b32254e78702156cdf63c17e4c0e3dd79cca004fa27be"
+    },
+    {
+      "path": "l-cheek-trans-up.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-trans-up.target",
+      "sha256": "a538a79637616b18f0ba6b0ec749d7b8548791fcb0f9352b37fa82ef4840df39"
+    },
+    {
+      "path": "l-eye-height1-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-height1-decr.target",
+      "sha256": "d1d9f77ff6efc9ccdfcc88beafc8a3be8170b3ea386b7a44b414df1f41e84daf"
+    },
+    {
+      "path": "l-eye-corner2-up.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-corner2-up.target",
+      "sha256": "e31bbedfb1d451459a6ebf510a055e4af94eb8f146079fe9a5e7722b0e4aa661"
+    },
+    {
+      "path": "r-cheek-volume-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-volume-decr.target",
+      "sha256": "3a356f2f6434ccefa633981dff1b7866ce1feb8427918f35f81b6adffa4599b5"
+    },
+    {
+      "path": "r-cheek-trans-up.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-trans-up.target",
+      "sha256": "c776254ff7fc00dc8cae1fb957605291042cbe1b30c519c2079a75a1ca409231"
+    },
+    {
+      "path": "r-eye-height1-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-height1-decr.target",
+      "sha256": "0e561d96be0453c209ff7cbffdd86cdd73e790a11fc7c0cc8e2e36a1143c46ef"
+    },
+    {
+      "path": "r-eye-corner2-up.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-corner2-up.target",
+      "sha256": "121342afb92d0916ca1fba59df1c45a61dcf08713fd81f6ff67871cfc6a4f14c"
+    },
+    {
+      "path": "head-invertedtriangular.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-invertedtriangular.target",
+      "sha256": "d236302afe23f2f2d6d753e4b73f91c1220d17dca24417931fe477a232f18116"
+    },
+    {
+      "path": "head-fat-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-fat-decr.target",
+      "sha256": "00473b6069f9cf6c05a2f1fd0c0bae20bb4ec45e9552bb5695f1d1533f3cc119"
+    },
+    {
+      "path": "chin-cleft-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-cleft-incr.target",
+      "sha256": "93f523e952d436094321a5ec8ea38bafcdbe272ada894d3dfa12de7bd4c717d5"
+    },
+    {
+      "path": "chin-height-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-height-incr.target",
+      "sha256": "8b13d4a1e0f4b105cb51a346cd8a3618c9349e620d0197cc442905e83de8ae53"
+    },
+    {
+      "path": "nose-scale-vert-incr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-scale-vert-incr.target",
+      "sha256": "b87163e4272d77bcdb7b51328504167f71a7a47b630dc9b13da9c68e0f06c20f"
+    },
+    {
+      "path": "nose-point-width-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-point-width-decr.target",
+      "sha256": "b9abb0a0fa7acf3208acee76ab9e329c89b4e7b6c83fcf8429ffd004aae1a4cc"
+    },
+    {
+      "path": "nose-width1-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-width1-decr.target",
+      "sha256": "91a63986af9115fe944f2a3f1177e1eed2ebe8cdd9037a4734d95bd36231d9f4"
+    },
+    {
+      "path": "l-cheek-inner-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-inner-decr.target",
+      "sha256": "db665941e27c700ca6ccb514efcdf108d4100efcae6e68b0abf3f95333924dd1"
+    },
+    {
+      "path": "l-eye-height2-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-height2-decr.target",
+      "sha256": "11f97a658461ab341b75165acc280dd5541a0ebf57d84dab24819a3af8ee5d25"
+    },
+    {
+      "path": "l-eye-eyefold-down.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-eyefold-down.target",
+      "sha256": "4cbc747fc0be444ccf1546387203370fb9d6a7fffb77ffd84a0ccb75449d7c46"
+    },
+    {
+      "path": "r-cheek-inner-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-inner-decr.target",
+      "sha256": "931435368577ebb410f2179e7e1ed121f741e6ad18fd7eb92ec96c679db1608f"
+    },
+    {
+      "path": "r-eye-height2-decr.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-height2-decr.target",
+      "sha256": "8fbe66bf11786f68697b5ba720f6f76e1a99f0db066249d369e4476e016f3f64"
+    },
+    {
+      "path": "r-eye-eyefold-down.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-eyefold-down.target",
+      "sha256": "44569bba940133d44e07cb66f2946c419e36ff59b45a0e24497930468b749b8a"
     }
   ],
   "additionalPacks": [

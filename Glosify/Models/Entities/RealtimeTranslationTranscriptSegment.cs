@@ -9,6 +9,7 @@ public sealed class RealtimeTranslationTranscriptSegment
     public string Stream { get; set; } = RealtimeTranslationTranscriptStreams.Source;
     public string ProviderEventKey { get; set; } = string.Empty;
     public string Text { get; set; } = string.Empty;
+    public string? Speaker { get; set; }
     public DateTimeOffset CapturedAt { get; set; } = DateTimeOffset.UtcNow;
     public RealtimeTranslationTranscript Transcript { get; set; } = null!;
 }

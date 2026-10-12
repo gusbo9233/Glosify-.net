@@ -1,7 +1,9 @@
 # Avatar assets and verification
 
 The admin-only `/Avatar` page is implemented inside the Glosify MVC application.
-It ships with `Avatar:Enabled=true`; apply `AddAvatarUsageOperations` through the normal deployment migration bundle before serving traffic. The existing
+It ships with `Avatar:Enabled=true`; apply pending migrations, including
+`AddAvatarUsageOperations` and `AvatarConversationTranscripts`, through the normal
+deployment migration bundle before serving traffic. The existing
 `Admin:UserIds` allowlist controls the page, HTTP API, and WebSocket. No shared game
 authentication or separate game deployment is required.
 
@@ -10,15 +12,14 @@ authentication or separate game deployment is required.
 Push-to-talk is the default on every page visit. The first hold of the microphone
 button requests microphone permission and opens the voice connection; there is
 no separate Start action. Choose Hands-free explicitly to use continuous capture,
-then use the microphone button to start it. Changing modes pauses existing capture
-and waits for the microphone button; choosing a mode never opens the microphone.
+then select Start hands-free to begin. The microphone button is only for push-to-talk. Changing modes pauses existing capture
+and waits for the selected mode’s start control; choosing a mode never opens the microphone.
 Merely loading the page does not open the microphone or submit provider requests.
 After a release during initial connection setup, the button stays disabled until the
 connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
-supports holding Enter. Holding Space anywhere outside form controls also records,
-without scrolling the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, the same
-button pauses/resumes capture; pausing during a reply lets the reply finish. The
+supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Buttons, checkboxes, radios, links, editors, selects and dialogs retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
+Start/Pause hands-free button replaces the microphone and pauses/resumes capture; pausing during a reply lets the reply finish. The
 button keeps a fixed accessible name and reports recording through `aria-pressed`.
 There are no separate Mute/End controls or Space hint. Each account has one live
 conversation: starting in another tab ends the earlier tab's conversation.
@@ -27,12 +28,17 @@ Leaving the page stops capture. Returning in the same tab/browser session restor
 conversation context on the next talk action. Only an opaque reference and the
 selected partner/quiz/language and help preferences are kept in account-scoped `sessionStorage`; the
 transcript remains in process-local server memory. Changing partner, language or
-quiz discards the previous reference instead of keeping separate conversations.
-Changing partner or quiz stops the old capture automatically. Captions show only turns heard during the current visit.
+quiz asks to Save / Discard / Cancel before dropping unsaved turns. Failed saves
+preserve the old context. Unexpected selection changes retain opaque references
+for resuming when that selection is restored. Changing partner or quiz stops the
+old capture automatically. The floating conversation chat shows only turns heard during the current visit. Drag its header to move it or its lower-right handle to resize it. Both handles support arrow keys (Shift for larger steps). Clear chat removes visible messages and live help without ending the voice session or erasing server conversation memory. The window stays inside the stage, above the voice controls, and follows stage resizing. Messages are bounded to 48 turns and auto-scroll only when the reader is already near the bottom. Chat geometry is not persisted.
 
-Server memory is owner/context-checked, bounded to 128 conversations and 24 turns /
-24,000 serialized characters each, and expires after eight hours without a saved
-turn or a new visit claiming it. Capacity eviction and application restarts can also discard it. An old
+Server memory is owner/context-checked. Model history is bounded to 24 turns /
+24,000 serialized characters; the separate spoken archive permits 2,000 turns /
+500,000 characters. All archives share a 128-conversation / 8,000,000-character cap.
+Capacity reclaims only fully saved idle archives; unsaved archives are never evicted
+for capacity. Memory expires after eight hours without activity and application
+restarts discard it. Save transcripts to retain them durably. An old
 connection cannot overwrite memory after a newer visit has claimed it. Existing
 30-minute connection limits and 45-second transport recovery limits still apply.
 
@@ -133,8 +139,8 @@ backoff for up to 45 seconds. The server retains the owned session and conversat
 context for 45 seconds after the old connection finishes cancelling its turn.
 Reconnect still checks authentication, origin and session ownership, allows only
 one socket, and never extends the original 30-minute lifetime. Restored sessions
-keep the microphone paused until the user uses the microphone button again. While
-reconnecting, the microphone button can instead start over with a new session that
+keep the microphone paused until the user uses the selected mode’s control again. While
+reconnecting, that control can instead start over with a new session that
 restores remembered context, for example after mobile suspension outlasted the
 server's grace period; a push-to-talk hold that starts over records like a first
 press. Interrupted audio and
@@ -160,7 +166,11 @@ audio is written to the database; text memory is temporary as described above.
 The conversation settings use the app theme and can be collapsed with the side
 arrow. The page expands up to 1800px on wide screens, with a 300–360px settings
 panel and a landscape library backdrop; closing settings gives the scene the full
-width. Captions stay within a readable 48rem measure. At 1100px and below, settings
+width. Above 1100px the stage height follows the viewport (620–980px), never the
+settings content; the panel matches it and scrolls. The camera frames the portrait
+by height alone, so closing settings or the app sidebar widens the room without
+zooming the character out; the 720px phone layout widens the view to keep the
+shoulders in frame. Captions stay within a readable 48rem measure. At 1100px and below, settings
 open as a scrollable side drawer; Escape closes the drawer
 and returns focus to the arrow. Notices reopen settings so connection errors remain
 visible. The portrait has no idle caption; captions appear only for conversation text.
@@ -196,14 +206,26 @@ worker cannot fetch resources or create nested workers.
 ## Rebuild the characters
 
 Both characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
-portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan keeps the original brown eyes. `academia_outfit.py` adds an ivory pointed collar, forest-green
+portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan uses the pinned grey eye texture with its irises cooled to a pale blue. `academia_outfit.py` adds an ivory pointed collar, forest-green
 woven-check vest, black ribbon tie and an antique-gold embroidered GG chest patch.
 The outfit combines the green vest/ivory shirt and ribbon/check details from the
 user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in the
 main working tree); no photo pixels are included in the shipped assets. The patch
 is intentionally partly covered by her hair. Garments inherit the blouse's skin
 weights before morph baking, including breathing and shoulder movement.
-Rowan has male anatomy, short CC0 MakeHuman hair, and a waist-length charcoal
+Rowan has young-adult male anatomy: high cheekbones over lean cheeks, a jaw tapering
+to a narrower cleft chin, a long straight nose and full lips. Heavy dark brows sit
+low over lightly hooded pale-blue eyes, and light stubble is painted into the skin
+texture over the upper lip, chin, jawline, lower cheeks and sideburns, leaving the
+lips clean. He is sculpted from the source anatomy. His dark mop fits close to the
+head and has two layers. The CC0 short02 hair, under a dark espresso tint, is
+reshaped into the base: a crown about 1.5 cm off the scalp, sides over the ear tops
+and a fringe ending just above the brows, swept to his left. Original hair cards are
+grown over it from the crown whorl, with a dense row along the hairline. They use a
+generated lock texture (tapered, pointed locks with strand streaks), so the fringe,
+temples and nape break into separate locks. Both layers use an alpha cutout and
+follow the head. His
+outfit remains a waist-length charcoal
 V-neck cardigan with fitted sleeves, fine knit textures, ribbed front borders and
 dark horn buttons. An ivory shirt and dark necktie show inside the V, with a gold
 GG shield embroidered on the cardigan chest. His raised collar stand wraps the neck;
@@ -242,7 +264,7 @@ It keeps mesh topology, textures, materials and named morph targets. Compression
 is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
 compress shipped files. The script rejects compressed inputs and identical
 input/output paths. The pre-compression assets are also retained in Git at
-`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 3.00 MB, down from
+`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 4.46 MB, down from
 15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
@@ -253,9 +275,13 @@ The export bakes morph targets for mouth shapes (`jawOpen`, `mouthWide`, `mouthR
 and body language (`nod`, `turn`, `tilt`, `shrug`, `breathe`), and embeds textures. After
 export, morph deltas below 0.01 mm (positions) or 0.001 (normals) are dropped and stored
 as sparse accessors, so the extra units add about 0.6 MB instead of over 20 MB.
-Facial sculpt targets soften the jaw and define the upper lip. The resting smile
+Rain’s facial sculpt targets soften the jaw and define the upper lip; Rowan’s
+targets define the jaw, cheekbones, brows, nose and lips before fitting the facial
+rig and attachments. The resting smile
 has closed lips and no jaw-opening pose; expression smiles change slowly with the
 conversation state and never follow the audio, so speech returns to a calm closed mouth.
+Rowan rests with low brows and lightly hooded, narrowed lids; his blink closes from
+that resting lid instead of overshooting it.
 The hair is weighted to the head,
 avoiding shoulder-driven kinks during posing. The face retains all source bone weights
 before baking so facial expressions are not truncated to four influences.
@@ -294,7 +320,7 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 
 Optional arguments after the output set the resolution percentage and sample count for
 quick previews. The background carries an `academia-1` cache revision; Rain uses
-`natural-brown-eyes-1` and Rowan uses `cardigan-2`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
+`natural-brown-eyes-1` and Rowan uses `close-locks-1`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
 The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,

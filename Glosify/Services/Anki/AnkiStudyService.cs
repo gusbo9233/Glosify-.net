@@ -99,7 +99,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
             selected.State,
             previews.ToDictionary(pair => pair.Key, pair => pair.Value.IntervalLabel, StringComparer.Ordinal),
             dueRemaining,
-            newRemaining), null, collection.TimeZoneId);
+            newRemaining) { QuizId = selected.Note.QuizId }, null, collection.TimeZoneId);
     }
 
     public async Task<bool> RateAsync(

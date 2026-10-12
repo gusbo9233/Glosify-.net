@@ -20,12 +20,21 @@ public sealed class AvatarSession(string userId, QuizLanguage language, string p
     public int Connected;
 }
 
-public sealed class AvatarSessions(TimeProvider clock)
+public sealed partial class AvatarSessions(TimeProvider clock)
 {
     private readonly ConcurrentDictionary<Guid, AvatarSession> _sessions = new();
     private readonly object _gate = new();
     private sealed record Memory(string UserId, string Language, string Character, string Practice,
-        Guid WriterId, DateTimeOffset ExpiresAt, AgentTurn[] History);
+        Guid WriterId, DateTimeOffset ExpiresAt, AgentTurn[] History)
+    {
+        public List<AvatarTranscriptTurn> Turns { get; init; } = [];
+        public int Characters { get; set; }
+        public Guid? TranscriptId { get; set; }
+        public bool SavingSuppressed { get; set; }
+        public int SavedTurns { get; set; }
+        public long StatusRevision { get; set; }
+        public bool? AutoSaveConversations { get; set; }
+    }
     private readonly Dictionary<Guid, Memory> _memories = [];
     private static readonly TimeSpan MemoryLifetime = TimeSpan.FromHours(8);
     public AvatarSession Create(string userId, QuizLanguage language, string practice, AvatarVoice? voice = null, AvatarCharacter? character = null, Guid? memoryId = null)
@@ -33,29 +42,42 @@ public sealed class AvatarSessions(TimeProvider clock)
         lock (_gate)
         {
             Sweep();
-            // One conversation per account. The newest start wins, so another tab, or a
-            // session whose cleanup never reached the server, cannot block the user.
-            foreach (var previous in _sessions.Values.Where(x => x.UserId == userId)) Remove(previous);
-            if (_sessions.Count >= 16) throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");
+            var previous = _sessions.Values.Where(x => x.UserId == userId).ToArray();
+            // Replacing this account's connection does not consume another live slot.
+            if (_sessions.Count - previous.Length >= 16)
+                throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");
             var session = new AvatarSession(userId, language, practice, clock.GetUtcNow(), voice, character);
+            Memory? remembered = null;
             if (memoryId is { } id && _memories.TryGetValue(id, out var memory)
                 && memory.UserId == userId && memory.Language == language.Code
                 && memory.Character == session.Character.Id && memory.Practice == practice)
+                remembered = memory;
+
+            Guid? reclaim = null;
+            if (remembered is null && _memories.Count >= 128)
             {
-                session.MemoryId = id;
-                session.History.AddRange(memory.History);
-                // Claiming is activity; Sweep must not expire memory the new session is using.
-                _memories[id] = memory with { WriterId = session.Id, ExpiresAt = clock.GetUtcNow().Add(MemoryLifetime) };
+                // The caller's old session becomes idle only after admission succeeds.
+                // Select a safe candidate now, but preserve every session on rejection.
+                var active = _sessions.Values.Where(x => x.UserId != userId).Select(x => x.MemoryId).ToHashSet();
+                var oldest = _memories.Where(x => !active.Contains(x.Key)
+                    && x.Value.Turns.Count <= x.Value.SavedTurns).OrderBy(x => x.Value.ExpiresAt).FirstOrDefault();
+                if (oldest.Value is null)
+                    throw new AvatarException(429, "Conversation storage is full. Save or discard an existing conversation before starting another.");
+                reclaim = oldest.Key;
+            }
+
+            // All capacity and context checks succeeded. Only an accepted replacement
+            // cancels the old call or claims its archive's writer.
+            foreach (var old in previous) Remove(old);
+            if (remembered is not null)
+            {
+                session.MemoryId = memoryId!.Value;
+                session.History.AddRange(remembered.History);
+                _memories[session.MemoryId] = remembered with { WriterId = session.Id, ExpiresAt = clock.GetUtcNow().Add(MemoryLifetime) };
             }
             else
             {
-                // Bound ephemeral text independently of the live connection limit.
-                if (_memories.Count >= 128)
-                {
-                    var active = _sessions.Values.Select(x => x.MemoryId).ToHashSet();
-                    var oldest = _memories.Where(x => !active.Contains(x.Key)).MinBy(x => x.Value.ExpiresAt);
-                    _memories.Remove(oldest.Key);
-                }
+                if (reclaim is { } reclaimed) _memories.Remove(reclaimed);
                 _memories[session.MemoryId] = new(userId, language.Code, session.Character.Id, practice, session.Id,
                     clock.GetUtcNow().Add(MemoryLifetime), []);
             }

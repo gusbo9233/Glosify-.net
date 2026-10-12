@@ -8,6 +8,7 @@ public sealed class AssistantPageContext
 {
     public bool IsHidden { get; init; }
     public Guid? QuizId { get; init; }
+    public Guid? AnkiCollectionId { get; init; }
     public string? FocusedWordId { get; init; }
     public Guid? DocumentId { get; init; }
     public int? CurrentPage { get; init; }
@@ -28,6 +29,7 @@ public sealed class AssistantPageContext
 public class AssistantPanelViewModel
 {
     public Guid? QuizId { get; set; }
+    public Guid? AnkiCollectionId { get; set; }
     public string? FocusedWordId { get; set; }
     public Guid? DocumentId { get; set; }
     public int? CurrentPage { get; set; }

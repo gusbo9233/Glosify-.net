@@ -25,7 +25,7 @@ public static class WebFonts
         "chevron_left", "chevron_right", "close", "content_copy", "create_new_folder",
         "data_object", "delete", "east", "edit",
         "edit_note", "error", "event", "explore", "fit_screen", "flag", "folder", "folder_open",
-        "folder_shared", "format_quote", "graphic_eq", "grid_4x4",
+        "folder_shared", "format_quote", "forum", "graphic_eq", "grid_4x4",
         "group", "help", "hourglass_top", "info", "inventory_2", "keyboard",
         "library_add", "library_books", "lock", "lock_reset",
         "menu_book", "more_vert", "north_east", "notes", "person_search", "picture_as_pdf",

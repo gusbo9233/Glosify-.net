@@ -27,6 +27,9 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         string? pendingReply = null;
         var listening = false;
         var reconnect = true;
+        var transcriptSaves = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
+        { SingleReader = true, FullMode = BoundedChannelFullMode.DropWrite });
+        var transcriptWriter = PersistTranscripts();
         var monitor = MonitorIdentity();
         try
         {
@@ -52,13 +55,16 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 if (type == "interrupt") { await StopTurn(); await Send(new { type = "idle" }); continue; }
                 if (type == "played" && root.TryGetProperty("turnId", out var played) && played.GetString() == turnId && pendingReply is not null)
                 {
+                    sessions.RecordTurn(session, turnId!, "assistant", pendingReply);
                     session.History.Add(TextTurn("assistant", pendingReply)); pendingReply = null;
+                    transcriptSaves.Writer.TryWrite(true);
                     sessions.Remember(session);
                     await Send(new { type = "idle" }); continue;
                 }
                 if (type == "commit" && input is not null && listening)
                 { listening = false; input.Writer.TryComplete(); continue; }
                 if (type != "listen") throw new AvatarException(400, "Unknown voice command.");
+                sessions.CheckTranscriptCapacity(session);
                 var mode = root.GetProperty("mode").GetString();
                 if (mode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
                 var translate = ReadOption(root, "translateReplies");
@@ -81,6 +87,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         {
             lifetime.Cancel();
             await StopTurn();
+            transcriptSaves.Writer.TryComplete();
+            await transcriptWriter; // Drain accepted turns before disposing this connection.
             try { await monitor; } catch (OperationCanceledException) { }
             reconnect = reconnect && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
             sessions.Remember(session);
@@ -112,10 +120,14 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                     async () => { listening = true; await Send(new { type = "listening", turnId = id }); }, ct);
                 listening = false; channel.Writer.TryComplete();
                 if (string.IsNullOrWhiteSpace(text)) { await Send(new { type = "idle" }); return; }
+                sessions.RecordTurn(session, id, "user", text);
                 session.History.Add(TextTurn("user", text));
                 while (session.History.Count > 24 || session.History.Sum(x => x.ContentJson.Length) > 24000)
                     session.History.RemoveAt(0);
                 sessions.Remember(session);
+                // Record and schedule persistence before transport: a disconnect
+                // while sending the caption must not strand finalized speech.
+                transcriptSaves.Writer.TryWrite(true);
                 await Send(new { type = "transcript", turnId = id, text });
                 await Send(new { type = "thinking", turnId = id });
                 var ai = scope.ServiceProvider.GetRequiredService<IGenerativeAiClient>();
@@ -163,6 +175,42 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                     catch (Exception ex) { logger.LogWarning(ex, "Could not send avatar usage totals for {SessionId}", session.Id); }
                 }
             }
+        }
+        async Task PersistTranscripts()
+        {
+            // At most one save is running and one coalesced update is queued. Every
+            // save reads the current archive, so coalescing never drops spoken turns.
+            await foreach (var _ in transcriptSaves.Reader.ReadAllAsync(CancellationToken.None))
+                await SaveTranscript();
+        }
+        async Task SaveTranscript()
+        {
+            AvatarTranscriptStatus status;
+            try
+            {
+                await using var scope = scopes.CreateAsyncScope();
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                status = await scope.ServiceProvider.GetRequiredService<AvatarTranscriptService>()
+                    .SaveAsync(session.MemoryId, session.UserId, session.Language.Code, true, timeout.Token);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Could not save avatar transcript for session {SessionId}", session.Id);
+                await SendTranscriptNotice(new { type = "transcript-save-error", detail = "Transcript not saved. Use Save transcript to retry." });
+                return;
+            }
+            await SendTranscriptNotice(new { type = "transcript-status", status = new {
+                conversationId = status.ConversationId, turnCount = status.TurnCount,
+                transcriptId = status.TranscriptId, savedTurns = status.SavedTurns,
+                autoSave = status.AutoSave, suppressed = status.Suppressed, revision = status.Revision } });
+        }
+        async Task SendTranscriptNotice(object notice)
+        {
+            if (lifetime.IsCancellationRequested || socket.State != WebSocketState.Open) return;
+            try { await Send(notice); }
+            // The connection may close after the state check. Delivery of its status
+            // is independent of saving the transcript, which has already completed.
+            catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
         }
         async Task StopTurn()
         {

@@ -457,11 +457,12 @@ public sealed class AssistantLearningTests
             db.AnkiReviews.Add(Review(h, reviewed, "good")); await db.SaveChangesAsync();
         }
         var undo = await h.UndoAsync(run.Id);
-        Assert.Equal(1, undo.Undone); Assert.Equal(linked ? 2 : 1, undo.Kept);
+        Assert.Equal(linked ? 0 : 1, undo.Undone); Assert.Equal(linked ? 3 : 1, undo.Kept);
         await using var after = h.Db();
         Assert.Equal(reviewed, (await after.AnkiReviews.SingleAsync()).AnkiCardId);
         Assert.Equal(1, (await after.AnkiCards.SingleAsync(c => c.Id == reviewed)).ReviewCount);
         Assert.Equal("house", (await after.Words.SingleAsync(w => w.Id == "w1")).Translation);
+        if (linked) Assert.True(await after.Words.AnyAsync(w => w.Lemma == "pies"));
     }
 
     [Theory]

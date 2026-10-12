@@ -1699,4 +1699,13 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>游戏</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>游戏使用情况</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>虚拟角色使用情况</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>记住了</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>困难</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← 再来一次 · 记住了 →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← 再来一次 · 简单 →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>菜单</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>与虚拟角色的对话</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>与虚拟角色的对话 · {0}</value></data>
+  <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} 次发言</value></data>
+  <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} 次发言</value></data>
 </root>

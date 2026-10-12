@@ -14,7 +14,8 @@ export function createConversationMemory(owner, storage) {
                 const parsed = JSON.parse(saved);
                 if (valid(parsed?.preferences)) fallback = {
                     preferences: parsed.preferences,
-                    id: typeof parsed.id === 'string' ? parsed.id : undefined
+                    id: typeof parsed.id === 'string' ? parsed.id : undefined,
+                    retained: Array.isArray(parsed.retained) ? parsed.retained.filter(x => valid(x?.preferences) && typeof x.id === 'string') : []
                 };
             }
         } catch { /* Disabled or invalid storage still permits memory on this page. */ }
@@ -35,12 +36,19 @@ export function createConversationMemory(owner, storage) {
         select(selection) {
             const value = read();
             if (matches(value.preferences, selection)) return;
-            write({ preferences: selection });
+            const retained = (value.retained || []).filter(x => !matches(x.preferences, selection));
+            if (value.id) retained.push({ preferences: value.preferences, id: value.id });
+            const found = value.retained?.find(x => matches(x.preferences, selection));
+            write({ preferences: selection, id: found?.id, retained });
             return value.id;
         },
-        get(selection) { const value = read(); return matches(value.preferences, selection) ? value.id : undefined; },
+        get(selection) { const value = read(); return matches(value.preferences, selection) ? value.id : value.retained?.find(x => matches(x.preferences, selection))?.id; },
         save(selection, id) {
-            if (typeof id === 'string') write({ preferences: selection, id });
+            if (typeof id !== 'string') return;
+            const value = read();
+            const retained = (value.retained || []).filter(x => !matches(x.preferences, selection));
+            if (value.id && !matches(value.preferences, selection)) retained.push({ preferences: value.preferences, id: value.id });
+            write({ preferences: selection, id, ...(retained.length ? { retained } : {}) });
         }
     };
 }

@@ -9,6 +9,7 @@ internal sealed class RealtimeTranslationTranscriptSegmentConfiguration : IEntit
     public void Configure(EntityTypeBuilder<RealtimeTranslationTranscriptSegment> entity)
     {
         entity.HasKey(segment => segment.Id);
+        entity.Property(segment => segment.Speaker).HasMaxLength(32);
         entity.Property(segment => segment.ProviderEventKey).HasMaxLength(256).IsRequired();
         entity.Property(segment => segment.Text).IsRequired();
         entity.Property(segment => segment.Stream).HasMaxLength(16).IsRequired();

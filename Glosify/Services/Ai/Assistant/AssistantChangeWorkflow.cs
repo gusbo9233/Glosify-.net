@@ -1,5 +1,6 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
+using Glosify.Services.Ai.Assistant.Runtime;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 
@@ -76,15 +77,55 @@ internal sealed class AssistantChangeWorkflow(
             return new AssistantApplyResult(0);
         }
 
+        var run = message.TurnId is null ? null : await context.AssistantRuns.SingleOrDefaultAsync(
+            run => run.TurnId == message.TurnId && run.ThreadId == message.ThreadId && run.UserId == userId, cancellationToken);
+        if (run is not null && (!AssistantRunStatus.IsTerminal(run.Status) || run.UndoneAt is not null))
+            throw new AssistantRunConflictException("Wait for this request to finish before applying. An undone request cannot apply more changes.");
+
         var result = await changeApplier.ApplyAsync(
             message.ContextQuizId,
             userId,
             changes,
             cancellationToken);
+        if (run is not null && result.Journal.Count > 0)
+            await JournalAsync(run, message, result, cancellationToken);
         message.Status = AssistantMessageStatus.Applied;
         await UpdateTurnOutcomeAsync(message.TurnId, AssistantChangeOutcome.Applied, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
         return result;
+    }
+
+    private async Task JournalAsync(AssistantRun run, AssistantMessage message, AssistantApplyResult result, CancellationToken ct)
+    {
+        var state = RunJson.Read<AssistantRunState>(run.StateJson);
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var part = new AssistantPart
+        {
+            Id = Guid.NewGuid(), RunId = run.Id, MessageId = message.Id,
+            Sequence = (await context.AssistantParts.Where(p => p.MessageId == message.Id).MaxAsync(p => (int?)p.Sequence, ct) ?? -1) + 1,
+            Step = ++state.Step, Type = AssistantPartTypes.Tool, State = AssistantToolStates.Completed,
+            Title = "Applied reviewed changes", Output = RunJson.Write(new { saved = result.Journal.Count }), CreatedAt = now,
+        };
+        context.AssistantParts.Add(part);
+        foreach (var entry in result.Journal)
+        {
+            context.AssistantChanges.Add(new AssistantChange
+            {
+                Id = Guid.NewGuid(), RunId = run.Id, PartId = part.Id, UserId = run.UserId,
+                Sequence = state.ChangeSequence++, Kind = entry.Kind, EntityType = entry.EntityType,
+                EntityId = entry.EntityId, QuizId = entry.QuizId,
+                BeforeJson = entry.Before is null ? null : RunJson.Write(entry.Before),
+                AfterJson = entry.After is null ? null : RunJson.Write(entry.After), CreatedAt = now,
+            });
+            if (entry.Kind == PendingChangeKinds.CreateQuiz && Guid.TryParse(entry.EntityId, out var id))
+                state.CreatedQuizzes.Add(id);
+        }
+        AssistantRunChangeState.RemoveDeletedResources(state, result.Journal);
+        run.SavedChanges += result.Journal.Count;
+        run.Revision++;
+        run.UpdatedAt = now;
+        run.StateJson = RunJson.Write(state);
+        AssistantRunTelemetry.SavedChanges.Add(result.Journal.Count);
     }
 
     public async Task RejectAsync(

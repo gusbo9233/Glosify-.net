@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPerformance } from '../Glosify/wwwroot/js/avatar/performance.js';
-import { createRenderLoop, portraitScaling } from '../Glosify/wwwroot/js/avatar/render-loop.js';
+import { createRenderLoop, portraitFraming, portraitScaling } from '../Glosify/wwwroot/js/avatar/render-loop.js';
 
 function harness() {
     let time = 0, next = 0;
@@ -83,4 +83,20 @@ test('portrait buffer is bounded to 1000 pixels on either axis without upscaling
     assert.equal(portraitScaling(390, 540), 1);
     assert.equal(portraitScaling(1000, 720, 2), 2 / 1.5);
     assert.equal(portraitScaling(1000, 720, 3), 2);
+});
+
+test('closing a sidebar widens the stage without zooming the portrait out', () => {
+    for (const height of [620, 720, 900]) {
+        const open = portraitFraming(520, height);
+        for (const width of [800, 1120, 1360, 1500]) assert.deepEqual(portraitFraming(width, height), open);
+    }
+});
+
+test('the phone layout widens the view to keep the shoulders and hair in frame', () => {
+    const extent = ({ fov }) => 2 * 1.65 * Math.tan(fov / 2);
+    const phone = portraitFraming(366, 540, { compact: true }), desktop = portraitFraming(366, 540);
+    assert.ok(phone.fov > desktop.fov);
+    assert.ok(extent(phone) * 366 / 540 >= .5 - 1e-9);
+    assert.deepEqual(portraitFraming(800, 540, { compact: true }), portraitFraming(800, 540));
+    for (const framing of [phone, desktop]) assert.ok(framing.targetY + extent(framing) / 2 > 1.75);
 });

@@ -20,7 +20,7 @@ namespace Glosify.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPricing pricing, AvatarSessions sessions,
     AvatarConversation conversation, AvatarBilling billing, GlosifyContext db, IAiCreditService credits, ILanguageContext languageContext,
-    SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users, IAvatarVoices voices) : Controller
+    SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users, IAvatarVoices voices, AvatarTranscriptService transcripts) : Controller
 {
     private QuizLanguage? CurrentLanguage => QuizLanguageCatalog.Find(languageContext.CurrentLanguage) is { IsLanguageLearning: true } language ? language : null;
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
@@ -42,7 +42,8 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
             .WhereTargetLanguage(language?.Code).OrderBy(x => x.Name)
             .Select(x => new { x.Id, x.Name, x.TargetLanguage }).ToListAsync(ct);
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
-        return Json(new { available = pricing.Available, rates = pricing.Rates, balance = account.AvailableCredits,
+        var autoSave = await db.Users.Where(u => u.Id == UserId).Select(u => u.AutoSaveAvatarConversations).SingleAsync(ct);
+        return Json(new { autoSaveConversations = autoSave, available = pricing.Available, rates = pricing.Rates, balance = account.AvailableCredits,
             language = language?.Code, languageName = language?.Name,
             languages = QuizLanguageCatalog.LanguageLearning.Where(x => x.Code == language?.Code).Select(x => new { x.Code, x.Name }),
             quizzes });
@@ -81,6 +82,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         {
             var voice = await voices.ResolveAsync(language, ct, character);
             var session = sessions.Create(UserId, language, practice, voice, character, request.MemoryId);
+            await transcripts.InitializePreferenceAsync(UserId, ct);
             return Json(new { sessionId = session.Id, memoryId = session.MemoryId, rememberedTurns = session.History.Count, characterId = character.Id, language = language.Code, voiceName = voice.Name,
                 nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
         }
@@ -108,6 +110,30 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     {
         if (await Access() is { } failure) return failure;
         sessions.Forget(id, UserId);
+        return NoContent();
+    }
+
+    [HttpGet("/api/avatar/conversations/{id:guid}/transcript")]
+    public async Task<IActionResult> TranscriptStatus(Guid id, CancellationToken ct)
+    {
+        if (await Access() is { } failure) return failure;
+        try { return Json(await transcripts.StatusAsync(id, UserId, CurrentLanguage?.Code ?? "", ct)); }
+        catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
+    }
+
+    [HttpPost("/api/avatar/conversations/{id:guid}/transcript"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTranscript(Guid id, CancellationToken ct)
+    {
+        if (await Access() is { } failure) return failure;
+        try { return Json(await transcripts.SaveAsync(id, UserId, CurrentLanguage?.Code ?? "", false, ct)); }
+        catch (AvatarException ex) { return ProblemResult(ex.Status, ex.Message); }
+    }
+
+    [HttpPost("/api/avatar/preferences"), ValidateAntiForgeryToken]
+    public async Task<IActionResult> Preferences(AvatarPreferencesRequest request, CancellationToken ct)
+    {
+        if (await Access() is { } failure) return failure;
+        await transcripts.SetPreferenceAsync(UserId, request.AutoSaveConversations, ct);
         return NoContent();
     }
 

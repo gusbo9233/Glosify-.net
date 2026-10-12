@@ -37,7 +37,9 @@ function confirmationPage(pageScript, accepted) {
         document,
         Element,
         performance,
+        AbortController,
         window: {
+            addEventListener() {},
             confirm(message) {
                 confirmations.push(message);
                 return accepted;

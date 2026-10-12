@@ -9,27 +9,48 @@
     @Html.AntiForgeryToken()
     <h1 class="visually-hidden">Avatar conversation</h1>
     <div class="avatar-workspace" id="avatar-workspace">
-        <div class="avatar-stage">
+        <div class="avatar-stage" id="avatar-stage">
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
             <div class="avatar-stage-top"><span class="avatar-name"><span id="avatar-name">Rain</span> <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
-            <div class="avatar-dialogue" id="avatar-dialogue" aria-live="polite" hidden>
-                <div class="avatar-caption" id="avatar-caption" hidden></div>
-                <p class="avatar-translation" id="avatar-translation" lang="en" hidden></p>
-                <div class="avatar-suggestion" id="avatar-suggestion" hidden>
-                    <span class="avatar-suggestion-label">You could say</span>
-                    <p id="avatar-suggestion-text"></p>
-                    <p class="avatar-translation" id="avatar-suggestion-translation" lang="en" hidden></p>
+            <section class="avatar-dialogue" id="avatar-dialogue" aria-label="Conversation chat">
+                <header class="avatar-chat-header">
+                    <button type="button" id="avatar-chat-move" aria-label="Move conversation chat" title="Drag to move · Arrow keys to move"><span class="avatar-chat-title">Conversation</span><span aria-hidden="true">⠿</span></button>
+                    <button type="button" id="avatar-chat-clear" aria-label="Clear display" title="Clear display; conversation context is kept"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg></button>
+                </header>
+                <div class="avatar-chat-body" id="avatar-chat-body" tabindex="0" aria-label="Conversation messages">
+                    <p class="avatar-chat-empty" id="avatar-chat-empty">Your conversation will appear here.</p>
+                    <ol class="avatar-chat-messages" id="avatar-transcript" aria-live="polite" aria-relevant="additions"></ol>
+                    <div class="avatar-chat-current" id="avatar-chat-current" aria-live="polite" hidden>
+                        <span class="avatar-chat-speaker" id="avatar-chat-speaker"></span>
+                        <div class="avatar-caption" id="avatar-caption" hidden></div>
+                        <p class="avatar-translation" id="avatar-translation" lang="en" hidden></p>
+                        <div class="avatar-suggestion" id="avatar-suggestion" hidden>
+                            <span class="avatar-suggestion-label">You could say</span>
+                            <p id="avatar-suggestion-text"></p>
+                            <p class="avatar-translation" id="avatar-suggestion-translation" lang="en" hidden></p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+                <div class="avatar-chat-actions">
+                    <button type="button" id="avatar-ask" disabled>Ask assistant</button>
+                    <button type="button" id="avatar-make-quiz" disabled>Make a quiz</button>
+                    <button type="button" id="avatar-save" disabled>Save transcript</button>
+                    <a id="avatar-saved-link" hidden>Open transcript</a>
+                    <span id="avatar-save-status" role="status"></span>
+                </div>
+                <footer class="avatar-chat-footer"><span>Live conversation</span><button type="button" id="avatar-chat-resize" aria-label="Resize conversation chat" title="Drag to resize · Arrow keys to resize"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 18 10-10M13 18l5-5" /></svg></button></footer>
+            </section>
             <div class="avatar-controls">
                 <button type="button" id="avatar-talk" aria-keyshortcuts="Space Enter" aria-label="Hold to record" title="Hold to record" aria-pressed="false" disabled>
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></svg>
                 </button>
+                <button type="button" id="avatar-hands-free" aria-keyshortcuts="Space" aria-label="Hands-free conversation" aria-pressed="false" hidden disabled>Start hands-free</button>
             </div>
         </div>
         <button class="avatar-settings-toggle" id="avatar-settings-toggle" type="button" aria-controls="avatar-settings" aria-expanded="true" aria-label="Close conversation settings" title="Close settings">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+            <span class="avatar-settings-toggle-label">Settings</span>
         </button>
         <aside class="avatar-settings" id="avatar-settings" aria-label="Conversation settings">
             <div class="avatar-settings-heading"><span class="avatar-step">MAKE IT YOURS</span><h2>Conversation settings</h2></div>
@@ -53,11 +74,24 @@
                 <label><input type="checkbox" id="avatar-suggest" /><span>Suggested answers<small>A little help with what to say next</small></span></label>
                 <p class="avatar-help">Applies to the next reply.</p>
             </fieldset>
+            <label class="avatar-autosave"><input type="checkbox" id="avatar-autosave" /> Automatically save conversations</label>
+            <p class="avatar-help">Save spoken turns to your transcript library. Unsaved conversations expire after 8 hours of inactivity and are lost if the server restarts.</p>
+            <button type="button" id="avatar-new-conversation">New conversation</button>
             <p class="avatar-notice" id="avatar-notice" role="alert"></p>
         </aside>
     </div>
+    <dialog id="avatar-unsaved-dialog" class="avatar-unsaved-dialog" aria-labelledby="avatar-unsaved-title">
+        <form method="dialog">
+            <h2 id="avatar-unsaved-title">Save your conversation?</h2>
+            <p>You have spoken turns that haven’t been saved. Save them as a transcript before continuing.</p>
+            <div class="avatar-chat-actions">
+                <button value="cancel" autofocus>Cancel</button>
+                <button value="discard">Discard unsaved turns</button>
+                <button value="save">Save transcript</button>
+            </div>
+        </form>
+    </dialog>
     <div class="avatar-footer"><p id="avatar-spending" aria-live="polite">Current session · 0 credits</p><details><summary>Character credits</summary><p>Characters adapted from <a href="https://www.makehumancommunity.org/" target="_blank" rel="noopener">MakeHuman Community</a> CC0 anatomy and Rowan’s short hair. Rain’s <a href="https://www.makehumancommunity.org/node/2816" target="_blank" rel="noopener">Hazel Hair by Elvaerwyn</a> (CC-BY), adapted for this portrait. Original GlobeGlotter styling and animation. Library rendered with <a href="https://polyhaven.com/" target="_blank" rel="noopener">Poly Haven</a> CC0 models and textures; globe map from NASA Blue Marble (Reto Stöckli, NASA Goddard Space Flight Center); AI-generated courtyard view.</p></details></div>
-    <details class="avatar-transcript"><summary>Conversation captions</summary><ol id="avatar-transcript"></ol></details>
 </section>
 @section Scripts {
     <script type="module" src="~/js/avatar/avatar.js" asp-append-version="true"></script>

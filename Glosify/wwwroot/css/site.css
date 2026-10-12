@@ -6797,3 +6797,5 @@ input, select, textarea { accent-color: var(--primary); }
     color: var(--on-primary, #003913);
     border-color: var(--primary, #53e076);
 }
+
+.study-interval { display: block; margin-top: .4rem; opacity: .75; }

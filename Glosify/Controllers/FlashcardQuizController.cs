@@ -60,7 +60,7 @@ public class FlashcardQuizController : Controller
         var resumed = wordIds.Count > 0
             ? null
             : _sessionService.FindResumableSession(userId, selectedQuiz.Id, normalizedDirection, normalizedItemType, wordCount, wordRangeStart, wordRangeEnd);
-        if (resumed != null)
+        if (resumed != null && await CurrentCardExistsAsync(resumed, resumed.CurrentIndex, userId, cancellationToken))
         {
             return View(BuildViewModel(resumed, selectedQuiz));
         }
@@ -98,31 +98,51 @@ public class FlashcardQuizController : Controller
     }
 
     [HttpPost]
-    public IActionResult Reveal(string sessionId)
+    public async Task<IActionResult> Reveal(string sessionId, int? expectedIndex = null, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();
         var session = _sessionService.FindSession(sessionId, userId);
         if (session == null)
             return RedirectToAction(nameof(Index));
 
-        _sessionService.RevealAnswer(session);
-        _sessionService.SaveSession(session);
+        var cardIndex = session.CurrentIndex;
+        if (!await CurrentCardExistsAsync(session, cardIndex, userId, cancellationToken))
+            return Problem(statusCode: 409, detail: "This card changed. Reopen the quiz to continue.");
+        lock (session)
+        {
+            if (cardIndex != session.CurrentIndex || (expectedIndex.HasValue && expectedIndex != session.CurrentIndex))
+                return Problem(statusCode: 409, detail: "This card changed. Reopen the quiz to continue.");
+            _sessionService.RevealAnswer(session);
+            _sessionService.SaveSession(session);
+        }
 
         return FlashcardResponse(session);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Rate(string sessionId, string rating, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Rate(string sessionId, string rating, CancellationToken cancellationToken = default, int? expectedIndex = null)
     {
         var userId = User.GetUserId();
         var session = _sessionService.FindSession(sessionId, userId);
         if (session == null)
             return RedirectToAction(nameof(Index));
 
-        _sessionService.ApplyRating(session, rating);
+        if (rating is not ("again" or "good" or "easy" or "skip"))
+            return Problem(statusCode: 400, detail: "Choose Again or Got it.");
+        var cardIndex = session.CurrentIndex;
+        if (!await CurrentCardExistsAsync(session, cardIndex, userId, cancellationToken))
+            return Problem(statusCode: 409, detail: "This card changed or was removed. Reopen the quiz to continue.");
+        bool justCompleted;
+        lock (session)
+        {
+            if (cardIndex != session.CurrentIndex || (expectedIndex.HasValue && (expectedIndex != session.CurrentIndex || (rating != "skip" && !session.IsAnswerRevealed))))
+                return Problem(statusCode: 409, detail: "This card changed. Reopen the quiz to continue.");
+            _sessionService.ApplyRating(session, rating);
+            justCompleted = session.CurrentIndex >= session.Cards.Count && !session.AttemptRecorded;
+            if (justCompleted) session.AttemptRecorded = true;
+            _sessionService.SaveSession(session);
+        }
 
-        // Flag before persisting so a re-posted final rating can't double-record.
-        var justCompleted = session.CurrentIndex >= session.Cards.Count && !session.AttemptRecorded;
         if (justCompleted)
         {
             session.AttemptRecorded = true;
@@ -136,6 +156,18 @@ public class FlashcardQuizController : Controller
         }
 
         return FlashcardResponse(session);
+    }
+
+    private async Task<bool> CurrentCardExistsAsync(FlashcardSessionData session, int index, string userId, CancellationToken ct)
+    {
+        var card = session.Cards.ElementAtOrDefault(index);
+        var exists = card is null
+            ? await _quizService.GetQuizByIdAsync(session.QuizId, userId, ct) is not null
+            : await _wordService.CardMatchesAsync(session.QuizId, userId, card.Id, card.Lemma,
+                card.Translation, PracticeItemType.IsSentences(session.PracticeItemType), ct);
+        if (!exists)
+            _sessionService.RemoveSession(session.SessionId, userId);
+        return exists;
     }
 
     [HttpPost]

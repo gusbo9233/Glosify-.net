@@ -25,15 +25,17 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
     private readonly IMemoryCache _cache;
+    private readonly Glosify.Services.Avatar.AvatarSessions? _avatarSessions;
 
     public RealtimeTranslationTranscriptService(
         GlosifyContext context,
         TimeProvider timeProvider,
-        IMemoryCache cache)
+        IMemoryCache cache, Glosify.Services.Avatar.AvatarSessions? avatarSessions = null)
     {
         _context = context;
         _timeProvider = timeProvider;
         _cache = cache;
+        _avatarSessions = avatarSessions;
     }
 
     public async Task<TranscriptLibraryPage> GetLibraryAsync(
@@ -62,7 +64,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 transcript.Stream,
                 transcript.CreatedAt,
                 transcript.UpdatedAt,
-                transcript.Segments.Count(segment => segment.Stream == transcript.Stream)))
+                transcript.Segments.Count(segment => segment.Stream == transcript.Stream), transcript.SourceKind))
             .ToListAsync(cancellationToken);
         return new TranscriptLibraryPage(items, page, pageSize, total);
     }
@@ -89,6 +91,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 item.Title,
                 item.TargetLanguage,
                 item.Stream,
+                item.SourceKind,
                 item.CreatedAt,
                 item.UpdatedAt,
                 SourceCount = item.Segments.Count(segment =>
@@ -129,7 +132,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             transcript.HasActiveSession,
             selectedStream,
             transcript.SourceCount,
-            transcript.TranslationCount);
+            transcript.TranslationCount, transcript.SourceKind);
     }
 
     public async Task<TranscriptTextPage?> GetTextPageAsync(
@@ -151,6 +154,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
                 item.Title,
                 item.TargetLanguage,
                 item.Stream,
+                item.SourceKind,
                 SourceCount = item.Segments.Count(segment =>
                     segment.Stream == RealtimeTranslationTranscriptStreams.Source),
                 TranslationCount = item.Segments.Count(segment =>
@@ -204,9 +208,11 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         var rows = await segments
             .Skip(skip)
             .Take(Math.Min(limit, DetailPageSize - (skip % DetailPageSize)))
-            .Select(segment => new TranscriptTextSegment(segment.Sequence, segment.Text, segment.CapturedAt))
+            .Select(segment => new TranscriptTextSegment(segment.Sequence, segment.Text, segment.CapturedAt, segment.Speaker))
             .ToListAsync(cancellationToken);
-        var bounded = BoundByCharacters(rows, maximumCharacters);
+        var characterOffset = request.Page is null && request.AtTime is null ? Math.Max(0, request.CharacterOffset) : 0;
+        var (bounded, nextCharacterOffset) = BoundByCharacters(rows, maximumCharacters, characterOffset);
+        var nextOffset = skip + bounded.Count - (nextCharacterOffset > 0 ? 1 : 0);
         var pageStart = skip / DetailPageSize * DetailPageSize;
         var pageEnd = Math.Min(pageStart + DetailPageSize, total);
 
@@ -222,12 +228,14 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
             totalPages,
             skip,
             total,
-            skip + bounded.Count >= pageEnd,
-            skip + bounded.Count < total,
+            nextOffset >= pageEnd,
+            nextOffset < total,
             rows.Count == 0 ? null : rows[0].CapturedAt,
             rows.Count == 0 ? null : rows[^1].CapturedAt,
             transcript.SourceCount,
-            transcript.TranslationCount);
+            transcript.TranslationCount,
+            characterOffset,
+            nextCharacterOffset);
     }
 
     /// <summary>
@@ -312,25 +320,30 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
     /// Stops one read filling a context window, however long the captions turn out to be.
     /// Always yields at least one segment so a caller can never stall on a long caption.
     /// </summary>
-    private static List<TranscriptTextSegment> BoundByCharacters(
+    private static (List<TranscriptTextSegment> Segments, int NextCharacterOffset) BoundByCharacters(
         IReadOnlyList<TranscriptTextSegment> rows,
-        int maximumCharacters)
+        int maximumCharacters,
+        int characterOffset)
     {
         var bounded = new List<TranscriptTextSegment>(rows.Count);
         var characters = 0;
         foreach (var row in rows)
         {
-            if (bounded.Count > 0 && characters + row.Text.Length > maximumCharacters)
+            var start = bounded.Count == 0 ? Math.Min(characterOffset, row.Text.Length) : 0;
+            var remaining = row.Text.Length - start;
+            if (bounded.Count > 0 && characters + remaining > maximumCharacters)
             {
                 break;
             }
-            var text = row.Text.Length <= maximumCharacters
-                ? row.Text
-                : row.Text[..maximumCharacters];
+            var length = Math.Min(remaining, maximumCharacters - characters);
+            if (length > 0 && start + length < row.Text.Length
+                && char.IsHighSurrogate(row.Text[start + length - 1]) && char.IsLowSurrogate(row.Text[start + length])) length--;
+            var text = row.Text.Substring(start, length);
             bounded.Add(row with { Text = text });
             characters += text.Length;
+            if (length < remaining) return (bounded, start + length);
         }
-        return bounded;
+        return (bounded, 0);
     }
 
     public async Task RenameAsync(
@@ -357,6 +370,11 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         string quizLanguageCode,
         CancellationToken cancellationToken = default)
     {
+        var avatar = await _context.RealtimeTranslationTranscripts.AsNoTracking()
+            .Where(item => item.Id == transcriptId && item.UserId == userId && item.TargetLanguage == quizLanguageCode)
+            .Select(item => item.AvatarConversationId).SingleOrDefaultAsync(cancellationToken);
+        using var lease = avatar is not null && _avatarSessions is not null
+            ? await _avatarSessions.LockTranscriptWritesAsync(userId, cancellationToken) : null;
         var transcript = await _context.RealtimeTranslationTranscripts
             .Include(item => item.Sessions)
             .SingleOrDefaultAsync(item => item.Id == transcriptId
@@ -383,6 +401,8 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         }
         _context.RealtimeTranslationTranscripts.Remove(transcript);
         await _context.SaveChangesAsync(cancellationToken);
+        if (transcript.AvatarConversationId is { } conversationId)
+            _avatarSessions?.SetSavedTranscript(conversationId, userId, null, true);
     }
 
     public async Task AppendAsync(
@@ -400,6 +420,7 @@ public sealed class RealtimeTranslationTranscriptService : IRealtimeTranslationT
         if (session?.TranscriptId is not Guid transcriptId
             || session.TranscriptConsentAt is null
             || session.Transcript is null
+            || session.Transcript.SourceKind != RealtimeTranslationTranscriptSourceKinds.Subtitles
             || !string.Equals(
                 session.Transcript.Stream,
                 RealtimeTranslationTranscriptStreams.Source,

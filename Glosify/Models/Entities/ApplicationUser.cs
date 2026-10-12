@@ -12,6 +12,8 @@ public class ApplicationUser : IdentityUser
     /// </summary>
     public string? DisplayCulture { get; set; }
 
+    public bool AutoSaveAvatarConversations { get; set; }
+
     /// <summary>
     /// The language this user translates into, as a display name such as "English".
     /// </summary>

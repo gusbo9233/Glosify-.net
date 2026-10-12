@@ -38,7 +38,8 @@ internal sealed class DeleteItemsTool(GlosifyContext db) : AssistantTool<DeleteI
             return ToolResult.Fail("Could not remove from the quiz", target.Error!);
         }
 
-        if (wordIds.Any(id => QuizContent.IsOutsideFocus(context, id)))
+        if (wordIds.Any(id => QuizContent.IsOutsideFocus(context, id))
+            || (sentenceIds.Count > 0 && !string.IsNullOrWhiteSpace(context.FocusedWordId)))
         {
             return ToolResult.Fail("Could not remove from the quiz", QuizContent.FocusError(context));
         }

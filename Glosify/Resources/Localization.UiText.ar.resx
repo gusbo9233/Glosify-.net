@@ -1699,4 +1699,13 @@
   <data name="AppSettings.Game" xml:space="preserve"><value>اللعبة</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>استخدام اللعبة</value></data>
   <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>استخدام الأفاتار</value></data>
+  <data name="Quiz.GotIt" xml:space="preserve"><value>تذكّرت</value></data>
+  <data name="Quiz.Hard" xml:space="preserve"><value>صعب</value></data>
+  <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← مرة أخرى · تذكّرت →</value></data>
+  <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← مرة أخرى · سهل →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>القائمة</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>محادثة مع الشخصية الافتراضية</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>محادثة مع الشخصية الافتراضية · {0}</value></data>
+  <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>عدد المداخلات: {0}</value></data>
+  <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>عدد المداخلات: {0}</value></data>
 </root>
