@@ -157,8 +157,9 @@
       data-speech-user="@User.FindFirstValue(ClaimTypes.NameIdentifier)"
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <partial name="_SpeechDialog" />
-    <button type="button" class="app-sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="@Text["Layout.PrimaryNavigation"]" data-open-label="@Text["Layout.PrimaryNavigation"]" data-close-label="@Text["Common.Close"]">
+    <button type="button" class="app-sidebar-toggle" data-sidebar-toggle aria-controls="app-sidebar" aria-expanded="false" aria-label="@Text["Layout.Menu"]" data-open-label="@Text["Layout.Menu"]" data-close-label="@Text["Common.Close"]">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+        <span class="app-sidebar-toggle-label">@Text["Layout.Menu"]</span>
     </button>
     <div class="app-sidebar-backdrop" data-sidebar-backdrop hidden></div>
     <div class="app-shell">

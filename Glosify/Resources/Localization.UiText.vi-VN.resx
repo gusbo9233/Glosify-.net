@@ -1703,4 +1703,5 @@
   <data name="Quiz.Hard" xml:space="preserve"><value>Khó</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Lại · Đã nhớ →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Lại · Dễ →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>Menu</value></data>
 </root>

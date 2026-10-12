@@ -1703,4 +1703,5 @@
   <data name="Quiz.Hard" xml:space="preserve"><value>難しい</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← もう一度 · 覚えていた →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← もう一度 · 簡単 →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>メニュー</value></data>
 </root>

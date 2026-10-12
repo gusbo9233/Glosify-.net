@@ -54,10 +54,14 @@
 [dir="rtl"] .app-sidebar { transform: translateX(100%); }
 .app-sidebar-open .app-sidebar { transform: translateX(0); visibility: visible; }
 .app-sidebar-open .app-shell { padding-inline-start: var(--app-sidebar-width); }
-.app-sidebar-toggle { position: fixed; inset-inline-start: 0; top: 50%; transform: translateY(-50%); z-index: 1501; width: 44px; height: 60px; display: grid; place-items: center; border: 1px solid var(--surface-container-highest); border-inline-start: 0; border-start-end-radius: 12px; border-end-end-radius: 12px; background: var(--surface); color: var(--primary); cursor: pointer; transition: inset-inline-start .2s ease; }
+.app-sidebar-toggle { position: fixed; inset-inline-start: 0; top: max(16px, env(safe-area-inset-top)); z-index: 1501; min-width: 96px; height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--surface-container-highest); border-inline-start: 0; border-start-end-radius: 10px; border-end-end-radius: 10px; background: var(--surface); color: var(--on-surface); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: inset-inline-start .2s ease, background .2s ease, color .2s ease; }
+.app-sidebar-toggle svg { width: 18px; height: 18px; flex-shrink: 0; }
 .app-sidebar-toggle:hover { background: var(--surface-container-high); }
 .app-sidebar-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; }
-.app-sidebar-open .app-sidebar-toggle { inset-inline-start: var(--app-sidebar-width); }
+.app-sidebar-open .app-sidebar-toggle { inset-inline-start: calc(var(--app-sidebar-width) - 52px); min-width: 44px; width: 44px; height: 44px; padding: 0; border-color: transparent; background: transparent; color: var(--on-surface-var); }
+.app-sidebar-open .app-sidebar-toggle:hover { background: var(--surface-container-high); color: var(--on-surface); }
+.app-sidebar-open .app-sidebar-toggle-label { display: none; }
+.app-sidebar-ready:not(.app-sidebar-open) .app-canvas { padding-top: max(80px, calc(env(safe-area-inset-top) + 64px)); }
 .app-sidebar-open .app-sidebar-toggle svg, [dir="rtl"] .app-sidebar-toggle svg { transform: rotate(180deg); }
 [dir="rtl"] .app-sidebar-open .app-sidebar-toggle svg { transform: none; }
 .app-sidebar-backdrop { position: fixed; inset: 0; z-index: 1499; background: #01091499; }

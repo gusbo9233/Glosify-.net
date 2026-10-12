@@ -1703,4 +1703,5 @@
   <data name="Quiz.Hard" xml:space="preserve"><value>困难</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← 再来一次 · 记住了 →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← 再来一次 · 简单 →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>菜单</value></data>
 </root>

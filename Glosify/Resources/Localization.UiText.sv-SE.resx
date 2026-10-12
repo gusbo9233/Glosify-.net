@@ -543,4 +543,5 @@
   <data name="Quiz.Hard" xml:space="preserve"><value>Svårt</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Igen · Kunde det →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Igen · Lätt →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>Meny</value></data>
 </root>

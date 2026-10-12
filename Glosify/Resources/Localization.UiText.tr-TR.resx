@@ -1703,4 +1703,5 @@
   <data name="Quiz.Hard" xml:space="preserve"><value>Zor</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Tekrar · Bildim →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Tekrar · Kolay →</value></data>
+  <data name="Layout.Menu" xml:space="preserve"><value>Menü</value></data>
 </root>
