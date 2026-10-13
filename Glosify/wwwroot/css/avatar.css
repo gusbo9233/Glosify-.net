@@ -139,3 +139,6 @@
 }
 .avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-dialogue{background:#141917}
 .avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-stage-message{background:#263e30}
+
+.avatar-settings textarea{width:100%;box-sizing:border-box;min-height:88px;resize:vertical;padding:11px 12px;border:1px solid var(--outline-variant,#3d4a3d);border-radius:7px;background:var(--surface-container-low,#0d1b30);color:var(--on-surface,#d6e3ff);font:inherit;font-size:13px;line-height:1.5}
+.avatar-settings textarea::placeholder{color:var(--on-surface-var,#bccbb9);opacity:.7}

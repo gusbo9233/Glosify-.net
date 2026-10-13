@@ -15,6 +15,8 @@ let sessionStore;
 try { sessionStore = globalThis.sessionStorage; } catch { /* Storage may be disabled. */ }
 const memory = createConversationMemory(document.body?.dataset.speechUser, sessionStore);
 const preferences = memory.preferences();
+let practiceContext = preferences?.practiceContext || '';
+el('practice-context').value = practiceContext;
 let qualityMode = 'auto';
 try { qualityMode = normalizeQuality(localStorage.getItem('glosify.avatar.quality')); } catch { /* Optional local preference. */ }
 el('quality').value = qualityMode;
@@ -54,7 +56,7 @@ let ending = null, changingQuiz = false, captureEpoch = 0;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
-const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null });
+const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null, practiceContext });
 const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !ending && !changingQuiz && !pageLeaving;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
 function send(value) { return socket ? socket.send(JSON.stringify(value)) !== false : false; }
@@ -155,6 +157,7 @@ function refreshStart() {
     el('hands-free').setAttribute('aria-pressed', String(handsFree && recording));
     el('hands-free').textContent = reconnecting ? 'Restart hands-free' : recording ? 'Pause hands-free' : 'Start hands-free';
     el('hands-free').title = el('hands-free').textContent;
+    el('practice-context').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('quiz').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('character').disabled = characterLoading || !!ending || changingQuiz || (!!audio && !ready) || pageLeaving;
 }
@@ -478,7 +481,7 @@ async function start() {
         await nextAudio.open(frame);
         if (generation !== epoch) { await nextAudio.close(); return; }
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null });
+        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext });
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         memory.save(context, result.memoryId);
@@ -589,18 +592,27 @@ async function release() {
     // reaches recognition, followed by its commit, even for a short button press.
     if (current() && ready && awaitingCommit && state === 'listening') commit();
 }
-async function chooseQuiz() {
-    if (changingQuiz || pageLeaving || ending) return;
+async function chooseQuiz(nextPracticeContext = practiceContext) {
+    if (changingQuiz || pageLeaving || ending) { el('practice-context').value = practiceContext; return; }
     changingQuiz = true; refreshStart();
     const previous = memory.preferences();
     try {
         if (previous && !await prepareConversationChange(previous)) {
-            el('quiz').value = previous.quizId || ''; return;
+            el('quiz').value = previous.quizId || '';
+            el('practice-context').value = practiceContext; return;
         }
-        if (!pageLeaving) selectMemory();
+        if (!pageLeaving) {
+            practiceContext = nextPracticeContext;
+            el('practice-context').value = practiceContext;
+            selectMemory();
+        }
     } finally { changingQuiz = false; refreshStart(); }
 }
 el('quiz').addEventListener('change', () => { void chooseQuiz(); });
+el('practice-context').addEventListener('change', () => {
+    const value = el('practice-context').value.trim();
+    if (value !== practiceContext) void chooseQuiz(value);
+});
 el('hands-free').addEventListener('click', toggleHandsFree);
 el('talk').addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;

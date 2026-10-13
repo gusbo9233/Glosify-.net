@@ -53,6 +53,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     public async Task<IActionResult> Start([FromBody] AvatarStartRequest request, CancellationToken ct)
     {
         if (await Access() is { } failure) return failure;
+        if (request.PracticeContext?.Length > 1000) return ProblemResult(422, "Practice context must be 1,000 characters or fewer.");
         if (!pricing.Available) return ProblemResult(503, "Voice is not configured. Ask an administrator to configure the provider keys.");
         var language = CurrentLanguage;
         if (language is null) return ProblemResult(422, "Choose a learning language in the sidebar to start a conversation.");
@@ -73,6 +74,8 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
             practice = JsonSerializer.Serialize(new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
                 sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) });
         }
+        if (!string.IsNullOrWhiteSpace(request.PracticeContext))
+            practice = JsonSerializer.Serialize(new { lesson = practice, learnerContext = request.PracticeContext.Trim() });
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         // Recognition reserves the maximum 45-second utterance. Replies and speech
         // reserve separately at the point of use.
@@ -175,4 +178,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null);
+public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null, string? PracticeContext = null);

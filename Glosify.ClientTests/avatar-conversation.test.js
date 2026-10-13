@@ -103,9 +103,10 @@ test('current learning language is a label and starting submits the chosen quiz 
     assert.equal(h.elements.get('avatar-language').options.length, 0);
     assert.equal(h.elements.get('avatar-talk').disabled, false);
     h.elements.get('avatar-quiz').value = 'polish-quiz';
+    await h.run("chooseQuiz('Practice ordering coffee')");
     await h.run('start()');
     const request = h.sent.find(x => x.path === '/api/avatar/sessions');
-    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz', characterId: 'rain', memoryId: null });
+    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz', characterId: 'rain', memoryId: null, practiceContext: 'Practice ordering coffee' });
     assert.equal(h.sent.at(-1).socketUrl, 'wss://localhost/api/avatar/sessions/session/voice');
     assert.equal(h.elements.get('avatar-quiz').disabled, true);
 });
@@ -1131,4 +1132,18 @@ test('quality changes apply immediately and survive changing the conversation pa
     await h.run('chooseCharacter()');
     assert.ok(h.sent.some(x => x.requestedQuality === 'low'));
     assert.ok(h.sent.some(x => x.loadedQuality === 'low'));
+});
+
+
+for (const choice of ['cancel', 'discard']) test(`practice context edit honors ${choice} for unsaved conversation`, async () => {
+    const h = setup();
+    h.run(`config = { available: true, language: 'sv' }; audio = null; ready = false; modelReady = true;
+        practiceContext = 'Ordering coffee'; el('practice-context').value = practiceContext;
+        memory.save(selection(), 'unsaved'); requestJson = async () => ({ turnCount: 2, savedTurns: 0 });
+        chooseUnsavedConversation = async () => '${choice}'; api = async path => wire({ path });`);
+    h.elements.get('avatar-practice-context').value = 'Job interview';
+    await h.run("chooseQuiz('Job interview')");
+    assert.equal(h.run('selection().practiceContext'), choice === 'cancel' ? 'Ordering coffee' : 'Job interview');
+    assert.equal(h.elements.get('avatar-practice-context').value, choice === 'cancel' ? 'Ordering coffee' : 'Job interview');
+    assert.equal(h.run('memory.get(selection())'), choice === 'cancel' ? 'unsaved' : undefined);
 });
