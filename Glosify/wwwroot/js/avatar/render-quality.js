@@ -1,0 +1,61 @@
+const densities = [.5, .67, .85, 1, 1.25, 1.5, 2];
+export const normalizeQuality = value => ['auto', 'high', 'low'].includes(value) ? value : 'auto';
+
+// Babylon's hardware scaling is the inverse of pixels per CSS pixel. Bound both
+// dimensions and total allocation, even with browser zoom or a very large screen.
+export function renderScaling(width, height, devicePixelRatio = 1, density = 1, low = false) {
+    const w = Math.max(1, width), h = Math.max(1, height);
+    const dpr = Number.isFinite(devicePixelRatio) && devicePixelRatio > 0 ? devicePixelRatio : 1;
+    const pixelsPerCssPixel = Math.min(density, dpr, 2);
+    return Math.max(1 / pixelsPerCssPixel, w / (low ? 1000 : 2560), h / (low ? 1000 : 2560),
+        Math.sqrt(w * h / (low ? 750000 : 3000000)));
+}
+
+export function createRenderQuality(initialMode = 'auto') {
+    let mode = normalizeQuality(initialMode), level = 3, maxLevel = densities.length - 1;
+    let backgroundReduced = false;
+    let samples = [], started = null, warmUntil = 0, goodWindows = 0, raiseAfter = 0;
+    function reset(time) {
+        samples = []; started = null; warmUntil = time + 2000; goodWindows = 0;
+    }
+    return {
+        reset,
+        setMode(value, time) { mode = normalizeQuality(value); level = 3; backgroundReduced = false; reset(time); },
+        background() { return mode === 'low' || (mode === 'auto' && backgroundReduced) ? 'reduced' : 'full'; },
+        scaling(width, height, dpr) {
+            const ceiling = 1 / renderScaling(width, height, dpr, 2);
+            maxLevel = densities.findIndex(density => density >= ceiling);
+            if (maxLevel < 0) maxLevel = densities.length - 1;
+            level = Math.min(level, maxLevel);
+            return renderScaling(width, height, dpr, mode === 'high' ? 2 : mode === 'low' ? .75 : densities[level], mode === 'low');
+        },
+        // Sample only the animation callback immediately after a rendered frame.
+        // This observes stalls without mistaking our intentional 12/15/24 fps
+        // pacing for a slow machine. Isolated pauses cannot lower quality.
+        sample({ time, renderMs, frameGap }) {
+            if (mode !== 'auto' || !Number.isFinite(renderMs) || !Number.isFinite(frameGap)) return false;
+            if (frameGap > 1000 || renderMs > 1000) { reset(time); return false; }
+            if (time < warmUntil) return false;
+            started ??= time;
+            samples.push(Math.max(renderMs, frameGap));
+            if (time - started < 2000 || samples.length < 12) return false;
+            const sorted = samples.sort((a, b) => a - b);
+            const cost = sorted[Math.floor((sorted.length - 1) * .75)];
+            samples = []; started = null;
+            if (cost > 40 && (!backgroundReduced || level > 0)) {
+                // Remove backdrop effects before sacrificing face and hair detail.
+                if (!backgroundReduced) backgroundReduced = true;
+                else level--;
+                raiseAfter = time + 12000; reset(time); return true;
+            }
+            goodWindows = cost < 23 ? goodWindows + 1 : 0;
+            if (goodWindows >= 3 && time >= raiseAfter && (level < maxLevel || backgroundReduced)) {
+                // Restore avatar sharpness before bringing back backdrop effects.
+                if (level < maxLevel) level++;
+                else backgroundReduced = false;
+                reset(time); return true;
+            }
+            return false;
+        }
+    };
+}

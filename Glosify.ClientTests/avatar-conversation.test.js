@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import { normalizeQuality } from '../Glosify/wwwroot/js/avatar/render-quality.js';
 import { preserveConversation } from '../Glosify/wwwroot/js/avatar/retention.js';
 import { transcriptPresentation } from '../Glosify/wwwroot/js/avatar/transcript.js';
 import { createConversationMemory } from '../Glosify/wwwroot/js/avatar/memory.js';
@@ -12,13 +13,13 @@ function setup(mode = 'push-to-talk') {
     const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
     const element = id => {
         if (['avatar-new', 'avatar-memory', 'avatar-balance', 'avatar-rates', 'avatar-mute', 'avatar-end', 'avatar-hint'].includes(id)) return null;
-        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, style: {}, getBoundingClientRect() { return { left: 900, right: 1200 }; }, textContent: '', options: [], attributes: {}, listeners: {}, classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener(name, action) { this.listeners[name] = action; }, setAttribute(name, value) { this.attributes[name] = value; }, setPointerCapture() {} });
+        if (!elements.has(id)) elements.set(id, { value: '', dataset: {}, style: {}, getBoundingClientRect() { return { left: 900, right: 1200, top: 24 }; }, textContent: '', options: [], attributes: {}, listeners: {}, classList: { toggle() {} }, add(option) { this.options.push(option); }, replaceChildren(...children) { this.options = children; }, addEventListener(name, action) { this.listeners[name] = action; }, setAttribute(name, value) { this.attributes[name] = value; }, setPointerCapture() {} });
         return elements.get(id);
     };
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
             querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action, options) => { listeners[name] = action; listenerOptions[name] = options; } },
-        ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+        ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, normalizeQuality, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
         setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
         Option: class { constructor(text, value) { this.text = text; this.value = value; } },
@@ -130,7 +131,7 @@ test('choosing Rowan disposes the previous model and submits the chosen partner'
     h.run(`
         audio = null; ready = false; config = { available: true, language: 'sv' };
         visual = { dispose() { wire({ disposed: 'rain' }); } };
-        createAvatar = async (_, id) => { wire({ model: id }); return { setState() {}, setAnalyser() {}, dispose() {} }; };
+        createAvatar = async (_, id) => { wire({ model: id }); return { setQuality() {}, setState() {}, setAnalyser() {}, dispose() {} }; };
         AvatarAudio = class { async open() {} async close() {} };
         WebSocket = class { constructor() {} };
         api = async (path, body) => { wire({ path, body }); return { sessionId: 'session', voiceName: 'Male Swedish', nativeVoice: true, connectUrl: '/voice' }; };
@@ -171,7 +172,7 @@ test('character loading blocks start and overlapping changes, then a failure all
     assert.equal(h.elements.get('avatar-talk').disabled, true);
     assert.equal(h.elements.get('avatar-character').disabled, false);
     assert.match(h.elements.get('avatar-render-status').textContent, /Rowan could not load/);
-    h.run('createAvatar = async () => ({ setState() {}, dispose() {} })');
+    h.run('createAvatar = async () => ({ setQuality() {}, setState() {}, dispose() {} })');
     h.elements.get('avatar-character').value = 'rain';
     await h.run('chooseCharacter()');
     assert.equal(h.elements.get('avatar-name').textContent, 'Rain');
@@ -200,11 +201,11 @@ test('Back restoration rebuilds the selected partner and ignores an obsolete mod
     assert.equal(h.sent.filter(x => x.disposed === 'obsolete').length, 1);
     assert.equal(h.elements.get('avatar-character').disabled, true);
     assert.equal(h.elements.get('avatar-talk').disabled, true);
-    h.run('finishNew({ setState() {}, dispose() {} })');
+    h.run('finishNew({ setQuality() {}, setState() {}, dispose() {} })');
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(h.elements.get('avatar-name').textContent, 'Rowan');
     assert.equal(h.elements.get('avatar-talk').disabled, false);
-    h.run('createAvatar = async () => ({ setState() {}, dispose() {} })');
+    h.run('createAvatar = async () => ({ setQuality() {}, setState() {}, dispose() {} })');
     h.elements.get('avatar-character').value = 'rain';
     await h.run('chooseCharacter()');
     assert.equal(h.elements.get('avatar-name').textContent, 'Rain');
@@ -564,7 +565,7 @@ test('changing partner closes active capture and loads the new partner without E
         memory.save(selection(), 'old-memory');
         audio.close = async () => wire({ microphoneClosed: true }); socket.close = () => wire({ socketClosed: true });
         api = async path => wire({ path }); requestJson = async () => ({ turnCount: 0, savedTurns: 0 });
-        createAvatar = async (_, id) => { wire({ model: id }); return { setState() {}, dispose() {} }; };
+        createAvatar = async (_, id) => { wire({ model: id }); return { setQuality() {}, setState() {}, dispose() {} }; };
         refreshStart();`);
     assert.equal(h.elements.get('avatar-character').disabled, false);
     h.elements.get('avatar-character').value = 'rowan';
@@ -997,16 +998,18 @@ test('Space release does not finish an independently started pointer hold', asyn
     assert.equal(h.run('holding'), true);
     assert.deepEqual(h.commands(), ['listen']);
 });
-test('settings toggle stays at the drawer edge when open and viewport edge when closed', () => {
+test('settings toggle stays at the top left of the open drawer and viewport edge when closed', () => {
     const h = setup();
     h.run('toggleSettings(true)');
-    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '8px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, '908px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.top, '32px');
     h.run('toggleSettings(false)');
     assert.equal(h.elements.get('avatar-settings-toggle').style.right, '0px');
-    h.run("window.innerWidth = 390; el('settings').getBoundingClientRect = () => ({ left: 48, right: 375 }); toggleSettings(true)");
-    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '23px');
+    h.run("window.innerWidth = 390; el('settings').getBoundingClientRect = () => ({ left: 48, right: 375, top: 80 }); toggleSettings(true)");
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, '56px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.top, '88px');
     h.run("document.documentElement = { clientWidth: 375 }; positionSettingsToggle();");
-    assert.equal(h.elements.get('avatar-settings-toggle').style.right, '8px');
+    assert.equal(h.elements.get('avatar-settings-toggle').style.left, '56px');
 });
 
 test('Space starts hands-free from off and key release leaves it listening', async () => {
@@ -1079,7 +1082,7 @@ for (const choice of ['cancel', 'save', 'discard']) test(`partner transition hon
     h.run(`config = { available: true, language: 'sv' }; audio = null; ready = false; modelReady = true;
         memory.save(selection(), 'unsaved'); requestJson = async () => ({ turnCount: 20, savedTurns: 0 });
         chooseUnsavedConversation = async () => '${choice}';
-        api = async path => wire({ path }); createAvatar = async () => ({ setState() {}, dispose() {} }); refreshStart();`);
+        api = async path => wire({ path }); createAvatar = async () => ({ setQuality() {}, setState() {}, dispose() {} }); refreshStart();`);
     h.elements.get('avatar-character').value = 'rowan'; await h.run('chooseCharacter()');
     assert.equal(h.run('characterId'), choice === 'cancel' ? 'rain' : 'rowan');
     assert.equal(h.sent.some(x => x.path?.endsWith('/forget')), choice !== 'cancel');
@@ -1114,4 +1117,18 @@ test('navigation with unknown status checks retention and stays put on failure',
     h.documentEvent('click', { button: 0, target: { closest: () => link }, preventDefault() { prevented = true; } });
     await tick(); assert.equal(prevented, true); assert.equal(h.sent.some(x => x.navigated), false);
     assert.equal(h.run('memory.get(selection())'), 'source');
+});
+
+
+test('quality changes apply immediately and survive changing the conversation partner', async () => {
+    const h = setup();
+    h.run("globalThis.savedQuality = {}; globalThis.localStorage = { setItem(k, v) { savedQuality[k] = v; } }; visual = { setQuality(v) { wire({ quality: v }); }, setAnalyser() {}, setState() {}, dispose() {} };");
+    const select = h.elements.get('avatar-quality');
+    select.value = 'low'; select.listeners.change();
+    assert.equal(h.run("savedQuality['glosify.avatar.quality']"), 'low');
+    assert.equal(h.sent.at(-1).quality, 'low');
+    h.run("createAvatar = async (_, id, options) => { wire({ requestedQuality: options.quality }); return { setQuality(v) { wire({ loadedQuality: v }); }, setState() {}, dispose() {} }; }; el('character').value = 'rowan';");
+    await h.run('chooseCharacter()');
+    assert.ok(h.sent.some(x => x.requestedQuality === 'low'));
+    assert.ok(h.sent.some(x => x.loadedQuality === 'low'));
 });

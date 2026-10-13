@@ -10,15 +10,22 @@ import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import '@babylonjs/loaders/glTF';
 import './meshopt.js';
+import { createRenderQuality } from './render-quality.js';
 import { createPerformance } from './performance.js';
 import { bindMorphTargets } from './morphs.js';
-import { createRenderLoop, portraitFraming, portraitScaling } from './render-loop.js';
+import { createRenderLoop, portraitFraming } from './render-loop.js';
 
-export async function createAvatar(canvas, character = 'rain') {
+export async function createAvatar(canvas, character = 'rain', { quality: qualityMode = 'auto' } = {}) {
     const model = { rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1', rowan: '/models/avatar/rowan-realistic.glb?v=close-locks-1' }[character];
     if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
-    engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
+    const quality = createRenderQuality(qualityMode);
+    function applyQuality() {
+        canvas.dataset.backgroundQuality = quality.background();
+        const scaling = quality.scaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio);
+        if (Math.abs(engine.getHardwareScalingLevel() - scaling) > .001) engine.setHardwareScalingLevel(scaling);
+    }
+    applyQuality();
     const scene = new Scene(engine);
     scene.skipPointerMovePicking = true;
     scene.clearColor = new Color4(0, 0, 0, 0);
@@ -61,10 +68,14 @@ export async function createAvatar(canvas, character = 'rain') {
         root.position.set(0, posture.rise, -posture.lean);
         root.rotation.set(0, Math.PI + posture.yaw, posture.sway);
         engine.beginFrame(); scene.render(); engine.endFrame();
-    });
+    }, { onFrame: sample => { if (quality.sample(sample)) applyQuality(); } });
+    quality.reset(performance.now());
     loop.setReducedMotion(reduced.matches);
     let inView = true;
-    const visibility = () => loop.setVisible(!document.hidden && inView);
+    const visibility = () => {
+        quality.reset(performance.now());
+        loop.setVisible(!document.hidden && inView);
+    };
     const motion = () => loop.setReducedMotion(reduced.matches);
     document.addEventListener('visibilitychange', visibility);
     reduced.addEventListener('change', motion);
@@ -74,15 +85,19 @@ export async function createAvatar(canvas, character = 'rain') {
     });
     intersection.observe(canvas);
     const resize = new ResizeObserver(() => {
-        engine.setHardwareScalingLevel(portraitScaling(canvas.clientWidth, canvas.clientHeight, window.devicePixelRatio));
+        quality.reset(performance.now()); applyQuality();
         engine.resize(); frame(); loop.invalidate();
     });
     resize.observe(canvas);
     // Shader/texture readiness and context restoration can occur after settling.
     const ready = scene.onReadyObservable.addOnce(() => loop.invalidate());
-    const restored = engine.onContextRestoredObservable.add(() => loop.invalidate());
+    const restored = engine.onContextRestoredObservable.add(() => { quality.reset(performance.now()); applyQuality(); loop.invalidate(); });
     return {
-        setState(value) { rain.setState(value); loop.setState(value); },
+        setQuality(value) { quality.setMode(value, performance.now()); applyQuality(); loop.invalidate(); },
+        setState(value) {
+            if (rain.state !== value) quality.reset(performance.now());
+            rain.setState(value); loop.setState(value);
+        },
         setReply(text) { rain.setReply(text); },
         hear(level) { rain.hear(level); },
         setAnalyser(value) {

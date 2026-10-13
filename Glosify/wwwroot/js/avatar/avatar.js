@@ -1,3 +1,4 @@
+import { normalizeQuality } from './render-quality.js';
 import { transcriptPresentation } from './transcript.js';
 import { preserveConversation } from './retention.js';
 import { setupFloatingChat } from './chat-panel.js';
@@ -7,13 +8,21 @@ import { VoiceConnection } from './connection.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
-setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize') });
+setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize'), toggle: el('chat-toggle') });
 let transcriptStatus = null, savingTranscript = false, transcriptStatusRequest = 0;
 let lastTranscript = null, clearedChatTurn, chatRevision = 0;
 let sessionStore;
 try { sessionStore = globalThis.sessionStorage; } catch { /* Storage may be disabled. */ }
 const memory = createConversationMemory(document.body?.dataset.speechUser, sessionStore);
 const preferences = memory.preferences();
+let qualityMode = 'auto';
+try { qualityMode = normalizeQuality(localStorage.getItem('glosify.avatar.quality')); } catch { /* Optional local preference. */ }
+el('quality').value = qualityMode;
+el('quality').addEventListener('change', () => {
+    qualityMode = normalizeQuality(el('quality').value);
+    try { localStorage.setItem('glosify.avatar.quality', qualityMode); } catch { /* Storage may be disabled. */ }
+    visual?.setQuality(qualityMode);
+});
 const helpKey = document.body?.dataset.speechUser ? `glosify.avatar.help.${document.body.dataset.speechUser}` : null;
 const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked });
 let replyHelp = null, spaceHeld = false, spaceRecording = false;
@@ -57,20 +66,26 @@ function setState(value) {
     refreshStart();
 }
 function positionSettingsToggle() {
-    const viewportWidth = document.documentElement?.clientWidth || window.innerWidth;
     const rtl = document.documentElement?.dir === 'rtl';
     const bounds = el('settings').getBoundingClientRect();
-    const offset = el('settings').hidden ? 0 : rtl ? bounds.left + 8 : viewportWidth - bounds.right + 8;
     const style = el('settings-toggle').style;
+    if (!el('settings').hidden) {
+        style.left = `${bounds.left + 8}px`;
+        style.right = 'auto';
+        style.top = `${bounds.top + 8}px`;
+        return;
+    }
     const edge = rtl ? 'left' : 'right';
     style[edge === 'left' ? 'right' : 'left'] = 'auto';
-    style[edge] = `${Math.max(0, Math.min(viewportWidth - 44, offset))}px`;
+    style[edge] = '0px';
+    style.top = 'max(16px, env(safe-area-inset-top))';
 }
 const settingsGeometry = new ResizeObserver(positionSettingsToggle);
 settingsGeometry.observe(el('workspace')); settingsGeometry.observe(el('settings'));
 const appMain = document.querySelector('.app-main');
 if (appMain) settingsGeometry.observe(appMain);
 window.addEventListener('resize', positionSettingsToggle);
+window.addEventListener('scroll', positionSettingsToggle, true);
 function toggleSettings(open) {
     const toggle = el('settings-toggle');
     el('settings').hidden = !open;
@@ -83,7 +98,10 @@ function toggleSettings(open) {
 el('settings-toggle').addEventListener('click', () => {
     const open = el('settings').hidden;
     toggleSettings(open);
-    if (open) el('settings').scrollIntoView({ block: 'start', behavior: 'instant' });
+    if (open) {
+        el('settings').scrollIntoView({ block: 'start', behavior: 'instant' });
+        positionSettingsToggle();
+    }
 });
 el('settings').addEventListener('keydown', event => {
     if (event.key === 'Escape') {
@@ -168,8 +186,9 @@ async function chooseCharacter() {
     el('render-status').textContent = `Getting ${character().name} ready…`;
     el('status').textContent = 'Getting ready';
     try {
-        const next = await createAvatar(el('canvas'), characterId);
+        const next = await createAvatar(el('canvas'), characterId, { quality: qualityMode });
         if (pageLeaving || generation !== modelEpoch) { next.dispose(); return; }
+        next.setQuality(qualityMode);
         visual = next; modelReady = true; el('render-status').hidden = true; setState('off');
     } catch {
         if (generation !== modelEpoch) return;
