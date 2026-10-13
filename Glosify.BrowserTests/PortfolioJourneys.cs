@@ -420,6 +420,10 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(pronunciationButton).ToHaveAttributeAsync("aria-pressed", "false");
         await pronunciationButton.FocusAsync();
         await Expect(pronunciationButton).ToBeFocusedAsync();
+        await revealButton.ClickAsync();
+        // Both languages remain playable after restoring the original card faces.
+        await Expect(Page.Locator(".flashcard.is-revealed .card-word button[data-tts]")).ToBeVisibleAsync();
+        await Expect(Page.Locator(".flashcard.is-revealed .translation button[data-tts]")).ToBeVisibleAsync();
     }
 
     [BrowserFact]

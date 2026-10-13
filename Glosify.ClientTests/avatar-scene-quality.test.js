@@ -50,7 +50,9 @@ async function sceneHarness(cost = 55) {
             time += 1000 / 60;
             if (stateChanges) visual.setState(['listening', 'thinking', 'speaking', 'reconnecting'][Math.floor(time / 3000) % 4]);
             const pending = [...callbacks.values()]; callbacks.clear();
-            for (const callback of pending) callback(time);
+            const timestamp = time;
+            time += 3; // Browser callbacks run after the rAF timestamp.
+            for (const callback of pending) callback(timestamp);
             assert.equal(engine.blank, false, 'quality resize must redraw in the same animation callback');
         }
     } };

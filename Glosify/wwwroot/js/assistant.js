@@ -111,7 +111,8 @@ import {
         || document.querySelector('input[name="__RequestVerificationToken"]');
     const defaultEmptyText = empty?.textContent?.trim() || t('Assistant.Empty', 'Ask for help anywhere in GlobeGlotter.');
     const canFocusAssistant = () => !windowEl?.hidden
-        && !document.querySelector('.modal-backdrop.open');
+        && !document.querySelector('.modal-backdrop.open')
+        && (document.activeElement === document.body || panel.contains(document.activeElement));
 
     const requestHeaders = (json = false) => {
         const headers = {

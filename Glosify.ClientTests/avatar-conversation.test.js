@@ -483,6 +483,7 @@ test('transcript save failures are visible outside closed settings and clear aft
     assert.equal(h.elements.get('avatar-save-error').textContent, 'Save failed');
     await h.run("onMessage({ type: 'transcript-save-error', detail: 'Automatic save failed' }, epoch)"); await tick();
     assert.equal(h.elements.get('avatar-save-error').textContent, 'Automatic save failed');
+    assert.equal(h.elements.get('avatar-save-status').textContent, 'Automatic save failed');
     h.run("api = async () => ({ conversationId: 'source', turnCount: 2, savedTurns: 2, transcriptId: 'saved' })");
     await h.run('saveTranscript()');
     assert.equal(h.elements.get('avatar-save-error').hidden, true);

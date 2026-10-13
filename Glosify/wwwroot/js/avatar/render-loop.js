@@ -7,7 +7,7 @@ export function createRenderLoop(render, {
     onFrame = () => {}
 } = {}) {
     let frame = null, disposed = false, visible = true, state = 'off', reduced = false;
-    let settleUntil = 0, last = null, due = 0, measurement = null;
+    let settleUntil = 0, last = null, due = 0, measurement = null, dirty = false;
     const animated = () => !reduced || state === 'speaking';
     function queue() {
         if (!disposed && visible && frame === null) frame = request(tick);
@@ -20,7 +20,8 @@ export function createRenderLoop(render, {
             measurement = null;
         }
         const interval = 1000 / (state === 'speaking' ? 24 : ['off', 'idle', 'error'].includes(state) ? 12 : 15);
-        if (time + .5 >= due) {
+        if (dirty || time + .5 >= due) {
+            dirty = false;
             const before = now();
             render(last === null ? interval / 1000 : Math.min((time - last) / 1000, .1));
             measurement = { time, cost: now() - before };
@@ -33,6 +34,7 @@ export function createRenderLoop(render, {
     function invalidate() {
         if (disposed) return;
         measurement = null;
+        dirty = true;
         settleUntil = now() + 1000; last = null; due = now(); queue();
     }
     invalidate();

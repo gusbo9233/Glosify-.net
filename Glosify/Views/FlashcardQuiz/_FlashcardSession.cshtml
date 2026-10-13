@@ -1,7 +1,5 @@
 @model FlashcardQuizViewModel
 @{
-    var promptIsTarget = Glosify.Models.PracticeDirection.IsTargetToSource(Model.PracticeDirection);
-    var answerIsTarget = !promptIsTarget;
     var isFreestyle = Model.SelectedQuiz?.IsFreestyle == true;
 }
 
@@ -61,7 +59,7 @@
                 <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
                 <h2 class="card-word" dir="auto">
                     @Model.CurrentCard.Prompt
-                    @if (!isFreestyle && promptIsTarget)
+                    @if (!isFreestyle)
                     {
                         <button class="btn-icon-tts"
                                 type="button"
@@ -77,7 +75,7 @@
                 <div class="card-answer revealed">
                     <div class="translation" dir="auto">
                         @Model.CurrentCard.Answer
-                        @if (!isFreestyle && answerIsTarget)
+                        @if (!isFreestyle)
                         {
                             <button class="btn-icon-tts"
                                     type="button"
@@ -111,7 +109,7 @@
                     <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
                     <span class="card-word" dir="auto">@Model.CurrentCard.Prompt</span>
                 </button>
-                @if (!isFreestyle && promptIsTarget)
+                @if (!isFreestyle)
                 {
                     <button class="btn-icon-tts card-preview-tts"
                             type="button"

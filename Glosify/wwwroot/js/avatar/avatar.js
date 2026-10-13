@@ -242,7 +242,7 @@ function showTranscriptStatus(status) {
     el('ask').disabled = el('make-quiz').disabled = !view.enabled;
     el('save').disabled = !view.enabled || savingTranscript;
     el('save').textContent = view.label;
-    el('save-status').textContent = view.message;
+    el('save-status').textContent = el('save-error').textContent || view.message;
     el('saved-link').hidden = !view.href;
     if (view.href) el('saved-link').href = view.href;
 }
