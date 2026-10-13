@@ -50,6 +50,63 @@ public sealed class AvatarTests
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/avatar/config")).StatusCode);
     }
 
+    [Theory]
+    [InlineData("  Roleplay a job interview  ", "Roleplay a job interview")]
+    [InlineData("", null)]
+    [InlineData("   ", null)]
+    public async Task FreeConversationUsesOptionalPracticeContext(string context, string? expected)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { practiceContext = context });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        if (expected is null) Assert.Equal("Free conversation. Follow the user's interests.", session.Practice);
+        else
+        {
+            using var practice = JsonDocument.Parse(session.Practice);
+            Assert.Equal(expected, practice.RootElement.GetProperty("learnerContext").GetString());
+            Assert.Equal("Free conversation. Follow the user's interests.", practice.RootElement.GetProperty("lesson").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task PracticeContextRejectsOversizedInputWithProblemDetails()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { practiceContext = new string('a', 1001) });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("Practice context must be 1,000 characters or fewer.", problem.RootElement.GetProperty("detail").GetString());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Practice ordering breakfast")]
+    public async Task QuizPracticePreservesStructuredMultilingualContent(string? context)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var quiz = Guid.NewGuid();
+        const string words = "smörgås кофе 咖啡 قهوة";
+        await app.Seed(async db =>
+        {
+            db.Quizzes.Add(new Quiz { Id = quiz, UserId = "admin", Name = "Frukost", TargetLanguage = "Swedish" });
+            db.Words.Add(new Word { Id = "breakfast", QuizId = quiz, Lemma = words, Translation = "breakfast vocabulary" });
+            await db.SaveChangesAsync();
+        });
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = quiz, practiceContext = context });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        using var practice = JsonDocument.Parse(session.Practice);
+        var lesson = context is null ? practice.RootElement : practice.RootElement.GetProperty("lesson");
+        Assert.Equal(JsonValueKind.Object, lesson.ValueKind);
+        Assert.Equal("Frukost", lesson.GetProperty("name").GetString());
+        Assert.Equal(words, lesson.GetProperty("vocabulary")[0].GetProperty("text").GetString());
+        if (context is not null) Assert.Equal(context, practice.RootElement.GetProperty("learnerContext").GetString());
+    }
+
     [Fact]
     public async Task StartRequiresAntiforgeryAndProtectsQuizOwnership()
     {
@@ -87,7 +144,7 @@ public sealed class AvatarTests
             db.Words.Add(new Word { Id = "coffee", QuizId = quiz, Lemma = "kaffe", Translation = "coffee" });
             await db.SaveChangesAsync();
         });
-        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = quiz, language = "en" });
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = quiz, language = "en", practiceContext = "Practice ordering coffee" });
         var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
         Assert.Equal("sv", payload.GetProperty("language").GetString());
         Assert.Equal("Test voice", payload.GetProperty("voiceName").GetString());
@@ -95,6 +152,7 @@ public sealed class AvatarTests
         var id = payload.GetProperty("sessionId").GetGuid();
         var sessions = app.Services.GetRequiredService<AvatarSessions>();
         Assert.Contains("kaffe", sessions.Get(id, "admin").Practice);
+        Assert.Equal("Practice ordering coffee", JsonDocument.Parse(sessions.Get(id, "admin").Practice).RootElement.GetProperty("learnerContext").GetString());
         Assert.Equal("test-female-sv", sessions.Get(id, "admin").Voice!.Id);
         Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(id, "learner")).Status);
         client.DefaultRequestHeaders.Add("Origin", "https://evil.example");

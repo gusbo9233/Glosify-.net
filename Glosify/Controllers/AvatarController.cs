@@ -53,12 +53,13 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     public async Task<IActionResult> Start([FromBody] AvatarStartRequest request, CancellationToken ct)
     {
         if (await Access() is { } failure) return failure;
+        if (request.PracticeContext?.Length > 1000) return ProblemResult(422, "Practice context must be 1,000 characters or fewer.");
         if (!pricing.Available) return ProblemResult(503, "Voice is not configured. Ask an administrator to configure the provider keys.");
         var language = CurrentLanguage;
         if (language is null) return ProblemResult(422, "Choose a learning language in the sidebar to start a conversation.");
         var character = AvatarCharacter.Find(request.CharacterId);
         if (character is null) return ProblemResult(422, "Choose an available conversation partner.");
-        var practice = "Free conversation. Follow the user's interests.";
+        object lesson = "Free conversation. Follow the user's interests.";
         if (request.QuizId is { } id)
         {
             var quiz = await db.Quizzes.AsNoTracking().WhereTargetLanguage(language.Code)
@@ -70,9 +71,12 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
                 .Select(x => new { x.Text, x.Translation }).ToListAsync(ct);
             if (words.Count + sentences.Count == 0) return ProblemResult(422, "This quiz has no words or sentences to practice.");
             static string Limit(string value) => value.Length > 160 ? value[..160] : value;
-            practice = JsonSerializer.Serialize(new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
-                sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) });
+            lesson = new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
+                sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) };
         }
+        var practice = !string.IsNullOrWhiteSpace(request.PracticeContext)
+            ? JsonSerializer.Serialize(new { lesson, learnerContext = request.PracticeContext.Trim() })
+            : lesson is string text ? text : JsonSerializer.Serialize(lesson);
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         // Recognition reserves the maximum 45-second utterance. Replies and speech
         // reserve separately at the point of use.
@@ -175,4 +179,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null);
+public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null, string? PracticeContext = null);

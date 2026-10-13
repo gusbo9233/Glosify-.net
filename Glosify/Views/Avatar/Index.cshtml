@@ -13,9 +13,11 @@
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>
             <div class="avatar-stage-top"><span class="avatar-name"><span id="avatar-name">Rain</span> <small>AI conversation partner</small></span><span id="avatar-status" role="status">Getting ready</span></div>
             <div class="avatar-stage-message" id="avatar-render-status">Getting Rain ready…</div>
-            <section class="avatar-dialogue" id="avatar-dialogue" aria-label="Conversation chat">
+            <section class="avatar-dialogue is-minimized" id="avatar-dialogue" aria-label="Conversation chat">
                 <header class="avatar-chat-header">
-                    <button type="button" id="avatar-chat-move" aria-label="Move conversation chat" title="Drag to move · Arrow keys to move"><span class="avatar-chat-title">Conversation</span><span aria-hidden="true">⠿</span></button>
+                    <button type="button" id="avatar-chat-move" aria-label="Expand conversation chat" title="Expand conversation chat"><span class="avatar-chat-title">Conversation</span></button>
+                    <span id="avatar-chat-unread" class="avatar-chat-unread" role="status" hidden>New messages</span>
+                    <button type="button" id="avatar-chat-toggle" aria-controls="avatar-chat-body" aria-expanded="false" aria-label="Expand conversation chat" title="Expand conversation chat">+</button>
                     <button type="button" id="avatar-chat-clear" aria-label="Clear display" title="Clear display; conversation context is kept"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6" /></svg></button>
                 </header>
                 <div class="avatar-chat-body" id="avatar-chat-body" tabindex="0" aria-label="Conversation messages">
@@ -32,16 +34,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="avatar-chat-actions">
-                    <button type="button" id="avatar-ask" disabled>Ask assistant</button>
-                    <button type="button" id="avatar-make-quiz" disabled>Make a quiz</button>
-                    <button type="button" id="avatar-save" disabled>Save transcript</button>
-                    <a id="avatar-saved-link" hidden>Open transcript</a>
-                    <span id="avatar-save-status" role="status"></span>
-                </div>
-                <footer class="avatar-chat-footer"><span>Live conversation</span><button type="button" id="avatar-chat-resize" aria-label="Resize conversation chat" title="Drag to resize · Arrow keys to resize"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 18 10-10M13 18l5-5" /></svg></button></footer>
+                <footer class="avatar-chat-footer"><button type="button" id="avatar-chat-resize" aria-label="Resize conversation chat" title="Drag to resize · Arrow keys to resize"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m8 18 10-10M13 18l5-5" /></svg></button></footer>
             </section>
-            <div class="avatar-controls">
+            <div class="avatar-controls" id="avatar-controls">
                 <button type="button" id="avatar-talk" aria-keyshortcuts="Space Enter" aria-label="Hold to record" title="Hold to record" aria-pressed="false" disabled>
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3" /><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8" /></svg>
                 </button>
@@ -54,6 +49,13 @@
         </button>
         <aside class="avatar-settings" id="avatar-settings" aria-label="Conversation settings">
             <div class="avatar-settings-heading"><span class="avatar-step">MAKE IT YOURS</span><h2>Conversation settings</h2></div>
+            <label for="avatar-quality">Visual quality</label>
+            <select id="avatar-quality" aria-describedby="avatar-quality-help">
+                <option value="auto">Auto</option>
+                <option value="high">High</option>
+                <option value="low">Low</option>
+            </select>
+            <p class="avatar-help" id="avatar-quality-help">Auto simplifies background effects first to keep your conversation partner sharp.</p>
             <label for="avatar-character">Conversation partner</label>
             <select id="avatar-character" aria-describedby="avatar-character-help">
                 <option value="rain">Rain · female voice</option>
@@ -63,6 +65,9 @@
             <label for="avatar-quiz">What brings you here?</label>
             <select id="avatar-quiz"><option value="">Just a conversation</option></select>
             <p class="avatar-help">Choose a quiz to practice its words and sentences naturally. No scores, no pressure.</p>
+            <label for="avatar-practice-context">What would you like to practice?</label>
+            <textarea id="avatar-practice-context" rows="3" maxlength="1000" aria-describedby="avatar-practice-context-help" placeholder="For example: ordering coffee, a job interview, or talking about my weekend using the past tense."></textarea>
+            <p class="avatar-help" id="avatar-practice-context-help">Optional. Add a topic, situation, or skill to focus on. Changing this starts a new conversation.</p>
             <p class="avatar-help" id="avatar-language">Rain follows your current learning language.</p>
             <p class="avatar-help avatar-voice" id="avatar-voice">A female voice matched to your learning language.</p>
             <fieldset class="avatar-mode"><legend>How would you like to talk?</legend>
@@ -76,10 +81,18 @@
             </fieldset>
             <label class="avatar-autosave"><input type="checkbox" id="avatar-autosave" /> Automatically save conversations</label>
             <p class="avatar-help">Save spoken turns to your transcript library. Unsaved conversations expire after 8 hours of inactivity and are lost if the server restarts.</p>
+            <div class="avatar-chat-actions">
+                <button type="button" id="avatar-ask" disabled>Ask assistant</button>
+                <button type="button" id="avatar-make-quiz" disabled>Make a quiz</button>
+                <button type="button" id="avatar-save" disabled>Save transcript</button>
+                <a id="avatar-saved-link" hidden>Open transcript</a>
+                <span id="avatar-save-status" role="status"></span>
+            </div>
             <button type="button" id="avatar-new-conversation">New conversation</button>
             <p class="avatar-notice" id="avatar-notice" role="alert"></p>
         </aside>
     </div>
+    <p class="avatar-save-error" id="avatar-save-error" role="alert" hidden></p>
     <dialog id="avatar-unsaved-dialog" class="avatar-unsaved-dialog" aria-labelledby="avatar-unsaved-title">
         <form method="dialog">
             <h2 id="avatar-unsaved-title">Save your conversation?</h2>

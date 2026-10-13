@@ -81,14 +81,13 @@
 @media(prefers-reduced-motion:reduce){.avatar-controls button{transition:none}}
 
 /* A floating chat stays inside the stage and clear of the voice controls. */
-.avatar-dialogue{position:absolute;z-index:1;top:96px;right:24px;width:320px;height:390px;max-width:calc(100% - 24px);max-height:calc(100% - 124px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;border:1px solid #eee8d61f;border-radius:16px;background:rgb(20 25 23 / 92%);color:#eeeade;box-shadow:0 12px 32px #09100c40;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;text-align:start;color-scheme:dark}
+.avatar-dialogue{position:absolute;z-index:1;top:96px;right:24px;width:320px;height:390px;max-width:calc(100% - 24px);max-height:calc(100% - 24px);box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;border:1px solid #eee8d61f;border-radius:16px;background:rgb(20 25 23 / 92%);color:#eeeade;box-shadow:0 12px 32px #09100c40;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-family:system-ui,sans-serif;font-size:15px;line-height:1.6;text-align:start;color-scheme:dark}
 .avatar-dialogue[hidden],.avatar-dialogue [hidden]{display:none}
 .avatar-chat-header{display:flex;align-items:center;flex:none;border-bottom:1px solid #eee8d614;padding:4px 8px 4px 14px}
 .avatar-chat-header button,.avatar-chat-footer button{border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;border-radius:8px;min-height:40px}
 .avatar-chat-header button:hover,.avatar-chat-footer button:hover{background:#ffffff0a}
 #avatar-chat-move{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1;min-width:0;text-align:start;font-size:13px;font-weight:600;cursor:grab;touch-action:none;user-select:none}
 #avatar-chat-move:active{cursor:grabbing}
-#avatar-chat-move>span[aria-hidden]{flex-shrink:0;color:#a3b2a6;font-size:20px;font-weight:400}
 #avatar-chat-move .avatar-chat-title{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #avatar-chat-clear{flex-shrink:0;display:grid;place-items:center;width:40px;margin-left:4px;color:#a3b2a6}
 .avatar-chat-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:16px;overflow-wrap:anywhere;scrollbar-width:thin;scrollbar-color:#778379 transparent}
@@ -102,7 +101,7 @@
 .avatar-suggestion{border-top:1px solid #eee8d61f;margin-top:14px;padding-top:12px}
 .avatar-suggestion-label{display:block;font-size:11px;font-weight:500;color:#a7c4ae;margin-bottom:6px}
 .avatar-suggestion p{margin:6px 0 0;text-wrap:pretty}
-.avatar-chat-footer{display:flex;justify-content:space-between;align-items:center;flex:none;padding-left:16px;border-top:1px solid #eee8d60d;color:#9bad9e;font-size:10px}
+.avatar-chat-footer{display:flex;justify-content:flex-end;align-items:center;flex:none;padding-left:16px;border-top:1px solid #eee8d60d;color:#9bad9e;font-size:10px}
 #avatar-chat-resize{display:grid;place-items:center;width:44px;min-height:32px;cursor:nwse-resize;touch-action:none;user-select:none}
 .avatar-learning-help{margin-top:0;margin-bottom:0}
 .avatar-learning-help .avatar-help{margin:8px 0 0}
@@ -121,3 +120,27 @@
 .avatar-unsaved-dialog { max-width: min(30rem, calc(100vw - 2rem)); border: 1px solid var(--border-color, #ccc); border-radius: 1rem; padding: 1.5rem; color: var(--text-color, #222); background: var(--surface-color, #fff); }
 .avatar-unsaved-dialog::backdrop { background: rgb(0 0 0 / .4); }
 .avatar-unsaved-dialog .avatar-chat-actions { margin-top: 1rem; }
+
+.avatar-dialogue.is-minimized{top:auto;bottom:12px;height:50px}
+.avatar-dialogue.is-minimized .avatar-chat-body,.avatar-dialogue.is-minimized .avatar-chat-footer,.avatar-dialogue.is-minimized #avatar-chat-clear{display:none}
+.avatar-dialogue.is-minimized .avatar-chat-header{border-bottom:0}
+#avatar-chat-toggle{flex-shrink:0;width:40px;font-size:22px}
+.avatar-stage:has(.avatar-dialogue.is-minimized) .avatar-controls{bottom:80px}
+
+.avatar-dialogue.is-minimized,.avatar-dialogue.is-minimized #avatar-chat-move{cursor:pointer;touch-action:manipulation}
+.avatar-chat-unread{font-size:10px;line-height:1.2;color:#bdeec4;margin-left:8px}
+.avatar-save-error{padding:12px 16px;border:1px solid var(--error,#ffb4ab);border-radius:9px;color:var(--error,#ffb4ab);font-size:13px}
+
+.avatar-settings{padding-top:64px}
+
+/* Adaptive quality removes compositing effects before reducing avatar resolution. */
+.avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-dialogue,
+.avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-stage-message,
+.avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-stage-top>span:last-child{
+    backdrop-filter:none;-webkit-backdrop-filter:none
+}
+.avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-dialogue{background:#141917}
+.avatar-stage:has(canvas[data-background-quality="reduced"]) .avatar-stage-message{background:#263e30}
+
+.avatar-settings textarea{width:100%;box-sizing:border-box;min-height:88px;resize:vertical;padding:11px 12px;border:1px solid var(--outline-variant,#3d4a3d);border-radius:7px;background:var(--surface-container-low,#0d1b30);color:var(--on-surface,#d6e3ff);font:inherit;font-size:13px;line-height:1.5}
+.avatar-settings textarea::placeholder{color:var(--on-surface-var,#bccbb9);opacity:.7}

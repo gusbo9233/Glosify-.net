@@ -19,19 +19,7 @@
             @if (!string.IsNullOrWhiteSpace(Model.ExampleTranslation)) { <div class="example" dir="auto">@Model.ExampleTranslation</div> }
         </div>
     </article>
-    <form class="controls" method="post" action="@Model.RateUrl" data-flashcard-form data-right-rating="@Model.RightRating">
-        @Html.AntiForgeryToken()
-        @foreach (var field in Model.Fields) { <input type="hidden" name="@field.Key" value="@field.Value" /> }
-        <input type="hidden" name="DurationMilliseconds" data-study-duration />
-        <div class="rating-row revealed" style="grid-template-columns:repeat(@Model.Ratings.Count,minmax(0,1fr))">
-            @for (var i = 0; i < Model.Ratings.Count; i++)
-            {
-                var rating = Model.Ratings[i];
-                <button class="btn-rating @rating.Value" type="submit" name="rating" value="@rating.Value" data-rating-key="@(i + 1)"><span>@Text[rating.LabelKey]</span>@if (rating.Interval is not null) { <small class="study-interval">@rating.Interval</small> }</button>
-            }
-        </div>
-        <p class="swipe-hint">@Text[Model.RightRating == "easy" ? "Quiz.AnkiSwipeHint" : "Quiz.TwoChoiceSwipeHint"]</p>
-    </form>
+    @await Html.PartialAsync("_StudyRatingControls", Model)
 }
 else
 {

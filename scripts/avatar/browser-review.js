@@ -15,7 +15,7 @@ async page => {
     await page.waitForFunction(() => document.getElementById('avatar-status').textContent === 'Speaking');
     await page.waitForTimeout(400);
     await page.screenshot({ path: 'output/playwright/avatar-speaking.png' });
-    await page.waitForFunction(() => document.querySelector('#avatar-transcript').textContent.includes('Rain'));
+    await page.waitForFunction(() => document.querySelector('#avatar-transcript').textContent.includes(document.getElementById('avatar-name').textContent));
     const beforeHandsFree = await page.locator('#avatar-transcript li').count();
     await page.getByRole('radio', { name: 'Hands-free' }).check();
     const microphone = page.getByRole('button', { name: 'Hands-free conversation', exact: true });
@@ -23,19 +23,25 @@ async page => {
     const sidebar = page.locator('[data-sidebar-toggle]');
     const sidebarState = await sidebar.getAttribute('aria-expanded');
     await sidebar.focus(); await page.keyboard.press('Space');
-    if (await sidebar.getAttribute('aria-expanded') !== sidebarState) throw new Error('Space toggled the sidebar');
+    if (await sidebar.getAttribute('aria-expanded') === sidebarState) throw new Error('Space did not activate the focused sidebar button');
+    if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Sidebar Space started recording');
+    await microphone.focus(); await page.keyboard.press('Space');
     await page.waitForFunction(count => document.querySelectorAll('#avatar-transcript li').length > count, beforeHandsFree);
     if (await microphone.getAttribute('aria-pressed') !== 'true') throw new Error('Hands-free microphone was not live');
     await page.keyboard.press('Space');
     if (await microphone.getAttribute('aria-pressed') !== 'false') throw new Error('Microphone pause was not applied');
     await page.getByRole('combobox', { name: 'Conversation partner', exact: true }).selectOption('rowan');
+    await page.waitForFunction(() => document.getElementById('avatar-unsaved-dialog').open || !document.getElementById('avatar-hands-free').disabled);
+    const retention = page.locator('#avatar-unsaved-dialog');
+    if (await retention.isVisible()) await retention.getByRole('button', { name: 'Save transcript', exact: true }).click();
     await page.waitForFunction(() => !document.getElementById('avatar-hands-free').disabled);
     const arrows = await page.evaluate(() => {
-        const left = document.querySelector('[data-sidebar-toggle]').getBoundingClientRect();
+        const settings = document.getElementById('avatar-settings').getBoundingClientRect();
         const right = document.getElementById('avatar-settings-toggle').getBoundingClientRect();
-        return { aligned: Math.abs(left.top - right.top) < 1, sameSize: left.width === right.width && left.height === right.height };
+        return { aligned: Math.abs(settings.top + 8 - right.top) < 1 && Math.abs(settings.left + 8 - right.left) < 1,
+            sameSize: right.width === 44 && right.height === 44 };
     });
-    if (!arrows.aligned || !arrows.sameSize) throw new Error('Settings and sidebar arrows are not aligned');
+    if (!arrows.aligned || !arrows.sameSize) throw new Error('Close settings arrow is not in the drawer’s top-left corner');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(500); // Let the shared sidebar's responsive transition finish.
     await page.screenshot({ path: 'output/playwright/avatar-mobile.png', fullPage: true });

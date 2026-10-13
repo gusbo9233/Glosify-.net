@@ -3,10 +3,11 @@
 export function createRenderLoop(render, {
     request = callback => requestAnimationFrame(callback),
     cancel = id => cancelAnimationFrame(id),
-    now = () => performance.now()
+    now = () => performance.now(),
+    onFrame = () => {}
 } = {}) {
     let frame = null, disposed = false, visible = true, state = 'off', reduced = false;
-    let settleUntil = 0, last = null, due = 0;
+    let settleUntil = 0, last = null, due = 0, measurement = null, dirty = false;
     const animated = () => !reduced || state === 'speaking';
     function queue() {
         if (!disposed && visible && frame === null) frame = request(tick);
@@ -14,9 +15,16 @@ export function createRenderLoop(render, {
     function tick(time) {
         frame = null;
         if (disposed || !visible) return;
+        if (measurement) {
+            onFrame({ time, renderMs: measurement.cost, frameGap: time - measurement.time });
+            measurement = null;
+        }
         const interval = 1000 / (state === 'speaking' ? 24 : ['off', 'idle', 'error'].includes(state) ? 12 : 15);
-        if (time + .5 >= due) {
+        if (dirty || time + .5 >= due) {
+            dirty = false;
+            const before = now();
             render(last === null ? interval / 1000 : Math.min((time - last) / 1000, .1));
+            measurement = { time, cost: now() - before };
             last = time;
             // Preserve the remainder so a 60 Hz display really delivers 24 fps.
             due = time + interval - Math.max(0, time - due) % interval;
@@ -25,6 +33,8 @@ export function createRenderLoop(render, {
     }
     function invalidate() {
         if (disposed) return;
+        measurement = null;
+        dirty = true;
         settleUntil = now() + 1000; last = null; due = now(); queue();
     }
     invalidate();
@@ -36,15 +46,10 @@ export function createRenderLoop(render, {
             if (visible === value) return;
             visible = value;
             if (value) invalidate();
-            else { if (frame !== null) cancel(frame); frame = null; last = null; }
+            else { if (frame !== null) cancel(frame); frame = null; last = null; measurement = null; }
         },
         dispose() { disposed = true; if (frame !== null) cancel(frame); frame = null; }
     };
-}
-
-// Bound the drawing buffer even when the settings drawer closes on a wide screen.
-export function portraitScaling(width, height, devicePixelRatio = 1) {
-    return Math.max(1, devicePixelRatio / 1.5, width / 1000, height / 1000);
 }
 
 // Frame the portrait from the canvas height alone: a wider stage (a closed sidebar or

@@ -1,17 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPerformance } from '../Glosify/wwwroot/js/avatar/performance.js';
-import { createRenderLoop, portraitFraming, portraitScaling } from '../Glosify/wwwroot/js/avatar/render-loop.js';
+import { createRenderLoop, portraitFraming } from '../Glosify/wwwroot/js/avatar/render-loop.js';
 
 function harness() {
     let time = 0, next = 0;
-    const pending = new Map(), draws = [];
+    const pending = new Map(), draws = [], samples = [];
     const loop = createRenderLoop(dt => draws.push({ time, dt }), {
         now: () => time,
+        onFrame: sample => samples.push(sample),
         request: callback => { pending.set(++next, callback); return next; },
         cancel: id => pending.delete(id)
     });
-    return { loop, draws, pending, advance(ms) {
+    return { loop, draws, pending, samples, advance(ms) {
         const end = time + ms;
         while (time + 1000 / 60 <= end + .001) {
             time += 1000 / 60;
@@ -74,17 +75,6 @@ test('disposal prevents every later wakeup', () => {
     assert.equal(h.pending.size, 0); assert.equal(h.draws.length, count);
 });
 
-test('portrait buffer is bounded to 1000 pixels on either axis without upscaling small canvases', () => {
-    for (const [width, height] of [[1800, 820], [390, 540], [800, 1800], [1000, 720]]) {
-        const scale = portraitScaling(width, height);
-        assert.ok(width / scale <= 1000 && height / scale <= 1000);
-        assert.ok(scale >= 1);
-    }
-    assert.equal(portraitScaling(390, 540), 1);
-    assert.equal(portraitScaling(1000, 720, 2), 2 / 1.5);
-    assert.equal(portraitScaling(1000, 720, 3), 2);
-});
-
 test('closing a sidebar widens the stage without zooming the portrait out', () => {
     for (const height of [620, 720, 900]) {
         const open = portraitFraming(520, height);
@@ -99,4 +89,15 @@ test('the phone layout widens the view to keep the shoulders and hair in frame',
     assert.ok(extent(phone) * 366 / 540 >= .5 - 1e-9);
     assert.deepEqual(portraitFraming(800, 540, { compact: true }), portraitFraming(800, 540));
     for (const framing of [phone, desktop]) assert.ok(framing.targetY + extent(framing) / 2 > 1.75);
+});
+
+
+test('render timing samples the next animation callback rather than the intentional idle interval', () => {
+    const h = harness(); h.advance(3000);
+    assert.ok(h.samples.length >= 34);
+    assert.ok(h.samples.every(sample => Math.abs(sample.frameGap - 1000 / 60) < .001));
+    h.loop.setVisible(false); const count = h.samples.length; h.advance(10000);
+    assert.equal(h.samples.length, count);
+    h.loop.setVisible(true); h.advance(1000);
+    assert.ok(h.samples.slice(count).every(sample => sample.frameGap < 20));
 });

@@ -28,6 +28,7 @@ async page => {
     await page.locator('#avatar-make-quiz').click();
     await page.waitForFunction(() => [...document.querySelectorAll('textarea')].some(t => t.value === 'Make a quiz based on this avatar conversation.'));
     await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Expand conversation chat', exact: true }).first().click();
     await page.locator('#avatar-chat-clear').click();
     if (await page.locator('#avatar-ask').isDisabled()) throw new Error('Clearing display lost conversation');
     const transcript = await page.context().newPage(); await transcript.goto(new URL(link, page.url()).href);

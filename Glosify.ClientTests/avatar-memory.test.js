@@ -16,7 +16,7 @@ test('a later page visit remembers only the opaque reference and selection, scop
     assert.equal(createConversationMemory('owner', storage()).get(choice), undefined);
     assert.deepEqual(JSON.parse([...store.values.values()][0]), { preferences: choice, id: 'reference' });
 });
-for (const change of [{ language: 'en' }, { characterId: 'rowan' }, { quizId: 'quiz' }]) {
+for (const change of [{ language: 'en' }, { characterId: 'rowan' }, { quizId: 'quiz' }, { practiceContext: 'Ordering coffee' }]) {
     test(`changing ${Object.keys(change)[0]} retains the reference when returning to the old choice`, () => {
         const memory = createConversationMemory('owner', storage());
         memory.save(choice, 'reference');

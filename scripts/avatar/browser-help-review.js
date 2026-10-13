@@ -52,6 +52,9 @@ async page => {
     if (await page.locator('#avatar-translation').textContent() !== 'Hi! How are you?') throw new Error('Missing English reply');
     if (await page.locator('#avatar-suggestion-text').textContent() !== 'Hur har din dag varit?') throw new Error('Missing Swedish suggestion');
     if (await page.locator('#avatar-suggestion-translation').textContent() !== 'How has your day been?') throw new Error('Missing translated suggestion');
+    if (!await page.locator('#avatar-chat-unread').isVisible()) throw new Error('Minimized chat did not signal new messages');
+    if (await page.locator('#avatar-chat-unread').evaluate(node => Boolean(node.closest('button')))) throw new Error('Unread status must be exposed outside button semantics');
+    await page.getByRole('button', { name: 'Expand conversation chat', exact: true }).first().click();
     await page.screenshot({ path: 'output/playwright/avatar-help-desktop.png', fullPage: true });
     await page.getByRole('button', { name: 'Open conversation settings', exact: true }).click();
     await translate.uncheck();
@@ -71,6 +74,7 @@ async page => {
     await page.waitForTimeout(500);
     await page.screenshot({ path: 'output/playwright/avatar-help-mobile-settings.png', fullPage: true });
     await page.getByRole('button', { name: 'Close conversation settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Expand conversation chat', exact: true }).first().click();
     const talk = page.getByRole('button', { name: 'Hold to record', exact: true });
     const box = await talk.boundingBox();
     if (box.width < 72 || box.height < 72) throw new Error('Mobile microphone target shrank');

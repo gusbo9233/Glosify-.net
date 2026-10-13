@@ -1,3 +1,4 @@
+import { normalizeQuality } from './render-quality.js';
 import { transcriptPresentation } from './transcript.js';
 import { preserveConversation } from './retention.js';
 import { setupFloatingChat } from './chat-panel.js';
@@ -7,13 +8,23 @@ import { VoiceConnection } from './connection.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
-setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize') });
+const chat = setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize'), toggle: el('chat-toggle'), controls: el('controls'), unread: el('chat-unread') });
 let transcriptStatus = null, savingTranscript = false, transcriptStatusRequest = 0;
 let lastTranscript = null, clearedChatTurn, chatRevision = 0;
 let sessionStore;
 try { sessionStore = globalThis.sessionStorage; } catch { /* Storage may be disabled. */ }
 const memory = createConversationMemory(document.body?.dataset.speechUser, sessionStore);
 const preferences = memory.preferences();
+let practiceContext = preferences?.practiceContext || '';
+el('practice-context').value = practiceContext;
+let qualityMode = 'auto';
+try { qualityMode = normalizeQuality(localStorage.getItem('glosify.avatar.quality')); } catch { /* Optional local preference. */ }
+el('quality').value = qualityMode;
+el('quality').addEventListener('change', () => {
+    qualityMode = normalizeQuality(el('quality').value);
+    try { localStorage.setItem('glosify.avatar.quality', qualityMode); } catch { /* Storage may be disabled. */ }
+    visual?.setQuality(qualityMode);
+});
 const helpKey = document.body?.dataset.speechUser ? `glosify.avatar.help.${document.body.dataset.speechUser}` : null;
 const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked });
 let replyHelp = null, spaceHeld = false, spaceRecording = false;
@@ -32,6 +43,7 @@ function renderHelp() {
     el('suggestion-translation').textContent = suggestionTranslation || ''; el('suggestion-translation').hidden = !suggestionTranslation;
     el('chat-current').hidden = el('caption').hidden && !translation && !suggestion;
     el('chat-empty').hidden = !!lastTranscript || !el('chat-current').hidden;
+    if (translation || suggestion) chat?.markUnread();
 }
 for (const name of ['translate', 'suggest']) el(name).addEventListener('change', () => {
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
@@ -45,7 +57,7 @@ let ending = null, changingQuiz = false, captureEpoch = 0;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
-const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null });
+const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null, practiceContext });
 const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !ending && !changingQuiz && !pageLeaving;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
 function send(value) { return socket ? socket.send(JSON.stringify(value)) !== false : false; }
@@ -57,20 +69,29 @@ function setState(value) {
     refreshStart();
 }
 function positionSettingsToggle() {
-    const viewportWidth = document.documentElement?.clientWidth || window.innerWidth;
     const rtl = document.documentElement?.dir === 'rtl';
-    const bounds = el('settings').getBoundingClientRect();
-    const offset = el('settings').hidden ? 0 : rtl ? bounds.left + 8 : viewportWidth - bounds.right + 8;
     const style = el('settings-toggle').style;
+    if (!el('settings').hidden) {
+        const bounds = el('settings').getBoundingClientRect();
+        style.left = `${bounds.left + 8}px`;
+        style.right = 'auto';
+        style.top = `${bounds.top + 8}px`;
+        return;
+    }
     const edge = rtl ? 'left' : 'right';
     style[edge === 'left' ? 'right' : 'left'] = 'auto';
-    style[edge] = `${Math.max(0, Math.min(viewportWidth - 44, offset))}px`;
+    style[edge] = '0px';
+    style.top = 'max(16px, env(safe-area-inset-top))';
 }
 const settingsGeometry = new ResizeObserver(positionSettingsToggle);
 settingsGeometry.observe(el('workspace')); settingsGeometry.observe(el('settings'));
 const appMain = document.querySelector('.app-main');
 if (appMain) settingsGeometry.observe(appMain);
 window.addEventListener('resize', positionSettingsToggle);
+window.addEventListener('scroll', event => {
+    // Scrolling chat messages or another independent panel cannot move settings.
+    if (event.target === document || event.target?.contains?.(el('settings'))) positionSettingsToggle();
+}, true);
 function toggleSettings(open) {
     const toggle = el('settings-toggle');
     el('settings').hidden = !open;
@@ -83,7 +104,10 @@ function toggleSettings(open) {
 el('settings-toggle').addEventListener('click', () => {
     const open = el('settings').hidden;
     toggleSettings(open);
-    if (open) el('settings').scrollIntoView({ block: 'start', behavior: 'instant' });
+    if (open) {
+        el('settings').scrollIntoView({ block: 'start', behavior: 'instant' });
+        positionSettingsToggle();
+    }
 });
 el('settings').addEventListener('keydown', event => {
     if (event.key === 'Escape') {
@@ -102,6 +126,7 @@ function caption(text, speaker = 'assistant') {
     el('caption').hidden = !text.trim();
     if (!text.trim() || speaker === 'user') replyHelp = null;
     renderHelp();
+    if (text.trim()) chat?.markUnread();
     if (follow) body.scrollTop = body.scrollHeight;
 }
 function transcript(speaker, text) {
@@ -112,6 +137,7 @@ function transcript(speaker, text) {
     el('transcript').append(item);
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
     lastTranscript = { speaker, text };
+    chat?.markUnread();
     if (el('caption').textContent === text && el('chat-speaker').textContent === speaker) el('caption').hidden = true;
     renderHelp();
     if (follow) body.scrollTop = body.scrollHeight;
@@ -119,6 +145,7 @@ function transcript(speaker, text) {
 function clearChat() {
     clearedChatTurn = turnId ?? undefined; ++chatRevision;
     el('transcript').replaceChildren(); lastTranscript = null; caption('');
+    chat?.clearUnread();
 }
 el('chat-clear').addEventListener('click', clearChat);
 function refreshStart() {
@@ -137,6 +164,7 @@ function refreshStart() {
     el('hands-free').setAttribute('aria-pressed', String(handsFree && recording));
     el('hands-free').textContent = reconnecting ? 'Restart hands-free' : recording ? 'Pause hands-free' : 'Start hands-free';
     el('hands-free').title = el('hands-free').textContent;
+    el('practice-context').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('quiz').disabled = !!ending || changingQuiz || characterLoading || (!!audio && !ready) || pageLeaving;
     el('character').disabled = characterLoading || !!ending || changingQuiz || (!!audio && !ready) || pageLeaving;
 }
@@ -168,8 +196,9 @@ async function chooseCharacter() {
     el('render-status').textContent = `Getting ${character().name} ready…`;
     el('status').textContent = 'Getting ready';
     try {
-        const next = await createAvatar(el('canvas'), characterId);
+        const next = await createAvatar(el('canvas'), characterId, { quality: qualityMode });
         if (pageLeaving || generation !== modelEpoch) { next.dispose(); return; }
+        next.setQuality(qualityMode);
         visual = next; modelReady = true; el('render-status').hidden = true; setState('off');
     } catch {
         if (generation !== modelEpoch) return;
@@ -208,13 +237,18 @@ function showTranscriptStatus(status) {
             savedTurns: status.transcriptId && status.transcriptId === transcriptStatus.transcriptId
                 ? Math.max(status.savedTurns, transcriptStatus.savedTurns) : status.savedTurns };
     transcriptStatus = status;
+    if (!status || status.savedTurns >= status.turnCount) showSaveError();
     const view = transcriptPresentation(status);
     el('ask').disabled = el('make-quiz').disabled = !view.enabled;
     el('save').disabled = !view.enabled || savingTranscript;
     el('save').textContent = view.label;
-    el('save-status').textContent = view.message;
+    el('save-status').textContent = el('save-error').textContent || view.message;
     el('saved-link').hidden = !view.href;
     if (view.href) el('saved-link').href = view.href;
+}
+function showSaveError(message = '') {
+    el('save-error').textContent = message;
+    el('save-error').hidden = !message;
 }
 async function refreshTranscriptStatus() {
     const id = memory.get(selection());
@@ -232,7 +266,11 @@ async function saveTranscript() {
     ++transcriptStatusRequest; // An earlier GET cannot overwrite the save result.
     savingTranscript = true; showTranscriptStatus(transcriptStatus);
     try { showTranscriptStatus(await api(`/api/avatar/conversations/${id}/transcript`, {})); }
-    catch (error) { if (memory.get(selection()) === id) el('save-status').textContent = error.message; }
+    catch (error) {
+        if (memory.get(selection()) === id) {
+            el('save-status').textContent = error.message; showSaveError(error.message);
+        }
+    }
     finally { savingTranscript = false; el('save').disabled = !transcriptStatus?.turnCount; }
 }
 el('save').addEventListener('click', () => { void saveTranscript(); });
@@ -393,7 +431,8 @@ async function onMessage(message, generation) {
     if (generation !== epoch) return;
     if (message.type === 'transcript-status') { showTranscriptStatus(message.status); return; }
     if (message.type === 'transcript-save-error') {
-        void refreshTranscriptStatus().then(() => { el('save-status').textContent = message.detail; }); return;
+        el('save-status').textContent = message.detail; showSaveError(message.detail);
+        void refreshTranscriptStatus(); return;
     }
     if (message.type === 'connected') {
         ready = true; setState('idle');
@@ -459,7 +498,7 @@ async function start() {
         await nextAudio.open(frame);
         if (generation !== epoch) { await nextAudio.close(); return; }
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null });
+        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext });
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         memory.save(context, result.memoryId);
@@ -527,6 +566,16 @@ function toggleHandsFree(event) {
 }
 function activateConversation(event) {
     if (ending || changingQuiz || pageLeaving) return;
+    const draft = el('practice-context').value.trim();
+    if (draft !== practiceContext) {
+        event?.preventDefault();
+        if (audio || sessionId || memory.get(selection())) {
+            // Resolve retention before opening a microphone. If a dialog is
+            // needed, the learner starts recording with their next press.
+            void chooseQuiz(draft); return;
+        }
+        practiceContext = draft; el('practice-context').value = draft; selectMemory();
+    }
     if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
     if (!ready && !canStart()) return;
     event?.preventDefault(); notice();
@@ -570,18 +619,32 @@ async function release() {
     // reaches recognition, followed by its commit, even for a short button press.
     if (current() && ready && awaitingCommit && state === 'listening') commit();
 }
-async function chooseQuiz() {
+async function chooseQuiz(nextPracticeContext = el('practice-context').value.trim()) {
+    // A blur caused by disabling the field must not overwrite a pending draft.
     if (changingQuiz || pageLeaving || ending) return;
-    changingQuiz = true; refreshStart();
     const previous = memory.preferences();
+    if (!audio && !sessionId && (!previous || !memory.get(previous))) {
+        practiceContext = nextPracticeContext; el('practice-context').value = practiceContext;
+        selectMemory(); return;
+    }
+    changingQuiz = true; refreshStart();
     try {
         if (previous && !await prepareConversationChange(previous)) {
-            el('quiz').value = previous.quizId || ''; return;
+            el('quiz').value = previous.quizId || '';
+            el('practice-context').value = practiceContext; return;
         }
-        if (!pageLeaving) selectMemory();
+        if (!pageLeaving) {
+            practiceContext = nextPracticeContext;
+            el('practice-context').value = practiceContext;
+            selectMemory();
+        }
     } finally { changingQuiz = false; refreshStart(); }
 }
 el('quiz').addEventListener('change', () => { void chooseQuiz(); });
+el('practice-context').addEventListener('change', () => {
+    const value = el('practice-context').value.trim();
+    if (value !== practiceContext) void chooseQuiz(value);
+});
 el('hands-free').addEventListener('click', toggleHandsFree);
 el('talk').addEventListener('pointerdown', event => {
     if (!event.isPrimary || event.button !== 0) return;

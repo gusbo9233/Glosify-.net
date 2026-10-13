@@ -6,7 +6,8 @@ export function createConversationMemory(owner, storage) {
     const valid = value => value && typeof value === 'object'
         && (typeof value.language === 'string' || value.language === null)
         && typeof value.characterId === 'string'
-        && (typeof value.quizId === 'string' || value.quizId === null);
+        && (typeof value.quizId === 'string' || value.quizId === null)
+        && (value.practiceContext === undefined || (typeof value.practiceContext === 'string' && value.practiceContext.length <= 1000));
     function read() {
         try {
             const saved = key && storage?.getItem(key);
@@ -30,7 +31,8 @@ export function createConversationMemory(owner, storage) {
         }
     }
     const matches = (entry, selection) => entry?.language === selection.language
-        && entry?.characterId === selection.characterId && entry?.quizId === selection.quizId;
+        && entry?.characterId === selection.characterId && entry?.quizId === selection.quizId
+        && (entry?.practiceContext || '') === (selection.practiceContext || '');
     return {
         preferences: () => read().preferences,
         select(selection) {
