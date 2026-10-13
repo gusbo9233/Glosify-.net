@@ -59,7 +59,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         if (language is null) return ProblemResult(422, "Choose a learning language in the sidebar to start a conversation.");
         var character = AvatarCharacter.Find(request.CharacterId);
         if (character is null) return ProblemResult(422, "Choose an available conversation partner.");
-        var practice = "Free conversation. Follow the user's interests.";
+        object lesson = "Free conversation. Follow the user's interests.";
         if (request.QuizId is { } id)
         {
             var quiz = await db.Quizzes.AsNoTracking().WhereTargetLanguage(language.Code)
@@ -71,11 +71,12 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
                 .Select(x => new { x.Text, x.Translation }).ToListAsync(ct);
             if (words.Count + sentences.Count == 0) return ProblemResult(422, "This quiz has no words or sentences to practice.");
             static string Limit(string value) => value.Length > 160 ? value[..160] : value;
-            practice = JsonSerializer.Serialize(new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
-                sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) });
+            lesson = new { name = Limit(quiz.Name), vocabulary = words.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }),
+                sentences = sentences.Select(x => new { text = Limit(x.Text), translation = Limit(x.Translation) }) };
         }
-        if (!string.IsNullOrWhiteSpace(request.PracticeContext))
-            practice = JsonSerializer.Serialize(new { lesson = practice, learnerContext = request.PracticeContext.Trim() });
+        var practice = !string.IsNullOrWhiteSpace(request.PracticeContext)
+            ? JsonSerializer.Serialize(new { lesson, learnerContext = request.PracticeContext.Trim() })
+            : lesson is string text ? text : JsonSerializer.Serialize(lesson);
         var account = await credits.GetOrCreateAccountAsync(UserId, ct);
         // Recognition reserves the maximum 45-second utterance. Replies and speech
         // reserve separately at the point of use.

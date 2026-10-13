@@ -427,6 +427,67 @@ function prepareFirstPress(h) {
 }
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
+test('Talk commits an unblurred practice draft before opening the microphone', async () => {
+    const h = setup(); prepareFirstPress(h);
+    const field = h.elements.get('avatar-practice-context');
+    field.value = '  Ordering breakfast  ';
+    h.run('press()');
+    // Disabling a focused textarea can synchronously emit change during startup.
+    field.listeners.change();
+    await tick();
+    assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.practiceContext, 'Ordering breakfast');
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+    assert.equal(h.sent.some(x => x.microphoneClosed), false);
+    assert.equal(h.run('selection().practiceContext'), 'Ordering breakfast');
+});
+
+test('blurring a fresh practice draft keeps the hands-free button available for the same click', async () => {
+    const h = setup('hands-free'); prepareFirstPress(h);
+    const field = h.elements.get('avatar-practice-context'); field.value = 'Ordering breakfast';
+    field.listeners.change();
+    assert.equal(h.elements.get('avatar-hands-free').disabled, false);
+    h.run('toggleHandsFree()'); await tick();
+    assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.practiceContext, 'Ordering breakfast');
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+});
+
+for (const busy of ['changingQuiz', 'ending']) test(`context blur preserves the pending draft while ${busy}`, async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run(`${busy} = true`);
+    const field = h.elements.get('avatar-practice-context'); field.value = 'Job interview';
+    field.listeners.change(); await tick();
+    assert.equal(field.value, 'Job interview');
+    h.run(`${busy} = false; press()`); await tick();
+    assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.practiceContext, 'Job interview');
+});
+
+test('Talk with an edited retained conversation resolves cancellation before opening a microphone', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run(`memory.save(selection(), 'unsaved'); requestJson = async () => ({ turnCount: 2, savedTurns: 0 });
+        chooseUnsavedConversation = async () => 'cancel';`);
+    h.elements.get('avatar-practice-context').value = 'New topic';
+    h.run('press()'); await tick();
+    assert.equal(h.sent.some(x => x.microphoneOpened), false);
+    assert.equal(h.run('memory.get(selection())'), 'unsaved');
+    assert.equal(h.elements.get('avatar-practice-context').value, '');
+});
+
+test('transcript save failures are visible outside closed settings and clear after a successful save', async () => {
+    const h = setup();
+    h.run(`config = { language: 'sv' }; memory.save(selection(), 'source'); toggleSettings(false);
+        transcriptStatus = { conversationId: 'source', turnCount: 2, savedTurns: 0 };
+        requestJson = async () => transcriptStatus; api = async () => { throw Error('Save failed'); };`);
+    await h.run('saveTranscript()');
+    assert.equal(h.elements.get('avatar-settings').hidden, true);
+    assert.equal(h.elements.get('avatar-save-error').hidden, false);
+    assert.equal(h.elements.get('avatar-save-error').textContent, 'Save failed');
+    await h.run("onMessage({ type: 'transcript-save-error', detail: 'Automatic save failed' }, epoch)"); await tick();
+    assert.equal(h.elements.get('avatar-save-error').textContent, 'Automatic save failed');
+    h.run("api = async () => ({ conversationId: 'source', turnCount: 2, savedTurns: 2, transcriptId: 'saved' })");
+    await h.run('saveTranscript()');
+    assert.equal(h.elements.get('avatar-save-error').hidden, true);
+});
+
 test('the first talk press starts once and preserves a short utterance through HTTP and voice setup', async () => {
     const h = setup(); prepareFirstPress(h);
     assert.equal(h.elements.get('avatar-talk').disabled, false);

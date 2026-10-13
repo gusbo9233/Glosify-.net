@@ -8,7 +8,7 @@ import { VoiceConnection } from './connection.js';
 import { createAvatar } from './scene.min.js';
 
 const el = name => document.getElementById('avatar-' + name);
-setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize'), toggle: el('chat-toggle') });
+const chat = setupFloatingChat({ panel: el('dialogue'), stage: el('stage'), move: el('chat-move'), resize: el('chat-resize'), toggle: el('chat-toggle'), controls: el('controls'), unread: el('chat-unread') });
 let transcriptStatus = null, savingTranscript = false, transcriptStatusRequest = 0;
 let lastTranscript = null, clearedChatTurn, chatRevision = 0;
 let sessionStore;
@@ -43,6 +43,7 @@ function renderHelp() {
     el('suggestion-translation').textContent = suggestionTranslation || ''; el('suggestion-translation').hidden = !suggestionTranslation;
     el('chat-current').hidden = el('caption').hidden && !translation && !suggestion;
     el('chat-empty').hidden = !!lastTranscript || !el('chat-current').hidden;
+    if (translation || suggestion) chat?.markUnread();
 }
 for (const name of ['translate', 'suggest']) el(name).addEventListener('change', () => {
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
@@ -69,9 +70,9 @@ function setState(value) {
 }
 function positionSettingsToggle() {
     const rtl = document.documentElement?.dir === 'rtl';
-    const bounds = el('settings').getBoundingClientRect();
     const style = el('settings-toggle').style;
     if (!el('settings').hidden) {
+        const bounds = el('settings').getBoundingClientRect();
         style.left = `${bounds.left + 8}px`;
         style.right = 'auto';
         style.top = `${bounds.top + 8}px`;
@@ -87,7 +88,10 @@ settingsGeometry.observe(el('workspace')); settingsGeometry.observe(el('settings
 const appMain = document.querySelector('.app-main');
 if (appMain) settingsGeometry.observe(appMain);
 window.addEventListener('resize', positionSettingsToggle);
-window.addEventListener('scroll', positionSettingsToggle, true);
+window.addEventListener('scroll', event => {
+    // Scrolling chat messages or another independent panel cannot move settings.
+    if (event.target === document || event.target?.contains?.(el('settings'))) positionSettingsToggle();
+}, true);
 function toggleSettings(open) {
     const toggle = el('settings-toggle');
     el('settings').hidden = !open;
@@ -122,6 +126,7 @@ function caption(text, speaker = 'assistant') {
     el('caption').hidden = !text.trim();
     if (!text.trim() || speaker === 'user') replyHelp = null;
     renderHelp();
+    if (text.trim()) chat?.markUnread();
     if (follow) body.scrollTop = body.scrollHeight;
 }
 function transcript(speaker, text) {
@@ -132,6 +137,7 @@ function transcript(speaker, text) {
     el('transcript').append(item);
     while (el('transcript').children.length > 48) el('transcript').firstChild.remove();
     lastTranscript = { speaker, text };
+    chat?.markUnread();
     if (el('caption').textContent === text && el('chat-speaker').textContent === speaker) el('caption').hidden = true;
     renderHelp();
     if (follow) body.scrollTop = body.scrollHeight;
@@ -139,6 +145,7 @@ function transcript(speaker, text) {
 function clearChat() {
     clearedChatTurn = turnId ?? undefined; ++chatRevision;
     el('transcript').replaceChildren(); lastTranscript = null; caption('');
+    chat?.clearUnread();
 }
 el('chat-clear').addEventListener('click', clearChat);
 function refreshStart() {
@@ -230,6 +237,7 @@ function showTranscriptStatus(status) {
             savedTurns: status.transcriptId && status.transcriptId === transcriptStatus.transcriptId
                 ? Math.max(status.savedTurns, transcriptStatus.savedTurns) : status.savedTurns };
     transcriptStatus = status;
+    if (!status || status.savedTurns >= status.turnCount) showSaveError();
     const view = transcriptPresentation(status);
     el('ask').disabled = el('make-quiz').disabled = !view.enabled;
     el('save').disabled = !view.enabled || savingTranscript;
@@ -237,6 +245,10 @@ function showTranscriptStatus(status) {
     el('save-status').textContent = view.message;
     el('saved-link').hidden = !view.href;
     if (view.href) el('saved-link').href = view.href;
+}
+function showSaveError(message = '') {
+    el('save-error').textContent = message;
+    el('save-error').hidden = !message;
 }
 async function refreshTranscriptStatus() {
     const id = memory.get(selection());
@@ -254,7 +266,11 @@ async function saveTranscript() {
     ++transcriptStatusRequest; // An earlier GET cannot overwrite the save result.
     savingTranscript = true; showTranscriptStatus(transcriptStatus);
     try { showTranscriptStatus(await api(`/api/avatar/conversations/${id}/transcript`, {})); }
-    catch (error) { if (memory.get(selection()) === id) el('save-status').textContent = error.message; }
+    catch (error) {
+        if (memory.get(selection()) === id) {
+            el('save-status').textContent = error.message; showSaveError(error.message);
+        }
+    }
     finally { savingTranscript = false; el('save').disabled = !transcriptStatus?.turnCount; }
 }
 el('save').addEventListener('click', () => { void saveTranscript(); });
@@ -415,7 +431,8 @@ async function onMessage(message, generation) {
     if (generation !== epoch) return;
     if (message.type === 'transcript-status') { showTranscriptStatus(message.status); return; }
     if (message.type === 'transcript-save-error') {
-        void refreshTranscriptStatus().then(() => { el('save-status').textContent = message.detail; }); return;
+        el('save-status').textContent = message.detail; showSaveError(message.detail);
+        void refreshTranscriptStatus(); return;
     }
     if (message.type === 'connected') {
         ready = true; setState('idle');
@@ -549,6 +566,16 @@ function toggleHandsFree(event) {
 }
 function activateConversation(event) {
     if (ending || changingQuiz || pageLeaving) return;
+    const draft = el('practice-context').value.trim();
+    if (draft !== practiceContext) {
+        event?.preventDefault();
+        if (audio || sessionId || memory.get(selection())) {
+            // Resolve retention before opening a microphone. If a dialog is
+            // needed, the learner starts recording with their next press.
+            void chooseQuiz(draft); return;
+        }
+        practiceContext = draft; el('practice-context').value = draft; selectMemory();
+    }
     if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
     if (!ready && !canStart()) return;
     event?.preventDefault(); notice();
@@ -592,10 +619,15 @@ async function release() {
     // reaches recognition, followed by its commit, even for a short button press.
     if (current() && ready && awaitingCommit && state === 'listening') commit();
 }
-async function chooseQuiz(nextPracticeContext = practiceContext) {
-    if (changingQuiz || pageLeaving || ending) { el('practice-context').value = practiceContext; return; }
-    changingQuiz = true; refreshStart();
+async function chooseQuiz(nextPracticeContext = el('practice-context').value.trim()) {
+    // A blur caused by disabling the field must not overwrite a pending draft.
+    if (changingQuiz || pageLeaving || ending) return;
     const previous = memory.preferences();
+    if (!audio && !sessionId && (!previous || !memory.get(previous))) {
+        practiceContext = nextPracticeContext; el('practice-context').value = practiceContext;
+        selectMemory(); return;
+    }
+    changingQuiz = true; refreshStart();
     try {
         if (previous && !await prepareConversationChange(previous)) {
             el('quiz').value = previous.quizId || '';

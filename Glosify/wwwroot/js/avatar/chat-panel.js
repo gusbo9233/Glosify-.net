@@ -2,28 +2,41 @@ const sideInset = area => area.width <= 720 ? 44 : 12;
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
 // Keep the entire panel reachable, including at the bottom of the scene.
-export function constrainChat(rect, area, minimized = false) {
+export function constrainChat(rect, area, minimized = false, controls = null) {
     const margin = 12;
     const side = sideInset(area);
     const maxWidth = Math.max(0, area.width - side * 2);
     const maxHeight = Math.max(0, area.height - margin * 2);
     const width = clamp(rect.width, Math.min(240, maxWidth), maxWidth);
     const height = clamp(rect.height, Math.min(minimized ? 50 : 200, maxHeight), maxHeight);
-    return {
+    const result = {
         x: clamp(rect.x, side, Math.max(side, area.width - width - side)),
         y: clamp(rect.y, margin, Math.max(margin, area.height - height - margin)),
         width, height,
     };
+    if (!minimized && controls && result.x < controls.x + controls.width + margin
+        && result.x + width > controls.x - margin && result.y + height > controls.y - margin
+        && result.y < controls.y + controls.height + margin) {
+        result.height = Math.min(height, Math.max(0, controls.y - margin * 2));
+        result.y = Math.max(margin, controls.y - margin - result.height);
+    }
+    return result;
 }
 
-export function setupFloatingChat({ panel, stage, move, resize, toggle, Observer = ResizeObserver }) {
+export function setupFloatingChat({ panel, stage, move, resize, toggle, controls, unread, Observer = ResizeObserver }) {
     const events = new AbortController();
     const on = (element, name, action) => element.addEventListener(name, action, { signal: events.signal });
     let rect, gesture;
     let minimized = true, expandedHeight = 390;
     const area = () => ({ width: stage.clientWidth, height: stage.clientHeight });
+    const voiceBounds = () => {
+        const button = controls?.querySelector('button:not([hidden])');
+        if (!button) return null;
+        const bounds = button.getBoundingClientRect(), scene = stage.getBoundingClientRect();
+        return { x: bounds.left - scene.left, y: bounds.top - scene.top, width: bounds.width, height: bounds.height };
+    };
     function apply(next) {
-        rect = constrainChat(next, area(), minimized);
+        rect = constrainChat(next, area(), minimized, voiceBounds());
         Object.assign(panel.style, { left: `${rect.x}px`, top: `${rect.y}px`, right: 'auto',
             width: `${rect.width}px`, height: `${rect.height}px` });
     }
@@ -46,9 +59,10 @@ export function setupFloatingChat({ panel, stage, move, resize, toggle, Observer
         const bottom = rect.y + rect.height;
         if (!minimized) expandedHeight = rect.height;
         minimized = !minimized;
+        if (!minimized && unread) unread.hidden = true;
         const height = minimized ? 50 : expandedHeight;
         renderState();
-        apply({ ...rect, y: bottom - height, height });
+        apply({ ...rect, y: minimized ? area().height - height - 12 : bottom - height, height });
     }
     on(toggle, 'click', event => { event.stopPropagation(); toggleChat(); });
     on(panel, 'click', () => { if (minimized) toggleChat(); });
@@ -96,5 +110,10 @@ export function setupFloatingChat({ panel, stage, move, resize, toggle, Observer
         apply(minimized ? { ...rect, y: area().height - rect.height - 12 } : rect);
     });
     observer.observe(stage);
-    return { destroy() { events.abort(); observer.disconnect(); } };
+    if (controls) observer.observe(controls);
+    return {
+        markUnread() { if (minimized && unread) unread.hidden = false; },
+        clearUnread() { if (unread) unread.hidden = true; },
+        destroy() { events.abort(); observer.disconnect(); }
+    };
 }

@@ -81,6 +81,32 @@ public sealed class AvatarTests
         Assert.Equal("Practice context must be 1,000 characters or fewer.", problem.RootElement.GetProperty("detail").GetString());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("Practice ordering breakfast")]
+    public async Task QuizPracticePreservesStructuredMultilingualContent(string? context)
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var quiz = Guid.NewGuid();
+        const string words = "smörgås кофе 咖啡 قهوة";
+        await app.Seed(async db =>
+        {
+            db.Quizzes.Add(new Quiz { Id = quiz, UserId = "admin", Name = "Frukost", TargetLanguage = "Swedish" });
+            db.Words.Add(new Word { Id = "breakfast", QuizId = quiz, Lemma = words, Translation = "breakfast vocabulary" });
+            await db.SaveChangesAsync();
+        });
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { quizId = quiz, practiceContext = context });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        using var practice = JsonDocument.Parse(session.Practice);
+        var lesson = context is null ? practice.RootElement : practice.RootElement.GetProperty("lesson");
+        Assert.Equal(JsonValueKind.Object, lesson.ValueKind);
+        Assert.Equal("Frukost", lesson.GetProperty("name").GetString());
+        Assert.Equal(words, lesson.GetProperty("vocabulary")[0].GetProperty("text").GetString());
+        if (context is not null) Assert.Equal(context, practice.RootElement.GetProperty("learnerContext").GetString());
+    }
+
     [Fact]
     public async Task StartRequiresAntiforgeryAndProtectsQuizOwnership()
     {

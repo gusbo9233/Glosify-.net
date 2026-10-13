@@ -10,14 +10,14 @@ function fixture(minimized = false) {
         fire(name, overrides = {}) { this.handlers[name]?.({ isPrimary: true, button: 0, pointerId: 1,
             clientX: 0, clientY: 0, preventDefault() {}, stopPropagation() {}, ...overrides }); },
     });
-    const panel = element(), move = element(), resize = element(), toggle = element();
+    const panel = element(), move = element(), resize = element(), toggle = element(), unread = { hidden: true };
     const stage = { clientWidth: 1000, clientHeight: 660 };
     let resized;
     class Observer { constructor(callback) { resized = callback; } observe() {} disconnect() {} }
-    setupFloatingChat({ panel, move, resize, toggle, stage, Observer });
+    const chat = setupFloatingChat({ panel, move, resize, toggle, stage, unread, Observer });
     if (!minimized) toggle.fire("click");
     const rect = () => Object.fromEntries(['left', 'top', 'width', 'height'].map(key => [key, parseFloat(panel.style[key])]));
-    return { panel, move, resize, toggle, stage, rect, resized: () => resized() };
+    return { panel, move, resize, toggle, stage, rect, chat, unread, resized: () => resized() };
 }
 
 test('dragging uses the initial pointer offset and stops on cancellation', () => {
@@ -113,4 +113,31 @@ test('minimized chat remains bottom aligned after stage resize and cannot be res
     assert.equal(h.rect().height, 50);
     h.toggle.fire('click');
     assert.equal(h.rect().top + h.rect().height, 528);
+});
+
+test('expanded phone chat leaves both microphone and hands-free controls reachable', () => {
+    for (const width of [72, 230]) {
+        const controls = { x: (366 - width) / 2, y: 444, width, height: 72 };
+        for (const height of [390, 1000]) {
+            const rect = constrainChat({ x: 44, y: 999, width: 278, height }, { width: 366, height: 540 }, false, controls);
+            assert.ok(rect.y + rect.height <= controls.y - 12);
+            assert.ok(rect.y >= 12);
+        }
+    }
+});
+
+test('chat can remain at the scene bottom beside the microphone on a wide scene', () => {
+    const rect = constrainChat({ x: 656, y: 999, width: 320, height: 390 }, { width: 1000, height: 660 }, false,
+        { x: 464, y: 562, width: 72, height: 72 });
+    assert.equal(rect.y + rect.height, 648);
+});
+
+test('minimized chat signals new messages and clears the indicator on click to expand', () => {
+    const h = fixture(true);
+    h.chat.markUnread(); assert.equal(h.unread.hidden, false);
+    h.panel.fire('click'); assert.equal(h.unread.hidden, true);
+    assert.equal(h.toggle.attributes['aria-expanded'], 'true');
+    h.chat.markUnread(); assert.equal(h.unread.hidden, true);
+    h.toggle.fire('click'); h.chat.markUnread(); h.chat.clearUnread();
+    assert.equal(h.unread.hidden, true);
 });

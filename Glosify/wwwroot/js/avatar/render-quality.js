@@ -14,19 +14,24 @@ export function renderScaling(width, height, devicePixelRatio = 1, density = 1, 
 export function createRenderQuality(initialMode = 'auto') {
     let mode = normalizeQuality(initialMode), level = 3, maxLevel = densities.length - 1;
     let backgroundReduced = false;
+    // Remember failed settings for this scene size. Repeatedly retrying the same
+    // slow resolution makes Auto oscillate and prevents background recovery.
+    const failed = new Set();
+    let sizeKey;
     let samples = [], started = null, warmUntil = 0, goodWindows = 0, raiseAfter = 0;
     function reset(time) {
         samples = []; started = null; warmUntil = time + 2000; goodWindows = 0;
     }
     return {
         reset,
-        setMode(value, time) { mode = normalizeQuality(value); level = 3; backgroundReduced = false; reset(time); },
+        setMode(value, time) { mode = normalizeQuality(value); level = 3; backgroundReduced = false; failed.clear(); raiseAfter = 0; reset(time); },
         background() { return mode === 'low' || (mode === 'auto' && backgroundReduced) ? 'reduced' : 'full'; },
         scaling(width, height, dpr) {
+            const nextSize = `${width}:${height}:${dpr}`;
+            if (sizeKey !== nextSize) { failed.clear(); sizeKey = nextSize; }
             const ceiling = 1 / renderScaling(width, height, dpr, 2);
             maxLevel = densities.findIndex(density => density >= ceiling);
             if (maxLevel < 0) maxLevel = densities.length - 1;
-            level = Math.min(level, maxLevel);
             return renderScaling(width, height, dpr, mode === 'high' ? 2 : mode === 'low' ? .75 : densities[level], mode === 'low');
         },
         // Sample only the animation callback immediately after a rendered frame.
@@ -42,16 +47,22 @@ export function createRenderQuality(initialMode = 'auto') {
             const sorted = samples.sort((a, b) => a - b);
             const cost = sorted[Math.floor((sorted.length - 1) * .75)];
             samples = []; started = null;
-            if (cost > 40 && (!backgroundReduced || level > 0)) {
+            const effectiveLevel = Math.min(level, maxLevel);
+            if (cost > 40 && (!backgroundReduced || effectiveLevel > 0)) {
+                failed.add(`${effectiveLevel}:${backgroundReduced ? 'reduced' : 'full'}`);
                 // Remove backdrop effects before sacrificing face and hair detail.
                 if (!backgroundReduced) backgroundReduced = true;
-                else level--;
+                else level = effectiveLevel - 1;
                 raiseAfter = time + 12000; reset(time); return true;
             }
             goodWindows = cost < 23 ? goodWindows + 1 : 0;
-            if (goodWindows >= 3 && time >= raiseAfter && (level < maxLevel || backgroundReduced)) {
-                // Restore avatar sharpness before bringing back backdrop effects.
-                if (level < maxLevel) level++;
+            const nextLevel = effectiveLevel + 1;
+            const canRaise = nextLevel <= maxLevel && !failed.has(`${nextLevel}:reduced`)
+                && (backgroundReduced || !failed.has(`${nextLevel}:full`));
+            const canRestoreBackground = backgroundReduced && !failed.has(`${effectiveLevel}:full`);
+            if (goodWindows >= 3 && time >= raiseAfter && (canRaise || canRestoreBackground)) {
+                // Restore sharpness up to the sustainable ceiling, then effects.
+                if (canRaise) level = nextLevel;
                 else backgroundReduced = false;
                 reset(time); return true;
             }

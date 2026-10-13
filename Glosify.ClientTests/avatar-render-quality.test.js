@@ -4,6 +4,7 @@ import { createRenderQuality, renderScaling, normalizeQuality } from '../Glosify
 
 function machine() {
     const quality = createRenderQuality();
+    quality.scaling(1280, 820, 2);
     let time = 0;
     quality.reset(time);
     return { quality, run(ms, cost = 16, cpu = 5) {
@@ -51,7 +52,8 @@ test('cooldown prevents immediate rebound and neutral timing never oscillates', 
     const h = machine(); h.run(10000, 55);
     const low = h.scale(); h.run(8000, 16); assert.equal(h.scale(), low);
     h.run(30000, 30); assert.equal(h.scale(), low);
-    h.run(12000, 16); assert.ok(h.scale() < low);
+    h.run(12000, 16); assert.equal(h.scale(), low, 'does not retry a resolution already measured too slow');
+    assert.equal(h.quality.background(), 'full', 'restores effects at the sustainable resolution');
 });
 
 test('resume and resize discard old samples but preserve the learned quality', () => {
@@ -84,20 +86,35 @@ test('Auto reduces background effects before changing avatar resolution', () => 
     assert.ok(h.scale() > 1, 'persistent overload can still lower avatar resolution');
 });
 
-test('recovery restores avatar detail before background effects', () => {
-    const h = machine(); h.run(10000, 55);
-    assert.equal(h.quality.background(), 'reduced');
-    let detailRestored = false;
-    for (let i = 0; i < 120; i++) {
-        h.run(1000);
-        if (h.scale() <= 1) detailRestored = true;
-        if (h.quality.background() === 'full') {
-            assert.ok(detailRestored);
-            assert.equal(h.scale(), renderScaling(1280, 820, 2, 2));
-            return;
-        }
+test('a stable workload settles at its sustainable resolution and restores the background', () => {
+    const q = createRenderQuality();
+    let scale = q.scaling(800, 600, 2);
+    const lateDensities = new Set();
+    for (let time = 0; time < 120000; time += 100) {
+        const cost = 1 / scale > 1 ? 50 : 16;
+        q.sample({ time, frameGap: cost, renderMs: cost });
+        scale = q.scaling(800, 600, 2);
+        if (time > 30000) lateDensities.add(1 / scale);
     }
-    assert.fail('stable headroom should eventually restore background effects');
+    assert.deepEqual([...lateDensities], [1]);
+    assert.equal(q.background(), 'full');
+});
+
+test('a background that is too expensive is not repeatedly restored', () => {
+    const q = createRenderQuality(); q.scaling(800, 600, 1);
+    for (let time = 0; time < 90000; time += 100) {
+        const cost = q.background() === 'full' ? 55 : 16;
+        q.sample({ time, frameGap: cost, renderMs: cost });
+        if (time > 5000) assert.equal(q.background(), 'reduced');
+    }
+    assert.equal(q.scaling(800, 600, 1), 1, 'background reduction preserves the face resolution');
+});
+
+test('temporary pixel caps do not erase the learned density', () => {
+    const h = machine(); h.run(60000);
+    const learned = h.scale(); assert.ok(learned < 1);
+    h.quality.scaling(4000, 3000, 2);
+    assert.equal(h.scale(), learned);
 });
 
 test('manual quality overrides control background effects as well as avatar resolution', () => {

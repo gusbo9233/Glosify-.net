@@ -68,7 +68,9 @@ export async function createAvatar(canvas, character = 'rain', { quality: qualit
         root.position.set(0, posture.rise, -posture.lean);
         root.rotation.set(0, Math.PI + posture.yaw, posture.sway);
         engine.beginFrame(); scene.render(); engine.endFrame();
-    }, { onFrame: sample => { if (quality.sample(sample)) applyQuality(); } });
+    }, { onFrame: sample => {
+        if (quality.sample(sample)) { applyQuality(); loop.invalidate(); }
+    } });
     quality.reset(performance.now());
     loop.setReducedMotion(reduced.matches);
     let inView = true;
@@ -95,7 +97,6 @@ export async function createAvatar(canvas, character = 'rain', { quality: qualit
     return {
         setQuality(value) { quality.setMode(value, performance.now()); applyQuality(); loop.invalidate(); },
         setState(value) {
-            if (rain.state !== value) quality.reset(performance.now());
             rain.setState(value); loop.setState(value);
         },
         setReply(text) { rain.setReply(text); },
