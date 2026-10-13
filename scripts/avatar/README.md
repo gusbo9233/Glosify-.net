@@ -181,7 +181,12 @@ Visible portraits keep subtle breathing, blinks and posture movement at 12 fps
 before/after a conversation, between turns and in error state. Active listening,
 connecting and thinking run at 15 fps; speech runs at 24 fps. Hidden/offscreen
 portraits pause; reduced motion also pauses settled non-speaking states. The
-canvas drawing buffer is capped at 1,000 pixels on its longest edge.
+Auto quality starts at one pixel per CSS pixel and adapts to sustained frame cost,
+reducing background effects before face resolution. Auto and High cap the drawing
+buffer at 2,560 pixels per axis and 3,000,000 pixels total, with density limited
+to the device pixel ratio or 2, whichever is lower. Low uses at most 0.75 pixels
+per CSS pixel, capped at 1,000 pixels per axis and 750,000 pixels total, and
+reduces background effects. The selected mode is saved locally.
 See [the performance check](performance-review.md) for measurements and remaining
 model-loading costs.
 
