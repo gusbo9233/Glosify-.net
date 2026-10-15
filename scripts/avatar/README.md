@@ -10,19 +10,26 @@ authentication or separate game deployment is required.
 ## Conversation controls and memory
 
 Push-to-talk is the default on every page visit. The first hold of the microphone
-button requests microphone permission and opens the voice connection; there is
+button requests microphone permission and uses the prepared voice connection (or connects on demand); there is
 no separate Start action. Choose Hands-free explicitly to use continuous capture,
 then select Start hands-free to begin. The microphone button is only for push-to-talk. Changing modes pauses existing capture
 and waits for the selected mode’s start control; choosing a mode never opens the microphone.
-Merely loading the page does not open the microphone or submit provider requests.
+Once the visible page and character are ready, it prepares the app transport and one
+ElevenLabs recognition connection without opening the microphone, sending audio,
+reserving credits, or generating replies. Unused preparation expires after 30 seconds;
+a used connection closes after 60 seconds idle. Server timers enforce this even
+when browser timers are suspended, and heartbeat pings do not extend the lease.
+Preparation is best-effort and does not loop after expiry or failure. The next talk
+action reconnects on demand using the retained conversation memory.
 After a release during initial connection setup, the button stays disabled until the
 connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
-supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Buttons, checkboxes, radios, links, editors, selects and dialogs retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
+supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Avatar settings and chat controls yield Space to recording; text editors, dialogs and controls outside those panels retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
 Start/Pause hands-free button replaces the microphone and pauses/resumes capture; pausing during a reply lets the reply finish. The
 button keeps a fixed accessible name and reports recording through `aria-pressed`.
 There are no separate Mute/End controls or Space hint. Each account has one live
-conversation: starting in another tab ends the earlier tab's conversation.
+conversation: explicitly starting in another tab ends the earlier tab's conversation.
+Automatic preparation never replaces an existing session in another tab.
 
 Leaving the page stops capture. Returning in the same tab/browser session restores
 conversation context on the next talk action. Only an opaque reference and the
@@ -123,7 +130,8 @@ rate snapshots and reservation expiry. It stores no conversation text or audio.
 Expired operations settle after five minutes through the maintenance worker.
 Conversation context is process-local, capped at 24 messages/24,000 serialized
 characters. Sessions expire after 30 minutes; microphone turns after 45 seconds;
-unconnected sessions after 30 seconds. Switching tabs keeps the conversation,
+unconnected sessions after 30 seconds. Hiding an unused prepared page releases its
+connection immediately. Switching tabs during an active conversation keeps the conversation,
 microphone and playback running while pausing hidden rendering. A held
 push-to-talk utterance is released when the tab becomes hidden. Navigating away
 from the page or closing it still ends capture. In hands-free mode, silence sent to

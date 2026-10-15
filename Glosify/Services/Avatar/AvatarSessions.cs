@@ -18,6 +18,7 @@ public sealed class AvatarSession(string userId, QuizLanguage language, string p
     public CancellationTokenSource Lifetime { get; } = new();
     public List<AgentTurn> History { get; } = [];
     public int Connected;
+    public bool HasStartedTurn { get; internal set; }
 }
 
 public sealed partial class AvatarSessions(TimeProvider clock)
@@ -37,12 +38,14 @@ public sealed partial class AvatarSessions(TimeProvider clock)
     }
     private readonly Dictionary<Guid, Memory> _memories = [];
     private static readonly TimeSpan MemoryLifetime = TimeSpan.FromHours(8);
-    public AvatarSession Create(string userId, QuizLanguage language, string practice, AvatarVoice? voice = null, AvatarCharacter? character = null, Guid? memoryId = null)
+    public AvatarSession Create(string userId, QuizLanguage language, string practice, AvatarVoice? voice = null, AvatarCharacter? character = null, Guid? memoryId = null, bool preconnect = false)
     {
         lock (_gate)
         {
             Sweep();
             var previous = _sessions.Values.Where(x => x.UserId == userId).ToArray();
+            if (preconnect && previous.Length > 0)
+                throw new AvatarException(409, "A conversation is already open. Start speaking to replace it.");
             // Replacing this account's connection does not consume another live slot.
             if (_sessions.Count - previous.Length >= 16)
                 throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");

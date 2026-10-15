@@ -43,6 +43,24 @@ public sealed class AvatarTests
     }
 
     [Fact]
+    public async Task AutomaticPreparationCannotReplaceAnotherTabsSession()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var first = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        using var payload = JsonDocument.Parse(await first.Content.ReadAsStringAsync());
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        var id = payload.RootElement.GetProperty("sessionId").GetGuid();
+        var original = sessions.Get(id, "admin");
+        using var automatic = await client.PostAsJsonAsync("/api/avatar/sessions", new { preconnect = true });
+        Assert.Equal(HttpStatusCode.Conflict, automatic.StatusCode);
+        Assert.Same(original, sessions.Get(id, "admin"));
+        Assert.False(original.Lifetime.IsCancellationRequested);
+        using var explicitStart = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        Assert.Equal(HttpStatusCode.OK, explicitStart.StatusCode);
+        Assert.True(original.Lifetime.IsCancellationRequested);
+    }
+
+    [Fact]
     public async Task DisabledFeatureDoesNotExposePageOrConfig()
     {
         using var app = new AvatarFixture(false); using var client = await app.Client("admin");

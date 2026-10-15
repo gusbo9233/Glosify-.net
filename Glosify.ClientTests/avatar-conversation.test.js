@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', import.meta.url), 'utf8');
 function setup(mode = 'push-to-talk') {
-    const elements = new Map(), sent = [], listeners = {}, listenerOptions = {}, windowListeners = {};
+    const elements = new Map(), sent = [], listeners = {}, listenerOptions = {}, windowListeners = {}, timers = new Map();
     const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
     const element = id => {
         if (['avatar-new', 'avatar-memory', 'avatar-balance', 'avatar-rates', 'avatar-mute', 'avatar-end', 'avatar-hint'].includes(id)) return null;
@@ -20,7 +20,10 @@ function setup(mode = 'push-to-talk') {
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
             querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action, options) => { listeners[name] = action; listenerOptions[name] = options; } },
         ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, normalizeQuality, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
-        setTimeout: (fn, ms) => { const timer = setTimeout(fn, ms); timer.unref(); return timer; }, clearTimeout,
+        setTimeout: (fn, ms) => {
+            if ([250, 30000, 60000].includes(ms)) { const timer = {}; timers.set(timer, { fn, ms }); return timer; }
+            const timer = setTimeout(fn, ms); timer.unref(); return timer;
+        }, clearTimeout: timer => { timers.delete(timer); clearTimeout(timer); },
         location: { href: 'https://localhost/Avatar', protocol: 'https:' },
         Option: class { constructor(text, value) { this.text = text; this.value = value; } },
         setupFloatingChat() {}, createAvatar: () => new Promise(() => {}), fetch: path => path.endsWith('/transcript') ? Promise.resolve({ ok: true, json: async () => ({ turnCount: 0, savedTurns: 0 }) }) : new Promise(() => {}),
@@ -31,7 +34,10 @@ function setup(mode = 'push-to-talk') {
         const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
     } };`, context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire, close() {} }; audio = { stop() {}, mute() {}, flush: async () => {} };", context);
-    return { sent, elements, listenerOptions, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
+    return { sent, elements, listenerOptions, fireTimer: ms => {
+        const entry = [...timers].find(([, value]) => value.ms === ms);
+        assert.ok(entry, `Expected ${ms}ms timer`); timers.delete(entry[0]); entry[1].fn();
+    }, timerCount: ms => [...timers.values()].filter(value => value.ms === ms).length, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
         frame: index => { context.pcm = Uint8Array.of(index).buffer; vm.runInContext('frame({ pcm, rms: 0 })', context); },
         binary: () => sent.filter(x => Object.prototype.toString.call(x) === '[object ArrayBuffer]').map(x => new Uint8Array(x)[0]),
         commands: () => sent.filter(x => typeof x === 'string').map(x => JSON.parse(x).type),
@@ -503,10 +509,10 @@ test('the first talk press starts once and preserves a short utterance through H
     h.run("finishStart({ sessionId: 'session', memoryId: 'memory', connectUrl: '/voice', rememberedTurns: 0 })");
     await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     assert.deepEqual(h.binary(), [1, 2]);
-    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
     assert.equal(h.run('memory.get(selection())'), 'memory');
 });
 
@@ -521,7 +527,7 @@ test('the first connection waits for a pending microphone flush before committin
     assert.equal(h.commands().includes('commit'), false);
     h.frame(2); h.run('finishFlush()'); await released;
     assert.deepEqual(h.binary(), [1, 2]);
-    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
 });
 
 test('denied microphone permission leaves the talk button available for an explicit retry', async () => {
@@ -748,11 +754,11 @@ test('holding the microphone while reconnecting starts over with remembered cont
     h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     assert.equal(h.run('sessionId'), 'fresh');
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
     h.frame(3); await h.buttonEvent('pointerup');
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     assert.deepEqual(h.binary(), [1, 2, 3]);
-    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
     assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
 });
 
@@ -765,7 +771,7 @@ test('releasing before the restarted microphone opens records nothing and leaves
     h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     assert.deepEqual(h.binary(), []);
-    assert.deepEqual(h.commands(), []);
+    assert.deepEqual(h.commands(), ['prepare']);
     assert.equal(h.elements.get('avatar-status').textContent, 'Your turn');
     assert.equal(h.elements.get('avatar-talk').disabled, false);
     assert.equal(h.elements.get('avatar-talk').attributes['aria-pressed'], 'false');
@@ -778,7 +784,7 @@ test('starting over in hands-free listens on the new session without a second pr
     h.run("finishStart({ sessionId: 'fresh', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     assert.equal(h.run('muted'), false);
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
 });
 
 test('the first connection keeps a short press whose only audio is still being flushed', async () => {
@@ -788,11 +794,11 @@ test('the first connection keeps a short press whose only audio is still being f
     const released = h.run('release()');
     h.run("finishStart({ sessionId: 'session', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
     h.frame(1); h.run('finishFlush()'); await released;
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     assert.deepEqual(h.binary(), [1]);
-    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
 });
 
 
@@ -820,11 +826,11 @@ test('choosing Hands-free during first setup discards the previous pending hold 
     h.run("finishStart({ sessionId: 'session', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     assert.equal(h.elements.get('avatar-hands-free').attributes['aria-pressed'], 'false');
-    assert.deepEqual(h.commands(), []);
+    assert.deepEqual(h.commands(), ['prepare']);
     h.run('toggleHandsFree()');
     await h.run("connectionHandlers.onMessage({ type: 'listening' })");
     h.run('finishFlush()'); await released; h.frame(3);
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
     assert.deepEqual(h.binary(), [3]);
 });
 
@@ -875,7 +881,7 @@ test('Space held through the first connection sends a short utterance once', asy
     await h.run("onMessage({ type: 'listening' }, epoch)");
     assert.equal(down.defaultPrevented, true);
     assert.deepEqual(h.binary(), [2]);
-    assert.deepEqual(h.commands(), ['listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
 });
 test('push-to-talk pointer and Enter controls cannot toggle hands-free capture', () => {
     const h = setup('hands-free'); h.run('muted = true; audio.mute = () => {}; refreshStart()');
@@ -1039,7 +1045,7 @@ test('page Space controls hands-free once and suppresses repeated key activation
         assert.equal(h.run('muted'), true);
         assert.deepEqual(h.commands(), ['listen', 'interrupt']);
 });
-test('Space preserves checkbox, radio, button and speech-dialog keyboard actions in both modes', () => {
+test('Space preserves controls outside Avatar panels and speech-dialog keyboard actions in both modes', () => {
     for (const mode of ['push-to-talk', 'hands-free']) {
         const h = setup(mode); h.run('refreshStart()');
         for (const selector of ['input', 'button', 'select', 'a[href]', 'summary', 'dialog', '[role="dialog"]', '[role="checkbox"]', '[role="radio"]', '[role="switch"]']) {
@@ -1052,6 +1058,36 @@ test('Space preserves checkbox, radio, button and speech-dialog keyboard actions
         }
         assert.deepEqual(h.commands(), []);
         assert.equal(h.run('spaceHeld'), false);
+    }
+});
+test('Space records from focused Avatar settings and chat controls without activating them', async () => {
+    for (const panel of ['#avatar-settings', '#avatar-settings-toggle', '#avatar-dialogue', '#avatar-controls']) {
+        for (const control of ['button', 'input', 'select', 'a[href]', '[role="checkbox"]']) {
+            const h = setup(); h.run('refreshStart()');
+            const target = { closest: selectors => selectors.split(', ').some(selector => [panel, control].includes(selector)) ? target : null };
+            const down = space({ target }); h.documentEvent('keydown', down);
+            h.documentEvent('keydown', space({ target, repeat: true }));
+            await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(7);
+            const up = space({ target }); h.documentEvent('keyup', up); await tick();
+            h.frame(8);
+            assert.equal(down.defaultPrevented, true, `${panel} ${control}`);
+            assert.equal(up.defaultPrevented, true);
+            assert.equal(down.propagationStopped, true);
+            assert.equal(up.propagationStopped, true);
+            assert.deepEqual(h.commands(), ['listen', 'commit']);
+            assert.deepEqual(h.binary(), [7]);
+        }
+    }
+});
+test('Space still types in Avatar text fields and operates dialog controls', () => {
+    for (const control of ['textarea', '[contenteditable]', '[role="textbox"]', 'dialog', '[role="dialog"]', '[data-assistant-panel]']) {
+        const h = setup(); h.run('refreshStart()');
+        const target = { closest: selectors => selectors.split(', ').some(selector => ['#avatar-settings', control].includes(selector)) ? target : null };
+        const down = space({ target }); h.documentEvent('keydown', down);
+        const up = space({ target }); h.documentEvent('keyup', up);
+        assert.equal(down.defaultPrevented, false, control);
+        assert.equal(up.defaultPrevented, false, control);
+        assert.deepEqual(h.commands(), []);
     }
 });
 test('Space release does not finish an independently started pointer hold', async () => {
@@ -1083,7 +1119,7 @@ test('Space starts hands-free from off and key release leaves it listening', asy
     assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
     h.run("finishStart({ sessionId: 'hands-free-session', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
-    assert.deepEqual(h.commands(), ['listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
     assert.equal(h.run('holding'), false);
     assert.equal(h.run('muted'), false);
 });
@@ -1208,4 +1244,108 @@ for (const choice of ['cancel', 'discard']) test(`practice context edit honors $
     assert.equal(h.run('selection().practiceContext'), choice === 'cancel' ? 'Ordering coffee' : 'Job interview');
     assert.equal(h.elements.get('avatar-practice-context').value, choice === 'cancel' ? 'Ordering coffee' : 'Job interview');
     assert.equal(h.run('memory.get(selection())'), choice === 'cancel' ? 'unsaved' : undefined);
+});
+
+for (const mode of ['push-to-talk', 'hands-free']) test(`automatic preparation keeps the ${mode} microphone off until activation`, async () => {
+    const h = setup(mode); prepareFirstPress(h);
+    h.run('schedulePreparation()'); h.fireTimer(250); await tick();
+    assert.equal(h.sent.some(x => x.microphoneOpened), false);
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
+    h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    assert.deepEqual(h.commands(), ['prepare']);
+    assert.equal(h.run('audio'), null);
+    h.run(mode === 'hands-free' ? 'toggleHandsFree()' : 'press()'); await tick();
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
+    assert.deepEqual(h.commands(), ['prepare', 'listen']);
+    assert.equal(h.timerCount(30000), 0);
+    await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(9);
+    if (mode === 'push-to-talk') {
+        await h.run('release()');
+        assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
+    }
+    assert.deepEqual(h.binary(), [9]);
+});
+
+test('pressing during preparation shares the pending session and buffers the first utterance', async () => {
+    const h = setup(); prepareFirstPress(h);
+    void h.run('start(true)'); await tick();
+    h.run('press()'); await tick(); h.frame(4); await h.run('release()');
+    assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
+    h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
+    assert.deepEqual(h.binary(), [4]);
+});
+
+test('unused preparation expires without reopening and releases its session', async () => {
+    const h = setup(); prepareFirstPress(h);
+    void h.run('start(true)');
+    h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    h.run("api = async path => wire({ ended: path })");
+    h.fireTimer(30000); await tick();
+    assert.equal(h.run('sessionId'), null);
+    assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/warm/end'), true);
+    assert.equal(h.sent.some(x => x.microphoneOpened), false);
+    assert.equal(h.timerCount(250), 0);
+    assert.equal(h.run('canStart()'), true);
+});
+
+test('cleanup during pending preparation ends a late session without attaching it', async () => {
+    const h = setup(); prepareFirstPress(h);
+    const starting = h.run('start(true)');
+    h.run('api = async path => wire({ ended: path })');
+    h.run('document.hidden = true'); h.documentEvent('visibilitychange'); await tick();
+    h.run("finishStart({ sessionId: 'late', memoryId: 'memory', connectUrl: '/voice' })"); await starting;
+    assert.equal(h.run('sessionId'), null);
+    assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/late/end'), true);
+    assert.equal(h.sent.some(x => x.microphoneOpened), false);
+});
+
+test('an idle conversation releases the microphone and preserves its memory for restart', async () => {
+    const h = setup();
+    h.run("config = { available: true, language: 'sv' }; modelReady = true; sessionId = 'used'; memory.save(selection(), 'remembered'); audio.close = async () => wire({ closed: true }); api = async path => wire({ ended: path });");
+    await h.run("onMessage({ type: 'idle' }, epoch)");
+    h.fireTimer(60000); await tick();
+    assert.equal(h.run('audio'), null);
+    assert.equal(h.sent.some(x => x.closed), true);
+    assert.equal(h.run('memory.get(selection())'), 'remembered');
+    assert.equal(h.run('canStart()'), true);
+});
+
+test('losing a prepared transport during microphone permission cleans up and permits retry', async () => {
+    const h = setup(); prepareFirstPress(h);
+    void h.run('start(true)');
+    h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    h.run(`let allowMicrophone;
+        AvatarAudio = class { open() { return new Promise(resolve => { allowMicrophone = resolve; }); }
+            async close() { wire({ closed: true }); } stop() {} };
+        api = async path => wire({ ended: path });
+        press(); connectionHandlers.onLost();`);
+    await tick(); h.run('allowMicrophone()'); await tick();
+    assert.equal(h.run('audio'), null);
+    assert.equal(h.run('sessionId'), null);
+    assert.equal(h.run('canStart()'), true);
+    assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/warm/end'), true);
+    assert.deepEqual(h.commands(), ['prepare']);
+});
+
+test('synchronous prepared transport failure closes the connector without a reconnect loop', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run(`VoiceConnection = class {
+        constructor(url, handlers) { handlers.onLost(); }
+        close() { wire({ transportClosed: true }); }
+    };`);
+    const starting = h.run('start(true)');
+    h.run("api = async path => wire({ ended: path }); finishStart({ sessionId: 'failed', memoryId: 'memory', connectUrl: '/voice' })");
+    await starting; await tick();
+    assert.equal(h.run('socket'), null);
+    assert.equal(h.run('sessionId'), null);
+    assert.equal(h.sent.some(x => x.transportClosed), true);
+    assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/failed/end'), true);
+    assert.equal(h.timerCount(250), 0);
 });

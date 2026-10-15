@@ -54,11 +54,12 @@ let characterId = Object.hasOwn(characters, preferences?.characterId) ? preferen
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let ending = null, changingQuiz = false, captureEpoch = 0;
+let preconnecting = false, audioOpening = false, prepareTimer = null, idleTimer = null;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
 const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null, practiceContext });
-const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !ending && !changingQuiz && !pageLeaving;
+const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !preconnecting && !ending && !changingQuiz && !pageLeaving;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
 function send(value) { return socket ? socket.send(JSON.stringify(value)) !== false : false; }
 function setState(value) {
@@ -152,7 +153,7 @@ function refreshStart() {
     const handsFree = mode() === 'hands-free', reconnecting = state === 'reconnecting';
     // A hands-free error stops listening until the explicit retry.
     const recording = holding || (handsFree && !!audio && !muted && state !== 'error');
-    const disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || reconnecting));
+    const disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || ((preconnecting || sessionId) && !audio) || reconnecting));
     el('talk').hidden = handsFree;
     el('talk').disabled = handsFree || disabled;
     el('talk').setAttribute('aria-label', 'Hold to record');
@@ -184,7 +185,7 @@ async function chooseCharacter() {
     el('character').value = characterId;
     const generation = ++modelEpoch;
     characterLoading = true; modelReady = false; refreshStart();
-    if (audio || sessionId) await end();
+    if (audio || sessionId || preconnecting) await end();
     if (pageLeaving || generation !== modelEpoch) return;
     if (config) selectMemory();
     visual?.dispose(); visual = null;
@@ -205,7 +206,7 @@ async function chooseCharacter() {
         el('render-status').textContent = `${character().name} could not load. Choose another partner or refresh to retry.`;
         el('status').textContent = 'Could not load';
     } finally {
-        if (generation === modelEpoch) { characterLoading = false; refreshStart(); }
+        if (generation === modelEpoch) { characterLoading = false; refreshStart(); schedulePreparation(); }
     }
 }
 el('character').addEventListener('change', () => { void chooseCharacter(); });
@@ -313,7 +314,7 @@ function chooseUnsavedConversation() {
 }
 async function prepareConversationChange(context) {
     const id = memory.get(context);
-    if (!id) { if (audio || sessionId) await end(); return true; }
+    if (!id) { if (audio || sessionId || preconnecting) await end(); return true; }
     const pendingTurn = ['connecting', 'listening', 'thinking', 'speaking'].includes(state);
     if (audio) {
         muted = true; holding = false; spaceRecording = false; audio.mute(true);
@@ -381,6 +382,7 @@ function connectionLost() {
 }
 function listen(preserveCapture = false) {
     if (!ready || muted) return;
+    clearTimeout(idleTimer);
     if (!preserveCapture) { ++captureEpoch; flushing = false; }
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     setState('connecting'); send({ type: 'listen', mode: mode(), ...helpOptions() });
@@ -389,7 +391,7 @@ function interrupt() {
     ++captureEpoch; flushing = false;
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     awaitingCommit = false; preRoll = [];
-    if (send({ type: 'interrupt' })) setState('idle');
+    if (send({ type: 'interrupt' })) { setState('idle'); armIdleCleanup(); }
 }
 function bufferFrame(pcm) {
     if (preRoll.length >= 25) {
@@ -435,14 +437,14 @@ async function onMessage(message, generation) {
         void refreshTranscriptStatus(); return;
     }
     if (message.type === 'connected') {
-        ready = true; setState('idle');
+        ready = true; setState(audioOpening ? 'connecting' : 'idle');
         if (message.resumed) {
             notice('Connection restored. Use the conversation control to continue; please repeat the interrupted turn.');
         }
-        if (mode() === 'hands-free' && !muted) listen();
+        if (audio && !audioOpening && mode() === 'hands-free' && !muted) listen();
         // A pending flush may still deliver the only audio of a short first press.
-        else if (holding || (awaitingCommit && (preRoll.length || flushing))) listen(true);
-        else { awaitingCommit = false; refreshStart(); }
+        else if (audio && !audioOpening && (holding || (awaitingCommit && (preRoll.length || flushing)))) listen(true);
+        else { if (!audioOpening) awaitingCommit = false; refreshStart(); }
         return;
     }
     if (message.type === 'usage') {
@@ -481,43 +483,93 @@ async function onMessage(message, generation) {
         case 'idle':
             // An interrupt acknowledgement can arrive before the replacement turn.
             if (state === 'connecting') break;
+            armIdleCleanup();
             setState('idle'); if (mode() === 'hands-free' && !muted) listen(); break;
         case 'error':
-            audio?.stop(); setState('error'); notice(message.detail);
+            audio?.stop(); setState('error'); notice(message.detail); armIdleCleanup();
             // Explicit retry avoids an unattended loop of chargeable failed requests.
             break;
     }
 }
-async function start() {
-    if (!canStart()) return;
-    const generation = ++epoch; ready = false; muted = false; notice(); caption(''); setState('connecting');
-    el('spending').textContent = 'Current session · 0 credits';
-    const context = selection();
-    const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
+// Preparation is a single best-effort attempt per page/selection, never an idle loop.
+function schedulePreparation() {
+    clearTimeout(prepareTimer);
+    prepareTimer = setTimeout(() => {
+        prepareTimer = null;
+        if (!document.hidden && canStart()) void start(true);
+    }, 250);
+}
+function armIdleCleanup(milliseconds = 60000) {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { if (!holding && !audioOpening) void end(); }, milliseconds);
+}
+async function openMicrophone(generation) {
+    const nextAudio = new AvatarAudio(); audio = nextAudio; audioOpening = true; refreshStart();
     try {
         await nextAudio.open(frame);
-        if (generation !== epoch) { await nextAudio.close(); return; }
+        if (generation !== epoch) { await nextAudio.close(); return false; }
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext });
-        if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
-        sessionId = result.sessionId;
-        memory.save(context, result.memoryId);
-        void refreshTranscriptStatus();
-        el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
-        const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        socket = new VoiceConnection(url, {
-            onMessage: message => generation === epoch ? onMessage(message, generation) : undefined,
-            onLost: () => { if (generation === epoch) connectionLost(); },
-            onEnded: detail => { if (generation === epoch) { notice(detail); void end(); } }
-        });
-        refreshStart();
+        return true;
+    } finally { if (generation === epoch) { audioOpening = false; refreshStart(); } }
+}
+async function activatePrepared() {
+    const generation = epoch;
+    clearTimeout(idleTimer);
+    muted = false; holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch;
+    setState('connecting');
+    try {
+        if (!await openMicrophone(generation)) return;
+        if (ready && (mode() === 'hands-free' || holding || (awaitingCommit && preRoll.length))) listen(true);
+        else if (!holding) { if (ready) setState('idle'); armIdleCleanup(); }
     } catch (error) {
         if (generation !== epoch) return;
         notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
         await end();
     }
 }
+async function start(background = false) {
+    if (!canStart()) return;
+    clearTimeout(prepareTimer); prepareTimer = null;
+    const generation = ++epoch; ready = false; muted = background; preconnecting = true;
+    if (!background) { notice(); caption(''); setState('connecting'); }
+    el('spending').textContent = 'Current session · 0 credits';
+    const context = selection();
+    if (background) armIdleCleanup(30000);
+    refreshStart();
+    try {
+        if (!background && !await openMicrophone(generation)) return;
+        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId: context.characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext, ...(background ? { preconnect: true } : {}) });
+        if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
+        sessionId = result.sessionId;
+        memory.save(context, result.memoryId);
+        void refreshTranscriptStatus();
+        el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
+        const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const connection = new VoiceConnection(url, {
+            onMessage: message => {
+                if (generation !== epoch) return;
+                if (message.type === 'connected') send({ type: 'prepare', mode: mode() });
+                return onMessage(message, generation);
+            },
+            onLost: () => {
+                if (generation !== epoch) return;
+                if (!audio || audioOpening) void end(); else connectionLost();
+            },
+            onEnded: detail => { if (generation === epoch) { if (audio && !['off', 'idle'].includes(state)) notice(detail); void end(); } }
+        });
+        // Construction can fail synchronously and trigger cleanup before assignment.
+        if (generation !== epoch) { connection.close(); return; }
+        socket = connection;
+        refreshStart();
+    } catch (error) {
+        if (generation !== epoch) return;
+        if (!background || audio) notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
+        await end();
+    } finally { if (generation === epoch) { preconnecting = false; refreshStart(); } }
+}
 function end() {
+    clearTimeout(prepareTimer); clearTimeout(idleTimer); prepareTimer = idleTimer = null;
+    preconnecting = false; audioOpening = false;
     if (ending) return ending;
     const generation = ++epoch;
     ++captureEpoch;
@@ -569,7 +621,7 @@ function activateConversation(event) {
     const draft = el('practice-context').value.trim();
     if (draft !== practiceContext) {
         event?.preventDefault();
-        if (audio || sessionId || memory.get(selection())) {
+        if (audio || sessionId || preconnecting || memory.get(selection())) {
             // Resolve retention before opening a microphone. If a dialog is
             // needed, the learner starts recording with their next press.
             void chooseQuiz(draft); return;
@@ -577,8 +629,9 @@ function activateConversation(event) {
         practiceContext = draft; el('practice-context').value = draft; selectMemory();
     }
     if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
-    if (!ready && !canStart()) return;
-    event?.preventDefault(); notice();
+    if (!audio && (preconnecting || sessionId)) { event?.preventDefault(); notice(); void activatePrepared(); return; }
+    if (audioOpening || (!ready && !canStart())) return;
+    event?.preventDefault(); notice(); clearTimeout(idleTimer);
     if (!ready) {
         holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch;
         void start(); return;
@@ -623,9 +676,9 @@ async function chooseQuiz(nextPracticeContext = el('practice-context').value.tri
     // A blur caused by disabling the field must not overwrite a pending draft.
     if (changingQuiz || pageLeaving || ending) return;
     const previous = memory.preferences();
-    if (!audio && !sessionId && (!previous || !memory.get(previous))) {
+    if (!audio && !sessionId && !preconnecting && (!previous || !memory.get(previous))) {
         practiceContext = nextPracticeContext; el('practice-context').value = practiceContext;
-        selectMemory(); return;
+        selectMemory(); schedulePreparation(); return;
     }
     changingQuiz = true; refreshStart();
     try {
@@ -638,7 +691,7 @@ async function chooseQuiz(nextPracticeContext = el('practice-context').value.tri
             el('practice-context').value = practiceContext;
             selectMemory();
         }
-    } finally { changingQuiz = false; refreshStart(); }
+    } finally { changingQuiz = false; refreshStart(); schedulePreparation(); }
 }
 el('quiz').addEventListener('change', () => { void chooseQuiz(); });
 el('practice-context').addEventListener('change', () => {
@@ -658,12 +711,14 @@ el('talk').addEventListener('keydown', event => {
     if (event.code === 'Enter') { event.preventDefault(); if (!event.repeat) press(event); }
 });
 el('talk').addEventListener('keyup', event => { if (event.code === 'Enter') { event.preventDefault(); void release(); } });
-// Space controls recording on the page and microphone. Controls, editors and
-// dialogs keep their native keyboard behavior, including checkbox/radio toggles.
+// Space controls recording even when Avatar settings or chat controls have focus.
+// Text editing, dialogs and controls elsewhere keep their native behavior.
 function isTypingSpace(event) {
     if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target?.isContentEditable) return true;
     if (event.target === el('talk')) return false;
+    if (event.target?.closest?.('textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]), [contenteditable], [role="textbox"], dialog, [role="dialog"], [data-assistant-panel]')) return true;
+    if (event.target?.closest?.('#avatar-settings, #avatar-settings-toggle, #avatar-dialogue, #avatar-controls')) return false;
     return !!event.target?.closest?.('button, input, textarea, select, a[href], summary, dialog, [role="dialog"], [data-assistant-panel], [contenteditable], [role="textbox"], [role="combobox"], [role="button"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], [role="spinbutton"], [role="listbox"]');
 }
 document.addEventListener('keydown', event => {
@@ -712,7 +767,7 @@ window.addEventListener('pageshow', async event => {
 });
 // A tab switch pauses only the renderer. Keep voice alive, but finish a held
 // push-to-talk utterance because its key/pointer release may happen in another tab.
-document.addEventListener('visibilitychange', () => { if (document.hidden) releaseKeyboard(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { releaseKeyboard(); if (!audio) void end(); } });
 
 async function initialize() {
     const generation = ++configEpoch;
@@ -732,7 +787,7 @@ async function initialize() {
         selectMemory();
         if (!config.language) notice('Choose a learning language in the sidebar to start a conversation.');
         else if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
-        refreshStart();
+        refreshStart(); schedulePreparation();
     } catch (error) { if (!pageLeaving && generation === configEpoch) notice(error.message); }
 }
 el('character').value = characterId;

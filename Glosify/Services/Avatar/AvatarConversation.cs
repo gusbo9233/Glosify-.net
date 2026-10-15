@@ -18,7 +18,12 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
     {
         var remaining = session.ExpiresAt - clock.GetUtcNow();
         using var expires = new CancellationTokenSource(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero, clock);
-        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token, expires.Token);
+        using var inactivity = new CancellationTokenSource(session.HasStartedTurn ? TimeSpan.FromSeconds(60) : Timeout.InfiniteTimeSpan, clock);
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token, expires.Token, inactivity.Token);
+        await using var speechScope = scopes.CreateAsyncScope();
+        var speech = speechScope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
+        Task preparation = Task.CompletedTask;
+        var prepared = false;
         using var sendLock = new SemaphoreSlim(1);
         CancellationTokenSource? turnCancellation = null;
         Channel<byte[]>? input = null;
@@ -51,14 +56,28 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 var root = message.RootElement;
                 var type = root.GetProperty("type").GetString();
                 if (type == "ping") { await Send(new { type = "pong" }); continue; }
+                if (type == "prepare")
+                {
+                    // One preparation per transport; pings cannot extend its idle lease.
+                    if (!prepared && turn is null)
+                    {
+                        var prepareMode = root.GetProperty("mode").GetString();
+                        if (prepareMode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
+                        prepared = true;
+                        ArmIdle();
+                        preparation = Prepare(prepareMode);
+                    }
+                    continue;
+                }
                 if (type == "end") { reconnect = false; break; }
-                if (type == "interrupt") { await StopTurn(); await Send(new { type = "idle" }); continue; }
+                if (type == "interrupt") { await StopTurn(); ArmIdle(); await Send(new { type = "idle" }); continue; }
                 if (type == "played" && root.TryGetProperty("turnId", out var played) && played.GetString() == turnId && pendingReply is not null)
                 {
                     sessions.RecordTurn(session, turnId!, "assistant", pendingReply);
                     session.History.Add(TextTurn("assistant", pendingReply)); pendingReply = null;
                     transcriptSaves.Writer.TryWrite(true);
                     sessions.Remember(session);
+                    ArmIdle();
                     await Send(new { type = "idle" }); continue;
                 }
                 if (type == "commit" && input is not null && listening)
@@ -70,6 +89,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 var translate = ReadOption(root, "translateReplies");
                 var suggest = ReadOption(root, "suggestAnswers");
                 await StopTurn();
+                session.HasStartedTurn = true;
+                inactivity.CancelAfter(Timeout.InfiniteTimeSpan);
                 turnId = Guid.NewGuid().ToString("N");
                 input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32) { SingleReader = true, SingleWriter = true });
                 turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
@@ -87,10 +108,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         {
             lifetime.Cancel();
             await StopTurn();
+            await preparation;
             transcriptSaves.Writer.TryComplete();
             await transcriptWriter; // Drain accepted turns before disposing this connection.
             try { await monitor; } catch (OperationCanceledException) { }
-            reconnect = reconnect && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
+            reconnect = reconnect && !inactivity.IsCancellationRequested && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
             sessions.Remember(session);
             if (!reconnect) session.History.Clear();
             if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
@@ -104,16 +126,31 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
 
         return reconnect;
 
+        void ArmIdle()
+        {
+            if (!lifetime.IsCancellationRequested)
+                inactivity.CancelAfter(TimeSpan.FromSeconds(session.HasStartedTurn ? 60 : 30));
+        }
+
+        async Task Prepare(string mode)
+        {
+            try { await speech.PrepareAsync(session, mode, lifetime.Token); }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+            catch (Exception ex) { logger.LogDebug(ex, "Avatar preparation unavailable for {SessionId}; first turn will connect normally", session.Id); }
+        }
+
         async Task Respond(Channel<byte[]> channel, string id, string mode, bool translate, bool suggest, CancellationToken stopToken)
         {
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(120), clock);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(stopToken, deadline.Token);
             var ct = cancellation.Token;
+            long playbackBytes = 0;
             await using var scope = scopes.CreateAsyncScope();
-            var speech = scope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
             var billing = scope.ServiceProvider.GetRequiredService<AvatarBilling>();
             try
             {
+                await preparation;
+                ct.ThrowIfCancellationRequested();
                 await Send(new { type = "connecting", turnId = id });
                 var text = await speech.ListenAsync(session, mode, channel.Reader,
                     text => Send(new { type = "partial", turnId = id, text }),
@@ -151,7 +188,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 var reply = AvatarReply.Parse(result.Text, translate, suggest);
                 await Send(new { type = "reply", turnId = id, text = reply.Text, translation = reply.Translation,
                     suggestion = reply.Suggestion, suggestionTranslation = reply.SuggestionTranslation });
-                await speech.SpeakAsync(session, reply.Text, bytes => Send(new { type = "audio", turnId = id, pcm = Convert.ToBase64String(bytes) }), ct);
+                await speech.SpeakAsync(session, reply.Text, bytes =>
+                {
+                    playbackBytes += bytes.Length;
+                    return Send(new { type = "audio", turnId = id, pcm = Convert.ToBase64String(bytes) });
+                }, ct);
                 ct.ThrowIfCancellationRequested();
                 pendingReply = reply.Text;
                 await Send(new { type = "audio-end", turnId = id });
@@ -168,6 +209,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             }
             finally
             {
+                // PCM is mono 24 kHz, 16-bit. Playback is activity, but a missing
+                // acknowledgement must still have a bounded cleanup deadline.
+                if (pendingReply is not null && !lifetime.IsCancellationRequested)
+                    inactivity.CancelAfter(TimeSpan.FromSeconds(60 + playbackBytes / 48000d));
+                else ArmIdle();
                 listening = false; channel.Writer.TryComplete();
                 await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
                     .ReleaseAsync(scope.ServiceProvider.GetRequiredService<ResourceQuotaService>());

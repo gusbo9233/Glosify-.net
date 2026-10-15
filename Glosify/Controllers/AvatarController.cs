@@ -85,7 +85,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         try
         {
             var voice = await voices.ResolveAsync(language, ct, character);
-            var session = sessions.Create(UserId, language, practice, voice, character, request.MemoryId);
+            var session = sessions.Create(UserId, language, practice, voice, character, request.MemoryId, request.Preconnect);
             await transcripts.InitializePreferenceAsync(UserId, ct);
             return Json(new { sessionId = session.Id, memoryId = session.MemoryId, rememberedTurns = session.History.Count, characterId = character.Id, language = language.Code, voiceName = voice.Name,
                 nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
@@ -179,4 +179,4 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private ObjectResult ProblemResult(int status, string detail) => GlosifyProblemDetails.Result(HttpContext, status, GlosifyProblemDetails.CodeForStatus(status), detail);
 }
 
-public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null, string? PracticeContext = null);
+public sealed record AvatarStartRequest(Guid? QuizId, string? CharacterId = null, Guid? MemoryId = null, string? PracticeContext = null, bool Preconnect = false);
