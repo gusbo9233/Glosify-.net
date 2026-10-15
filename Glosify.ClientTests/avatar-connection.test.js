@@ -113,3 +113,14 @@ test('the complete five-second setup buffer fits without causing a false reconne
     assert.equal(socket.sent.length, 25); assert.deepEqual(h.lost, []);
     h.connection.close();
 });
+
+test('terminal idle expiry stops transport retries even if the following close is abnormal', () => {
+    const h = setup(), socket = h.sockets[0]; socket.connected();
+    socket.message({ type: 'ended', reason: 'idle' }); socket.drop(1006);
+    h.advance(60000);
+    assert.equal(h.ended.length, 1);
+    assert.equal(h.connection.closed, true);
+    assert.equal(h.sockets.length, 1);
+    assert.deepEqual(h.lost, []);
+    assert.equal(h.timers.size, 0);
+});

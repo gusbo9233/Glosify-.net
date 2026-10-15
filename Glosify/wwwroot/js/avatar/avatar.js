@@ -54,7 +54,7 @@ let characterId = Object.hasOwn(characters, preferences?.characterId) ? preferen
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let ending = null, changingQuiz = false, captureEpoch = 0;
-let preconnecting = false, audioOpening = false, prepareTimer = null, idleTimer = null;
+let preconnecting = false, preconnectActivated = false, audioOpening = false, prepareTimer = null, idleTimer = null;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
@@ -444,7 +444,10 @@ async function onMessage(message, generation) {
         if (audio && !audioOpening && mode() === 'hands-free' && !muted) listen();
         // A pending flush may still deliver the only audio of a short first press.
         else if (audio && !audioOpening && (holding || (awaitingCommit && (preRoll.length || flushing)))) listen(true);
-        else { if (!audioOpening) awaitingCommit = false; refreshStart(); }
+        else {
+            if (!audioOpening) { awaitingCommit = false; armIdleCleanup(message.resumed ? 60000 : 30000); }
+            refreshStart();
+        }
         return;
     }
     if (message.type === 'usage') {
@@ -506,20 +509,29 @@ function armIdleCleanup(milliseconds = 60000) {
 async function openMicrophone(generation) {
     const nextAudio = new AvatarAudio(); audio = nextAudio; audioOpening = true; refreshStart();
     try {
-        await nextAudio.open(frame);
+        const opened = await nextAudio.open(frame);
         if (generation !== epoch) { await nextAudio.close(); return false; }
+        if (!opened) {
+            await nextAudio.close();
+            if (generation !== epoch) return false;
+            audio = null; holding = false; awaitingCommit = false; flushing = false; preRoll = []; ++captureEpoch;
+            visual?.setAnalyser(null); setState(ready ? 'idle' : 'off'); armIdleCleanup(30000);
+            return false;
+        }
+        nextAudio.mute(muted);
         visual?.setAnalyser(nextAudio.analyser);
         return true;
     } finally { if (generation === epoch) { audioOpening = false; refreshStart(); } }
 }
 async function activatePrepared() {
     const generation = epoch;
+    preconnectActivated = true;
     clearTimeout(idleTimer);
     muted = false; holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch;
     setState('connecting');
     try {
         if (!await openMicrophone(generation)) return;
-        if (ready && (mode() === 'hands-free' || holding || (awaitingCommit && preRoll.length))) listen(true);
+        if (ready && !muted && (mode() === 'hands-free' || holding || (awaitingCommit && preRoll.length))) listen(true);
         else if (!holding) { if (ready) setState('idle'); armIdleCleanup(); }
     } catch (error) {
         if (generation !== epoch) return;
@@ -530,7 +542,7 @@ async function activatePrepared() {
 async function start(background = false) {
     if (!canStart()) return;
     clearTimeout(prepareTimer); prepareTimer = null;
-    const generation = ++epoch; ready = false; muted = background; preconnecting = true;
+    const generation = ++epoch; ready = false; muted = background; preconnecting = true; preconnectActivated = false;
     if (!background) { notice(); caption(''); setState('connecting'); }
     el('spending').textContent = 'Current session · 0 credits';
     const context = selection();
@@ -538,7 +550,14 @@ async function start(background = false) {
     refreshStart();
     try {
         if (!background && !await openMicrophone(generation)) return;
-        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId: context.characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext, ...(background ? { preconnect: true } : {}) });
+        const request = { quizId: context.quizId, characterId: context.characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext };
+        let result;
+        try { result = await api('/api/avatar/sessions', { ...request, ...(background ? { preconnect: true } : {}) }); }
+        catch (error) {
+            // Only an explicit Talk action may replace another tab's active session.
+            if (!background || !preconnectActivated || generation !== epoch || error.status !== 409) throw error;
+            result = await api('/api/avatar/sessions', request);
+        }
         if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
         sessionId = result.sessionId;
         memory.save(context, result.memoryId);
@@ -548,7 +567,7 @@ async function start(background = false) {
         const connection = new VoiceConnection(url, {
             onMessage: message => {
                 if (generation !== epoch) return;
-                if (message.type === 'connected') send({ type: 'prepare', mode: mode() });
+                if (message.type === 'connected' && !send({ type: 'prepare', mode: mode() })) return;
                 return onMessage(message, generation);
             },
             onLost: () => {
@@ -569,7 +588,7 @@ async function start(background = false) {
 }
 function end() {
     clearTimeout(prepareTimer); clearTimeout(idleTimer); prepareTimer = idleTimer = null;
-    preconnecting = false; audioOpening = false;
+    preconnecting = false; preconnectActivated = false; audioOpening = false;
     if (ending) return ending;
     const generation = ++epoch;
     ++captureEpoch;

@@ -19,7 +19,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         var remaining = session.ExpiresAt - clock.GetUtcNow();
         using var expires = new CancellationTokenSource(remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero, clock);
         using var inactivity = new CancellationTokenSource(session.HasStartedTurn ? TimeSpan.FromSeconds(60) : Timeout.InfiniteTimeSpan, clock);
-        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token, expires.Token, inactivity.Token);
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(requestAborted, session.Lifetime.Token, expires.Token);
         await using var speechScope = scopes.CreateAsyncScope();
         var speech = speechScope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
         Task preparation = Task.CompletedTask;
@@ -31,11 +31,13 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         string? turnId = null;
         string? pendingReply = null;
         var listening = false;
+        var startingTurn = false;
         var reconnect = true;
         var transcriptSaves = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
         { SingleReader = true, FullMode = BoundedChannelFullMode.DropWrite });
         var transcriptWriter = PersistTranscripts();
         var monitor = MonitorIdentity();
+        var idleMonitor = MonitorInactivity();
         try
         {
             await Send(new { type = "connected", language = session.Language.Code });
@@ -44,6 +46,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 using var idleDeadline = new CancellationTokenSource(TimeSpan.FromSeconds(35), clock);
                 using var idle = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token, idleDeadline.Token);
                 var (messageType, buffer) = await ReadClientFrame(socket, idle.Token);
+                if (inactivity.IsCancellationRequested) { await idleMonitor; break; }
                 if (messageType == WebSocketMessageType.Close) break;
                 if (messageType == WebSocketMessageType.Binary)
                 {
@@ -88,9 +91,14 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 if (mode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
                 var translate = ReadOption(root, "translateReplies");
                 var suggest = ReadOption(root, "suggestAnswers");
-                await StopTurn();
-                session.HasStartedTurn = true;
+                startingTurn = true;
                 inactivity.CancelAfter(Timeout.InfiniteTimeSpan);
+                if (inactivity.IsCancellationRequested) { await idleMonitor; break; }
+                await StopTurn();
+                if (inactivity.IsCancellationRequested) { await idleMonitor; break; }
+                lifetime.Token.ThrowIfCancellationRequested();
+                session.HasStartedTurn = true;
+                startingTurn = false;
                 turnId = Guid.NewGuid().ToString("N");
                 input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32) { SingleReader = true, SingleWriter = true });
                 turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
@@ -107,6 +115,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         finally
         {
             lifetime.Cancel();
+            await idleMonitor;
             await StopTurn();
             await preparation;
             transcriptSaves.Writer.TryComplete();
@@ -126,9 +135,30 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
 
         return reconnect;
 
+        async Task MonitorInactivity()
+        {
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(inactivity.Token, lifetime.Token);
+            try { await Task.Delay(Timeout.InfiniteTimeSpan, stop.Token); }
+            catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+            if (lifetime.IsCancellationRequested) return;
+            reconnect = false;
+            try
+            {
+                // Canceling a pending receive can abort the socket. Deliver the
+                // terminal signal first so the client releases capture, not retries.
+                await Send(new { type = "ended", reason = "idle" });
+                using var close = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                await sendLock.WaitAsync(close.Token);
+                try { await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Conversation idle", close.Token); }
+                finally { sendLock.Release(); }
+            }
+            catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
+            finally { lifetime.Cancel(); }
+        }
+
         void ArmIdle()
         {
-            if (!lifetime.IsCancellationRequested)
+            if (!startingTurn && !lifetime.IsCancellationRequested)
                 inactivity.CancelAfter(TimeSpan.FromSeconds(session.HasStartedTurn ? 60 : 30));
         }
 
@@ -211,7 +241,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             {
                 // PCM is mono 24 kHz, 16-bit. Playback is activity, but a missing
                 // acknowledgement must still have a bounded cleanup deadline.
-                if (pendingReply is not null && !lifetime.IsCancellationRequested)
+                if (pendingReply is not null && !startingTurn && !lifetime.IsCancellationRequested)
                     inactivity.CancelAfter(TimeSpan.FromSeconds(60 + playbackBytes / 48000d));
                 else ArmIdle();
                 listening = false; channel.Writer.TryComplete();

@@ -19,6 +19,60 @@ namespace Glosify.Tests;
 
 public sealed class AvatarVoiceTests
 {
+    [Fact]
+    public async Task AcceptedListenSuspendsIdleExpiryWhilePreviousTurnDisposes()
+    {
+        var reply = new Reply(); var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        var disposing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var accepted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var app = App(reply); var configure = app.Overrides!;
+        app.Overrides = services =>
+        {
+            configure(services); services.AddSingleton<TimeProvider>(clock);
+            services.RemoveAll<IGenerativeAiClient>();
+            services.AddScoped<IGenerativeAiClient>(sp => new SlowCleanupReply(
+                new ReservingReply(reply, sp.GetRequiredService<ResourceQuotaService>(), sp.GetRequiredService<RequestResourceReservations>()),
+                disposing, release.Task));
+        };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin");
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        try
+        {
+            await Until(socket, "connected", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+            var listening = await Until(socket, "listening", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "commit" }, timeout.Token);
+            await Until(socket, "audio-end", timeout.Token); await Until(socket, "usage", timeout.Token);
+            await disposing.Task.WaitAsync(timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "played", turnId = listening.GetProperty("turnId").GetString() }, timeout.Token);
+            await Until(socket, "idle", timeout.Token);
+            for (var i = 0; i < 5; i++)
+            {
+                clock.Advance(TimeSpan.FromSeconds(10));
+                await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+            }
+            using var cancellation = reply.LastCancellation.Register(() => accepted.TrySetResult());
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+            await accepted.Task.WaitAsync(timeout.Token); // StopTurn has accepted the new command.
+            clock.Advance(TimeSpan.FromSeconds(20)); // Cross the old idle deadline while disposal is blocked.
+            release.TrySetResult();
+            await Until(socket, "listening", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token);
+            await Until(socket, "pong", timeout.Token);
+            Assert.False(session.Lifetime.IsCancellationRequested);
+            Assert.Equal(1, reply.Calls);
+            await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+        }
+        finally { release.TrySetResult(); }
+    }
+
     [Theory]
     [InlineData(false, true)]
     [InlineData(true, true)]
@@ -80,6 +134,7 @@ public sealed class AvatarVoiceTests
             await Until(socket, "pong", timeout.Token);
         }
         clock.Advance(TimeSpan.FromSeconds(11));
+        Assert.Equal("idle", (await Until(socket, "ended", timeout.Token)).GetProperty("reason").GetString());
         try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
         catch (WebSocketException) { /* Cancellation can abort the receive side. */ }
         while (!session.Lifetime.IsCancellationRequested) await Task.Delay(5, timeout.Token);
@@ -121,6 +176,7 @@ public sealed class AvatarVoiceTests
             await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
         }
         clock.Advance(TimeSpan.FromSeconds(11));
+        Assert.Equal("idle", (await Until(socket, "ended", timeout.Token)).GetProperty("reason").GetString());
         try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
         catch (WebSocketException) { }
         while (!session.Lifetime.IsCancellationRequested) await Task.Delay(5, timeout.Token);
@@ -619,18 +675,28 @@ public sealed class AvatarVoiceTests
         public Task<string> ExtractTextFromImageAsync(byte[] image, string contentType, string prompt, AiUsageContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
+    private sealed class SlowCleanupReply(IGenerativeAiClient inner, TaskCompletionSource disposing, Task release) : IGenerativeAiClient, IAsyncDisposable
+    {
+        public Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext context, CancellationToken cancellationToken = default) =>
+            inner.RunAgentTurnAsync(request, context, cancellationToken);
+        public async ValueTask DisposeAsync() { disposing.TrySetResult(); await release; }
+        public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext context, string? model = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<string> ExtractTextFromImageAsync(byte[] image, string contentType, string prompt, AiUsageContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
     private sealed class Reply : IGenerativeAiClient
     {
         public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public AgentRequest? LastRequest;
         public AiUsageContext? LastUsage;
+        public CancellationToken LastCancellation;
         public bool Wait;
         public bool Fail;
         public bool Cancelled;
         public int Calls;
         public async Task<AgentTurnResult> RunAgentTurnAsync(AgentRequest request, AiUsageContext context, CancellationToken cancellationToken = default)
         {
-            Calls++; LastRequest = request; LastUsage = context; Started.TrySetResult();
+            Calls++; LastRequest = request; LastUsage = context; LastCancellation = cancellationToken; Started.TrySetResult();
             if (Fail) throw new InvalidOperationException("Provider unavailable");
             try { if (Wait) await Task.Delay(Timeout.Infinite, cancellationToken); }
             catch (OperationCanceledException) { Cancelled = true; throw; }
