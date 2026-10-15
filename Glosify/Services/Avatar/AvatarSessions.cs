@@ -39,6 +39,17 @@ public sealed partial class AvatarSessions(TimeProvider clock)
     }
     private readonly Dictionary<Guid, Memory> _memories = [];
     private static readonly TimeSpan MemoryLifetime = TimeSpan.FromHours(8);
+    private int _preparations;
+    // Bounds idle provider connections held for a faster first turn.
+    public bool TryReservePreparation(int limit)
+    {
+        lock (_gate)
+        {
+            if (_preparations >= limit) return false;
+            _preparations++; return true;
+        }
+    }
+    public void ReleasePreparation() { lock (_gate) _preparations--; }
     public AvatarSession Create(string userId, QuizLanguage language, string practice, AvatarVoice? voice = null, AvatarCharacter? character = null, Guid? memoryId = null, bool preconnect = false)
     {
         lock (_gate)

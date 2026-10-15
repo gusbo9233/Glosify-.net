@@ -16,21 +16,27 @@ public interface IAvatarSpeech
 
 public sealed class AvatarSpeech(AvatarBilling billing, IOptions<SpeechOptions> options) : IAvatarSpeech, IDisposable
 {
-    private ClientWebSocket? prepared;
+    private WebSocket? prepared;
     private string? preparedMode;
     private Task<JsonDocument>? preparedMessage;
 
     // No audio, reservations or generation requests are submitted during preparation.
     public async Task PrepareAsync(AvatarSession session, string mode, CancellationToken ct)
     {
-        Dispose();
-        prepared = await ConnectRecognitionAsync(session, mode, ct);
+        DiscardPrepared();
+        // Preparation is optional, so a slow provider gives up early. A turn's own
+        // connect keeps the turn deadline instead.
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        deadline.CancelAfter(TimeSpan.FromSeconds(10));
+        prepared = await ConnectRecognitionAsync(session, mode, deadline.Token);
         preparedMode = mode;
         // Observe provider idle errors/closure before handing the socket to a turn.
         preparedMessage = AvatarWire.ReadAsync(prepared, ct);
     }
 
-    public void Dispose()
+    public void Dispose() => DiscardPrepared();
+
+    private void DiscardPrepared()
     {
         prepared?.Dispose(); prepared = null;
         _ = DiscardReadAsync(preparedMessage); preparedMessage = null;
@@ -43,17 +49,15 @@ public sealed class AvatarSpeech(AvatarBilling billing, IOptions<SpeechOptions> 
         catch (Exception) { /* Socket disposal cancels pending reads; always observe them. */ }
     }
 
-    private async Task<ClientWebSocket> ConnectRecognitionAsync(AvatarSession session, string mode, CancellationToken ct)
+    private async Task<WebSocket> ConnectRecognitionAsync(AvatarSession session, string mode, CancellationToken ct)
     {
         var socket = Socket();
         try
         {
-            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            deadline.CancelAfter(TimeSpan.FromSeconds(10));
             var strategy = mode == "hands-free" ? "vad" : "manual";
             var url = $"wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&audio_format=pcm_16000&language_code={Uri.EscapeDataString(session.Language.ScribeCode)}&commit_strategy={strategy}";
-            await socket.ConnectAsync(new Uri(url), deadline.Token);
-            using var start = await AvatarWire.ReadAsync(socket, deadline.Token);
+            await socket.ConnectAsync(new Uri(url), ct);
+            using var start = await AvatarWire.ReadAsync(socket, ct);
             if (start.RootElement.GetProperty("message_type").GetString() != "session_started") throw Unavailable();
             return socket;
         }
@@ -66,49 +70,114 @@ public sealed class AvatarSpeech(AvatarBilling billing, IOptions<SpeechOptions> 
         var reservation = await billing.ReserveAsync(session.UserId, session.Id, "recognition", 45, ct);
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(60));
-        if (preparedMode != mode || preparedMessage?.IsCompleted == true) Dispose();
-        var connected = prepared;
-        prepared = null;
-        var receiving = preparedMessage; preparedMessage = null;
-        Task? sender = null;
+        if (preparedMode != mode || preparedMessage?.IsCompleted == true) DiscardPrepared();
+        var connection = prepared; var receiving = preparedMessage;
+        prepared = null; preparedMessage = null;
         try
         {
-            connected ??= await ConnectRecognitionAsync(session, mode, timeout.Token);
-            // The prepared read began under the connection lifetime. Also enforce
-            // this turn's deadline and interruption while waiting for that read.
-            using var abort = timeout.Token.Register(connected.Abort);
-            sender = SendAudioAsync(audio, mode,
-                (seconds, token) => billing.SubmittedAsync(reservation, seconds, token),
-                (chunk, commit, token) => AvatarWire.SendAsync(connected, new { message_type = "input_audio_chunk", audio_base_64 = Convert.ToBase64String(chunk), sample_rate = 16000, commit }, token),
-                timeout.Token);
-            await ready();
-            while (true)
-            {
-                var read = receiving ??= AvatarWire.ReadAsync(connected, timeout.Token);
-                if (await Task.WhenAny(read, sender) == sender) await sender;
-                using var message = await read;
-                receiving = null;
-                var type = message.RootElement.GetProperty("message_type").GetString() ?? "";
-                if (type.Contains("error", StringComparison.OrdinalIgnoreCase)) throw Unavailable();
-                var text = message.RootElement.TryGetProperty("text", out var item) ? item.GetString() ?? "" : "";
-                if (text.Length > 4000) throw new AvatarException(400, "Please try a shorter sentence.");
-                if (type == "partial_transcript") await partial(text);
-                if (type == "committed_transcript") return text.Trim();
-            }
+            return await RecognizeAsync(connection, receiving, token => ConnectRecognitionAsync(session, mode, token), audio, mode,
+                (seconds, token) => billing.SubmittedAsync(reservation, seconds, token), partial, ready, timeout.Token);
         }
-        catch (WebSocketException) when (timeout.IsCancellationRequested)
+        catch (Exception ex) when (ex is WebSocketException && timeout.IsCancellationRequested)
         {
             throw new OperationCanceledException(timeout.Token);
         }
+        finally { await billing.SettleAsync(reservation, CancellationToken.None); }
+    }
+
+    // The provider closes a session without enough audio activity, so an idle
+    // prepared session can fail just after it passed the check before a turn.
+    // Until it returns a transcript, the turn keeps its audio and replays it
+    // once on a fresh session instead of losing the learner's first words.
+    internal static async Task<string> RecognizeAsync(WebSocket? connection, Task<JsonDocument>? receiving,
+        Func<CancellationToken, Task<WebSocket>> connect, ChannelReader<byte[]> audio, string mode,
+        Func<decimal, CancellationToken, Task> submitted, Func<string, Task> partial, Func<Task> ready, CancellationToken ct)
+    {
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        using var sending = new SemaphoreSlim(1);
+        List<(byte[] Chunk, bool Commit)>? replay = connection is null ? null : [];
+        var abort = default(CancellationTokenRegistration);
+        Task? sender = null;
+        try
+        {
+            connection ??= await connect(stop.Token);
+            // The prepared read began under the connection lifetime. Also enforce
+            // this turn's deadline and interruption while waiting for that read.
+            abort = stop.Token.Register(connection.Abort);
+            sender = SendAudioAsync(audio, mode, submitted, async (chunk, commit, token) =>
+            {
+                await sending.WaitAsync(token);
+                try
+                {
+                    replay?.Add((chunk, commit));
+                    try { await SendChunkAsync(connection!, chunk, commit, token); }
+                    catch (Exception ex) when (replay is not null && !token.IsCancellationRequested
+                        && ex is WebSocketException or OperationCanceledException)
+                    { connection!.Abort(); } // The receive loop replays this chunk on a fresh session.
+                }
+                finally { sending.Release(); }
+            }, stop.Token);
+            await ready();
+            while (true)
+            {
+                var read = receiving ??= AvatarWire.ReadAsync(connection, stop.Token);
+                if (await Task.WhenAny(read, sender) == sender) await sender;
+                JsonDocument? message = null;
+                try { message = await read; }
+                catch (Exception ex) when (replay is not null && !stop.IsCancellationRequested
+                    && ex is WebSocketException or OperationCanceledException) { }
+                receiving = null;
+                using (message)
+                {
+                    var type = message?.RootElement.GetProperty("message_type").GetString() ?? "error";
+                    if (type.Contains("error", StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (replay is null) throw Unavailable();
+                        await ReplaceAsync();
+                        continue;
+                    }
+                    var text = message!.RootElement.TryGetProperty("text", out var item) ? item.GetString() ?? "" : "";
+                    if (text.Length > 4000) throw new AvatarException(400, "Please try a shorter sentence.");
+                    if (type is "partial_transcript" or "committed_transcript" && replay is not null)
+                    {
+                        // A transcript proves the session is serving this turn.
+                        await sending.WaitAsync(stop.Token);
+                        replay = null; sending.Release();
+                    }
+                    if (type == "partial_transcript") await partial(text);
+                    if (type == "committed_transcript") return text.Trim();
+                }
+            }
+        }
         finally
         {
-            timeout.Cancel(); connected?.Abort();
+            stop.Cancel(); connection?.Abort();
             if (sender is not null) { try { await sender; } catch (Exception) { /* The receive loop observes sender failure; always settle in finally. */ } }
             await DiscardReadAsync(receiving);
-            connected?.Dispose();
-            await billing.SettleAsync(reservation, CancellationToken.None);
+            abort.Dispose();
+            connection?.Dispose();
+        }
+
+        async Task ReplaceAsync()
+        {
+            // A pending send on the failed session completes (and is kept) once aborted.
+            connection!.Abort();
+            var fresh = await connect(stop.Token);
+            try { await sending.WaitAsync(stop.Token); }
+            catch { fresh.Dispose(); throw; }
+            try
+            {
+                abort.Dispose(); connection.Dispose();
+                connection = fresh; abort = stop.Token.Register(fresh.Abort);
+                foreach (var (chunk, commit) in replay!) await SendChunkAsync(fresh, chunk, commit, stop.Token);
+                replay = null; // Retry once; a fresh session's failure is reported.
+            }
+            finally { sending.Release(); }
         }
     }
+
+    private static Task SendChunkAsync(WebSocket socket, byte[] chunk, bool commit, CancellationToken ct) =>
+        AvatarWire.SendAsync(socket, new { message_type = "input_audio_chunk", audio_base_64 = Convert.ToBase64String(chunk), sample_rate = 16000, commit }, ct);
 
     internal static async Task SendAudioAsync(ChannelReader<byte[]> audio, string mode,
         Func<decimal, CancellationToken, Task> submitted,

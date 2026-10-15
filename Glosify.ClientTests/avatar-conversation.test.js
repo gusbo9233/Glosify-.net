@@ -306,8 +306,8 @@ test('lost connection pauses capture, clears pending audio and resumes muted wit
 test('late usage from an ended session cannot overwrite a newer conversation', async () => {
     const h = setup();
     h.run(`let finishUsage; requestJson = () => new Promise(resolve => { finishUsage = resolve; });`);
-    const pending = h.run("refreshUsage('old-session', epoch)");
-    h.run("epoch++; el('spending').textContent = 'new usage';");
+    const pending = h.run("refreshUsage('old-session')");
+    h.run("resetUsage(); el('spending').textContent = 'new usage';");
     h.run("finishUsage({ type: 'usage', available: 1, total: 99, pending: false })");
     await pending;
     assert.equal(h.elements.get('avatar-spending').textContent, 'new usage');
@@ -1281,12 +1281,12 @@ for (const mode of ['push-to-talk', 'hands-free']) test(`automatic preparation k
     h.run(mode === 'hands-free' ? 'toggleHandsFree()' : 'press()'); await tick();
     assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
     assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions').length, 1);
-    assert.deepEqual(h.commands(), ['prepare', 'listen']);
+    assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen']);
     assert.equal(h.timerCount(30000), 0);
     await h.run("onMessage({ type: 'listening' }, epoch)"); h.frame(9);
     if (mode === 'push-to-talk') {
         await h.run('release()');
-        assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
+        assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen', 'commit']);
     }
     assert.deepEqual(h.binary(), [9]);
 });
@@ -1299,7 +1299,7 @@ test('pressing during preparation shares the pending session and buffers the fir
     h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     await h.run("onMessage({ type: 'listening' }, epoch)");
-    assert.deepEqual(h.commands(), ['prepare', 'listen', 'commit']);
+    assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen', 'commit']);
     assert.deepEqual(h.binary(), [4]);
 });
 
@@ -1354,7 +1354,7 @@ test('losing a prepared transport during microphone permission cleans up and per
     assert.equal(h.run('sessionId'), null);
     assert.equal(h.run('canStart()'), true);
     assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/warm/end'), true);
-    assert.deepEqual(h.commands(), ['prepare']);
+    assert.deepEqual(h.commands(), ['prepare', 'activate']);
 });
 
 test('synchronous prepared transport failure closes the connector without a reconnect loop', async () => {
@@ -1426,7 +1426,7 @@ for (const mode of ['push-to-talk', 'hands-free']) test(`explicit ${mode} retrie
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     await h.run("onMessage({ type: 'listening' }, epoch)");
     assert.equal(h.run('sessionId'), 'explicit');
-    assert.deepEqual(h.commands(), mode === 'push-to-talk' ? ['prepare', 'listen', 'commit'] : ['prepare', 'listen']);
+    assert.deepEqual(h.commands(), mode === 'push-to-talk' ? ['prepare', 'activate', 'listen', 'commit'] : ['prepare', 'activate', 'listen']);
     if (mode === 'push-to-talk') assert.deepEqual(h.binary(), [8]);
 });
 
@@ -1475,4 +1475,166 @@ for (const resumed of [false, true]) test(`failed preparation send preserves rec
     assert.equal(h.run('state'), 'reconnecting');
     assert.equal(h.elements.get('avatar-talk').title, 'Start over');
     assert.equal(h.timerCount(30000), 0); assert.equal(h.timerCount(60000), 0);
+});
+
+async function connectPreparation(h) {
+    h.run('memory.select(selection())');
+    void h.run('start(true)');
+    h.run("finishStart({ sessionId: 'warm', memoryId: 'prepared', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+}
+
+test('a preparation remembers its new conversation only once the first turn starts', async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    assert.equal(h.run('memory.get(selection())'), undefined);
+    h.windowEvent('beforeunload', { preventDefault() { wire({ unloadPrompt: true }); } });
+    assert.equal(h.sent.some(x => x.unloadPrompt), false);
+    h.run('press()'); await tick();
+    assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen']);
+    assert.equal(h.run('memory.get(selection())'), undefined);
+    await h.run("onMessage({ type: 'connecting', turnId: 'first' }, epoch)");
+    assert.equal(h.run('memory.get(selection())'), 'prepared');
+});
+
+for (const scenario of ['live', 'expired']) test(`changing quiz after an unused ${scenario} preparation needs no save decision`, async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    h.run(`api = async path => wire({ path });
+        requestJson = async path => {
+            if (!path.endsWith('/transcript')) return { pending: false };
+            wire({ status: path }); throw Object.assign(new Error('Conversation not found for this learning language.'), { status: 404 });
+        };`);
+    if (scenario === 'expired') { h.fireTimer(30000); await tick(); }
+    h.elements.get('avatar-quiz').value = 'quiz'; await h.run('chooseQuiz()');
+    assert.equal(h.sent.some(x => x.status), false);
+    assert.equal(h.sent.some(x => x.path?.endsWith('/forget')), false);
+    assert.equal(h.sent.some(x => x.path === '/api/avatar/sessions/warm/end'), true);
+    assert.equal(h.run("el('notice').textContent"), '');
+    assert.equal(h.run('memory.preferences().quizId'), 'quiz');
+    assert.equal(h.run('sessionId'), null);
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+});
+
+test('Talk with an edited practice context replaces an unused preparation and records that press', async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    h.run(`api = (path, body) => { wire({ path, body }); return path.endsWith('/end') ? Promise.resolve() : new Promise(resolve => { finishStart = resolve; }); };`);
+    h.elements.get('avatar-practice-context').value = 'Job interview';
+    h.run('press()'); await tick();
+    assert.equal(h.sent.some(x => x.path === '/api/avatar/sessions/warm/end'), true);
+    const requests = h.sent.filter(x => x.path === '/api/avatar/sessions');
+    assert.equal(requests.length, 2);
+    assert.equal(requests[1].body.practiceContext, 'Job interview');
+    assert.equal(requests[1].body.preconnect, undefined);
+    assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+    h.frame(6); await h.run('release()');
+    h.run("finishStart({ sessionId: 'fresh', memoryId: 'fresh-memory', connectUrl: '/voice' })"); await tick();
+    await h.run("connectionHandlers.onMessage({ type: 'connected' })");
+    await h.run("onMessage({ type: 'listening' }, epoch)");
+    assert.deepEqual(h.commands(), ['prepare', 'prepare', 'listen', 'commit']);
+    assert.deepEqual(h.binary(), [6]);
+});
+
+test('a connected preparation reads as ready until a microphone is open', async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    assert.equal(h.run('state'), 'idle');
+    assert.equal(h.elements.get('avatar-status').textContent, 'Ready when you are');
+    h.run('press()'); await tick();
+    h.run("setState('idle')");
+    assert.equal(h.elements.get('avatar-status').textContent, 'Your turn');
+    h.run("muted = true; setState('idle')");
+    assert.equal(h.elements.get('avatar-status').textContent, 'Microphone muted');
+});
+
+test('activation renews the preparation lease before the microphone prompt and after reconnecting', async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    h.run('let allowMicrophone; AvatarAudio.prototype.open = () => new Promise(resolve => { allowMicrophone = () => resolve(true); });');
+    h.run('press()');
+    assert.deepEqual(h.commands(), ['prepare', 'activate']);
+    h.run('allowMicrophone()'); await tick();
+    assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen']);
+    h.run('connectionHandlers.onLost()');
+    assert.equal(h.run('state'), 'reconnecting');
+    await h.run("connectionHandlers.onMessage({ type: 'connected', resumed: true })");
+    assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen', 'prepare', 'activate']);
+});
+
+test('losing the connection hands cleanup to the reconnect deadline instead of the idle timer', async () => {
+    const h = setup();
+    h.run("config = { available: true, language: 'sv' }; modelReady = true; sessionId = 'used'; audio.close = async () => {};");
+    await h.run("onMessage({ type: 'idle' }, epoch)");
+    assert.equal(h.timerCount(60000), 1);
+    h.run('connectionLost()');
+    assert.equal(h.timerCount(60000), 0);
+    assert.equal(h.run('state'), 'reconnecting');
+    await h.run("onMessage({ type: 'connected', resumed: true }, epoch)");
+    assert.equal(h.timerCount(60000), 1);
+});
+
+test('switching tabs without a conversation leaves the page state and final usage refresh alone', async () => {
+    const h = setup();
+    h.run(`audio = null; socket = null; ready = false; el('status').textContent = 'Could not load';
+        let finishUsage; requestJson = () => new Promise(resolve => { finishUsage = resolve; });`);
+    const pending = h.run("refreshUsage('ended')");
+    h.run('document.hidden = true'); h.documentEvent('visibilitychange');
+    assert.equal(h.elements.get('avatar-status').textContent, 'Could not load');
+    h.run("finishUsage({ type: 'usage', available: 1, total: 2, recognition: 1, replies: 1, speech: 0, pending: false })"); await pending;
+    assert.match(h.elements.get('avatar-spending').textContent, /· 2 credits/);
+});
+
+test('a background preparation keeps the previous totals until the learner starts talking', async () => {
+    const h = setup(); prepareFirstPress(h);
+    h.run(`el('spending').textContent = 'Current session · 5 credits';
+        let finishUsage; requestJson = path => path.endsWith('/usage') ? new Promise(resolve => { finishUsage = resolve; }) : Promise.resolve(null);`);
+    const pending = h.run("refreshUsage('ended')");
+    await connectPreparation(h);
+    assert.equal(h.elements.get('avatar-spending').textContent, 'Current session · 5 credits');
+    h.run("finishUsage({ type: 'usage', available: 1, total: 7, recognition: 0, replies: 0, speech: 0, pending: false })"); await pending;
+    assert.match(h.elements.get('avatar-spending').textContent, /· 7 credits/);
+    h.run('press()'); await tick();
+    assert.equal(h.elements.get('avatar-spending').textContent, 'Current session · 0 credits');
+});
+
+for (const next of ['press', 'preparation']) test(`changing quiz keeps Talk usable while an unused preparation ends (${next})`, async () => {
+    const h = setup(); prepareFirstPress(h); await connectPreparation(h);
+    h.run(`let finishEnd; api = (path, body) => { wire({ path, body });
+        return new Promise(resolve => { if (path.endsWith('/end')) finishEnd = resolve; else finishStart = resolve; }); };`);
+    h.elements.get('avatar-quiz').value = 'quiz'; await h.run('chooseQuiz()'); await tick();
+    assert.equal(h.sent.some(x => x.path === '/api/avatar/sessions/warm/end'), true);
+    assert.equal(h.elements.get('avatar-talk').disabled, false);
+    const sessions = () => h.sent.filter(x => x.path === '/api/avatar/sessions');
+    if (next === 'press') {
+        // An explicit start replaces the old session server-side without waiting.
+        h.run('press()'); await tick();
+        assert.equal(sessions().length, 2);
+        assert.equal(sessions()[1].body.preconnect, undefined);
+        assert.equal(sessions()[1].body.quizId, 'quiz');
+        assert.equal(h.sent.filter(x => x.microphoneOpened).length, 1);
+        return;
+    }
+    // A replacement preparation waits, so it cannot conflict with the old session.
+    h.fireTimer(250); await tick();
+    assert.equal(sessions().length, 1);
+    h.run('finishEnd()'); await tick();
+    assert.equal(sessions().length, 2);
+    assert.equal(sessions()[1].body.preconnect, true);
+    assert.equal(sessions()[1].body.quizId, 'quiz');
+});
+
+test('idle cleanup behind the unsaved-conversation dialog keeps that conversation resumable after Cancel', async () => {
+    const h = setup();
+    h.run(`config = { available: true, language: 'sv' }; modelReady = true; sessionId = 'used';
+        memory.save(selection(), 'remembered'); audio.close = async () => {}; socket.close = () => {};
+        requestJson = async path => path.endsWith('/transcript') ? ({ conversationId: 'remembered', turnCount: 2, savedTurns: 0 }) : new Promise(() => {});
+        let choose; chooseUnsavedConversation = () => new Promise(resolve => { choose = resolve; });
+        api = async (path, body) => { wire({ path, body }); return path === '/api/avatar/sessions' ? new Promise(() => {}) : undefined; };
+        AvatarAudio = class { async open() { return true; } mute() {} async close() {} };
+        setState('listening');`);
+    h.elements.get('avatar-quiz').value = 'quiz';
+    const change = h.run('chooseQuiz()'); await tick();
+    h.fireTimer(60000); await tick();
+    assert.equal(h.run('sessionId'), null);
+    h.run("choose('cancel')"); await change;
+    assert.equal(h.elements.get('avatar-quiz').value, '');
+    assert.equal(h.run('memory.get(selection())'), 'remembered');
+    h.run('press()'); await tick();
+    assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.memoryId, 'remembered');
 });

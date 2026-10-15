@@ -9,10 +9,12 @@ using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Avatar;
 
-public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider clock, ILogger<AvatarConversation> logger, AvatarSessions sessions)
+public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider clock, ILogger<AvatarConversation> logger, AvatarSessions sessions,
+    IOptions<AvatarOptions> options)
 {
     public async Task<bool> RunAsync(WebSocket socket, AvatarSession session, ClaimsPrincipal principal, CancellationToken requestAborted)
     {
@@ -24,6 +26,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         var speech = speechScope.ServiceProvider.GetRequiredService<IAvatarSpeech>();
         Task preparation = Task.CompletedTask;
         var prepared = false;
+        var activated = false;
+        var preparationSlot = 0;
         using var sendLock = new SemaphoreSlim(1);
         CancellationTokenSource? turnCancellation = null;
         Channel<byte[]>? input = null;
@@ -68,8 +72,18 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                         if (prepareMode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
                         prepared = true;
                         ArmIdle();
-                        preparation = Prepare(prepareMode);
+                        // Past the limit, the first turn connects normally.
+                        if (sessions.TryReservePreparation(options.Value.MaxPreparedRecognitions))
+                        { preparationSlot = 1; preparation = Prepare(prepareMode); }
                     }
+                    continue;
+                }
+                if (type == "activate")
+                {
+                    // The learner chose to talk. Once per transport, give an unused
+                    // preparation the started-conversation lease so the browser's
+                    // microphone prompt cannot outlive it.
+                    if (!activated && turn is null) { activated = true; ArmIdle(); }
                     continue;
                 }
                 if (type == "end") { reconnect = false; break; }
@@ -118,6 +132,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             await idleMonitor;
             await StopTurn();
             await preparation;
+            ReleasePreparation();
             transcriptSaves.Writer.TryComplete();
             await transcriptWriter; // Drain accepted turns before disposing this connection.
             try { await monitor; } catch (OperationCanceledException) { }
@@ -159,14 +174,24 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         void ArmIdle()
         {
             if (!startingTurn && !lifetime.IsCancellationRequested)
-                inactivity.CancelAfter(TimeSpan.FromSeconds(session.HasStartedTurn ? 60 : 30));
+                inactivity.CancelAfter(TimeSpan.FromSeconds(session.HasStartedTurn || activated ? 60 : 30));
         }
 
         async Task Prepare(string mode)
         {
             try { await speech.PrepareAsync(session, mode, lifetime.Token); }
-            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
-            catch (Exception ex) { logger.LogDebug(ex, "Avatar preparation unavailable for {SessionId}; first turn will connect normally", session.Id); }
+            catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { ReleasePreparation(); }
+            catch (Exception ex)
+            {
+                ReleasePreparation();
+                logger.LogDebug(ex, "Avatar preparation unavailable for {SessionId}; first turn will connect normally", session.Id);
+            }
+        }
+
+        // The first turn takes over (or discards) the prepared connection.
+        void ReleasePreparation()
+        {
+            if (Interlocked.Exchange(ref preparationSlot, 0) == 1) sessions.ReleasePreparation();
         }
 
         async Task Respond(Channel<byte[]> channel, string id, string mode, bool translate, bool suggest, CancellationToken stopToken)
@@ -179,8 +204,10 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             var billing = scope.ServiceProvider.GetRequiredService<AvatarBilling>();
             try
             {
-                await preparation;
+                // A slow provider connect must not delay interruption of this turn.
+                await preparation.WaitAsync(ct);
                 ct.ThrowIfCancellationRequested();
+                ReleasePreparation();
                 await Send(new { type = "connecting", turnId = id });
                 var text = await speech.ListenAsync(session, mode, channel.Reader,
                     text => Send(new { type = "partial", turnId = id, text }),

@@ -182,6 +182,132 @@ public sealed class AvatarVoiceTests
         while (!session.Lifetime.IsCancellationRequested) await Task.Delay(5, timeout.Token);
     }
 
+    [Fact]
+    public async Task ActivationExtendsAnUnusedPreparationLeaseOncePerTransport()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services => { configure(services); services.AddSingleton<TimeProvider>(clock); };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { preconnect = true });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin");
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "prepare", mode = "push-to-talk" }, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+        async Task Elapse(int seconds)
+        {
+            for (var elapsed = 0; elapsed < seconds; elapsed += 10)
+            {
+                clock.Advance(TimeSpan.FromSeconds(10));
+                await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+            }
+        }
+        await Elapse(20);
+        // Talk was pressed; the browser's microphone prompt outlasts the 30-second preparation lease.
+        await AvatarWire.SendAsync(socket, new { type = "activate" }, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+        await Elapse(50);
+        Assert.False(session.Lifetime.IsCancellationRequested);
+        Assert.False(session.HasStartedTurn);
+        // Repeated activation cannot keep an unused connection open indefinitely.
+        await AvatarWire.SendAsync(socket, new { type = "activate" }, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+        clock.Advance(TimeSpan.FromSeconds(11));
+        Assert.Equal("idle", (await Until(socket, "ended", timeout.Token)).GetProperty("reason").GetString());
+        try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
+        catch (WebSocketException) { }
+        while (!session.Lifetime.IsCancellationRequested) await Task.Delay(5, timeout.Token);
+    }
+
+    [Theory]
+    [InlineData("limit")]
+    [InlineData("turn")]
+    [InlineData("end")]
+    public async Task PreparedRecognitionConnectionsAreBoundedAndReleased(string scenario)
+    {
+        var speech = new Speech();
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services =>
+        {
+            configure(services);
+            services.RemoveAll<IAvatarSpeech>(); services.AddScoped<IAvatarSpeech>(_ => speech);
+            services.Configure<AvatarOptions>(options => options.MaxPreparedRecognitions = 1);
+        };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        // Another conversation already holds the only prepared connection.
+        if (scenario == "limit") Assert.True(sessions.TryReservePreparation(1));
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { preconnect = true });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "prepare", mode = "push-to-talk" }, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+        Assert.Equal(scenario == "limit" ? 0 : 1, speech.PrepareCalls);
+        Assert.False(sessions.TryReservePreparation(1));
+        if (scenario == "end")
+        {
+            await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+            while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { }
+            while (!sessions.TryReservePreparation(1)) await Task.Delay(5, timeout.Token);
+            return;
+        }
+        if (scenario == "limit") sessions.ReleasePreparation();
+        // Over the limit the first turn connects normally; otherwise it takes over the slot.
+        await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+        await Until(socket, "listening", timeout.Token);
+        Assert.Equal(1, speech.ListenCalls);
+        Assert.True(sessions.TryReservePreparation(1));
+        sessions.ReleasePreparation();
+        await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+    }
+
+    [Fact]
+    public async Task InterruptDuringSlowPreparationDoesNotWaitForTheProvider()
+    {
+        var speech = new Speech { PrepareGate = new(TaskCreationOptions.RunContinuationsAsynchronously) };
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services =>
+        {
+            configure(services);
+            services.RemoveAll<IAvatarSpeech>(); services.AddScoped<IAvatarSpeech>(_ => speech);
+        };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { preconnect = true });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        try
+        {
+            await Until(socket, "connected", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "prepare", mode = "push-to-talk" }, timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "interrupt" }, timeout.Token);
+            // The command loop answers while the provider connect is still pending.
+            await Until(socket, "idle", timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token); await Until(socket, "pong", timeout.Token);
+            Assert.False(speech.PrepareGate.Task.IsCompleted);
+            Assert.Equal(0, speech.ListenCalls);
+            // A later turn still uses the completed preparation.
+            speech.PrepareGate.TrySetResult();
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+            await Until(socket, "listening", timeout.Token);
+            Assert.Equal(1, speech.PrepareCalls);
+            await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+        }
+        finally { speech.PrepareGate.TrySetResult(); }
+    }
+
     [Theory]
     [InlineData("push-to-talk", "rain", "Rain")]
     [InlineData("hands-free", "rowan", "Rowan")]
@@ -637,8 +763,13 @@ public sealed class AvatarVoiceTests
         public int ListenCalls, PrepareCalls;
         public int PlaybackChunks = 1;
         public bool Disposed;
+        public TaskCompletionSource? PrepareGate;
         public void Dispose() => Disposed = true;
-        public Task PrepareAsync(AvatarSession session, string mode, CancellationToken ct) { PrepareCalls++; return Task.CompletedTask; }
+        public async Task PrepareAsync(AvatarSession session, string mode, CancellationToken ct)
+        {
+            PrepareCalls++;
+            if (PrepareGate is not null) await PrepareGate.Task.WaitAsync(ct);
+        }
         public string? SpokenText;
         public async Task<string> ListenAsync(AvatarSession session, string mode, ChannelReader<byte[]> audio, Func<string, Task> partial, Func<Task> ready, CancellationToken ct)
         {

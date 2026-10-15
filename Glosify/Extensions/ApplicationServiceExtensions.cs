@@ -261,6 +261,7 @@ public static class ApplicationServiceExtensions
         services.AddOptions<Glosify.Services.Avatar.AvatarOptions>()
             .Bind(configuration.GetSection("Avatar"))
             .Validate(o => o.SynthesisSekPerMillionCharacters is > 0 and <= 1_000_000m, "Avatar provider pricing must be positive and bounded.")
+            .Validate(o => o.MaxPreparedRecognitions is >= 0 and <= 16, "Avatar prepared recognition limit must be between 0 and the 16-session capacity.")
             .ValidateOnStart();
         services.AddSingleton<Glosify.Services.Avatar.AvatarSessions>();
         services.AddScoped<Glosify.Services.Avatar.AvatarPricing>();

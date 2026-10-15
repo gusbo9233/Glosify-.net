@@ -14,6 +14,9 @@ public sealed class AvatarOptions
     public Dictionary<string, string> MeiVoiceIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
     // Conservative cost ceiling for the provider budget, independent of customer rates.
     public decimal SynthesisSekPerMillionCharacters { get; set; } = 1928.29m;
+    // Idle prepared recognition sessions count against the ElevenLabs plan's realtime
+    // concurrency, shared with turns and realtime translation. Zero disables them.
+    public int MaxPreparedRecognitions { get; set; } = 4;
     public const string SpeechModel = "eleven_v4_turbo";
 
     // Each character keeps its own casting; Rain's and Rowan's keys predate the other characters.

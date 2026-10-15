@@ -456,3 +456,9 @@ for repeatable catalogue and synthesis commands. Environment entries under
 `Avatar__KwameVoiceIds__<language>` and `Avatar__MeiVoiceIds__<language>` override shipped
 selections. Check another account before switching credentials. Missing configured
 voices fail before paid work. Use `Avatar__Enabled=false` to disable access.
+
+Opening the Avatar page prepares an idle ElevenLabs realtime speech-to-text connection
+for a faster first turn. These count against the plan's realtime concurrency limit
+(6 on Free, 9 on Starter, 15 on Creator), shared with Avatar turns and realtime
+translation. `Avatar__MaxPreparedRecognitions` (default 4, at most 16) bounds how many
+are held at once; beyond it, or at 0, the first turn connects on demand.
