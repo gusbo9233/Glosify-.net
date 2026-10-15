@@ -20,14 +20,16 @@ public sealed class AvatarCastingSmokeTests
         var voices = scope.ServiceProvider.GetRequiredService<IAvatarVoices>();
         var options = scope.ServiceProvider.GetRequiredService<IOptions<AvatarOptions>>().Value;
         using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
-        foreach (var character in new[] { AvatarCharacter.Rain, AvatarCharacter.Rowan })
+        // Languages without a matching native voice use a multilingual voice of the partner's gender.
+        string[] fallbacks = ["rain/ka", "rowan/ka", "kwame/ka", "kwame/lv", "mei/ka", "mei/my"];
+        foreach (var character in AvatarCharacter.All)
         {
-            var casting = character == AvatarCharacter.Rain ? options.VoiceIds : options.MaleVoiceIds;
+            var casting = options.VoiceIdsFor(character);
             foreach (var language in QuizLanguageCatalog.LanguageLearning)
             {
                 var voice = await voices.ResolveAsync(language, timeout.Token, character);
                 Assert.Equal(casting[language.Code], voice.Id);
-                Assert.Equal(language.Code != "ka", voice.Native);
+                Assert.Equal(!fallbacks.Contains($"{character.Id}/{language.Code}"), voice.Native);
             }
         }
     }
@@ -40,6 +42,11 @@ public sealed class AvatarCastingSmokeTests
     [InlineData("rain", "ja", "こんにちは。一緒に学びましょう。")]
     [InlineData("rain", "ka", "გამარჯობა.")]
     [InlineData("rowan", "ka", "გამარჯობა.")]
+    [InlineData("kwame", "en", "Hello. Let’s learn together.")]
+    [InlineData("mei", "en", "Hello. Let’s learn together.")]
+    [InlineData("mei", "zh-Hans", "你好。我们一起学习吧。")]
+    [InlineData("kwame", "lv", "Sveiki! Mācīsimies kopā.")]
+    [InlineData("mei", "my", "မင်္ဂလာပါ။")]
     public async Task SelectedVoiceProducesPcmThroughAvatarSpeech(string characterId, string code, string text)
     {
         using var app = App();
@@ -83,6 +90,6 @@ internal sealed class AvatarCastingTheoryAttribute : TheoryAttribute
     public AvatarCastingTheoryAttribute()
     {
         if (Environment.GetEnvironmentVariable("RUN_AVATAR_CASTING_SMOKE") != "true")
-            Skip = "Set RUN_AVATAR_CASTING_SMOKE=true to synthesize six short samples using real provider credit.";
+            Skip = "Set RUN_AVATAR_CASTING_SMOKE=true to synthesize eleven short samples using real provider credit.";
     }
 }

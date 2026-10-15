@@ -292,6 +292,8 @@ public sealed class AvatarTests
     [InlineData(null, "rain", "female")]
     [InlineData("rain", "rain", "female")]
     [InlineData("rowan", "rowan", "male")]
+    [InlineData("kwame", "kwame", "male")]
+    [InlineData("mei", "mei", "female")]
     public async Task SelectedPartnerPinsCharacterAndMatchingVoice(string? requested, string expected, string gender)
     {
         using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
@@ -323,6 +325,8 @@ public sealed class AvatarTests
     [Theory]
     [InlineData("rain")]
     [InlineData("rowan")]
+    [InlineData("kwame")]
+    [InlineData("mei")]
     public async Task VoiceSelectionFailureDoesNotStartOrChargeAConversation(string characterId)
     {
         using var app = new AvatarFixture { Overrides = services =>

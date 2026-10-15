@@ -159,6 +159,27 @@ test('choosing Rowan disposes the previous model and submits the chosen partner'
     assert.equal(h.sent.filter(x => x.model).length, 1);
 });
 
+for (const [id, name, gender] of [['kwame', 'Kwame', 'male'], ['mei', 'Mei', 'female']]) {
+    test(`choosing ${name} loads that partner and submits it`, async () => {
+        const h = setup();
+        h.run(`
+            audio = null; ready = false; config = { available: true, language: 'sv' };
+            visual = { dispose() {} };
+            createAvatar = async (_, id) => { wire({ model: id }); return { setQuality() {}, setState() {}, setAnalyser() {}, dispose() {} }; };
+            AvatarAudio = class { async open() { return true; } mute() {} async close() {} };
+            WebSocket = class { constructor() {} };
+            api = async (path, body) => { wire({ path, body }); return { sessionId: 'session', voiceName: 'Swedish voice', nativeVoice: true, connectUrl: '/voice' }; };
+        `);
+        h.elements.get('avatar-character').value = id;
+        await h.run('chooseCharacter()');
+        assert.equal(h.sent.filter(x => x.model === id).length, 1);
+        assert.equal(h.elements.get('avatar-name').textContent, name);
+        assert.equal(h.elements.get('avatar-voice').textContent, `A ${gender} voice matched to your learning language.`);
+        await h.run('start()');
+        assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.characterId, id);
+    });
+}
+
 test('character loading blocks start and overlapping changes, then a failure allows another choice', async () => {
     const h = setup();
     h.run(`

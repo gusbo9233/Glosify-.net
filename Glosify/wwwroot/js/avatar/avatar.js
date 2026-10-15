@@ -49,7 +49,10 @@ for (const name of ['translate', 'suggest']) el(name).addEventListener('change',
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
     renderHelp();
 });
-const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
+const characters = {
+    rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' },
+    kwame: { name: 'Kwame', gender: 'male' }, mei: { name: 'Mei', gender: 'female' }
+};
 let characterId = Object.hasOwn(characters, preferences?.characterId) ? preferences.characterId : 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);

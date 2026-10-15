@@ -128,6 +128,41 @@ public sealed class AvatarVoicesTests
         Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => Service(handler, cache).ResolveAsync(QuizLanguageCatalog.Find("sv")!, default, AvatarCharacter.Rowan))).Status);
     }
 
+    [Fact]
+    public async Task EachPartnerUsesItsOwnCastingWithinSharedGenderCatalogues()
+    {
+        var handler = new CatalogueHandler(
+            new { voices = new[] { Voice("rain", "sv"), Voice("mei", "sv", age: "middle_aged") }, has_more = false },
+            new { voices = new[] { Voice("rowan", "sv", "male"), Voice("kwame", "sv", "male", age: "middle_aged") }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var options = new AvatarOptions();
+        options.VoiceIds["sv"] = "rain"; options.MaleVoiceIds["sv"] = "rowan";
+        options.KwameVoiceIds["sv"] = "kwame"; options.MeiVoiceIds["sv"] = "mei";
+        var service = Service(handler, cache, options); var language = QuizLanguageCatalog.Find("sv")!;
+        foreach (var character in AvatarCharacter.All)
+            Assert.Equal(character.Id, (await service.ResolveAsync(language, default, character)).Id);
+        Assert.Equal(2, handler.Requests.Count); // One catalogue per gender.
+        options.MeiVoiceIds["sv"] = "kwame";
+        Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => service.ResolveAsync(language, default, AvatarCharacter.Mei))).Status);
+    }
+
+    [Fact]
+    public async Task OnlyRainMayBeCastWithATeenageVoice()
+    {
+        var handler = new CatalogueHandler(new { voices = new[] { Voice("a-teen", "en", age: "teen"), Voice("b-adult", "en", age: "middle_aged") }, has_more = false });
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var options = new AvatarOptions();
+        var service = Service(handler, cache, options); var language = QuizLanguageCatalog.Find("en")!;
+        Assert.Equal("a-teen", (await service.ResolveAsync(language, default, AvatarCharacter.Rain)).Id);
+        Assert.Equal("b-adult", (await service.ResolveAsync(language, default, AvatarCharacter.Mei)).Id);
+        options.MeiVoiceIds["en"] = "a-teen";
+        Assert.Equal(503, (await Assert.ThrowsAsync<AvatarException>(() => service.ResolveAsync(language, default, AvatarCharacter.Mei))).Status);
+    }
+
+    [Fact]
+    public void UnknownPartnerHasNoCasting() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => new AvatarOptions().VoiceIdsFor(new AvatarCharacter("other", "Other", "female")));
+
     [Theory]
     [InlineData("teen", true)]
     [InlineData("child", false)]
