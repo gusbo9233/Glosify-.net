@@ -8,7 +8,7 @@ public sealed class AvatarAssistantContext(AvatarSessions sessions, Administrato
     public void EnsureAvailable(string userId)
     {
         if (!options.Value.Enabled || !administrators.IsAdminUser(userId))
-            throw new AvatarException(404, "Avatar conversation not available.");
+            throw new AvatarException(404, "Speaking conversation not available.");
     }
 
     public AvatarTranscriptSnapshot Capture(Guid id, string userId, string language)

@@ -319,7 +319,7 @@ import {
             if (materialId && !materialSelector.value) {
                 const option = document.createElement('option');
                 option.value = `${materialKind}:${materialId}`;
-                option.dataset.contextLabel = materialKind === 'avatar' ? 'Current avatar conversation' : getActiveChat()?.contextBookTitle
+                option.dataset.contextLabel = materialKind === 'avatar' ? 'Current Speaking conversation' : getActiveChat()?.contextBookTitle
                     || getActiveChat()?.contextTranscriptTitle
                     || 'Selected material';
                 option.textContent = option.dataset.contextLabel;
@@ -1383,7 +1383,7 @@ import {
             await setMaterialContext('avatar', id, false);
             await setQuizContext(null, 'GlobeGlotter', false);
             setStatus('Using your conversation so far. Shared text is retained in this assistant chat.');
-            if (event.detail?.quiz) textarea.value = 'Make a quiz based on this avatar conversation.';
+            if (event.detail?.quiz) textarea.value = 'Make a quiz based on this Speaking conversation.';
             textarea.focus();
         } catch (error) { setStatus(error.message || 'Could not open the assistant.', true); }
         finally { avatarOpening = false; }

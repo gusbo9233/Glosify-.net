@@ -170,7 +170,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
     private async Task<IActionResult?> Access()
     {
         Response.Headers.CacheControl = "no-store";
-        if (!options.Value.Enabled) return ProblemResult(404, "Avatar preview is disabled.");
+        if (!options.Value.Enabled) return ProblemResult(404, "Speaking preview is disabled.");
         var user = await signIn.ValidateSecurityStampAsync(User);
         if (user is null || !await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user))
             return ProblemResult(401, "Please sign in again.");

@@ -343,7 +343,11 @@ async function prepareConversationChange(context) {
         // A reference that expired or disappeared cannot block starting over.
         // Keep missing references for a possible language change in another tab.
         if (error.status === 410) memory.save(context, '');
-        if (error.status === 404 || error.status === 410) { showTranscriptStatus(null); return true; }
+        if (error.status === 404 || error.status === 410) {
+            // The accepted change must also retire a preparation made with a
+            // fresh memory ID while this remembered reference was stale.
+            await end(); showTranscriptStatus(null); return true;
+        }
         return false;
     }
 }
@@ -593,8 +597,12 @@ async function start(background = false) {
         const connection = new VoiceConnection(url, {
             onMessage: message => {
                 if (generation !== epoch) return;
-                if (message.type === 'connected' && !(send({ type: 'prepare', mode: mode() })
-                    && (!preconnectActivated || send({ type: 'activate' })))) return;
+                if (message.type === 'connected') {
+                    // Warm idle background sessions only. Foreground starts keep
+                    // an idle lease, then connect recognition directly with listen.
+                    if (preparation && !send({ type: 'prepare', mode: mode() })) return;
+                    if ((!preparation || preconnectActivated) && !send({ type: 'activate' })) return;
+                }
                 return onMessage(message, generation);
             },
             onLost: () => {

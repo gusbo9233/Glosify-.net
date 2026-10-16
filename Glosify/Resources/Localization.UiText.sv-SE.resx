@@ -538,14 +538,14 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>Administration</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>Spel</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Spelanvändning</value></data>
-  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Avataranvändning</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Användning av Speaking</value></data>
   <data name="Quiz.GotIt" xml:space="preserve"><value>Kunde det</value></data>
   <data name="Quiz.Hard" xml:space="preserve"><value>Svårt</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Igen · Kunde det →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Igen · Lätt →</value></data>
   <data name="Layout.Menu" xml:space="preserve"><value>Meny</value></data>
-  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Avatarsamtal</value></data>
-  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Avatarsamtal · {0}</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Speaking-samtal</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking-samtal · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} replik</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} repliker</value></data>
 </root>

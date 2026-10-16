@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Avatar conversation";
+    ViewData["Title"] = "Speaking";
     Layout = "~/Views/Shared/_AppLayout.cshtml";
 }
 @section Styles {
@@ -7,7 +7,7 @@
 }
 <section class="avatar-page" id="avatar-page">
     @Html.AntiForgeryToken()
-    <h1 class="visually-hidden">Avatar conversation</h1>
+    <h1 class="visually-hidden">Speaking</h1>
     <div class="avatar-workspace" id="avatar-workspace">
         <div class="avatar-stage" id="avatar-stage">
             <canvas id="avatar-canvas" aria-label="Rain, your animated conversation partner"></canvas>

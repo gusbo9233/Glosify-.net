@@ -132,6 +132,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             await idleMonitor;
             await StopTurn();
             await preparation;
+            await speechScope.DisposeAsync();
             ReleasePreparation();
             transcriptSaves.Writer.TryComplete();
             await transcriptWriter; // Drain accepted turns before disposing this connection.
@@ -188,7 +189,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             }
         }
 
-        // The first turn takes over (or discards) the prepared connection.
+        // Recognition readiness proves the turn consumed the prepared connection.
+        // Failed admission keeps the slot until a retry succeeds or speech is disposed.
         void ReleasePreparation()
         {
             if (Interlocked.Exchange(ref preparationSlot, 0) == 1) sessions.ReleasePreparation();
@@ -207,11 +209,10 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 // A slow provider connect must not delay interruption of this turn.
                 await preparation.WaitAsync(ct);
                 ct.ThrowIfCancellationRequested();
-                ReleasePreparation();
                 await Send(new { type = "connecting", turnId = id });
                 var text = await speech.ListenAsync(session, mode, channel.Reader,
                     text => Send(new { type = "partial", turnId = id, text }),
-                    async () => { listening = true; await Send(new { type = "listening", turnId = id }); }, ct);
+                    async () => { ReleasePreparation(); listening = true; await Send(new { type = "listening", turnId = id }); }, ct);
                 listening = false; channel.Writer.TryComplete();
                 if (string.IsNullOrWhiteSpace(text)) { await Send(new { type = "idle" }); return; }
                 sessions.RecordTurn(session, id, "user", text);
