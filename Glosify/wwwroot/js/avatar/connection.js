@@ -24,7 +24,9 @@ export class VoiceConnection {
             this.lastReceived = this.now();
             if (message.type === 'pong') return;
             if (message.type === 'ended') {
-                this.finish('Conversation ended. Start again whenever you like.'); return;
+                this.finish(message.reason === 'idle'
+                    ? 'Conversation ended after inactivity. Start again whenever you like.'
+                    : 'Conversation ended. Start again whenever you like.'); return;
             }
             if (message.type === 'connected') {
                 message.resumed = this.lostAt !== null;

@@ -119,6 +119,7 @@ test('terminal idle expiry stops transport retries even if the following close i
     socket.message({ type: 'ended', reason: 'idle' }); socket.drop(1006);
     h.advance(60000);
     assert.equal(h.ended.length, 1);
+    assert.match(h.ended[0], /ended after inactivity/);
     assert.equal(h.connection.closed, true);
     assert.equal(h.sockets.length, 1);
     assert.deepEqual(h.lost, []);
