@@ -1488,7 +1488,7 @@ async function connectPreparation(h) {
 test('a preparation remembers its new conversation only once the first turn starts', async () => {
     const h = setup(); prepareFirstPress(h); await connectPreparation(h);
     assert.equal(h.run('memory.get(selection())'), undefined);
-    h.windowEvent('beforeunload', { preventDefault() { wire({ unloadPrompt: true }); } });
+    h.windowEvent('beforeunload', { preventDefault() { h.sent.push({ unloadPrompt: true }); } });
     assert.equal(h.sent.some(x => x.unloadPrompt), false);
     h.run('press()'); await tick();
     assert.deepEqual(h.commands(), ['prepare', 'activate', 'listen']);
