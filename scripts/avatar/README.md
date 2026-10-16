@@ -10,19 +10,26 @@ authentication or separate game deployment is required.
 ## Conversation controls and memory
 
 Push-to-talk is the default on every page visit. The first hold of the microphone
-button requests microphone permission and opens the voice connection; there is
+button requests microphone permission and uses the prepared voice connection (or connects on demand); there is
 no separate Start action. Choose Hands-free explicitly to use continuous capture,
 then select Start hands-free to begin. The microphone button is only for push-to-talk. Changing modes pauses existing capture
 and waits for the selected mode’s start control; choosing a mode never opens the microphone.
-Merely loading the page does not open the microphone or submit provider requests.
+Once the visible page and character are ready, it prepares the app transport and one
+ElevenLabs recognition connection without opening the microphone, sending audio,
+reserving credits, or generating replies. Unused preparation expires after 30 seconds;
+a used connection closes after 60 seconds idle. Server timers enforce this even
+when browser timers are suspended, and heartbeat pings do not extend the lease.
+Preparation is best-effort and does not loop after expiry or failure. The next talk
+action reconnects on demand using the retained conversation memory.
 After a release during initial connection setup, the button stays disabled until the
 connection can accept another hold. The scene has one circular microphone control: hold to record, release to send on
 both desktop and mobile. The mobile target is 72 pixels; the focused button also
-supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Buttons, checkboxes, radios, links, editors, selects and dialogs retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
+supports holding Enter. Space controls the selected speaking mode while the page or push-to-talk microphone is focused: hold/release for push-to-talk, or press once to start/pause hands-free. Repeat keydown events never retrigger a toggle. Avatar settings and chat controls yield Space to recording; text editors, dialogs and controls outside those panels retain native Space behavior. The page recording shortcut does not scroll the page. Releasing Space or leaving the window finishes the hold. In explicitly selected Hands-free mode, a separate labeled
 Start/Pause hands-free button replaces the microphone and pauses/resumes capture; pausing during a reply lets the reply finish. The
 button keeps a fixed accessible name and reports recording through `aria-pressed`.
 There are no separate Mute/End controls or Space hint. Each account has one live
-conversation: starting in another tab ends the earlier tab's conversation.
+conversation: explicitly starting in another tab ends the earlier tab's conversation.
+Automatic preparation never replaces an existing session in another tab.
 
 Leaving the page stops capture. Returning in the same tab/browser session restores
 conversation context on the next talk action. Only an opaque reference and the
@@ -79,27 +86,30 @@ usage records. The earlier customer charging and budget controls remain in effec
 
 ## Providers and prices
 
-See [the Rain/Rowan casting sheet](voice-casting.md) for the researched 69-language
-voice pairings, provider previews, and age/pronunciation caveats. Both 69-language
-mappings ship in `Glosify/appsettings.json`. All 137 unique voices were verified in
-the deployment account on 2026-10-10 after adding 92 missing library voices.
+See [the casting sheet](voice-casting.md) for the researched 69-language voices of all
+four partners, provider previews, and age/pronunciation caveats. All four 69-language
+mappings ship in `Glosify/appsettings.json`. Rain's and Rowan's 137 unique voices were
+verified in the deployment account on 2026-10-10 after adding 92 missing library voices;
+Kwame's and Mei's 134 were verified on 2026-10-15 after adding 94 more.
 
 Reuse `OPENAI_SECRET_KEY` and the existing ElevenLabs key configuration
 (`RealtimeTranslation:ElevenLabs:ApiKey` or legacy `Elevenlabs_key`; `Speech:ApiKey`
 is also bound by the speech options). The key also needs read access to the voices catalogue.
-Choose Rain or Rowan before starting a conversation. Rain uses a youthful female voice (teenage tones are allowed);
-Rowan uses an adult male voice. Selection uses native-language labels first, then
+Choose Rain, Rowan, Kwame or Mei before starting a conversation. Rain uses a youthful female
+voice (teenage tones are allowed); Rowan uses a young-adult male voice, Kwame a mature male
+voice and Mei an adult female voice. Only Rain may use a voice labelled teenage. Selection uses native-language labels first, then
 verified languages, then a multilingual fallback of the chosen gender. Saved voice names never
 establish language support. Catalogue pagination is followed and results are cached for
 one hour in separate gender caches; selection is pinned before the session begins and before any paid provider work.
 Custom-rate and live-moderated voices are excluded. The UI identifies a multilingual
 fallback when there is no native-labelled match; native accent quality still needs listening
 review. No voices are automatically added at runtime. The Georgian pair is a multilingual
-fallback; PCM synthesis passed, but native pronunciation still needs listening review.
+fallback for every partner, as are Kwame's Latvian and Mei's Burmese, which have no further
+native voice of that gender in the library; native pronunciation still needs listening review.
 
-The shipped `Avatar:VoiceIds:<catalog-language-code>` mappings choose a specific available
-female voice for one language; `Avatar:MaleVoiceIds:<catalog-language-code>` does the
-same for Rowan. An unavailable matching voice prevents the session from starting.
+The shipped `Avatar:VoiceIds:<catalog-language-code>` mappings choose Rain's voice for one
+language; `Avatar:MaleVoiceIds`, `Avatar:KwameVoiceIds` and `Avatar:MeiVoiceIds` do the
+same for Rowan, Kwame and Mei. An unavailable matching voice prevents the session from starting.
 The previous global `Avatar:VoiceId` and the book reader's
 `Speech:DefaultVoiceId` no longer control avatar speech. Synthesis explicitly sends the
 current language (including `zh-Hans` → `zh` and `nb` → `no`). The server uses Scribe v2
@@ -123,7 +133,8 @@ rate snapshots and reservation expiry. It stores no conversation text or audio.
 Expired operations settle after five minutes through the maintenance worker.
 Conversation context is process-local, capped at 24 messages/24,000 serialized
 characters. Sessions expire after 30 minutes; microphone turns after 45 seconds;
-unconnected sessions after 30 seconds. Switching tabs keeps the conversation,
+unconnected sessions after 30 seconds. Hiding an unused prepared page releases its
+connection immediately. Switching tabs during an active conversation keeps the conversation,
 microphone and playback running while pausing hidden rendering. A held
 push-to-talk utterance is released when the tab becomes hidden. Navigating away
 from the page or closing it still ends capture. In hands-free mode, silence sent to
@@ -210,8 +221,8 @@ worker cannot fetch resources or create nested workers.
 
 ## Rebuild the characters
 
-Both characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
-portrait styling. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan uses the pinned grey eye texture with its irises cooled to a pale blue. `academia_outfit.py` adds an ivory pointed collar, forest-green
+All four characters use CC0 MakeHuman adult anatomy, skin, eyes and clothing, with original
+portrait styling. `avatar_rig.py` holds the posing, morph baking and export steps they share. Rain uses the pinned light-brown eye texture for a natural brown iris without the original red tint; Rowan uses the pinned grey eye texture with its irises cooled to a pale blue. `academia_outfit.py` adds an ivory pointed collar, forest-green
 woven-check vest, black ribbon tie and an antique-gold embroidered GG chest patch.
 The outfit combines the green vest/ivory shirt and ribbon/check details from the
 user's two outfit references (`img/girl-outfit.webp` and `img/girl-outfit2` in the
@@ -219,11 +230,11 @@ main working tree); no photo pixels are included in the shipped assets. The patc
 is intentionally partly covered by her hair. Garments inherit the blouse's skin
 weights before morph baking, including breathing and shoulder movement.
 Rowan has young-adult male anatomy: high cheekbones over lean cheeks, a jaw tapering
-to a narrower cleft chin, a long straight nose and full lips. Heavy dark brows sit
-low over lightly hooded pale-blue eyes, and light stubble is painted into the skin
+to a narrower cleft chin, a long straight nose and full lips. Heavy brown brows sit
+just above open, lightly hooded pale-blue eyes, and light brown stubble is painted into the skin
 texture over the upper lip, chin, jawline, lower cheeks and sideburns, leaving the
-lips clean. He is sculpted from the source anatomy. His dark mop fits close to the
-head and has two layers. The CC0 short02 hair, under a dark espresso tint, is
+lips clean. He is sculpted from the source anatomy. His medium-brown mop fits close to the
+head and has two layers. The CC0 short02 hair, recoloured to that brown, is
 reshaped into the base: a crown about 1.5 cm off the scalp, sides over the ear tops
 and a fringe ending just above the brows, swept to his left. Original hair cards are
 grown over it from the crown whorl, with a dense row along the hairline. They use a
@@ -236,6 +247,20 @@ dark horn buttons. An ivory shirt and dark necktie show inside the V, with a gol
 GG shield embroidered on the cardigan chest. His raised collar stand wraps the neck;
 the shirt shoulders fill the neckline, and the smaller collar points frame the tie
 knot. Shirt and tie weights blend from the torso to the neck for body morphs.
+Kwame (`build-kwame.py`, `kwame_outfit.py`) is a man in his early forties with a
+professorial look: MakeHuman's African male anatomy blended toward middle age, a defined
+jaw and cheekbones, warm dark-brown eyes and tortoiseshell glasses. His close crop and
+short groomed beard are one alpha-cut shell grown from the scalp and jaw, with a coil
+normal map and a touch of grey at the temples and chin. He wears the CC0 male suit
+retextured as a herringbone tweed blazer with elbow patches, an ivory shirt, an oxblood
+knit tie and a gold GG emblem.
+Mei (`build-mei.py`, `mei_hair.py`, `mei_outfit.py`) is a woman of about 35 with a
+teacher's look: MakeHuman's East Asian female base with a gently oval head and
+dark-brown eyes. Her original sleek low bun is a two-layer strand-textured scalp shell, a
+swirled chignon and side-swept bangs. She is built twice: the unclothed figure slims the
+CC0 suit into a charcoal fine-wool blazer and supplies the skin inside an original ivory
+silk blouse's V neckline. A gold-and-green GG pin sits on the lapel. Her skin texture is
+softened, and occlusion from her own geometry is baked into it because the web renderer has none.
 The character chooser swaps the model and pins the character name and matching voice
 for the conversation; it is locked while a model loads or a conversation is active.
 Layered Hazel Hair by Elvaerwyn is CC-BY; the model license file
@@ -253,6 +278,10 @@ blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
   /tmp/avatar-human-source /tmp/avatar-rain-raw.glb
 blender --factory-startup -b -P scripts/avatar/build-rain.py -- \
   /tmp/avatar-human-source /tmp/avatar-rowan-raw.glb --character rowan
+blender --factory-startup -b -P scripts/avatar/build-kwame.py -- \
+  /tmp/avatar-human-source /tmp/avatar-kwame-raw.glb
+blender --factory-startup -b -P scripts/avatar/build-mei.py -- \
+  /tmp/avatar-human-source /tmp/avatar-mei-raw.glb
 ```
 
 Then compress the fresh exports as the final asset step:
@@ -260,6 +289,8 @@ Then compress the fresh exports as the final asset step:
 ```sh
 node scripts/avatar/compress-model.mjs /tmp/avatar-rain-raw.glb Glosify/wwwroot/models/avatar/rain-realistic.glb
 node scripts/avatar/compress-model.mjs /tmp/avatar-rowan-raw.glb Glosify/wwwroot/models/avatar/rowan-realistic.glb
+node scripts/avatar/compress-model.mjs /tmp/avatar-kwame-raw.glb Glosify/wwwroot/models/avatar/kwame-realistic.glb
+node scripts/avatar/compress-model.mjs /tmp/avatar-mei-raw.glb Glosify/wwwroot/models/avatar/mei-realistic.glb
 npm run build --prefix scripts/avatar
 ```
 
@@ -269,8 +300,8 @@ It keeps mesh topology, textures, materials and named morph targets. Compression
 is lossy quantization, so keep raw exports outside `wwwroot` and never repeatedly
 compress shipped files. The script rejects compressed inputs and identical
 input/output paths. The pre-compression assets are also retained in Git at
-`0d02d69`. Current shipped sizes are Rain 3.78 MB and Rowan 4.46 MB, down from
-15.37 MB and 12.21 MB. See [validation and measurements](performance-review.md).
+`0d02d69`. Current shipped sizes are Rain 3.78 MB, Rowan 4.49 MB, Kwame 4.58 MB and
+Mei 3.66 MB; Rain and Rowan were 15.37 MB and 12.21 MB before compression. See [validation and measurements](performance-review.md).
 
 An optional final PNG path renders a portrait and saves a review `.blend` beside it.
 The fit helper comes from the game's MakeHuman anatomy builder; no addon is required.
@@ -281,12 +312,12 @@ and body language (`nod`, `turn`, `tilt`, `shrug`, `breathe`), and embeds textur
 export, morph deltas below 0.01 mm (positions) or 0.001 (normals) are dropped and stored
 as sparse accessors, so the extra units add about 0.6 MB instead of over 20 MB.
 Rain’s facial sculpt targets soften the jaw and define the upper lip; Rowan’s
-targets define the jaw, cheekbones, brows, nose and lips before fitting the facial
-rig and attachments. The resting smile
+targets define the jaw, cheekbones, brows, nose and lips; Kwame's and Mei's blend the
+young and old macro targets for their ages, all before fitting the facial rig and attachments. The resting smile
 has closed lips and no jaw-opening pose; expression smiles change slowly with the
 conversation state and never follow the audio, so speech returns to a calm closed mouth.
-Rowan rests with low brows and lightly hooded, narrowed lids; his blink closes from
-that resting lid instead of overshooting it.
+Rowan rests with an open gaze under slightly lowered brows. Kwame and Mei rest with
+lightly lowered lids; their blinks close from that resting lid instead of overshooting it.
 The hair is weighted to the head,
 avoiding shoulder-driven kinks during posing. The face retains all source bone weights
 before baking so facial expressions are not truncated to four influences.
@@ -298,7 +329,7 @@ units in `face-poses.json`, whose source revision is recorded alongside the pose
 near 1 kHz open the jaw, 2–3 kHz energy spreads the lips, its absence rounds them and
 hiss parts them. This is approximate, not phoneme-exact lip sync. When texture morphs are unavailable,
 the renderer budgets vertex attributes and keeps a stable reduced set, prioritizing
-speech, blinking and symmetric smiles rather than dropping arbitrary movements. Both characters also hold eye
+speech, blinking and symmetric smiles rather than dropping arbitrary movements. All characters also hold eye
 contact with small saccades and occasional glances, blink irregularly (sometimes twice),
 nod on speech emphasis, give small nods when the learner pauses, look away while
 thinking, raise their brows after asking a question, and breathe. With reduced motion,
@@ -325,7 +356,7 @@ blender --factory-startup -b -P scripts/avatar/build-library.py -- \
 
 Optional arguments after the output set the resolution percentage and sample count for
 quick previews. The background carries an `academia-1` cache revision; Rain uses
-`natural-brown-eyes-1` and Rowan uses `close-locks-1`. Both models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
+`natural-brown-eyes-1`, Rowan `brown-hair-1`, Kwame `tweed-1` and Mei `low-bun-1`. All models retain Meshopt compression. Bump the relevant revision and rebuild the viewer when replacing an asset.
 The view through the window is `wwwroot/images/avatar/courtyard.jpg`, an
 AI-generated image. Prompt:
 “Premium polished 3D Italian courtyard loggia, no people or text; warm ivory arches,
@@ -367,6 +398,8 @@ assignment, and six short live synthesis checks. The Release publish artifact
 contains both models, their attribution, the viewer, library background and all
 voice mappings. Production uses the same ElevenLabs key and already enables the
 avatar; no host settings were changed and no application deployment was made.
+On 2026-10-15, after Kwame and Mei were added, the live catalogue check passed for all
+276 assignments and eleven short synthesis checks passed.
 
 To recheck a different provider account, supply its key through the normal secret
 configuration and run the read-only catalogue check. The synthesis check spends a

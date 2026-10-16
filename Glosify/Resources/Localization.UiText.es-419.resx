@@ -1698,14 +1698,14 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>Administración</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>Juego</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Uso del juego</value></data>
-  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Uso del avatar</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Uso de Speaking</value></data>
   <data name="Quiz.GotIt" xml:space="preserve"><value>Lo sabía</value></data>
   <data name="Quiz.Hard" xml:space="preserve"><value>Difícil</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Otra vez · Lo sabía →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Otra vez · Fácil →</value></data>
   <data name="Layout.Menu" xml:space="preserve"><value>Menú</value></data>
-  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Conversación con el avatar</value></data>
-  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Conversación con el avatar · {0}</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Conversación de Speaking</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Conversación de Speaking · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} intervención hablada</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} intervenciones habladas</value></data>
 </root>

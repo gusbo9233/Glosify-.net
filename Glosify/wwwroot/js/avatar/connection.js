@@ -23,6 +23,9 @@ export class VoiceConnection {
             catch { this.finish('The voice connection returned an invalid message. Please start again.'); return; }
             this.lastReceived = this.now();
             if (message.type === 'pong') return;
+            if (message.type === 'ended') {
+                this.finish('Conversation ended. Start again whenever you like.'); return;
+            }
             if (message.type === 'connected') {
                 message.resumed = this.lostAt !== null;
                 this.connected = true; this.lostAt = null; this.attempt = 0;

@@ -30,7 +30,7 @@ internal sealed class ReadAvatarConversationTool(GlosifyContext db) : AssistantT
             where source.ThreadId == context.ThreadId && source.Language == context.TargetLanguageCode
             orderby run.CreatedAt descending
             select new { run.UserMessageId, source.ContentJson }).FirstOrDefaultAsync(ct);
-        if (saved is null) return ToolResult.Fail("Conversation unavailable", "No avatar conversation is attached to this chat.");
+        if (saved is null) return ToolResult.Fail("Conversation unavailable", "No Speaking conversation is attached to this chat.");
         var snapshot = RunJson.Read<AvatarTranscriptSnapshot>(saved.ContentJson);
         if (snapshot.Language != context.TargetLanguageCode)
             return ToolResult.Fail("Conversation unavailable", "The conversation belongs to another learning language.");
@@ -41,7 +41,7 @@ internal sealed class ReadAvatarConversationTool(GlosifyContext db) : AssistantT
             if (turns.Count > 0 && characters + turn.Text.Length > 12_000) break;
             turns.Add(turn); characters += turn.Text.Length;
         }
-        return ToolResult.Ok("Read avatar conversation", new { message_id = saved.UserMessageId,
+        return ToolResult.Ok("Read Speaking conversation", new { message_id = saved.UserMessageId,
             conversation_id = snapshot.ConversationId, language = snapshot.Language, turns,
             total_turns = snapshot.Turns.Length, next_offset = offset + turns.Count, has_more = offset + turns.Count < snapshot.Turns.Length });
     }

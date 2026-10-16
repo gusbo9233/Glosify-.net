@@ -442,8 +442,23 @@ checks passed, including the explicitly multilingual Georgian pair. No deploymen
 or host-setting mutation was performed. Subjective age/accent quality remains a
 listening-review item; Georgian is not claimed to have a native voice.
 
+On 2026-10-15, Kwame and Mei were added with their own 69-language castings
+(`Avatar:KwameVoiceIds`, `Avatar:MeiVoiceIds`; 134 unique voices, none shared with Rain or
+Rowan) after adding 94 library voices to the same account. The read-only catalogue check
+resolved all 276 assignments for the four partners, and eleven short synthesis checks
+passed, including Kwame's Latvian and Mei's Burmese multilingual fallbacks. Rowan's model
+now has medium-brown hair and more open eyes. No deployment or host-setting mutation was
+performed.
+
 See [avatar deployment checks](../scripts/avatar/README.md#deployment-verification)
 for repeatable catalogue and synthesis commands. Environment entries under
-`Avatar__VoiceIds__<language>` and `Avatar__MaleVoiceIds__<language>` override shipped
+`Avatar__VoiceIds__<language>`, `Avatar__MaleVoiceIds__<language>`,
+`Avatar__KwameVoiceIds__<language>` and `Avatar__MeiVoiceIds__<language>` override shipped
 selections. Check another account before switching credentials. Missing configured
 voices fail before paid work. Use `Avatar__Enabled=false` to disable access.
+
+Opening the Avatar page prepares an idle ElevenLabs realtime speech-to-text connection
+for a faster first turn. These count against the plan's realtime concurrency limit
+(6 on Free, 9 on Starter, 15 on Creator), shared with Avatar turns and realtime
+translation. `Avatar__MaxPreparedRecognitions` (default 4, at most 16) bounds how many
+are held at once; beyond it, or at 0, the first turn connects on demand.

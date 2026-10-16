@@ -49,21 +49,26 @@ for (const name of ['translate', 'suggest']) el(name).addEventListener('change',
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
     renderHelp();
 });
-const characters = { rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' } };
+const characters = {
+    rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' },
+    kwame: { name: 'Kwame', gender: 'male' }, mei: { name: 'Mei', gender: 'female' }
+};
 let characterId = Object.hasOwn(characters, preferences?.characterId) ? preferences.characterId : 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = value => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
-let ending = null, changingQuiz = false, captureEpoch = 0;
+let ending = null, retiring = null, changingQuiz = false, captureEpoch = 0, usageEpoch = 0;
+let preconnecting = false, preconnectActivated = false, audioOpening = false, prepareTimer = null, idleTimer = null, preparedMemory = null;
 let config, visual, socket, audio, sessionId, turnId, state = 'off', muted = false, holding = false, epoch = 0, speechFrames = 0;
 let preRoll = [], awaitingCommit = false, flushing = false, ready = false, modelReady = false, currentReply = '', cancelledTurn = null;
 const mode = () => document.querySelector('input[name="avatar-mode"]:checked').value;
 const selection = () => ({ language: config?.language, characterId, quizId: el('quiz').value || null, practiceContext });
-const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !ending && !changingQuiz && !pageLeaving;
+const canStart = () => !!config?.available && !!config?.language && modelReady && !sessionId && !audio && !preconnecting && !ending && !changingQuiz && !pageLeaving;
 const token = document.querySelector('#avatar-page input[name="__RequestVerificationToken"]').value;
 function send(value) { return socket ? socket.send(JSON.stringify(value)) !== false : false; }
 function setState(value) {
     state = value;
-    const labels = { off: 'Ready when you are', connecting: 'Connecting', reconnecting: 'Reconnecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', idle: muted ? 'Microphone muted' : 'Your turn', error: 'Try again' };
+    // A preparation is connected before any microphone opens; it is not muted.
+    const labels = { off: 'Ready when you are', connecting: 'Connecting', reconnecting: 'Reconnecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Speaking', idle: !audio ? 'Ready when you are' : muted ? 'Microphone muted' : 'Your turn', error: 'Try again' };
     el('status').textContent = labels[value] || value;
     visual?.setState(value);
     refreshStart();
@@ -152,7 +157,7 @@ function refreshStart() {
     const handsFree = mode() === 'hands-free', reconnecting = state === 'reconnecting';
     // A hands-free error stops listening until the explicit retry.
     const recording = holding || (handsFree && !!audio && !muted && state !== 'error');
-    const disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || reconnecting));
+    const disabled = !holding && (!!ending || changingQuiz || pageLeaving || !(ready || canStart() || ((preconnecting || sessionId) && !audio) || reconnecting));
     el('talk').hidden = handsFree;
     el('talk').disabled = handsFree || disabled;
     el('talk').setAttribute('aria-label', 'Hold to record');
@@ -184,7 +189,7 @@ async function chooseCharacter() {
     el('character').value = characterId;
     const generation = ++modelEpoch;
     characterLoading = true; modelReady = false; refreshStart();
-    if (audio || sessionId) await end();
+    if (audio || sessionId || preconnecting) await end();
     if (pageLeaving || generation !== modelEpoch) return;
     if (config) selectMemory();
     visual?.dispose(); visual = null;
@@ -205,7 +210,7 @@ async function chooseCharacter() {
         el('render-status').textContent = `${character().name} could not load. Choose another partner or refresh to retry.`;
         el('status').textContent = 'Could not load';
     } finally {
-        if (generation === modelEpoch) { characterLoading = false; refreshStart(); }
+        if (generation === modelEpoch) { characterLoading = false; refreshStart(); schedulePreparation(); }
     }
 }
 el('character').addEventListener('change', () => { void chooseCharacter(); });
@@ -313,7 +318,7 @@ function chooseUnsavedConversation() {
 }
 async function prepareConversationChange(context) {
     const id = memory.get(context);
-    if (!id) { if (audio || sessionId) await end(); return true; }
+    if (!id) { if (audio || sessionId || preconnecting) await end(); return true; }
     const pendingTurn = ['connecting', 'listening', 'thinking', 'speaking'].includes(state);
     if (audio) {
         muted = true; holding = false; spaceRecording = false; audio.mute(true);
@@ -338,7 +343,11 @@ async function prepareConversationChange(context) {
         // A reference that expired or disappeared cannot block starting over.
         // Keep missing references for a possible language change in another tab.
         if (error.status === 410) memory.save(context, '');
-        if (error.status === 404 || error.status === 410) { showTranscriptStatus(null); return true; }
+        if (error.status === 404 || error.status === 410) {
+            // The accepted change must also retire a preparation made with a
+            // fresh memory ID while this remembered reference was stale.
+            await end(); showTranscriptStatus(null); return true;
+        }
         return false;
     }
 }
@@ -372,6 +381,8 @@ function selectMemory() {
     // an explicit Save/Discard decision; switching back can resume that context.
 }
 function connectionLost() {
+    // The transport's reconnect deadline ends this state with its own notice.
+    clearTimeout(idleTimer);
     ++captureEpoch;
     ready = false; holding = false; spaceRecording = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; cancelledTurn = turnId; turnId = null; currentReply = '';
@@ -381,6 +392,7 @@ function connectionLost() {
 }
 function listen(preserveCapture = false) {
     if (!ready || muted) return;
+    clearTimeout(idleTimer);
     if (!preserveCapture) { ++captureEpoch; flushing = false; }
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     setState('connecting'); send({ type: 'listen', mode: mode(), ...helpOptions() });
@@ -389,7 +401,7 @@ function interrupt() {
     ++captureEpoch; flushing = false;
     cancelledTurn = turnId; turnId = null; currentReply = ''; audio?.stop();
     awaitingCommit = false; preRoll = [];
-    if (send({ type: 'interrupt' })) setState('idle');
+    if (send({ type: 'interrupt' })) { setState('idle'); armIdleCleanup(); }
 }
 function bufferFrame(pcm) {
     if (preRoll.length >= 25) {
@@ -435,24 +447,26 @@ async function onMessage(message, generation) {
         void refreshTranscriptStatus(); return;
     }
     if (message.type === 'connected') {
-        ready = true; setState('idle');
+        ready = true; setState(audioOpening ? 'connecting' : 'idle');
         if (message.resumed) {
             notice('Connection restored. Use the conversation control to continue; please repeat the interrupted turn.');
         }
-        if (mode() === 'hands-free' && !muted) listen();
+        if (audio && !audioOpening && mode() === 'hands-free' && !muted) listen();
         // A pending flush may still deliver the only audio of a short first press.
-        else if (holding || (awaitingCommit && (preRoll.length || flushing))) listen(true);
-        else { awaitingCommit = false; refreshStart(); }
+        else if (audio && !audioOpening && (holding || (awaitingCommit && (preRoll.length || flushing)))) listen(true);
+        else {
+            if (!audioOpening) { awaitingCommit = false; armIdleCleanup(message.resumed ? 60000 : 30000); }
+            refreshStart();
+        }
         return;
     }
-    if (message.type === 'usage') {
-        el('spending').textContent = `Current session · ${number(message.total)} credits · Listening ${number(message.recognition)} / Replies ${number(message.replies)} / Speech ${number(message.speech)}`;
-        document.querySelectorAll('[data-credit-balance]').forEach(span => {
-            span.textContent = span.dataset.creditLabel.replace('__COUNT__', number(Math.ceil(message.available)));
-        });
-        return;
+    if (message.type === 'usage') { showUsage(message); return; }
+    if (message.type === 'connecting') {
+        turnId = message.turnId;
+        // The server now keeps this preparation's conversation.
+        if (preparedMemory) { memory.save(preparedMemory.context, preparedMemory.id); preparedMemory = null; void refreshTranscriptStatus(); }
+        setState('connecting'); return;
     }
-    if (message.type === 'connecting') { turnId = message.turnId; setState('connecting'); return; }
     if (message.turnId && (message.turnId !== turnId || message.turnId === cancelledTurn)) return;
     const showChat = !turnId || turnId !== clearedChatTurn;
     switch (message.type) {
@@ -481,45 +495,137 @@ async function onMessage(message, generation) {
         case 'idle':
             // An interrupt acknowledgement can arrive before the replacement turn.
             if (state === 'connecting') break;
+            armIdleCleanup();
             setState('idle'); if (mode() === 'hands-free' && !muted) listen(); break;
         case 'error':
-            audio?.stop(); setState('error'); notice(message.detail);
+            audio?.stop(); setState('error'); notice(message.detail); armIdleCleanup();
             // Explicit retry avoids an unattended loop of chargeable failed requests.
             break;
     }
 }
-async function start() {
-    if (!canStart()) return;
-    const generation = ++epoch; ready = false; muted = false; notice(); caption(''); setState('connecting');
-    el('spending').textContent = 'Current session · 0 credits';
-    const context = selection();
-    const nextAudio = new AvatarAudio(); audio = nextAudio; refreshStart();
+function showUsage(usage) {
+    el('spending').textContent = `Current session · ${number(usage.total)} credits · Listening ${number(usage.recognition)} / Replies ${number(usage.replies)} / Speech ${number(usage.speech)}`;
+    document.querySelectorAll('[data-credit-balance]').forEach(span => {
+        span.textContent = span.dataset.creditLabel.replace('__COUNT__', number(Math.ceil(usage.available)));
+    });
+}
+// The spending line follows the conversation the learner is talking in. An unused
+// preparation leaves the previous conversation's final totals in place.
+function resetUsage() { ++usageEpoch; el('spending').textContent = 'Current session · 0 credits'; }
+// Preparation is a single best-effort attempt per page/selection, never an idle loop.
+function schedulePreparation() {
+    clearTimeout(prepareTimer);
+    prepareTimer = setTimeout(() => {
+        prepareTimer = null;
+        if (!document.hidden && canStart()) void start(true);
+    }, 250);
+}
+function armIdleCleanup(milliseconds = 60000) {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => { if (!holding && !audioOpening) void end(); }, milliseconds);
+}
+// A new capture starts empty, and a release from an older capture cannot commit it.
+function beginCapture() { holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch; }
+function startFailed(error) {
+    notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
+}
+async function openMicrophone(generation) {
+    const nextAudio = new AvatarAudio(); audio = nextAudio; audioOpening = true; refreshStart();
     try {
-        await nextAudio.open(frame);
-        if (generation !== epoch) { await nextAudio.close(); return; }
+        const opened = await nextAudio.open(frame);
+        if (generation !== epoch) { await nextAudio.close(); return false; }
+        if (!opened) {
+            await nextAudio.close();
+            if (generation !== epoch) return false;
+            audio = null; holding = false; awaitingCommit = false; flushing = false; preRoll = []; ++captureEpoch;
+            visual?.setAnalyser(null); setState(ready ? 'idle' : 'off'); armIdleCleanup(30000);
+            return false;
+        }
+        nextAudio.mute(muted);
         visual?.setAnalyser(nextAudio.analyser);
-        const result = await api('/api/avatar/sessions', { quizId: context.quizId, characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext });
-        if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
-        sessionId = result.sessionId;
-        memory.save(context, result.memoryId);
-        void refreshTranscriptStatus();
-        el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
-        const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        socket = new VoiceConnection(url, {
-            onMessage: message => generation === epoch ? onMessage(message, generation) : undefined,
-            onLost: () => { if (generation === epoch) connectionLost(); },
-            onEnded: detail => { if (generation === epoch) { notice(detail); void end(); } }
-        });
-        refreshStart();
+        return true;
+    } finally { if (generation === epoch) { audioOpening = false; refreshStart(); } }
+}
+async function activatePrepared() {
+    const generation = epoch;
+    preconnectActivated = true;
+    clearTimeout(idleTimer);
+    // Extend the server's unused-preparation lease through the microphone prompt.
+    // Before Ready, the connected handler sends this after 'prepare'.
+    if (ready && !send({ type: 'activate' })) return;
+    muted = false; beginCapture(); resetUsage();
+    setState('connecting');
+    try {
+        if (!await openMicrophone(generation)) return;
+        if (ready && !muted && (mode() === 'hands-free' || holding || (awaitingCommit && preRoll.length))) listen(true);
+        else if (!holding) { if (ready) setState('idle'); armIdleCleanup(); }
     } catch (error) {
         if (generation !== epoch) return;
-        notice(error.name === 'NotAllowedError' ? 'Allow microphone access to start a conversation.' : error.message);
+        startFailed(error);
         await end();
     }
 }
+async function start(background = false) {
+    if (!canStart()) return;
+    clearTimeout(prepareTimer); prepareTimer = null;
+    const generation = ++epoch; ready = false; muted = background; preconnecting = true; preconnectActivated = false;
+    if (!background) { notice(); caption(''); setState('connecting'); resetUsage(); }
+    const context = selection();
+    if (background) armIdleCleanup(30000);
+    refreshStart();
+    try {
+        // A new preparation cannot replace a session whose end is still in flight.
+        if (background && retiring) { await retiring; if (generation !== epoch) return; }
+        if (!background && !await openMicrophone(generation)) return;
+        const request = { quizId: context.quizId, characterId: context.characterId, memoryId: memory.get(context) || null, practiceContext: context.practiceContext };
+        let result, preparation = background;
+        try { result = await api('/api/avatar/sessions', { ...request, ...(background ? { preconnect: true } : {}) }); }
+        catch (error) {
+            // Only an explicit Talk action may replace another tab's active session.
+            if (!background || !preconnectActivated || generation !== epoch || error.status !== 409) throw error;
+            result = await api('/api/avatar/sessions', request); preparation = false;
+        }
+        if (generation !== epoch) { await api(`/api/avatar/sessions/${result.sessionId}/end`, {}); return; }
+        sessionId = result.sessionId;
+        // The server discards a preparation's new conversation if it ends before
+        // any turn, so its reference is kept only once the first turn starts.
+        if (preparation) preparedMemory = { context, id: result.memoryId };
+        else memory.save(context, result.memoryId);
+        void refreshTranscriptStatus();
+        el('voice').textContent = `${result.voiceName} · ${result.nativeVoice ? "Native" : "Multilingual"} voice`;
+        const url = new URL(result.connectUrl, location.href); url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const connection = new VoiceConnection(url, {
+            onMessage: message => {
+                if (generation !== epoch) return;
+                if (message.type === 'connected') {
+                    // Warm idle background sessions only. Foreground starts keep
+                    // an idle lease, then connect recognition directly with listen.
+                    if (preparation && !send({ type: 'prepare', mode: mode() })) return;
+                    if ((!preparation || preconnectActivated) && !send({ type: 'activate' })) return;
+                }
+                return onMessage(message, generation);
+            },
+            onLost: () => {
+                if (generation !== epoch) return;
+                if (!audio || audioOpening) void end(); else connectionLost();
+            },
+            onEnded: detail => { if (generation === epoch) { if (audio && !['off', 'idle'].includes(state)) notice(detail); void end(); } }
+        });
+        // Construction can fail synchronously and trigger cleanup before assignment.
+        if (generation !== epoch) { connection.close(); return; }
+        socket = connection;
+        refreshStart();
+    } catch (error) {
+        if (generation !== epoch) return;
+        if (!background || audio) startFailed(error);
+        await end();
+    } finally { if (generation === epoch) { preconnecting = false; refreshStart(); } }
+}
 function end() {
+    clearTimeout(prepareTimer); clearTimeout(idleTimer); prepareTimer = idleTimer = null;
+    preconnecting = false; preconnectActivated = false; audioOpening = false; preparedMemory = null;
     if (ending) return ending;
-    const generation = ++epoch;
+    ++epoch;
     ++captureEpoch;
     ready = false; holding = false; spaceRecording = false; awaitingCommit = false; flushing = false;
     preRoll = []; speechFrames = 0; muted = false; turnId = null;
@@ -527,21 +633,29 @@ function end() {
     socket?.close(); socket = null;
     visual?.setAnalyser(null); caption(''); setState('off');
     // Cleanup has a deadline; a dead network must not leave the talk control disabled forever.
-    ending = (async () => {
+    const cleanup = (async () => {
         try { await oldAudio?.close(); } catch { /* Tracks stop before AudioContext closes. */ }
         if (oldSession) await api(`/api/avatar/sessions/${oldSession}/end`, {}, 5000).catch(() => {});
-    })().finally(() => {
+    })();
+    if (!oldAudio) {
+        // Nothing was said without a microphone. An explicit start replaces this
+        // session server-side, so only a new preparation waits for its end.
+        const retired = retiring = cleanup.finally(() => { if (retiring === retired) retiring = null; });
+        refreshStart(); return retired;
+    }
+    ending = cleanup.finally(() => {
         ending = null; refreshStart();
-        if (oldSession) void refreshUsage(oldSession, generation);
+        if (oldSession) void refreshUsage(oldSession);
     });
     refreshStart(); return ending;
 }
-async function refreshUsage(id, generation) {
+async function refreshUsage(id) {
+    const generation = usageEpoch;
     try {
-        for (let attempt = 0; attempt < 5 && generation === epoch; attempt++) {
+        for (let attempt = 0; attempt < 5 && generation === usageEpoch; attempt++) {
             const usage = await requestJson(`/api/avatar/sessions/${id}/usage`, {}, 5000);
-            if (generation !== epoch) return;
-            await onMessage(usage, generation);
+            if (generation !== usageEpoch) return;
+            showUsage(usage);
             if (!usage.pending) break;
             await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -553,8 +667,8 @@ function startOver() {
     const ended = end();
     // end() resets capture synchronously; the press that started over is still a
     // push-to-talk hold, buffered from the new microphone exactly like a first press.
-    holding = mode() === 'push-to-talk'; refreshStart();
-    return ended.then(() => start());
+    beginCapture(); refreshStart();
+    return (ending ? ended : Promise.resolve()).then(() => start());
 }
 function press(event) {
     if (mode() !== 'push-to-talk') return;
@@ -569,20 +683,20 @@ function activateConversation(event) {
     const draft = el('practice-context').value.trim();
     if (draft !== practiceContext) {
         event?.preventDefault();
-        if (audio || sessionId || memory.get(selection())) {
+        if (memory.get(selection())) {
             // Resolve retention before opening a microphone. If a dialog is
             // needed, the learner starts recording with their next press.
             void chooseQuiz(draft); return;
         }
         practiceContext = draft; el('practice-context').value = draft; selectMemory();
+        // Nothing has been said yet, so this press replaces the old context's session.
+        if (audio || sessionId || preconnecting) { notice(); void startOver(); return; }
     }
     if (state === 'reconnecting') { event?.preventDefault(); notice(); void startOver(); return; }
-    if (!ready && !canStart()) return;
-    event?.preventDefault(); notice();
-    if (!ready) {
-        holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch;
-        void start(); return;
-    }
+    if (!audio && (preconnecting || sessionId)) { event?.preventDefault(); notice(); void activatePrepared(); return; }
+    if (audioOpening || (!ready && !canStart())) return;
+    event?.preventDefault(); notice(); clearTimeout(idleTimer);
+    if (!ready) { beginCapture(); void start(); return; }
     if (mode() === 'hands-free') {
         const reply = state === 'speaking' || state === 'thinking';
         if (muted || state === 'error') {
@@ -623,9 +737,11 @@ async function chooseQuiz(nextPracticeContext = el('practice-context').value.tri
     // A blur caused by disabling the field must not overwrite a pending draft.
     if (changingQuiz || pageLeaving || ending) return;
     const previous = memory.preferences();
-    if (!audio && !sessionId && (!previous || !memory.get(previous))) {
+    if (!audio && (!previous || !memory.get(previous))) {
+        // Nothing was said; an unused preparation belongs to the old selection.
+        if (sessionId || preconnecting) void end();
         practiceContext = nextPracticeContext; el('practice-context').value = practiceContext;
-        selectMemory(); return;
+        selectMemory(); schedulePreparation(); return;
     }
     changingQuiz = true; refreshStart();
     try {
@@ -638,7 +754,7 @@ async function chooseQuiz(nextPracticeContext = el('practice-context').value.tri
             el('practice-context').value = practiceContext;
             selectMemory();
         }
-    } finally { changingQuiz = false; refreshStart(); }
+    } finally { changingQuiz = false; refreshStart(); schedulePreparation(); }
 }
 el('quiz').addEventListener('change', () => { void chooseQuiz(); });
 el('practice-context').addEventListener('change', () => {
@@ -658,12 +774,14 @@ el('talk').addEventListener('keydown', event => {
     if (event.code === 'Enter') { event.preventDefault(); if (!event.repeat) press(event); }
 });
 el('talk').addEventListener('keyup', event => { if (event.code === 'Enter') { event.preventDefault(); void release(); } });
-// Space controls recording on the page and microphone. Controls, editors and
-// dialogs keep their native keyboard behavior, including checkbox/radio toggles.
+// Space controls recording even when Avatar settings or chat controls have focus.
+// Text editing, dialogs and controls elsewhere keep their native behavior.
 function isTypingSpace(event) {
     if (event.isComposing || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey
         || event.target?.isContentEditable) return true;
     if (event.target === el('talk')) return false;
+    if (event.target?.closest?.('textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]), [contenteditable], [role="textbox"], dialog, [role="dialog"], [data-assistant-panel]')) return true;
+    if (event.target?.closest?.('#avatar-settings, #avatar-settings-toggle, #avatar-dialogue, #avatar-controls')) return false;
     return !!event.target?.closest?.('button, input, textarea, select, a[href], summary, dialog, [role="dialog"], [data-assistant-panel], [contenteditable], [role="textbox"], [role="combobox"], [role="button"], [role="checkbox"], [role="radio"], [role="switch"], [role="slider"], [role="spinbutton"], [role="listbox"]');
 }
 document.addEventListener('keydown', event => {
@@ -712,7 +830,9 @@ window.addEventListener('pageshow', async event => {
 });
 // A tab switch pauses only the renderer. Keep voice alive, but finish a held
 // push-to-talk utterance because its key/pointer release may happen in another tab.
-document.addEventListener('visibilitychange', () => { if (document.hidden) releaseKeyboard(); });
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { releaseKeyboard(); if (!audio && (sessionId || preconnecting)) void end(); }
+});
 
 async function initialize() {
     const generation = ++configEpoch;
@@ -732,7 +852,7 @@ async function initialize() {
         selectMemory();
         if (!config.language) notice('Choose a learning language in the sidebar to start a conversation.');
         else if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
-        refreshStart();
+        refreshStart(); schedulePreparation();
     } catch (error) { if (!pageLeaving && generation === configEpoch) notice(error.message); }
 }
 el('character').value = characterId;

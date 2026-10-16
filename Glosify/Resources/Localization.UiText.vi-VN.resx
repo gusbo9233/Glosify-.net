@@ -1698,14 +1698,14 @@
   <data name="AppSettings.Admin" xml:space="preserve"><value>Quản trị</value></data>
   <data name="AppSettings.Game" xml:space="preserve"><value>Trò chơi</value></data>
   <data name="AppSettings.GameUsage" xml:space="preserve"><value>Mức sử dụng trò chơi</value></data>
-  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Mức sử dụng avatar</value></data>
+  <data name="AppSettings.AvatarUsage" xml:space="preserve"><value>Mức sử dụng Speaking</value></data>
   <data name="Quiz.GotIt" xml:space="preserve"><value>Đã nhớ</value></data>
   <data name="Quiz.Hard" xml:space="preserve"><value>Khó</value></data>
   <data name="Quiz.TwoChoiceSwipeHint" xml:space="preserve"><value>← Lại · Đã nhớ →</value></data>
   <data name="Quiz.AnkiSwipeHint" xml:space="preserve"><value>← Lại · Dễ →</value></data>
   <data name="Layout.Menu" xml:space="preserve"><value>Menu</value></data>
-  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Cuộc trò chuyện với nhân vật ảo</value></data>
-  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Cuộc trò chuyện với nhân vật ảo · {0}</value></data>
+  <data name="Transcripts.AvatarConversation" xml:space="preserve"><value>Cuộc trò chuyện Speaking</value></data>
+  <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Cuộc trò chuyện Speaking · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} lượt nói</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} lượt nói</value></data>
 </root>

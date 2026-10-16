@@ -21,7 +21,8 @@ public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<S
 {
     public async Task<AvatarVoice> ResolveAsync(QuizLanguage language, CancellationToken ct, AvatarCharacter? character = null)
     {
-        var gender = (character ?? AvatarCharacter.Rain).VoiceGender;
+        character ??= AvatarCharacter.Rain;
+        var gender = character.VoiceGender;
         try
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -42,8 +43,7 @@ public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<S
                     var data = await response.Content.ReadFromJsonAsync<VoicePage>(timeout.Token) ?? throw Unavailable();
                     if (data.Voices is null) throw Unavailable();
                     result.AddRange(data.Voices.Where(v => !string.IsNullOrWhiteSpace(v.Id)
-                        && Label(v, "gender") == gender && Label(v, "age") != "child"
-                        && (gender == "female" || Label(v, "age") != "teen")));
+                        && Label(v, "gender") == gender && Label(v, "age") != "child"));
                     if (!data.HasMore) return result;
                     if (string.IsNullOrEmpty(data.Next) || data.Next == next) throw Unavailable();
                     next = data.Next;
@@ -51,14 +51,15 @@ public sealed class AvatarVoices(HttpClient http, IMemoryCache cache, IOptions<S
                 throw Unavailable(); // Do not pick from a truncated catalogue.
             }) ?? throw Unavailable();
 
+            // Characters of one gender share the catalogue; only Rain may sound teenage.
+            if (!character.TeenVoice) voices = voices.Where(v => Label(v, "age") != "teen").ToList();
             var code = SpeechLanguage(language);
             var selected = voices.OrderBy(v => Normalize(Label(v, "language")) == code ? 0
                     : v.Languages?.Any(l => Normalize(l.Language) == code) == true ? 1 : 2)
                 .ThenBy(v => Label(v, "use_case") == "conversational" ? 0 : 1)
                 .ThenBy(v => v.Id == "EXAVITQu4vr4xnSDxMaL" ? 0 : 1)
                 .ThenBy(v => v.Id, StringComparer.Ordinal).FirstOrDefault();
-            var overrides = gender == "male" ? options.Value.MaleVoiceIds : options.Value.VoiceIds;
-            if (overrides.TryGetValue(language.Code, out var configured))
+            if (options.Value.VoiceIdsFor(character).TryGetValue(language.Code, out var configured))
                 selected = voices.SingleOrDefault(v => v.Id == configured)
                     ?? throw new AvatarException(503, "The configured avatar voice is unavailable. Ask an administrator to check the voice for this language.");
             if (selected is null) throw Unavailable();

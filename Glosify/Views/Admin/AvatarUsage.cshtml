@@ -1,6 +1,6 @@
 @model Glosify.Services.Avatar.AvatarUsageReport
 @{
-    ViewData["Title"] = "Avatar usage";
+    ViewData["Title"] = "Speaking usage";
     ViewData.HideAssistantPanel();
     var filter = Model.Filter;
     string Number(decimal value) => value.ToString("0.######", CultureInfo.InvariantCulture);
@@ -12,12 +12,12 @@
     <header class="select-header">
         <div>
             <p class="select-kicker">Admin</p>
-            <h1 class="select-title">Avatar usage</h1>
-            <p class="select-subtitle">Listening, replies and speech across Avatar conversations.</p>
-            <nav class="avatar-usage-links" aria-label="Usage navigation"><a href="/Avatar">Open Avatar</a><a href="/Admin/GameUsage">Game usage</a><a href="/Admin/AiCredits">AI credits</a></nav>
+            <h1 class="select-title">Speaking usage</h1>
+            <p class="select-subtitle">Listening, replies and speech across Speaking conversations.</p>
+            <nav class="avatar-usage-links" aria-label="Usage navigation"><a href="/Avatar">Open Speaking</a><a href="/Admin/GameUsage">Game usage</a><a href="/Admin/AiCredits">AI credits</a></nav>
         </div>
     </header>
-    <form method="get" class="avatar-usage-filters" aria-label="Filter Avatar usage">
+    <form method="get" class="avatar-usage-filters" aria-label="Filter Speaking usage">
         <label>From (UTC)<input name="from" type="datetime-local" step="1" value="@filter.From.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss")" /></label>
         <label>To (UTC)<input name="to" type="datetime-local" step="1" value="@filter.To.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss")" /></label>
         <label>Admin email or user ID<input name="admin" value="@filter.Admin" maxlength="450" /></label>
@@ -46,17 +46,17 @@
         <p>Released reply requests can still have unknown provider costs after a timeout. These estimates are not provider invoices. No conversation text or audio is stored in this report.</p>
     </details>
     <h2>By provider, model and operation</h2>
-    <div class="avatar-usage-table-wrap" role="region" aria-label="Avatar usage breakdown" tabindex="0">
+    <div class="avatar-usage-table-wrap" role="region" aria-label="Speaking usage breakdown" tabindex="0">
         <table class="avatar-usage-table"><thead><tr><th scope="col">Provider / model</th><th scope="col">Operation</th><th scope="col">Calls</th><th scope="col">Pending</th><th scope="col">Unpriced</th><th scope="col">Credits</th><th scope="col">Estimated SEK</th></tr></thead><tbody>
         @foreach (var group in Model.Breakdown)
         {
             <tr><td>@group.Provider<br /><small>@group.Model</small></td><td>@group.Operation</td><td>@group.Calls</td><td>@group.Pending</td><td>@group.Unpriced</td><td>@Number(group.Credits)</td><td>@Number(group.EstimatedSek)</td></tr>
         }
-        @if (Model.Breakdown.Count == 0) { <tr><td colspan="7">No Avatar usage in this date range.</td></tr> }
+        @if (Model.Breakdown.Count == 0) { <tr><td colspan="7">No Speaking usage in this date range.</td></tr> }
         </tbody></table>
     </div>
     <h2>Recent calls</h2>
-    <div class="avatar-usage-table-wrap" role="region" aria-label="Recent Avatar calls" tabindex="0">
+    <div class="avatar-usage-table-wrap" role="region" aria-label="Recent Speaking calls" tabindex="0">
         <table class="avatar-usage-table"><thead><tr><th scope="col">Started (UTC)</th><th scope="col">Admin / session</th><th scope="col">Provider / model</th><th scope="col">Operation</th><th scope="col">Status</th><th scope="col">Input / output / total tokens</th><th scope="col">Audio seconds / characters</th><th scope="col">Credits</th><th scope="col">Estimated SEK</th></tr></thead><tbody>
         @foreach (var entry in Model.Entries)
         {

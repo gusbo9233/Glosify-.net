@@ -13,6 +13,62 @@ public sealed class AvatarMemoryTests
 {
     private static readonly QuizLanguage English = QuizLanguageCatalog.Find("en")!;
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void UnusedPreparationsReleaseMemoryWithoutEvictingRetainedConversations(bool expire)
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var retained = sessions.Create("owner", English, "free");
+        sessions.RecordTurn(retained, "1", "user", "Remember me");
+        sessions.SetSavedTranscript(retained.MemoryId, "owner", Guid.NewGuid(), false, 1);
+        sessions.Remove(retained);
+        for (var i = 0; i < 130; i++)
+        {
+            var prepared = sessions.Create("owner", English, "free", preconnect: true);
+            if (expire) { clock.Advance(TimeSpan.FromSeconds(31)); sessions.Sweep(); }
+            else sessions.Remove(prepared);
+        }
+        Assert.Equal("Remember me", Assert.Single(sessions.Snapshot(retained.MemoryId, "owner", "en").Turns).Text);
+    }
+
+    [Fact]
+    public void PreparationAtMemoryCapacityCannotEvictAnArchive()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider()); var ids = new List<Guid>();
+        for (var i = 0; i < 128; i++)
+        {
+            var session = sessions.Create("owner", English, "free");
+            sessions.RecordTurn(session, "1", "user", $"Saved {i}");
+            sessions.SetSavedTranscript(session.MemoryId, "owner", Guid.NewGuid(), false, 1);
+            sessions.Remove(session); ids.Add(session.MemoryId);
+        }
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("owner", English, "free", preconnect: true)).Status);
+        Assert.Equal("Saved 0", Assert.Single(sessions.Snapshot(ids[0], "owner", "en").Turns).Text);
+        var resumed = sessions.Create("owner", English, "free", memoryId: ids[0], preconnect: true);
+        sessions.Remove(resumed);
+        Assert.Equal("Saved 0", Assert.Single(sessions.Snapshot(ids[0], "owner", "en").Turns).Text);
+    }
+
+    [Theory]
+    [InlineData("resumed")]
+    [InlineData("spoken")]
+    [InlineData("saved")]
+    public void PreparationCleanupPreservesExistingOrUsedMemory(string content)
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var original = sessions.Create("owner", English, "free"); sessions.Remove(original);
+        var prepared = sessions.Create("owner", English, "free", memoryId: content == "resumed" ? original.MemoryId : null, preconnect: true);
+        if (content == "spoken") sessions.RecordTurn(prepared, "1", "user", "Keep this turn");
+        var transcriptId = Guid.NewGuid();
+        if (content == "saved") sessions.SetSavedTranscript(prepared.MemoryId, "owner", transcriptId, false, 0);
+        sessions.Remove(prepared);
+        var snapshot = sessions.Snapshot(prepared.MemoryId, "owner", "en");
+        if (content == "spoken") Assert.Equal("Keep this turn", Assert.Single(snapshot.Turns).Text);
+        else if (content == "saved") Assert.Equal(transcriptId, sessions.SavedTranscript(prepared.MemoryId, "owner", "en").Id);
+        else Assert.Equal(original.MemoryId, prepared.MemoryId);
+    }
+
     [Fact]
     public void BytePressureReclaimsOnlyFullySavedIdleArchives()
     {

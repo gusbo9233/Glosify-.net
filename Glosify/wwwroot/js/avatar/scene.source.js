@@ -16,7 +16,12 @@ import { bindMorphTargets } from './morphs.js';
 import { createRenderLoop, portraitFraming } from './render-loop.js';
 
 export async function createAvatar(canvas, character = 'rain', { quality: qualityMode = 'auto' } = {}) {
-    const model = { rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1', rowan: '/models/avatar/rowan-realistic.glb?v=close-locks-1' }[character];
+    const model = {
+        rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1',
+        rowan: '/models/avatar/rowan-realistic.glb?v=brown-hair-1',
+        kwame: '/models/avatar/kwame-realistic.glb?v=tweed-1',
+        mei: '/models/avatar/mei-realistic.glb?v=low-bun-1'
+    }[character];
     if (typeof model !== 'string') throw new Error('Unknown conversation partner.');
     const engine = new Engine(canvas, true, { stencil: false, preserveDrawingBuffer: false, powerPreference: 'low-power' });
     const quality = createRenderQuality(qualityMode);

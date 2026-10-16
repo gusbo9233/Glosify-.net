@@ -445,11 +445,6 @@
       "sha256": "a538a79637616b18f0ba6b0ec749d7b8548791fcb0f9352b37fa82ef4840df39"
     },
     {
-      "path": "l-eye-height1-decr.target",
-      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-height1-decr.target",
-      "sha256": "d1d9f77ff6efc9ccdfcc88beafc8a3be8170b3ea386b7a44b414df1f41e84daf"
-    },
-    {
       "path": "l-eye-corner2-up.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-corner2-up.target",
       "sha256": "e31bbedfb1d451459a6ebf510a055e4af94eb8f146079fe9a5e7722b0e4aa661"
@@ -463,11 +458,6 @@
       "path": "r-cheek-trans-up.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-trans-up.target",
       "sha256": "c776254ff7fc00dc8cae1fb957605291042cbe1b30c519c2079a75a1ca409231"
-    },
-    {
-      "path": "r-eye-height1-decr.target",
-      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-height1-decr.target",
-      "sha256": "0e561d96be0453c209ff7cbffdd86cdd73e790a11fc7c0cc8e2e36a1143c46ef"
     },
     {
       "path": "r-eye-corner2-up.target",
@@ -515,11 +505,6 @@
       "sha256": "db665941e27c700ca6ccb514efcdf108d4100efcae6e68b0abf3f95333924dd1"
     },
     {
-      "path": "l-eye-height2-decr.target",
-      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-height2-decr.target",
-      "sha256": "11f97a658461ab341b75165acc280dd5541a0ebf57d84dab24819a3af8ee5d25"
-    },
-    {
       "path": "l-eye-eyefold-down.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-eyefold-down.target",
       "sha256": "4cbc747fc0be444ccf1546387203370fb9d6a7fffb77ffd84a0ccb75449d7c46"
@@ -530,14 +515,174 @@
       "sha256": "931435368577ebb410f2179e7e1ed121f741e6ad18fd7eb92ec96c679db1608f"
     },
     {
-      "path": "r-eye-height2-decr.target",
-      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-height2-decr.target",
-      "sha256": "8fbe66bf11786f68697b5ba720f6f76e1a99f0db066249d369e4476e016f3f64"
-    },
-    {
       "path": "r-eye-eyefold-down.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-eyefold-down.target",
       "sha256": "44569bba940133d44e07cb66f2946c419e36ff59b45a0e24497930468b749b8a"
+    },
+    {
+      "path": "african-male-young.target",
+      "sha256": "894abc1fbb3d28543a51fef16f89d5d4bdf9aa2e1534413339811a3d47818b7d",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/african-male-young.target"
+    },
+    {
+      "path": "african-male-old.target",
+      "sha256": "59ec94956b3525dbb30238d1239b2bce52adc3bfae091f12cd85d2570aa1933c",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/african-male-old.target"
+    },
+    {
+      "path": "universal-male-old-averagemuscle-averageweight.target",
+      "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-male-old-averagemuscle-averageweight.target"
+    },
+    {
+      "path": "head-scale-vert-decr.target",
+      "sha256": "928f8900b8955ec72659156e3153c00cdd2e55ba23eaaab7f8eeee7a5e64f528",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-scale-vert-decr.target"
+    },
+    {
+      "path": "forehead-scale-vert-decr.target",
+      "sha256": "d7b825f28c93766a0ee8e60002b8a0e9c2d8cd2c9b64e7bbd3a278e7103eae1c",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/forehead/forehead-scale-vert-decr.target"
+    },
+    {
+      "path": "chin-width-incr.target",
+      "sha256": "deef506bfe1883d9d4c38667332c9970785226566efbae4724fd3d60c02efcf4",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-width-incr.target"
+    },
+    {
+      "path": "nose-scale-vert-decr.target",
+      "sha256": "a154747135740f63f60df812024fcde24df2a6713effa3c6f27797aeee7d3311",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/nose/nose-scale-vert-decr.target"
+    },
+    {
+      "path": "neck-scale-horiz-incr.target",
+      "sha256": "60be8afb75b4c6e41f0157a157cdeba09b6efb5597e417ccd155e14cb06a216d",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/neck/neck-scale-horiz-incr.target"
+    },
+    {
+      "path": "l-cheek-volume-incr.target",
+      "sha256": "edb0bf9389aa7fd00f9d735603729b687b3899e9a6df0934ca14aa4d44574e27",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/l-cheek-volume-incr.target"
+    },
+    {
+      "path": "r-cheek-volume-incr.target",
+      "sha256": "dfdde51eb34b3e2c70a4c0c9fe876339dd80ee6ec0fbb3f798e630af556f9695",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/cheek/r-cheek-volume-incr.target"
+    },
+    {
+      "path": "l-eye-bag-decr.target",
+      "sha256": "68a0cd34a6849c6614cbdd2fbb8aa6065ab3fbe7c01078277510e206fb8a6259",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/l-eye-bag-decr.target"
+    },
+    {
+      "path": "r-eye-bag-decr.target",
+      "sha256": "0834b70b669c5287822b4e8bcc626b7d997b944751f95665a6a510a020c415a1",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/eyes/r-eye-bag-decr.target"
+    },
+    {
+      "path": "system/skins/middleage_african_male/middleage_darkskinned_male_diffuse.png",
+      "sha256": "ced478cfdd2b86391f0f92a4408b287ad70adb0dd0e9271ba606d0b028b47c6b",
+      "archivePath": "skins/middleage_african_male/middleage_darkskinned_male_diffuse.png"
+    },
+    {
+      "path": "system/skins/middleage_african_male/middleage_african_male.mhmat",
+      "sha256": "865b23cde5d2116107f9e8ce3a2ec2315440ed103c301ec8bc0e1d85e29830c9",
+      "archivePath": "skins/middleage_african_male/middleage_african_male.mhmat"
+    },
+    {
+      "path": "system/clothes/male_elegantsuit01/male_elegantsuit01.mhclo",
+      "sha256": "6e725b0adac1a07173a14e15207d0b0125d5510455ef6dee756b5fa1c51cccef",
+      "archivePath": "clothes/male_elegantsuit01/male_elegantsuit01.mhclo"
+    },
+    {
+      "path": "system/clothes/male_elegantsuit01/male_elegantsuit01.mhmat",
+      "sha256": "787bc0744174301c9ac0e33da4669bf37df9ac572ce950989f1bc6e71e938adf",
+      "archivePath": "clothes/male_elegantsuit01/male_elegantsuit01.mhmat"
+    },
+    {
+      "path": "system/clothes/male_elegantsuit01/male_elegantsuit01_diffuse.png",
+      "sha256": "eba3c9b662a35f145f28c8932fe96c01db258080daf1a1c09807def5497e3420",
+      "archivePath": "clothes/male_elegantsuit01/male_elegantsuit01_diffuse.png"
+    },
+    {
+      "path": "system/clothes/male_elegantsuit01/male_elegantsuit01.obj",
+      "sha256": "3f6dfc8c10de6160b1e23aad6b4b201b7651914bf3ea5bc8a8aba03e0c0298ea",
+      "archivePath": "clothes/male_elegantsuit01/male_elegantsuit01.obj"
+    },
+    {
+      "path": "system/eyebrows/eyebrow003/eyebrow003.mhmat",
+      "sha256": "91d53fb4fad2927ae412b38aaa8785bb26c6e886be049d5889a276ad3a875ea2",
+      "archivePath": "eyebrows/eyebrow003/eyebrow003.mhmat"
+    },
+    {
+      "path": "system/eyebrows/eyebrow003/eyebrow003.mhclo",
+      "sha256": "43028df55838152be8568eaa9a736746a2581ca327129a443d8d214554448632",
+      "archivePath": "eyebrows/eyebrow003/eyebrow003.mhclo"
+    },
+    {
+      "path": "system/eyebrows/eyebrow003/eyebrow003.png",
+      "sha256": "e98837d77247f2c11a8259f8b265243b9053ba55683bd70223c668110e7dfb62",
+      "archivePath": "eyebrows/eyebrow003/eyebrow003.png"
+    },
+    {
+      "path": "system/eyebrows/eyebrow003/eyebrow003.obj",
+      "sha256": "dda3828f484f877f011fb8c52b75be0d7870561111739ff4cc5c83fb5ac6acd7",
+      "archivePath": "eyebrows/eyebrow003/eyebrow003.obj"
+    },
+    {
+      "path": "l-ear-flap-decr.target",
+      "sha256": "f45356aa2b841811641d12c45f7d89bc1e778cb2f0abd04010100e1826e862e5",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/ears/l-ear-flap-decr.target"
+    },
+    {
+      "path": "r-ear-flap-decr.target",
+      "sha256": "38552ada19aa4d0b3b23075db35ffdf621f4eb82a2f5929a0b6e48bfa0d0d60f",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/ears/r-ear-flap-decr.target"
+    },
+    {
+      "path": "asian-female-old.target",
+      "sha256": "1a90cb281df640df55fbce3acd6588f27b28affeb96a7f693f6f038aefc204d8",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/asian-female-old.target"
+    },
+    {
+      "path": "asian-female-young.target",
+      "sha256": "095fe79694fa19e1fe98d93009ec116199bd524e081c640351a10eccf2cca1eb",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/asian-female-young.target"
+    },
+    {
+      "path": "universal-female-old-averagemuscle-averageweight.target",
+      "sha256": "4ba5396ddabda448ece15650a566fbebfbb10239256ccb201e8f883429e12249",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/macrodetails/universal-female-old-averagemuscle-averageweight.target"
+    },
+    {
+      "path": "system/skins/young_asian_female/young_asian_female.mhmat",
+      "sha256": "2baeded5fdfd31acc187e83b278f9c4e4cbb59a7ffedf50ebcffcc44e4eab220",
+      "archivePath": "skins/young_asian_female/young_asian_female.mhmat"
+    },
+    {
+      "path": "system/skins/young_asian_female/young_lightskinned_female_diffuse3.png",
+      "sha256": "1d82f782b7d2da732229633bd2d14754d873fff53cdb1d088977bcf67ae19dde",
+      "archivePath": "skins/young_asian_female/young_lightskinned_female_diffuse3.png"
+    },
+    {
+      "path": "system/eyebrows/eyebrow012/eyebrow012.png",
+      "sha256": "d352e9b3d6ccb9499be5e6cb5c0d462e8d7341539e1e28a003a29c83e5ca1b0f",
+      "archivePath": "eyebrows/eyebrow012/eyebrow012.png"
+    },
+    {
+      "path": "system/eyebrows/eyebrow012/eyebrow012.obj",
+      "sha256": "0a8d119c47f2d037e0ace7d2121f756084d9c614a5aec24459b4aa3385c0811a",
+      "archivePath": "eyebrows/eyebrow012/eyebrow012.obj"
+    },
+    {
+      "path": "system/eyebrows/eyebrow012/eyebrow012.mhmat",
+      "sha256": "8c5c7d8893d0a23606525b767c427647ded3b8d2ccd849f782b6c8cfdcedf711",
+      "archivePath": "eyebrows/eyebrow012/eyebrow012.mhmat"
+    },
+    {
+      "path": "system/eyebrows/eyebrow012/eyebrow012.mhclo",
+      "sha256": "780fa7314eb3775f09b0f804dbc9fa5be7ee5bc8960f5e27d0211b7827c3d8fa",
+      "archivePath": "eyebrows/eyebrow012/eyebrow012.mhclo"
     }
   ],
   "additionalPacks": [

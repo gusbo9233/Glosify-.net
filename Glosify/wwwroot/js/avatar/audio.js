@@ -3,12 +3,14 @@ export class AvatarAudio {
     async open(onFrame) {
         const generation = this.generation;
         const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
-        if (generation !== this.generation) { stream.getTracks().forEach(track => track.stop()); return; }
+        if (generation !== this.generation) { stream.getTracks().forEach(track => track.stop()); return false; }
         this.stream = stream;
         try {
             this.context = new AudioContext();
             await this.context.resume();
+            if (generation !== this.generation) { await this.close(); return false; }
             await this.context.audioWorklet.addModule('/js/avatar/capture.worklet.js');
+            if (generation !== this.generation) { await this.close(); return false; }
             this.capture = new AudioWorkletNode(this.context, 'avatar-capture');
             this.input = this.context.createMediaStreamSource(this.stream);
             this.silent = this.context.createGain(); this.silent.gain.value = 0;
@@ -20,6 +22,7 @@ export class AvatarAudio {
             // Little smoothing so the viewer's mouth shapes follow individual syllables.
             this.analyser = this.context.createAnalyser(); this.analyser.fftSize = 512; this.analyser.smoothingTimeConstant = .25;
             this.analyser.connect(this.context.destination);
+            return true;
         } catch (error) { await this.close(); throw error; }
     }
     flush() {

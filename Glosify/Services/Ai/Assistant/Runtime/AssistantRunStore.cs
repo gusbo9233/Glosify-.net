@@ -67,7 +67,7 @@ internal sealed class AssistantRunStore(
             if (input.Request.TranscriptId is not null || input.Request.BookDocumentId is not null || input.Request.DocumentContext is not null)
                 throw new ArgumentException("Select one reading material for this request.");
             var code = await resolver.ResolveLanguageCodeAsync(userId, cancellationToken);
-            if (avatarContext is null) throw new ArgumentException("Avatar conversations are not available.");
+            if (avatarContext is null) throw new ArgumentException("Speaking conversations are not available.");
             avatarContext.EnsureAvailable(userId);
             Glosify.Services.Avatar.AvatarTranscriptSnapshot? live;
             try { live = avatarContext.Capture(conversationId, userId, code ?? ""); }

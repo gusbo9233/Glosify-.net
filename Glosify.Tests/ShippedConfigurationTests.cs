@@ -49,18 +49,20 @@ public sealed class ShippedConfigurationTests
         var languages = QuizLanguageCatalog.LanguageLearning.Select(x => x.Code).Order().ToArray();
 
         Assert.True(options.Enabled);
-        Assert.Equal(languages, options.VoiceIds.Keys.Order().ToArray());
-        Assert.Equal(languages, options.MaleVoiceIds.Keys.Order().ToArray());
+        var castings = AvatarCharacter.All.Select(options.VoiceIdsFor).ToArray();
+        Assert.All(castings, casting => Assert.Equal(languages, casting.Keys.Order().ToArray()));
         Assert.All(languages, code =>
         {
-            Assert.False(string.IsNullOrWhiteSpace(options.VoiceIds[code]));
-            Assert.False(string.IsNullOrWhiteSpace(options.MaleVoiceIds[code]));
-            Assert.NotEqual(options.VoiceIds[code], options.MaleVoiceIds[code]);
+            var voices = castings.Select(casting => casting[code]).ToArray();
+            Assert.All(voices, voice => Assert.False(string.IsNullOrWhiteSpace(voice)));
+            Assert.Equal(voices.Length, voices.Distinct().Count()); // Every partner has its own voice.
         });
         Assert.Equal("RwZADRjd8b3vxKTsTtLP", options.VoiceIds["en"]); // Isabel, teen tone.
         Assert.Equal("6awt6FKyZGV0HyQEwisX", options.VoiceIds["ja"]); // Suzu, teen tone.
         Assert.Equal("cLAH1kXlkAivJHxCW601", options.VoiceIds["sv"]); // Olivia, youthful Swedish.
         Assert.Equal("9IzcwKmvwJcw58h3KnlH", options.MaleVoiceIds["en"]);
+        Assert.Equal("zwbf3iHXH6YGoTCPStfx", options.KwameVoiceIds["en"]); // Dayo, Nigerian English.
+        Assert.Equal("UmVsCJauYwXB4cGF0OlH", options.MeiVoiceIds["ko"]); // Soo, Korean teacher.
     }
 
     [Fact]

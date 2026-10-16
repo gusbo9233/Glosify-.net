@@ -110,7 +110,7 @@ public sealed class AvatarUsageTests
         var response = await admin.GetAsync("/Admin/AvatarUsage"); response.EnsureSuccessStatusCode();
         Assert.True(response.Headers.CacheControl!.NoStore);
         var page = new HtmlParser().ParseDocument(await response.Content.ReadAsStringAsync());
-        Assert.Contains("No Avatar usage", page.Body!.TextContent);
+        Assert.Contains("No Speaking usage", page.Body!.TextContent);
         Assert.NotNull(page.QuerySelector("#settings-admin a[href='/Admin/AvatarUsage']"));
         var learnerPage = new HtmlParser().ParseDocument(await learner.GetStringAsync("/Quiz"));
         Assert.Null(learnerPage.QuerySelector("a[href='/Admin/AvatarUsage']"));

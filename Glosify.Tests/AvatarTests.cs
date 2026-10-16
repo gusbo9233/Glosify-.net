@@ -43,6 +43,24 @@ public sealed class AvatarTests
     }
 
     [Fact]
+    public async Task AutomaticPreparationCannotReplaceAnotherTabsSession()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var first = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        using var payload = JsonDocument.Parse(await first.Content.ReadAsStringAsync());
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        var id = payload.RootElement.GetProperty("sessionId").GetGuid();
+        var original = sessions.Get(id, "admin");
+        using var automatic = await client.PostAsJsonAsync("/api/avatar/sessions", new { preconnect = true });
+        Assert.Equal(HttpStatusCode.Conflict, automatic.StatusCode);
+        Assert.Same(original, sessions.Get(id, "admin"));
+        Assert.False(original.Lifetime.IsCancellationRequested);
+        using var explicitStart = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        Assert.Equal(HttpStatusCode.OK, explicitStart.StatusCode);
+        Assert.True(original.Lifetime.IsCancellationRequested);
+    }
+
+    [Fact]
     public async Task DisabledFeatureDoesNotExposePageOrConfig()
     {
         using var app = new AvatarFixture(false); using var client = await app.Client("admin");
@@ -274,6 +292,8 @@ public sealed class AvatarTests
     [InlineData(null, "rain", "female")]
     [InlineData("rain", "rain", "female")]
     [InlineData("rowan", "rowan", "male")]
+    [InlineData("kwame", "kwame", "male")]
+    [InlineData("mei", "mei", "female")]
     public async Task SelectedPartnerPinsCharacterAndMatchingVoice(string? requested, string expected, string gender)
     {
         using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
@@ -305,6 +325,8 @@ public sealed class AvatarTests
     [Theory]
     [InlineData("rain")]
     [InlineData("rowan")]
+    [InlineData("kwame")]
+    [InlineData("mei")]
     public async Task VoiceSelectionFailureDoesNotStartOrChargeAConversation(string characterId)
     {
         using var app = new AvatarFixture { Overrides = services =>

@@ -58,12 +58,37 @@ test('late microphone permission cannot restart capture after End', async () => 
     try {
         const audio = new AvatarAudio(); const opening = audio.open(() => {});
         await audio.close();
-        allow({ getTracks: () => [{ stop() { stopped++; } }] }); await opening;
+        allow({ getTracks: () => [{ stop() { stopped++; } }] });
+        assert.equal(await opening, false);
         assert.equal(stopped, 1); assert.equal(audio.stream, null); assert.equal(audio.context, null);
     } finally {
         if (original) Object.defineProperty(globalThis, 'navigator', original);
         else delete globalThis.navigator;
     }
+});
+
+for (const stage of ['resume', 'worklet']) for (const action of ['stop', 'close'])
+test(`${action} during audio ${stage} cancels capture and releases its resources`, async () => {
+    let unblock, reached, stopped = 0, closed = 0;
+    const pending = new Promise(resolve => { unblock = resolve; });
+    const entered = new Promise(resolve => { reached = resolve; });
+    const pause = async point => { if (stage === point) { reached(); await pending; } };
+    const context = vm.createContext({
+        navigator: { mediaDevices: { async getUserMedia() { return { getTracks: () => [{ stop() { stopped++; } }] }; } } },
+        AudioContext: class {
+            state = 'running'; audioWorklet = { addModule: () => pause('worklet') };
+            resume() { return pause('resume'); }
+            async close() { closed++; this.state = 'closed'; }
+        },
+        AudioWorkletNode: class { constructor() { throw Error('Canceled setup must not create capture'); } }
+    });
+    vm.runInContext(readFileSync(new URL('../Glosify/wwwroot/js/avatar/audio.js', import.meta.url), 'utf8').replace('export class', 'class'), context);
+    const audio = vm.runInContext('new AvatarAudio()', context);
+    const opening = audio.open(() => assert.fail('Canceled setup must not emit audio'));
+    await entered; await audio[action](); unblock();
+    assert.equal(await opening, false);
+    assert.equal(stopped, 1); assert.equal(closed, 1);
+    assert.equal(audio.stream, null); assert.equal(audio.context, null);
 });
 
 test('unresponsive capture worklet times out instead of leaving release pending', async () => {

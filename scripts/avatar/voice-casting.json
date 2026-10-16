@@ -3,7 +3,9 @@
   "basis": "Provider labels and descriptions; not a listening audition. Language labels are not independent proof of native pronunciation. Selections are now shipped in appsettings.json; all 138 assignments resolve in the deployment account. Six short synthesis checks passed.",
   "characters": {
     "rain": "Teenage or young-adult female sound; light, bright, clear and natural, with gentle warmth and conversational delivery.",
-    "rowan": "Young-adult male; grounded, thoughtful, relaxed; clear medium-to-low register without an elderly or booming sound."
+    "rowan": "Young-adult male; grounded, thoughtful, relaxed; clear medium-to-low register without an elderly or booming sound.",
+    "kwame": "Early-forties male with a professorial manner; warm, thoughtful and articulate; clear mature register without sounding elderly or booming.",
+    "mei": "Adult female of about 35 with a teacher’s manner; warm, clear, patient and encouraging; not teenage."
   },
   "sources": [
     "https://elevenlabs.io/docs/api-reference/voices/search",
@@ -65,6 +67,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "DSjZW9N4UOKl4iryNz3Q",
+        "name": "NPC af — Corné - Friendly, Direct, Deep",
+        "gender": "male",
+        "languageLabel": "af",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The friendly, direct, deep delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "There's a no-nonsense friendliness to Corné's delivery — low and round in tone, brisk in pace, and always landing firmly on the last word of a line. Clean studio quality makes this Gauteng Afrikaans voice a dependable pick for direct-response ads and straight-talking commercial copy.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/DSjZW9N4UOKl4iryNz3Q/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiWkNaaFNQR0w1dEJVbXVTRGpXTEIubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=DSjZW9N4UOKl4iryNz3Q",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "M9vD7WrEnkKoRDZ9OSWB",
+        "name": "NPC af — Marike - Kind, Firm, Warm",
+        "gender": "female",
+        "languageLabel": "af",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind, firm, warm delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Marike pairs warmth with backbone. The Cape-accented Afrikaans delivery stays steady and plainly phrased, kind enough to reassure a frustrated caller but firm enough to hold a boundary — a solid match for customer support scripts and IVR systems where trust matters more than flash.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/M9vD7WrEnkKoRDZ9OSWB/MctCEdfVGIAMFSsvneI0.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=M9vD7WrEnkKoRDZ9OSWB",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -119,6 +165,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "x6fvBLXv9YxzoVJQ0wp6",
+        "name": "Mr. Momen - Warm, Mature, Calm",
+        "gender": "male",
+        "languageLabel": "ar",
+        "accent": "egyptian",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, mature, calm delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, calm, and mature Egyptian male voice with a trustworthy, mentor-like quality. Clear diction and an unhurried, reassuring pace make it ideal for educational and explainer content, finance and business lessons, narration, audiobooks, e-learning, and friendly conversational teaching. Speaks natural Egyptian Arabic and handles Modern Standard Arabic with ease.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/fc7f64719fcb4413920b8d47737f8973/voices/x6fvBLXv9YxzoVJQ0wp6/bdd6bca1-74fa-48da-8c30-d47997eb567e.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=x6fvBLXv9YxzoVJQ0wp6",
+        "publicOwnerId": "703996f0828f44fc71f8280a1c7c18cbf7c013a57c65ef3eb93a4748e7397fd6"
+      },
+      "mei": {
+        "voiceId": "EUojVLG1QfxaqqH4ce6s",
+        "name": "Razan – Academic & Cultural Narration",
+        "gender": "female",
+        "languageLabel": "ar",
+        "accent": "modern standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A clear, warm, and articulate Arabic voice suited for professional narration.Ideal for educational content, audiobooks, cultural projects, and research-based material. Delivers Modern Standard Arabic with precise diction, controlled pacing, and a calm, trustworthy tone. Designed for long-form listening, knowledge transmission, and high-quality spoken content.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ceff8f159be84cfa8c6319db1a6aea90/voices/EUojVLG1QfxaqqH4ce6s/nttFfmrgUdl3Eugmpimy.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=EUojVLG1QfxaqqH4ce6s",
+        "publicOwnerId": "df79dfca9f81f6ff7e237989a883c00ec2fd3722427421a548bd2816c1b8e749"
       }
     },
     {
@@ -179,6 +263,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "KeEbjyLmmeMfPz2N8Ooe",
+        "name": "NPC hy — Armen - Serious, Proud",
+        "gender": "male",
+        "languageLabel": "hy",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The serious, proud delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "There's gravity in the way Armen delivers a line — resonant, dry-edged, and measured, the standard Yerevan cadence giving every phrase level, deliberate stress. Serious without being cold, and proud without swagger, this voice fits historical narration, documentary work, or any script that needs weight.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/KeEbjyLmmeMfPz2N8Ooe/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiOTJpcFc0M285SGNtWkRnYVNzVkUubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=KeEbjyLmmeMfPz2N8Ooe",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "kyqw8ZqDBKvdhEqCx0j9",
+        "name": "Anahit - Warm, Patient, Deep",
+        "gender": "female",
+        "languageLabel": "hy",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, patient, deep delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Anahit narrates the way a patient teacher explains something for the second time — round, low, and softened at the edges, with long pauses and gentle endings that never rush the listener. Ideal for educational narration or calm long-form Armenian storytelling.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/kyqw8ZqDBKvdhEqCx0j9/C0lXRYIvKhqCqKjFmXQP.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=kyqw8ZqDBKvdhEqCx0j9",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -232,6 +360,47 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "RbH7Fj6XtlvUEoFUUKkl",
+        "name": "Pranjal - Firm, Patient",
+        "gender": "male",
+        "languageLabel": "as",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The firm, patient delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Measured and even, with a round Dibrugarh-accented tone that stays patient even when the delivery turns firm. This Assamese narrator voice suits instructional or explanatory content where clarity and steadiness matter more than flair.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/RbH7Fj6XtlvUEoFUUKkl/lz95be3IauForLmrIJ5k.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=RbH7Fj6XtlvUEoFUUKkl",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "TukQ1ITzWEkA6YPoCkaw",
+        "name": "Anu - Warm Assamese Conversational",
+        "gender": "female",
+        "languageLabel": "as",
+        "accent": null,
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm assamese conversational delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Clear, friendly, and natural, this Assamese voice handles everyday conversation the way a helpful local would, direct but never cold. Ideal for customer support calls, delivery and service updates, appointment reminders, weather and local advisories, and everyday query handling. A strong fit for IVR systems, support bots, and telecalling platforms, and for brands serving Assamese-speaking customers who want clarity, not a script.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/TukQ1ITzWEkA6YPoCkaw/nX9qUTA4MH0oUMm2icUN.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=TukQ1ITzWEkA6YPoCkaw",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -290,6 +459,48 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "tHcUjCm8garyDnZZNbca",
+        "name": "NPC az — Tural - Narrator",
+        "gender": "male",
+        "languageLabel": "az",
+        "accent": "standard",
+        "ageLabel": "middle-aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Tural shares a deep, resonant register and Baku cadence, reading slow -- long pauses stretching between calm, serious sentences. A dependable pick for long-form narration where unhurried pacing matters most.",
+        "notes": [
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/tHcUjCm8garyDnZZNbca/2c22d623-8c12-43c9-b02c-952f919c7e32.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=tHcUjCm8garyDnZZNbca",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "0crihQofgqeT3GZsTujv",
+        "name": "Sevinj - Conversational Partner",
+        "gender": "female",
+        "languageLabel": "az",
+        "accent": "standard",
+        "ageLabel": "middle-aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The conversational partner delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Sevinj keeps instructions plain and even -- calm, direct, and unhurried, her measured Azerbaijani built for clarity over charm. A solid match for customer support scripts that need to be understood the first time.",
+        "notes": [
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/0crihQofgqeT3GZsTujv/cc486694-20e8-4f2e-96f6-0af9fda42fd2.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=0crihQofgqeT3GZsTujv",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -340,6 +551,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "GuSivqtqi1qfWxEuGhqa",
+        "name": "Dipankar - Natural, Calm Conversations",
+        "gender": "male",
+        "languageLabel": "bn",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The natural, calm conversations delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, steady, and genuine — this voice settles into an exchange instead of performing one, holding the same even keel whether the moment is light or serious. Its controlled rise and fall in tone reads as attentive rather than flat, making back-and-forth dialogue feel like a real interaction rather than a monologue. Built for AI assistants, customer support, and everyday dialogue. Ideal for consumer apps and voice-agent platforms.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/GuSivqtqi1qfWxEuGhqa/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiU2VkQUNVblQwM1BhbjRScVFQOVAubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=GuSivqtqi1qfWxEuGhqa",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "VixjjTLMa0rgjbAS8LTX",
+        "name": "NPC bn — Madhusmita - Sweet Conversational Friend",
+        "gender": "female",
+        "languageLabel": "bn",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The sweet conversational friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm, empathetic, relatable — Madhusmita opens every conversation like she's already known you for years, easing straight past small talk. Built for companion apps, everyday advice content, conversational AI bots, and regional social interactions. Fits naturally into bots, companion apps, and Bengali-language chat platforms.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/VixjjTLMa0rgjbAS8LTX/sNy0JaSulQOoNZkpT7aB.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=VixjjTLMa0rgjbAS8LTX",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -397,6 +646,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "i3Sopi5uaJ7ZbHrMbDdc",
+        "name": "NPC bs — Nermin - Dry, Direct, Deep",
+        "gender": "male",
+        "languageLabel": "bs",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The dry, direct, deep delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Nermin doesn't dress anything up. Husky and low, with the Tuzla variety of Bosnian giving the delivery a grounded, blunt edge, this voice suits dry commentary and social content that leans on deadpan honesty rather than enthusiasm.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/i3Sopi5uaJ7ZbHrMbDdc/TJPZE4AsZA3OYSjO2VyA.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=i3Sopi5uaJ7ZbHrMbDdc",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "oDGXruwpxGwpvhGIPylp",
+        "name": "NPC bs — Lejla - Calm, Kind, Warm",
+        "gender": "female",
+        "languageLabel": "bs",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, kind, warm delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Lejla's ad delivery softens toward the end of every line, warm and round in tone with the Sarajevo standard cadence keeping things steady throughout. Calm, kind, and unforced — the kind of voice that reassures rather than pressures a listener toward a purchase.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/oDGXruwpxGwpvhGIPylp/LPhHn5JamX3AfRSGY6dQ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=oDGXruwpxGwpvhGIPylp",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -451,6 +744,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "406EiNlYvqFqcz3vsnOm",
+        "name": "NPC bg — Peter K - Warm, Round, and Smooth",
+        "gender": "male",
+        "languageLabel": "bg",
+        "accent": "sofia",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, round, and smooth delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Bulgarian, middle-aged man with a slight hoarseness in his thick voice. Good for Bulgarian, English, Spanish, and German voiceovers.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/hgPss3Iyr5U8wTXr6MepRnIRJJL2/voices/406EiNlYvqFqcz3vsnOm/818538f8-865a-46b9-8b0b-44cf97379ac5.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=406EiNlYvqFqcz3vsnOm",
+        "publicOwnerId": "18bd7dae2ae4bf50d2b9dc7ba891393412f2a6905469810034aa31c3ecb7a31a"
+      },
+      "mei": {
+        "voiceId": "cTXJb50tSXn699uH54p6",
+        "name": "NPC bg — Monica - Bulgarian",
+        "gender": "female",
+        "languageLabel": "bg",
+        "accent": "sofia",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The bulgarian delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Calm and trustworthy female voice for healthcare and hospital communication. Clear, warm, and reassuring tone, suitable for patient guidance and long conversations.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/cTXJb50tSXn699uH54p6/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJiNGFiMmU2ZWMzZTk0NDNjOTYxM2MzZDg5NTczNjEwYSIsImZpbGVuYW1lIjoiNmI4ZDFkOTUtNzIzYS00Nzk3LTgzM2YtNTA3MTA0N2M0NzNiLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=cTXJb50tSXn699uH54p6",
+        "publicOwnerId": "176689bc31db8ea2200a5efde279d4aa91de7f6234aa6ca06a8e32259ac8c786"
       }
     },
     {
@@ -508,6 +839,49 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "FzT1SPFNDDIoBDwgjXxI",
+        "name": "Htet - Calm, Patient Companion",
+        "gender": "male",
+        "languageLabel": "my",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, patient companion delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Husky and mid-range, Htet slows everything down to make sure the point lands -- long pauses, plain explanation, a patience that never feels condescending. Works well as a calm conversational companion voice for Burmese listeners who want things explained simply.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/FzT1SPFNDDIoBDwgjXxI/yNZy9nzDwnr2afHRYsng.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=FzT1SPFNDDIoBDwgjXxI",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "XfNU2rGpBa01ckF309OY",
+        "name": "Nichalia Schwartz - Bright and Friendly",
+        "gender": "female",
+        "languageLabel": "en",
+        "accent": "american",
+        "ageLabel": "young",
+        "match": "multilingual-fallback",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": false,
+        "reason": "Multilingual fallback in Mei’s English voice.",
+        "providerDescription": "Friendly, intelligent, engaging 20s-30s female American. Ideal for audiobooks, long-form narration, eLearning / e-learning, YouTube channel narration, educational material, explainers, podcasts, and corporate training videos. My natural, conversational tone includes natural speech patterns and breathing, perfect for projects requiring a clear, articulate, and warm voice that can captivate and maintain the audience's attention",
+        "notes": [
+          "No unused native voice of this gender in the library; multilingual fallback using this partner’s English voice. Needs a listening check for pronunciation."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/XfNU2rGpBa01ckF309OY/kuFJZI5s8GbgYm5f0hMo.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=XfNU2rGpBa01ckF309OY",
+        "publicOwnerId": "2f06b94223212b276650562b935af0b0c3d45abc717f3fd23fa458016cf4130b"
       }
     },
     {
@@ -565,6 +939,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "2HZgeWhEm3MJfPZ0MsrV",
+        "name": "Chun Wai - Calm, Warm Narrator",
+        "gender": "male",
+        "languageLabel": "yue",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, warm narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Chun Wai's Hong Kong-standard narration carries a warm mid-low timbre and a measured, even pace, with light stress landing exactly on the words that matter. Calm curiosity runs underneath -- a dependable choice for Cantonese documentary or long-form narration.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/2HZgeWhEm3MJfPZ0MsrV/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiOERPOURKYVg1YWhvMmpzcTFqdUcubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=2HZgeWhEm3MJfPZ0MsrV",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "Nw1gFFIqeG59noyldAp1",
+        "name": "Mei Ling - Kind Commercial",
+        "gender": "female",
+        "languageLabel": "yue",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind commercial delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Mei Ling's Cantonese ad delivery is calm and kind, warm mid timbre, slow and gentle -- until she reaches the offer, where the stress firms up just enough to make it land. Well suited to advertisements built on trust rather than urgency.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/Nw1gFFIqeG59noyldAp1/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoia3dZWERqd0ZvTUpxb3cxRlN5MWoubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=Nw1gFFIqeG59noyldAp1",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -618,6 +1036,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "2s13xENeADFYQZE8bg3a",
+        "name": "Jordi - Patient Barcelona Narrator",
+        "gender": "male",
+        "languageLabel": "ca",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The patient barcelona narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Round and low, delivered with clear pauses and a measured pace that gives listeners time to absorb each idea -- this is Jordi's Barcelona Catalan at its most patient. Calm narration well suited to long-form storytelling or instructional content.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/2s13xENeADFYQZE8bg3a/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoidkZ2SnpyZExvYjkyUkVpWjRxUVEubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=2s13xENeADFYQZE8bg3a",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "DcfSMGmIGv9duJkx5a24",
+        "name": "Marta - Kind Support Agent",
+        "gender": "female",
+        "languageLabel": "ca",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind support agent delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm and round in timbre, with a measured pace and gentle stops that keep the tone kind even when the subject turns serious -- Marta's Central Catalan phrasing reassures without sounding rehearsed. Built for customer support that needs a calm hand.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/DcfSMGmIGv9duJkx5a24/BCh85pLfi9mnBt48fw06.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=DcfSMGmIGv9duJkx5a24",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -672,6 +1134,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "YGeNjTKY1wBaKygyl4y8",
+        "name": "Gavin - Natural Mandarin Storyteller",
+        "gender": "male",
+        "languageLabel": "zh",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The natural mandarin storyteller delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, natural Mandarin voice with the feel of a thoughtful conversation. Clear and easy to follow, with expressive range for curious storytelling, calm narration, reassuring messages, confident announcements, and Chinese poetry. A versatile fit for podcasts, audiobooks, explainers, and conversational content.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/d84ee7739bc84ab2ae1e5980b885b7bf/voices/YGeNjTKY1wBaKygyl4y8/5iBMuq0tQIb2IA67e73h.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=YGeNjTKY1wBaKygyl4y8",
+        "publicOwnerId": "c743e7cedaa9a7794b5da030508bf2397fb3cb091d3375652cdd776bf0443d71"
+      },
+      "mei": {
+        "voiceId": "V3z1DARAbkkTVEx5lmEl",
+        "name": "Jill - Warm, Natural & Trustworthy",
+        "gender": "female",
+        "languageLabel": "zh",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, natural & trustworthy delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm and professional Mandarin Chinese female voice with a natural, trustworthy, and engaging delivery. Clear, calm, and easy to listen to, making it ideal for narration, explainers, social media content, documentaries, and professional voiceovers.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1eee8a7f69dd49dcb4c0c853e14a519e/voices/V3z1DARAbkkTVEx5lmEl/rfDz7crFTvZNlkygW0Du.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=V3z1DARAbkkTVEx5lmEl",
+        "publicOwnerId": "f50ffe09ca75e10acd23a49e8c34e7a13d4dbf3f806ce7bedcec0380f6eb5fb8"
       }
     },
     {
@@ -722,6 +1222,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "FEuh1dGiuX8Don6bZygL",
+        "name": "Luka",
+        "gender": "male",
+        "languageLabel": "hr",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Perfect audio quality. A 34-year-old Croatian male speaking fluent Croatian. Warm, trustworthy, and genuinely helpful tone, like a knowledgeable advisor who cares about finding the right solution. Medium pitch, steady and relaxed pacing with natural pauses. Clear and articulate pronunciation. Friendly and patient, never rushed or pushy. The kind of voice that makes you feel comfortable asking questions.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/cfd3b190f7e04524b0af74019bffd9dc/voices/FEuh1dGiuX8Don6bZygL/c62c8826-9877-4937-9c24-d51dc6316ef2.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=FEuh1dGiuX8Don6bZygL",
+        "publicOwnerId": "98cb382659277d5b834e02bc360f7fce8441cb3115139b622546b42174010e7e"
+      },
+      "mei": {
+        "voiceId": "eqAqnItEUARzEkoDCTJ1",
+        "name": "Mila - Pleasant and gentle",
+        "gender": "female",
+        "languageLabel": "hr",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The pleasant and gentle delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A smooth, warm voice of a Croatian female with a soft, welcoming tone.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/eqAqnItEUARzEkoDCTJ1/4126e25c-1b4c-4147-9c43-1e336be36391.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=eqAqnItEUARzEkoDCTJ1",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -776,6 +1314,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "KIDKfqJyZ6ASuyzsKfh5",
+        "name": "NPC cs — Jan - Kind Educator",
+        "gender": "male",
+        "languageLabel": "cs",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The kind educator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "35-year-old Czech man with a kind voice, ideal for audiobooks, narration, or educational content.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/KIDKfqJyZ6ASuyzsKfh5/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI4MzVjZjA4OWNkODk0MmY2ODY5ZTNlNjIxNGY5NWIwNCIsImZpbGVuYW1lIjoiZGY4NTY4MjYtMjc1NC00OTFhLWI3NjYtMjViNWJmZDNlM2I3Lm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=KIDKfqJyZ6ASuyzsKfh5",
+        "publicOwnerId": "2ccae164de26dd439e08892fde21a9dba30e53de7fde58868c38175a6aa7ab72"
+      },
+      "mei": {
+        "voiceId": "bF7C2fCv7Zf30iT84wZ1",
+        "name": "NPC cs — Jana - Warm, Confident Czech Female",
+        "gender": "female",
+        "languageLabel": "cs",
+        "accent": "prague",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, confident czech female delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A warm, confident female voice with clear articulation and a friendly, engaging delivery. Versatile for commercials, corporate videos, e-learning, and storytelling. Ideal for projects that require trustworthiness, professionalism, and a personal touch.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/bF7C2fCv7Zf30iT84wZ1/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJiMmJmYzdlYWRjNGE0OTQzYjkyYTMyOThhZjk1ZmJjOSIsImZpbGVuYW1lIjoiQkJSc3hYbmtROXdwZEdzWTRsRVIubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=bF7C2fCv7Zf30iT84wZ1",
+        "publicOwnerId": "209cecaa21e8ac9347f49d335c5217bd289ba536a7f09946bc36bebf82857e05"
       }
     },
     {
@@ -826,6 +1402,44 @@
         "noticePeriodDays": 4015,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "EU14UTtflRFtOAuWCuVe",
+        "name": "Teddy Andersen - Clear and Calm",
+        "gender": "male",
+        "languageLabel": "da",
+        "accent": "zealandic",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear and calm delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Male voice, Danish accent, clear and articulate. Ideal for teaching, educational content, and YouTube explainers.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/EU14UTtflRFtOAuWCuVe/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI2ZTk4NzkzNWQxZWI0OGI4YTlhZDUxMmU4ODc0NGJkOCIsImZpbGVuYW1lIjoiUHJBczNxRGM4S25yTkp1WTdtWHIubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=EU14UTtflRFtOAuWCuVe",
+        "publicOwnerId": "6c528f74a40ddd47394cd31f26313b03d5ddfa63f9849e5bc064d733b37159e0"
+      },
+      "mei": {
+        "voiceId": "RBQdnLdc4yI3og0Z9TQL",
+        "name": "NPC da — Mia - Warm Danish Narrator",
+        "gender": "female",
+        "languageLabel": "da",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm danish narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Native Danish female voice in a warm, low narration register — calm, clear, and intimate. Built for audiobooks, storytelling, e-learning, and long-form reading.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/b7f6c0570a234f6682fbec1a0c83c465/voices/RBQdnLdc4yI3og0Z9TQL/NbRZAnMsB4oFs6778gz8.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=RBQdnLdc4yI3og0Z9TQL",
+        "publicOwnerId": "5de2fe252c8ccf20ffff2e4a01dfee45471652ece93685bec1051e4757159fee"
       }
     },
     {
@@ -880,6 +1494,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "rN2gFSK0c2RP1mgdpt69",
+        "name": "Tom - Warm Natural Dutch",
+        "gender": "male",
+        "languageLabel": "nl",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm natural dutch delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Natural Dutch male voice with a clear, warm and conversational delivery. Mature and confident without sounding overly formal. Suitable for narration, explainers, e-learning, documentaries, corporate content and conversational applications.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/14550745fc6b4c42abe120da645fd6cd/voices/rN2gFSK0c2RP1mgdpt69/0ASlFVJ1C9iCzYMnaf8l.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=rN2gFSK0c2RP1mgdpt69",
+        "publicOwnerId": "b4a23b2d373550524ba805021a37c189db4a8d7c982f650e5cbf93f0552484b0"
+      },
+      "mei": {
+        "voiceId": "OlBRrVAItyi00MuGMbna",
+        "name": "NPC nl — Emma - Calm, Clear and Confident",
+        "gender": "female",
+        "languageLabel": "nl",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm, clear and confident delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A calm Dutch female voice that sounds like she's explaining something to a friend. Great for e-learning, tutorials, and natural voice-overs.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/OlBRrVAItyi00MuGMbna/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI5MDJjMzgwMjkyZjU0ZWQ3YmQyM2VlYmFhYTE5ZDUxZiIsImZpbGVuYW1lIjoiWTAwM0hKUGdqT3lIb3pDM3N6Z08ubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=OlBRrVAItyi00MuGMbna",
+        "publicOwnerId": "65552f36aff46db9c7a05e8c9cba307738b4e0cbcab39729879d97e5f8b4d3c1"
       }
     },
     {
@@ -936,6 +1588,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "zwbf3iHXH6YGoTCPStfx",
+        "name": "Dayo - Clear, Direct and Natural",
+        "gender": "male",
+        "languageLabel": "en",
+        "accent": "nigerian",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear, direct and natural delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Male Nigerian voice. Perfect for YouTube videos, training coaching and courses.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1d3a94dab7564275860e8dcc4393bfde/voices/zwbf3iHXH6YGoTCPStfx/MB97M99stOCGetRcKjyJ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=zwbf3iHXH6YGoTCPStfx",
+        "publicOwnerId": "548273ad0daedf50375b493ace5b35203fa609d273034d3c2782b080802fd14c"
+      },
+      "mei": {
+        "voiceId": "XfNU2rGpBa01ckF309OY",
+        "name": "Nichalia Schwartz - Bright and Friendly",
+        "gender": "female",
+        "languageLabel": "en",
+        "accent": "american",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The bright and friendly delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Friendly, intelligent, engaging 20s-30s female American. Ideal for audiobooks, long-form narration, eLearning / e-learning, YouTube channel narration, educational material, explainers, podcasts, and corporate training videos. My natural, conversational tone includes natural speech patterns and breathing, perfect for projects requiring a clear, articulate, and warm voice that can captivate and maintain the audience's attention",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/XfNU2rGpBa01ckF309OY/kuFJZI5s8GbgYm5f0hMo.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=XfNU2rGpBa01ckF309OY",
+        "publicOwnerId": "2f06b94223212b276650562b935af0b0c3d45abc717f3fd23fa458016cf4130b"
       }
     },
     {
@@ -996,6 +1686,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "0cuaFlR2we1Gl3woPjeJ",
+        "name": "NPC et — Kalev - Calm Tallinn Narrator",
+        "gender": "male",
+        "languageLabel": "et",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm tallinn narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Low and round, with a settled bottom end and short pauses between thoughts -- Kalev's Tallinn-standard narration carries itself with calm confidence. Even emphasis and a measured pace make this a dependable Estonian narration voice for long-form content.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/0cuaFlR2we1Gl3woPjeJ/27VfynicYzMhDOWqmiuh.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=0cuaFlR2we1Gl3woPjeJ",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "2sIfP2CLuKcWEgQqZBvh",
+        "name": "NPC et — Anneli - Practised Tallinn Support",
+        "gender": "female",
+        "languageLabel": "et",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The practised tallinn support delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Sounds like someone who's answered this question a hundred times and still means it -- warm mid timbre, Tallinn-standard vowels, a practised routine tone with brief waits between steps. Anneli's friendly, patient support delivery works well for Estonian customer service.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/2sIfP2CLuKcWEgQqZBvh/LOzMf3pAvpIQ8QO0gqne.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=2sIfP2CLuKcWEgQqZBvh",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1050,6 +1784,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "5Q7Prc4RWUSqufejYCQ5",
+        "name": "Rezz - Calm & Friendly",
+        "gender": "male",
+        "languageLabel": "fil",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm & friendly delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, friendly, and trustworthy Filipino male voice with a natural Taglish speaking style. Clear, conversational, and expressive with confident delivery and balanced energy. Perfect for real estate house tours, property presentations, educational explainers, storytelling, motivational content, and professional social media voice-overs.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/cdca2eefa3b147379ad65f4e21fd79c6/voices/5Q7Prc4RWUSqufejYCQ5/a8009476-6c54-4391-be7b-2d3ae675db6e.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=5Q7Prc4RWUSqufejYCQ5",
+        "publicOwnerId": "a7b5f6b797b529ccc68439b6d77c1d9e337deb12114e2c1f65bae0e8a4238572"
+      },
+      "mei": {
+        "voiceId": "OPouXJLzlYeaXfgM6Q7O",
+        "name": "Weng - Airy, Calm, and Neutral",
+        "gender": "female",
+        "languageLabel": "fil",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The airy, calm, and neutral delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Normal speaking voice, ideal for tutorials, social media, explanations, or guided instructions.Accent & Language Characteristics: Filipino conversational style, natural Tagalog pronunciation with smooth intonation and slight melodic cadence.Emotional Impression: Warm, friendly, and reassuring; creates a sense of trust and attentiveness in the listener.Conversational dialogue, audiobooks, and educational materials.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/dd98c39be45d4fd8ae286c93d0542148/voices/OPouXJLzlYeaXfgM6Q7O/c9e4cc38-279e-4abf-8a47-8cdc7d96ec01.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=OPouXJLzlYeaXfgM6Q7O",
+        "publicOwnerId": "027ae766db817c7e6da26a1f5dd3adc9569f02ea9d5b21a5d3b141423b9b1c4e"
       }
     },
     {
@@ -1100,6 +1872,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "ESapivUCtGNuYKDCwzcI",
+        "name": "Aapo - Friendly and approachable",
+        "gender": "male",
+        "languageLabel": "fi",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The friendly and approachable delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, down-to-earth voice of a Finnish male. He speaks with a gentle, welcoming cadence and a charming Nordic accent that feels trustworthy, inviting, and naturally conversational.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/ESapivUCtGNuYKDCwzcI/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiNGU2OTAzYzktOGM2ZC00MjJhLWE5M2ItYjMyYmRmYzIxYjc5Lm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=ESapivUCtGNuYKDCwzcI",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "RiWFFlzYFZuu4lPMig3i",
+        "name": "NPC Estonian — Soili",
+        "gender": "female",
+        "languageLabel": "fi",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A Finnish woman with a calm voice.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/2150a1ddeff74f8aab520889e9b56abc/voices/RiWFFlzYFZuu4lPMig3i/a88af9f5-a376-4456-bc48-8c2645214ddc.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=RiWFFlzYFZuu4lPMig3i",
+        "publicOwnerId": "5efa173ce4e3ff014bd03bd5a6b52a65c1dad5b7a378cf2babb8948215d6aac9"
       }
     },
     {
@@ -1154,6 +1964,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "FL0d5832ACnJkBaedeKX",
+        "name": "Florian French Male Narrator",
+        "gender": "male",
+        "languageLabel": "fr",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, smooth and reassuring French voice with a clear and natural delivery. Medium-toned timbre with a calm, articulate and conversational style. Ideal for storytelling, documentaries, podcasts, audiobooks, premium narration and cinematic voice-overs. Expressive yet relaxed, with a professional and immersive presence.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/05cfcef556e74cdc85ef2c90234c978f/voices/FL0d5832ACnJkBaedeKX/2g2ndEEd4RpWNIaXSXqf.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=FL0d5832ACnJkBaedeKX",
+        "publicOwnerId": "6cd9e41b70757cc496074cee14c01882cef6c44156c825c1d24b3150223b17da"
+      },
+      "mei": {
+        "voiceId": "UaGvaD7NWzU5mJNoUqoY",
+        "name": "Perle - Premium French Corporate Narrator",
+        "gender": "female",
+        "languageLabel": "fr",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The premium french corporate narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A warm, premium and professional French voice designed for corporate content, e-learning, podcasts, tutorials and brand storytelling. Clear, engaging and naturally reassuring, it delivers a smooth and credible listening experience ideal for training modules, onboarding, explainers and conversational content. Native French speaker with multilingual adaptability and natural pronunciation for international projects. Easily adjustable to different tones, pacing and delivery styles.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/9b575dced44a494191dd4a86259dca58/voices/UaGvaD7NWzU5mJNoUqoY/vDA7gLJMATfRgzejin2y.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=UaGvaD7NWzU5mJNoUqoY",
+        "publicOwnerId": "408aa8b556297d523791b450ef0e04d0c9d2bdce25e566c37fc71221a67a5720"
       }
     },
     {
@@ -1214,6 +2062,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "Pa7DQYCr4mnUUk2JtSmO",
+        "name": "Xoan - Curious Vigo Narrator",
+        "gender": "male",
+        "languageLabel": "gl",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The curious vigo narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Bright and light, moving at a measured pace with clear emphasis throughout -- Xoan's Vigo-inflected Galician narration carries real curiosity. Patience defines the delivery, well suited to narration that wants to sound genuinely interested in its subject.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/Pa7DQYCr4mnUUk2JtSmO/DRkLHxSxgESH261NsHRV.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=Pa7DQYCr4mnUUk2JtSmO",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "S14xs2TEo0iQmW5pSX3x",
+        "name": "Noa - Warm Costa da Morte Friend",
+        "gender": "female",
+        "languageLabel": "gl",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm costa da morte friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Noa's Costa da Morte lilt is husky and mellow, relaxed and chatty, warm and amused in equal measure. A conversational companion voice that sounds like catching up with someone you already know well.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/S14xs2TEo0iQmW5pSX3x/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiakJmWkhXaEZ0SThaTUlDeFFuOGQubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=S14xs2TEo0iQmW5pSX3x",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1272,6 +2164,48 @@
         "noticePeriodDays": null,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "zwbf3iHXH6YGoTCPStfx",
+        "name": "Dayo - Clear, Direct and Natural",
+        "gender": "male",
+        "languageLabel": "en",
+        "accent": "nigerian",
+        "ageLabel": "young",
+        "match": "multilingual-fallback",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "Multilingual fallback in Kwame’s English voice.",
+        "providerDescription": "Male Nigerian voice. Perfect for YouTube videos, training coaching and courses.",
+        "notes": [
+          "No unused native voice of this gender in the library; multilingual fallback using this partner’s English voice. Needs a listening check for pronunciation."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1d3a94dab7564275860e8dcc4393bfde/voices/zwbf3iHXH6YGoTCPStfx/MB97M99stOCGetRcKjyJ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=zwbf3iHXH6YGoTCPStfx",
+        "publicOwnerId": "548273ad0daedf50375b493ace5b35203fa609d273034d3c2782b080802fd14c"
+      },
+      "mei": {
+        "voiceId": "XfNU2rGpBa01ckF309OY",
+        "name": "Nichalia Schwartz - Bright and Friendly",
+        "gender": "female",
+        "languageLabel": "en",
+        "accent": "american",
+        "ageLabel": "young",
+        "match": "multilingual-fallback",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": false,
+        "reason": "Multilingual fallback in Mei’s English voice.",
+        "providerDescription": "Friendly, intelligent, engaging 20s-30s female American. Ideal for audiobooks, long-form narration, eLearning / e-learning, YouTube channel narration, educational material, explainers, podcasts, and corporate training videos. My natural, conversational tone includes natural speech patterns and breathing, perfect for projects requiring a clear, articulate, and warm voice that can captivate and maintain the audience's attention",
+        "notes": [
+          "No unused native voice of this gender in the library; multilingual fallback using this partner’s English voice. Needs a listening check for pronunciation."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/custom/voices/XfNU2rGpBa01ckF309OY/kuFJZI5s8GbgYm5f0hMo.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=XfNU2rGpBa01ckF309OY",
+        "publicOwnerId": "2f06b94223212b276650562b935af0b0c3d45abc717f3fd23fa458016cf4130b"
       }
     },
     {
@@ -1326,6 +2260,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "HNYELfQMgCeL9N0RGyxo",
+        "name": "Lennard - Warm & Trustworthy",
+        "gender": "male",
+        "languageLabel": "de",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm & trustworthy delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, grounded male voice with natural authority and effortless clarity. Blends calm confidence with the approachable warmth of a trusted advisor. Defined by precise articulation, a relaxed mid-range baritone, and a steady presence that keeps listeners engaged. Ideal for explainer videos, e-learning, startup demos, documentaries, and podcast narration. Shifts effortlessly between focused, informative delivery and a conversational, friendly tone.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/HNYELfQMgCeL9N0RGyxo/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI1OTk2YWQ1NTIxYjA0YzQzYTM5ZjVmYWMzMGU1YWQzNSIsImZpbGVuYW1lIjoieG5oZER0d0J4aUpEaGNjVXdZd0IubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=HNYELfQMgCeL9N0RGyxo",
+        "publicOwnerId": "15f4f91049d3e1f5ff4dbe26016d73b32997c976e1d4d9901643059e6b957bbf"
+      },
+      "mei": {
+        "voiceId": "rKiu7lQ4c5P3az3745s3",
+        "name": "Carla Blum - Confident and Informative",
+        "gender": "female",
+        "languageLabel": "de",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The confident and informative delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A warm, confident and pleasant female voice with calm depth for professional explanatory and educational content. Carla’s voice conveys trust, intelligence and competence - perfect for projects that require both authority and ease in explaining complex topics. The tonality is neutral, friendly and engaging - ideal for e-learnings, explainer videos, chatbots, call-center automation, AI voice agents, virtual assistants, customer support and non-fictional audiobooks. Native German / Deutsch",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/rKiu7lQ4c5P3az3745s3/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIyNWFlNjQxNzI5OTI0MzAwYTIxMzU0NWZlNDA2MGVlMyIsImZpbGVuYW1lIjoiUzZndUpKVFl3R2NRU2tFZEtTb0UubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=rKiu7lQ4c5P3az3745s3",
+        "publicOwnerId": "ced8ccff973f18ec079968f443f29d5c1f88fdc8a8e2a8f0a30df8c6cb465b36"
       }
     },
     {
@@ -1376,6 +2348,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "BbaKfkUxNfvcfAmNo76e",
+        "name": "Panos - Confident Greek Narrator",
+        "gender": "male",
+        "languageLabel": "el",
+        "accent": "athenian",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The confident greek narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Natural Greek adult male voice with a warm, clear and confident tone. Authoritative when needed while remaining conversational and approachable. Ideal for narration, documentaries, sports, corporate content, educational material, advertising and conversational projects.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/BbaKfkUxNfvcfAmNo76e/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIwNTY5M2FmYmU2OWQ0MThkYTUyNjJiM2Y3NjA4YjVlNyIsImZpbGVuYW1lIjoiM2NiNjNmZmQtMmQyYS00MGYwLWJmMTEtYTNlYzFjZTI4ZjAzLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=BbaKfkUxNfvcfAmNo76e",
+        "publicOwnerId": "95bd79d995e07401f53f9de45394eb4e1436b205d0041058b58f7efed18866e5"
+      },
+      "mei": {
+        "voiceId": "t7C9cEkpMwHG1IMZlJJ5",
+        "name": "Katerina - Confident and poised",
+        "gender": "female",
+        "languageLabel": "el",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The confident and poised delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A strong, clear voice of a Greek female with a self-assured, articulate tone.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/t7C9cEkpMwHG1IMZlJJ5/afce6b57-1a4a-45b4-b6ae-45a67f7d9b70.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=t7C9cEkpMwHG1IMZlJJ5",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1430,6 +2440,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "3L29IUUN61xcyvsKscMy",
+        "name": "Chinmay - Wise Gujarati Friend Voice",
+        "gender": "male",
+        "languageLabel": "gu",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The wise gujarati friend voice delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Grounded, warm and genuinely reassuring — Chinmay feels like the wise Gujarati friend who always knows what to say. His mature, natural delivery carries calm emotional intelligence that younger voices cannot replicate — every conversation feels like a real exchange with someone who understands a lot. Perfect for Gujarati companion apps, emotional support platforms, and AI friend experiences built for users who want depth, warmth and cultural familiarity.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/3L29IUUN61xcyvsKscMy/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiQ1ZqU3oxR2RaSFNwWHYxY3psRmsubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=3L29IUUN61xcyvsKscMy",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "aVwNS3gNch2GhQaTeQ54",
+        "name": "Mahi - Pleasant Gujarati Conversational",
+        "gender": "female",
+        "languageLabel": "gu",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The pleasant gujarati conversational delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Friendly, warm and engaging, Mahi brings natural Gujarati conversation that reflects the etiquette and communication style Gujarati speakers expect. Her clear, expressive delivery works across companion apps, casual AI chat, customer support bots, and everyday dialogue where a relatable, easygoing tone matters more than formality. Perfect for businesses and platforms building Gujarati conversational AI across Gujarat, Saurashtra, and Mumbai.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/aVwNS3gNch2GhQaTeQ54/DVoQV5uwO9cgxzYSAcJw.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=aVwNS3gNch2GhQaTeQ54",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -1490,6 +2538,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "cnc9FDcyBlbzxv28zGEM",
+        "name": "Yusuf - Calm Support Agent",
+        "gender": "male",
+        "languageLabel": "ha",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm support agent delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Calm, patient, and clear, Yusuf's even mid timbre in Kano-standard Hausa moves at a steady pace suited to customer support. Nothing about the delivery feels rushed or scripted, which is exactly what's needed when guiding someone through a problem step by step.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/cnc9FDcyBlbzxv28zGEM/Jqm3UliTz8G3iH9rF45N.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=cnc9FDcyBlbzxv28zGEM",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "MHRTqlfOS52k295qTnau",
+        "name": "NPC ha — Fatima - Kind, Calm Friend",
+        "gender": "female",
+        "languageLabel": "ha",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind, calm friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Fatima speaks with a warm mid timbre and gentle emphasis, at a steady pace that never feels hurried. Kind and calm in Kano-standard Hausa, hers is the voice of a patient friend — well suited to casual, supportive conversational scripts.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/MHRTqlfOS52k295qTnau/skhIhu2ubSCGjEOrML7y.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=MHRTqlfOS52k295qTnau",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1550,6 +2642,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "yGpVFXFoImvRvaURKypy",
+        "name": "NPC he — Tomer - Calm, Curious Narrator",
+        "gender": "male",
+        "languageLabel": "he",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, curious narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Tomer's delivery mirrors a classic narrator's calm — deep, resonant, Jerusalem-standard intonation, moving at a measured pace with short pauses after each finding. Curious rather than detached, this voice works well for factual or documentary-style narration.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/yGpVFXFoImvRvaURKypy/8F4UV5JfF9FBLm9O842M.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=yGpVFXFoImvRvaURKypy",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "V0stpogHp8KBgdErUZbd",
+        "name": "NPC he — Dana - Patient Support Agent",
+        "gender": "female",
+        "languageLabel": "he",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The patient support agent delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Dana's customer-support delivery is warm and plain, gentle on consonants, moving at a steady pace with short waits after each option so callers never feel rushed. Patient and friendly throughout — exactly the tone you want guiding someone through a menu or a problem.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/V0stpogHp8KBgdErUZbd/Mo2VPCfMO2tYayYknCol.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=V0stpogHp8KBgdErUZbd",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1604,6 +2740,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "rFzjTA9NFWPsUdx39OwG",
+        "name": "Yatin - Warm and Conversational",
+        "gender": "male",
+        "languageLabel": "hi",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm and conversational delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Voice crafted for smooth customer interactions, friendly chats, and everyday communication. Yatin’s clear, calm tone makes conversations feel natural and easy, perfect for chatbots, voice assistants, and support calls. His steady, approachable delivery enhances IVR systems, customer onboarding, and help content across platforms like WhatsApp, YouTube, and mobile apps. Ideal for brands that value clarity, comfort, and a human touch in their service.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/rFzjTA9NFWPsUdx39OwG/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiMkxRTWNoNlFpQ2FwMGVLY0w0TUgubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=rFzjTA9NFWPsUdx39OwG",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "nutrBX1pApRaSpLJobvb",
+        "name": "Muskaan - Natural, Friendly and Clear",
+        "gender": "female",
+        "languageLabel": "hi",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The natural, friendly and clear delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Voice with a teacher-like tone—perfect for guiding users through technical or financial queries. Muskaan’s delivery is confident, patient, and highly instructional—ideal for BFSI support bots, customer helplines, fintech platforms, and insurance IVRs. Her ability to explain complex processes calmly makes her perfect for apps requiring user education, onboarding support, or technical walkthroughs. Suited for mobile banking, investment tools, and finance service platforms.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/nutrBX1pApRaSpLJobvb/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiSmN5bDVtMUJIcEZiSUhEVUxiUjEubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=nutrBX1pApRaSpLJobvb",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -1654,6 +2828,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "EDFPnOFl5aCWNcPPmPVK",
+        "name": "Attila B. - Warm & Confident",
+        "gender": "male",
+        "languageLabel": "hu",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm & confident delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, confident Hungarian male voice with a natural conversational tone. Clear, calm and trustworthy delivery, well suited for commercials, narration, corporate content, e-learning and voice assistants.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/EDFPnOFl5aCWNcPPmPVK/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIzZGNmMzNiZDE0Y2Q0YTZiOTNmNTRkYzVkMWQwOTMyNyIsImZpbGVuYW1lIjoicVdXTndqOTZ1QWd5SjEyV2MzaDQubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=EDFPnOFl5aCWNcPPmPVK",
+        "publicOwnerId": "b21d587ccf7ad692db5af524e505e39dfaa54804d85f35086be18602eb3f5d07"
+      },
+      "mei": {
+        "voiceId": "E8fGKK3OUNrGTdmkyRdt",
+        "name": "NPC hu — Réka - Polished and Assured",
+        "gender": "female",
+        "languageLabel": "hu",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The polished and assured delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A refined, middle-aged Hungarian female voice. She has a measured, professional tone with a subtle warmth beneath her composure, delivering each word with precision and quiet confidence—perfect for corporate narration, business presentations, and short instructional scripts.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/E8fGKK3OUNrGTdmkyRdt/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiYjZlMmU4ZTUtM2RiOS00YmJjLWJmYTEtYmZjYzAyOTc4NDkxLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=E8fGKK3OUNrGTdmkyRdt",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1714,6 +2926,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "QxWyjuOd4Kb0lmtEA1Gj",
+        "name": "Einar - Friendly, Dry Friend",
+        "gender": "male",
+        "languageLabel": "is",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The friendly, dry friend delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Einar's husky, Reykjavík-standard voice has a dry sense of humor built into its relaxed, easy delivery. Friendly but never overeager — a good match for casual conversational content with a bit of wit.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/QxWyjuOd4Kb0lmtEA1Gj/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiRnpKdmxZOHBoQnFUM1U5Z2oyTDAubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=QxWyjuOd4Kb0lmtEA1Gj",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "rx2Jwpr6lciMIbfYvpOA",
+        "name": "NPC is — Katrin - Warm, Patient Friend",
+        "gender": "female",
+        "languageLabel": "is",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, patient friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Katrin sounds like an old friend settling in for a chat — warm Reykjavík-standard timbre, relaxed pace, gentle emphasis throughout. Patient and unhurried, suited to casual conversational scripts that don't need urgency.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/rx2Jwpr6lciMIbfYvpOA/5c6sm3OIyfCrt3hURnyd.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=rx2Jwpr6lciMIbfYvpOA",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -1764,6 +3020,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "3rL9ZxRgBgIkh4tcbrEH",
+        "name": "Deden Cahya - Warm, Calm and Clear",
+        "gender": "male",
+        "languageLabel": "id",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, calm and clear delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm and expressive voice with a friendly, natural tone. Perfect for storytelling, tutorials, or casual conversations. The combination of clarity and emotion makes this voice pleasing to the ear and engaging for a wide range of content.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/90873a8d002a4f28baa8cb03a54a46ae/voices/3rL9ZxRgBgIkh4tcbrEH/jC9djvUHFPo637zFDjE1.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=3rL9ZxRgBgIkh4tcbrEH",
+        "publicOwnerId": "d17a3691edf8125bf5d2dbb5b74beb7a9490d1c6338dd672ffb7109f89344a67"
+      },
+      "mei": {
+        "voiceId": "GdyFAZdMpKMBHw5pc1Bu",
+        "name": "Livna - Neutral, Clear and Steady",
+        "gender": "female",
+        "languageLabel": "id",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The neutral, clear and steady delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Indonesian female voice with a neutral accent and a clear, mid-range tone, featuring steady and articulate delivery that brings an informative, confident sound. There’s a natural warmth and approachability.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/e503bb7ff1d54d4e9bd251a8f23b7007/voices/GdyFAZdMpKMBHw5pc1Bu/QD0ayyO8kDyV8Kk1WAFy.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=GdyFAZdMpKMBHw5pc1Bu",
+        "publicOwnerId": "4b0ef22945f4c7137f87a467c4a8dfd448060fd6f9ce521aea3364d2d269e7f8"
       }
     },
     {
@@ -1818,6 +3112,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "wNIMZNAVa95a3UpgwWJr",
+        "name": "Giulio - Calm & Authoritative",
+        "gender": "male",
+        "languageLabel": "it",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm & authoritative delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, articulate male voice with a calm, authoritative presence. Neutral and professional in tone, with controlled warmth and a consistently serious delivery — built for clarity and credibility rather than character work. Clear diction, steady pacing, and controlled dynamics with a human, thoughtful read: polished without sounding artificial or overproduced. Well-suited to documentaries, educational content, corporate videos, branded storytelling, podcasts, and YouTube narration.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/2a24da030f41493b98db9681c9fc7a3b/voices/wNIMZNAVa95a3UpgwWJr/bhWlocrregYcEhpVr6sB.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=wNIMZNAVa95a3UpgwWJr",
+        "publicOwnerId": "e4f6ac0358f5a9ca829d701e94543521955a46a76c7b99d7b8ad3b45b546de1f"
+      },
+      "mei": {
+        "voiceId": "UnOINkXZ3yK4vVg3Iayj",
+        "name": "Beatrice - AI Agent",
+        "gender": "female",
+        "languageLabel": "it",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The ai agent delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Beatrice is a professional Italian voice with a warm, reassuring tone and a refined, confident presence. Perfect for projects that require professionalism, trust, and a human touch. Her delivery is clear, engaging, and naturally expressive, making her ideal for a wide range of applications including audiobooks, e-learning, podcasts, virtual assistants, and branded content.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/f5cf7717b1b243c68376b06b4096e065/voices/UnOINkXZ3yK4vVg3Iayj/a3p110znqqjKbluPDnoQ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=UnOINkXZ3yK4vVg3Iayj",
+        "publicOwnerId": "dc4239b369528b467450ffbeafe24e08966d7e852eaddc7cdc5e4354d7905b39"
       }
     },
     {
@@ -1874,6 +3206,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "EHMH9cyd1z3rXm4z0Jja",
+        "name": "Yuma Uchida - Calm, Clear and Measured",
+        "gender": "male",
+        "languageLabel": "ja",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm, clear and measured delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Use case: YouTube narration / Explainer / e-Learning / Podcast. Clear, not too flat, low-mid male voice with calmness, sincerity, and persuasive clarity. Fits technical/business explainers, tutorials, corporate training, recruitment videos, product intros, and news reads. Controllable from conversational to formal; easy to listen to long-form.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/EHMH9cyd1z3rXm4z0Jja/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJjMmYxMjIxNjQ5YTA0YmUzYTc0ODdhMzk1MGVjM2JkYSIsImZpbGVuYW1lIjoiMGUyOTA4NjctZWQ2Zi00ODAyLWJiMWYtMjhiYWU0ZmQzYTRiLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=EHMH9cyd1z3rXm4z0Jja",
+        "publicOwnerId": "72839c988458a2e6d86e7fc4b91dc3a50c9b78b8761ba7c8cf06215fe4412eb1"
+      },
+      "mei": {
+        "voiceId": "oRjJxMXs2RKFFbRt3qwK",
+        "name": "Hana - Clear Japanese Narrator",
+        "gender": "female",
+        "languageLabel": "ja",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The clear japanese narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Hana is a native Japanese female voice with clear articulation, a calm and friendly tone, and a gentle, steady pace. Her precise and approachable delivery makes complex information easy to follow without sounding overly formal. Best use cases: E-learning, language-learning content, tutorials, explainer videos, educational narration, corporate training, and informational content. Key qualities: Clear, calm, warm, precise, trustworthy, and consistently paced.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/c82cc79b232741cb92b15ca72239a4c7/voices/oRjJxMXs2RKFFbRt3qwK/owtRIitiuQMWAQpJcuni.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=oRjJxMXs2RKFFbRt3qwK",
+        "publicOwnerId": "c489c1d0b52a59625685328f2005cb2ad2c2c1fe4cb7a06cadd5306b4d78acc1"
       }
     },
     {
@@ -1924,6 +3294,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "hk5MOeftFsp844OxemT5",
+        "name": "Subbanna - Kannada Concept Explainer",
+        "gender": "male",
+        "languageLabel": "kn",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The kannada concept explainer delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Clear, patient, and consistently articulate — Subbanna breaks down a topic step by step, never rushing past the part where a student loses the thread. His calm, well-paced delivery keeps complex ideas simple without sounding rehearsed. Built for classroom explainers, curriculum videos, and concept-based e-learning content. Ideal for EdTech platforms, schools, and online tutoring applications serving Kannada-speaking students.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/hk5MOeftFsp844OxemT5/TWV1d9XHRqKILA53Gpsd.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=hk5MOeftFsp844OxemT5",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "2SDH0owxS12R2YMgMNoG",
+        "name": "Aisiri - Friendly Kannada Customer Care",
+        "gender": "female",
+        "languageLabel": "kn",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The friendly kannada customer care delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Empathetic & efficient, Aisiri delivers Kannada customer support with a reassuring warmth. Her clear, well-paced communication guides customers smoothly through solutions, leaving them feeling heard and satisfied. Perfect for businesses building loyal customer bases.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/2SDH0owxS12R2YMgMNoG/RbaLbKw0aVnDopys2kGb.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=2SDH0owxS12R2YMgMNoG",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -1981,6 +3389,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "RojlvMxYbtU94goTCgIP",
+        "name": "NPC kk — Bolat - Calm, Patient Friend",
+        "gender": "male",
+        "languageLabel": "kk",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, patient friend delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Husky and low, with a southern color, Bolat speaks slowly and leaves long pauses between thoughts, giving every sentence room to breathe. Calm and patient throughout, suited to relaxed conversational dialogue.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/RojlvMxYbtU94goTCgIP/X2IeMLGx2hC5kvLRtGeJ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=RojlvMxYbtU94goTCgIP",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "QpQ3ApUOdmaUcNblVLGC",
+        "name": "NPC kk — Aigerim - Cheerful, Direct Ad",
+        "gender": "female",
+        "languageLabel": "kk",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The cheerful, direct ad delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Aigerim's bright mid timbre carries a southern Turkistan color, moving briskly through ad copy with cheerful, direct, highly expressive delivery. Confident and lively, well suited to commercial reads that want energy up front.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/QpQ3ApUOdmaUcNblVLGC/bC7HDIMHiOES9uoKBSsA.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=QpQ3ApUOdmaUcNblVLGC",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2035,6 +3487,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "H9ihk5yaEtJLXjhBgRaF",
+        "name": "Jay Lee - Calm and Steady",
+        "gender": "male",
+        "languageLabel": "ko",
+        "accent": "seoul",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm and steady delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm and clear Korean male voice with a friendly and natural tone. Specially optimized for documentary, narration, tutorials, and educational content. Best used with Multilingual v2. For accurate pronunciation of years and numbers, please type them out phonetically in Korean.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/04ea7bc4f05e4f2088eb3ba50ee0c324/voices/H9ihk5yaEtJLXjhBgRaF/qaEvDifORiy4QvsKWSZt.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=H9ihk5yaEtJLXjhBgRaF",
+        "publicOwnerId": "1e308adac1b47a8dc4723e90545a6d7e2566a550a17beaaf3aee8e2b70299d97"
+      },
+      "mei": {
+        "voiceId": "UmVsCJauYwXB4cGF0OlH",
+        "name": "Soo - Warm Korean Teacher",
+        "gender": "female",
+        "languageLabel": "ko",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm korean teacher delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Soo is a warm, clear native Korean educator with careful articulation and a calm, natural pace. Ideal for Korean-language learning, e-learning courses, audiobooks, tutorials, and conversational narration. Key qualities: friendly, trustworthy, precise, and easy to follow.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ce3011e3321f4d449f625b35efae87bc/voices/UmVsCJauYwXB4cGF0OlH/jos0DP6Syr1JQJvMjcrC.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=UmVsCJauYwXB4cGF0OlH",
+        "publicOwnerId": "c44cf3191e334a70b44e7679e52fe845416344496d9db44acf78abe82a6999ec"
       }
     },
     {
@@ -2092,6 +3582,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "1qGK8vEXT1ZbVsMVwOOW",
+        "name": "Marat - Deep, Proud, Measured",
+        "gender": "male",
+        "languageLabel": "ky",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The deep, proud, measured delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A deep, resonant register anchors Marat's storytelling, each line landing with the unhurried gravity of someone who has spent years reading history aloud. He favors long pauses over speed, letting pride and seriousness settle before moving to the next thought. Reach for him when a Kirghiz narration needs weight rather than warmth: documentaries, historical accounts, formal recaps.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/1qGK8vEXT1ZbVsMVwOOW/2fx2DlrA4oLB3svUIEgv.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=1qGK8vEXT1ZbVsMVwOOW",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "6Svfc2gy357wUonak6d2",
+        "name": "Gulzat - Calm, Soft, Patient",
+        "gender": "female",
+        "languageLabel": "ky",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, soft, patient delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Built for reassurance more than energy, Gulzat speaks slowly and clearly, with a soft Issyk-Kul-tinged timbre that keeps things calm even when the caller isn't. A dependable choice for Kirghiz customer support and help-desk scripts.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/6Svfc2gy357wUonak6d2/c3VXGnwnTholmfx7SnNC.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=6Svfc2gy357wUonak6d2",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2150,6 +3684,48 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "zwbf3iHXH6YGoTCPStfx",
+        "name": "Dayo - Clear, Direct and Natural",
+        "gender": "male",
+        "languageLabel": "en",
+        "accent": "nigerian",
+        "ageLabel": "young",
+        "match": "multilingual-fallback",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "Multilingual fallback in Kwame’s English voice.",
+        "providerDescription": "Male Nigerian voice. Perfect for YouTube videos, training coaching and courses.",
+        "notes": [
+          "No unused native voice of this gender in the library; multilingual fallback using this partner’s English voice. Needs a listening check for pronunciation."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1d3a94dab7564275860e8dcc4393bfde/voices/zwbf3iHXH6YGoTCPStfx/MB97M99stOCGetRcKjyJ.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=zwbf3iHXH6YGoTCPStfx",
+        "publicOwnerId": "548273ad0daedf50375b493ace5b35203fa609d273034d3c2782b080802fd14c"
+      },
+      "mei": {
+        "voiceId": "4nP0MRk3S5Qj1fGfXf51",
+        "name": "NPC lv — Ilze - Calm, Warm, Unhurried",
+        "gender": "female",
+        "languageLabel": "lv",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, warm, unhurried delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Ilze narrates the way a favourite teacher explains things twice: unhurried, warm, never rushed. Her Riga-standard Latvian sits in a mellow low register with long pauses between thoughts -- built for narration and long-form audiobook work rather than anything punchy.",
+        "notes": [
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/4nP0MRk3S5Qj1fGfXf51/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiMWMzMTdlMmYtMDUwOC00MTkyLWE1MzYtMzMzZjk3M2VkODhmLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=4nP0MRk3S5Qj1fGfXf51",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2210,6 +3786,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "YzAEMXSQhHOIgNWD4uE9",
+        "name": "NPC lt — Vytautas - Calm, Deep, Proud",
+        "gender": "male",
+        "languageLabel": "lt",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, deep, proud delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Slow and deep, this Vilnius-standard Lithuanian delivery carries calm pride through long pauses between thoughts. Character: measured, warm, and unmistakably narrator-toned.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/YzAEMXSQhHOIgNWD4uE9/0LTU132njggUpz1uhNV7.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=YzAEMXSQhHOIgNWD4uE9",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "neOkJCtTBu6UseSuVtwd",
+        "name": "NPC lt — Egle - Kind, Warm, Patient",
+        "gender": "female",
+        "languageLabel": "lt",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind, warm, patient delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm and mid-register, this Lithuanian voice slows down at the end of each sentence, kind and patient in tone. A comfortable fit for conversational and companion contexts that call for gentleness.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/neOkJCtTBu6UseSuVtwd/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoibE5GNTlCZzVwVENPWHNaT3g0enAubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=neOkJCtTBu6UseSuVtwd",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2270,6 +3890,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "GPpMFajrelXuWKOqgAui",
+        "name": "Goran - Friendly, Husky Friend",
+        "gender": "male",
+        "languageLabel": "mk",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The friendly, husky friend delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Easygoing and husky, this Skopje Macedonian voice talks like a friend — relaxed pace, amused warmth running through the delivery. Well matched to Macedonian conversational and companion contexts.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/GPpMFajrelXuWKOqgAui/aVV8JIKfLaJTUpDAp7mV.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=GPpMFajrelXuWKOqgAui",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "2HRYbB9CYKUJuniMk17p",
+        "name": "NPC mk — Verica - Patient, Kind Friend",
+        "gender": "female",
+        "languageLabel": "mk",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The patient, kind friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm and round, this Skopje-standard Macedonian voice carries real patience, steady pacing and gentle emphasis that reads as genuinely kind. A comfortable choice for conversational use cases built around care and support.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/2HRYbB9CYKUJuniMk17p/vV0RrosRgeDc4Fj4VeRX.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=2HRYbB9CYKUJuniMk17p",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2324,6 +3988,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "iJs9wGWMjGX3z6CyKDde",
+        "name": "Zain - Clear E-Learning Narrator",
+        "gender": "male",
+        "languageLabel": "ms",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The clear e-learning narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Measured, patient, and easy to follow — Zain paces a lecture so a listener never has to replay a sentence to catch what he meant. His engaging, conversational tone makes dense academic material sound approachable, without slipping into a flat, textbook-reading register. Built for university lectures, academic courses, and e-learning content. Ideal for institutions that want tutorials to actually hold a student's attention.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/iJs9wGWMjGX3z6CyKDde/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoieDBhMnBjQjRaVW5IU2FidEdaNTkubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=iJs9wGWMjGX3z6CyKDde",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "vRaj2Gd0mefB1EU96ua2",
+        "name": "Syalala - Warm, Friendly and Engaging",
+        "gender": "female",
+        "languageLabel": "ms",
+        "accent": "malaysian",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, friendly and engaging delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A female voice in her mid-30s with a natural Malaysian Malay accent. Warm, clear, and engaging, suitable for narration, educational content, and conversational dialogue. Her tone carries a friendly yet professional quality, making it ideal for storytelling, documentaries, and voiceover projects that require authenticity and approachability.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/vRaj2Gd0mefB1EU96ua2/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJmZDljYTRmYTQ1Yjc0NTYzYWI1ZTA4Mzk2MTNhZGYwNSIsImZpbGVuYW1lIjoiMWY5ZjQ5MGYtODE0Ni00OTk0LTljNDMtNmNlY2VjZDU0NzFiLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=vRaj2Gd0mefB1EU96ua2",
+        "publicOwnerId": "85774eace53f46e0512daebfd6c1352553a948c780c739052af695c2dfa43f02"
       }
     },
     {
@@ -2374,6 +4076,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "X4vyuTrbgOdUvArVLv7j",
+        "name": "Vijayesh - Pleasant Malayalam Companion",
+        "gender": "male",
+        "languageLabel": "ml",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The pleasant malayalam companion delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Easygoing, natural & genuinely reassuring — Vijayesh brings a Malayalam conversational energy that makes every interaction feel relaxed and unforced. His clear, unhurried delivery works across companion apps, casual AI chat, and everyday dialogue where a familiar, approachable presence builds instant comfort and trust. Perfect for Malayalam conversational AI platforms, companion apps, and consumer brands across Kerala and the global Malayali diaspora.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/X4vyuTrbgOdUvArVLv7j/6kUEvJE2n0wp7jdEYDL0.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=X4vyuTrbgOdUvArVLv7j",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "AA6iXlJYcLQWoTQnJw8E",
+        "name": "Sunaina - Clear Malayalam Narrator",
+        "gender": "female",
+        "languageLabel": "ml",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear malayalam narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Articulate, polished and professionally steady, Sunaina delivers Malayalam narration with the precision Kerala audiences expect. Her well-paced tone works across corporate explainers, educational content, audiobooks, and informational narration where every word needs to land cleanly. Perfect for content creators, e-learning platforms, and businesses building professional Malayalam narration for Kerala and the global Malayali diaspora.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/AA6iXlJYcLQWoTQnJw8E/WctD6eoqAyvBCjWJo0Ix.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=AA6iXlJYcLQWoTQnJw8E",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -2431,6 +4171,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "X4ejJtkOgKgWYBYZjM2w",
+        "name": "Karm - Upbeat, Confident Pitch",
+        "gender": "male",
+        "languageLabel": "mt",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The upbeat, confident pitch delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Karm brings a bright, confident Gozitan variety of Maltese to advertisement reads, brisk pace and clear phrasing giving the pitch an upbeat, very expressive edge. A strong choice for Maltese commercial spots.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/X4ejJtkOgKgWYBYZjM2w/O9z3B6hmpX3PnJgrJuZo.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=X4ejJtkOgKgWYBYZjM2w",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "FLoBbl07mqyb8txXmOn9",
+        "name": "Marija - Cheerful, Warm Pitch",
+        "gender": "female",
+        "languageLabel": "mt",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The cheerful, warm pitch delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm and cheerful, this Żebbuġ-area Maltese pitch moves at a fast, lively pace that keeps the energy up throughout. Sounds best for Maltese advertisements aiming for friendly, upbeat persuasion.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/FLoBbl07mqyb8txXmOn9/UGZS55PlULGBDWKCUXGk.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=FLoBbl07mqyb8txXmOn9",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2489,6 +4273,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "0qyNNTtrOoyajIDP4kcr",
+        "name": "Manaia - Warm, Upbeat Pitch",
+        "gender": "male",
+        "languageLabel": "mi",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, upbeat pitch delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm, upbeat energy fills this Maori pitch, a bright, mellow voice shaped by Ngapuhi phrasing, steady pace and even emphasis ending on a warm note. Sounds best for Maori advertisement work with a friendly, welcoming tone.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/0qyNNTtrOoyajIDP4kcr/23SPVg2VBqWYIcWUe3fe.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=0qyNNTtrOoyajIDP4kcr",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "M4yldeC621XQOEWT5xqP",
+        "name": "Waimarie - Gentle, Patient Friend",
+        "gender": "female",
+        "languageLabel": "mi",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The gentle, patient friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A Tainui cadence gives this Maori voice a gentle, sing-song lift, warm and round, relaxed pacing with soft endings throughout. Good audio quality suits Maori conversational and companion use cases built on patience.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/M4yldeC621XQOEWT5xqP/k0tNMMos3S931EgWnqGy.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=M4yldeC621XQOEWT5xqP",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2543,6 +4371,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "1CmdrvPq0GFHIvBb1M4Z",
+        "name": "Raghav - Clear & Warm Marathi Narrator",
+        "gender": "male",
+        "languageLabel": "mr",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear & warm marathi narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Engaging, expressive & naturally authentic — Raghav brings a Marathi storytelling delivery that makes every narrative feel genuine and effortless. His well-paced, relatable tone works across audiobooks, folk tales, cultural podcasts, and storytelling where a familiar Marathi presence keeps audiences absorbed from first word to last. Perfect for Marathi content creators, publishers, and audio platforms across Maharashtra, Pune, and Mumbai.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/1CmdrvPq0GFHIvBb1M4Z/CtEFxb0zOQLHx0ViJJ7B.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=1CmdrvPq0GFHIvBb1M4Z",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "yNLymtQiql9Dxxobo0Cl",
+        "name": "Saanu - Warm Soothing Marathi Care",
+        "gender": "female",
+        "languageLabel": "mr",
+        "accent": null,
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm soothing marathi care delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Gentle, calm and genuinely reassuring — Saanu brings a soft female Marathi presence that makes every customer interaction feel unhurried and cared for. Her patient, clear delivery handles queries, complaints, order updates, and support flows with the kind of tender warmth that keeps Marathi-speaking customers comfortable and satisfied. Perfect for businesses building female Marathi customer care bots and conversational AI agents.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/yNLymtQiql9Dxxobo0Cl/zpfeYSQkdRc7Zb8nNBbm.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=yNLymtQiql9Dxxobo0Cl",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -2600,6 +4466,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "HkUjoHqRfXAnlMzQfp8a",
+        "name": "NPC ne — Bishnu - Proud Nepali Narrator",
+        "gender": "male",
+        "languageLabel": "ne",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The proud nepali narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Low and resonant, this voice unfolds slowly, with long pauses and evenly measured breath giving weight to each clause. Pride sits quietly underneath the calm surface, well suited to long-form storytelling or reflective narration.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/HkUjoHqRfXAnlMzQfp8a/9CCxbgjUPxe7lRGH7d20.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=HkUjoHqRfXAnlMzQfp8a",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "5Q1qGN5LYPBQ1b0SIFdA",
+        "name": "NPC ne — Kamala - Firm Nepali Friend",
+        "gender": "female",
+        "languageLabel": "ne",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The firm nepali friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Level-toned and clear, Kamala closes her sentences with soft stops that keep the mellow voice grounded. Firmness and patience sit side by side here, making her a believable choice for supportive dialogue or advice-driven conversational content.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/5Q1qGN5LYPBQ1b0SIFdA/zQKqQL7RrhS0zOTXi2zu.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=5Q1qGN5LYPBQ1b0SIFdA",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2650,6 +4560,44 @@
         "noticePeriodDays": 4015,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "s2xtA7B2CTXPPlJzch1v",
+        "name": "Dennis - Clear and Pleasant",
+        "gender": "male",
+        "languageLabel": "no",
+        "accent": "oslo",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear and pleasant delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "This voice is perfect for informational, educational, and conversational voiceover - with good dynamic and tone for different use cases.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/15af1c0d0dcd479cb8376a767ab07b4c/voices/s2xtA7B2CTXPPlJzch1v/YB9DE4weRg6BTei8hVZ5.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=s2xtA7B2CTXPPlJzch1v",
+        "publicOwnerId": "3ecf7d5a3435a45c391d35aa79fff38fbf397fa8b2d18e62f33c34707f552fba"
+      },
+      "mei": {
+        "voiceId": "pbb4nvdETnNfQljwVeaL",
+        "name": "Ingrid - Clear and expressive",
+        "gender": "female",
+        "languageLabel": "no",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The clear and expressive delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A smooth, clear voice of a female, ideal for natural and engaging narration.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/pbb4nvdETnNfQljwVeaL/fe9bb087-7a69-4731-bcd7-4afcd499939e.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=pbb4nvdETnNfQljwVeaL",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2700,6 +4648,50 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "vlM1zi2SfTmdlEJg5RPm",
+        "name": "Debasish - Warm Puri Narrator",
+        "gender": "male",
+        "languageLabel": "or",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm puri narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Clear emphasis on names and key terms lets a Puri cadence shape the rhythm of this measured, mellow storytelling. Warm and patient throughout, the voice is built for narration that needs to feel trustworthy and unhurried.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/vlM1zi2SfTmdlEJg5RPm/JCKQlPvoE8KNsIT7gmWG.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=vlM1zi2SfTmdlEJg5RPm",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "tB49Hs4WRYjj1hLb5T9E",
+        "name": "Rashmita - Kind Ganjam Friend",
+        "gender": "female",
+        "languageLabel": "or",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The kind ganjam friend delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "There's a gentle, unforced kindness in Rashmita's relaxed Ganjam-accented delivery. Warm and round with soft emphasis throughout, she reads like someone genuinely checking in on you — a natural fit for supportive conversational scripts.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/tB49Hs4WRYjj1hLb5T9E/lVk54m9wnmkJmH43bwy9.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=tB49Hs4WRYjj1hLb5T9E",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2760,6 +4752,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "VKDkQOjcRZb7aNtJGaWt",
+        "name": "NPC fa — Kourosh - Confident Mashhadi Ad",
+        "gender": "male",
+        "languageLabel": "fa",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The confident mashhadi ad delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A deep, round voice carries a Mashhadi color here, landing firm emphasis at a measured, unhurried pace. Confidence reads as reassurance rather than pressure — a good match for financial services or premium brand campaigns.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/VKDkQOjcRZb7aNtJGaWt/hVkz4LLiwmOpCOVsqEc8.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=VKDkQOjcRZb7aNtJGaWt",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "ndcUYGFbbd96WXiZVVaQ",
+        "name": "NPC fa — Roya - Warm Tehrani Narrator",
+        "gender": "female",
+        "languageLabel": "fa",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm tehrani narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Roya's Tehran-standard voice settles into an even, measured delivery that never wavers in pace. Warmth and patience define the read, making her well suited to audiobooks, explainer narration, or long-form educational content.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/ndcUYGFbbd96WXiZVVaQ/ElK0QrOkCqDrbHNiCdVa.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=ndcUYGFbbd96WXiZVVaQ",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2814,6 +4850,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "m9yKYCSv6TqWbcQHMCxR",
+        "name": "Ulubieniec Jegomości 3.0 - Warm Educator",
+        "gender": "male",
+        "languageLabel": "pl",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm educator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, articulate male voice with perfect diction and calm patience. Ideal for explaining complex topics in a clear, friendly and trustworthy way - from educational content and tutorials to thoughtful narration and guided experiences.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/m9yKYCSv6TqWbcQHMCxR/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZTdkYTc3YmMyMWU0Mzc4YTljMGVlNWVjM2NmN2NlMSIsImZpbGVuYW1lIjoiSDAyOWFnVFk1a0JMbnloQW9Ld28ubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=m9yKYCSv6TqWbcQHMCxR",
+        "publicOwnerId": "a043df56b11c6b0a1fb2683f1f9c8f37e83ef156a808a1e1fb83a88f8a02b8ad"
+      },
+      "mei": {
+        "voiceId": "F9eb9uZYeJuHuO7Uvs1R",
+        "name": "Arleta - Calm Instructor & Clear Voice",
+        "gender": "female",
+        "languageLabel": "pl",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm instructor & clear voice delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A calm, natural voice designed for tutorials, courses and step-by-step explanations. Works especially well in long-form content where clarity, steady pacing and trust matter.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/988aa170afb4444c84fa5520936e8815/voices/F9eb9uZYeJuHuO7Uvs1R/3f1UjpK9ecS5XwNtpRGs.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=F9eb9uZYeJuHuO7Uvs1R",
+        "publicOwnerId": "61b59449a05322c2dad4832727ce9a75c61768d6c234b06cd2c8b433e43f95b6"
       }
     },
     {
@@ -2868,6 +4942,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "ulzsiMeCbfKyTPCNhCD5",
+        "name": "Nassif - Podcast, Talk Show & Interview",
+        "gender": "male",
+        "languageLabel": "pt",
+        "accent": "brazilian",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The podcast, talk show & interview delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A natural, mellow male voice in his late 30s - warm and confident, with a low pitch that never turns heavy, and the relaxed flow of a podcast host talking to a friend. Recorded by a professional broadcaster and podcaster, and verified multilingual in 15 languages. Perfect for podcasts and talk shows, interviews, vlogs, reviews and commentary, conversational AI, explainers, e-learning and social media - and for long-form reading: book chapters, novels and literature. A natural announcer and presenter, with clear articulation, relaxed pacing and a trustworthy tone that keeps listeners to the end.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/ulzsiMeCbfKyTPCNhCD5/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI3MGFiNjgxNmZkZDE0N2MzYTE3NWNlZmYwZDQ3MmQ2NiIsImZpbGVuYW1lIjoicXdXdWtQSEF1UHg3UkdWc0xxREEubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=ulzsiMeCbfKyTPCNhCD5",
+        "publicOwnerId": "1fd97108cca8352e0537eee0346b932f1dba4d6f3979f1900e6b5826eb351c4d"
+      },
+      "mei": {
+        "voiceId": "fhtZMBwha5du5OxuvexO",
+        "name": "Malu - Casual Explainer",
+        "gender": "female",
+        "languageLabel": "pt",
+        "accent": "brazilian",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The casual explainer delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Tutorials, lessons, recipes — you name it! A clear voice made to explain things in a simple, casual way. Natural and easy to follow, it is perfect for step-by-step guides, educational content, cooking videos, and social media. If you need a friendly and engaging voice that doesn't sound formal, Malu is for you.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/da057dc7a61341ac9b96edd1f3d92bef/voices/fhtZMBwha5du5OxuvexO/0Nb5DNek7ir0SEKh6NcU.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=fhtZMBwha5du5OxuvexO",
+        "publicOwnerId": "30aedf93b0a7df2ada0f523496ca9fe63f94737575ba68485eed3792db2e73af"
       }
     },
     {
@@ -2922,6 +5034,47 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "HkrBPy9A2svfb9tZ9YaL",
+        "name": "Sufi - Wise Punjabi Conversation ",
+        "gender": "male",
+        "languageLabel": "pa",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The wise punjabi conversation  delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Casual, warm, and naturally full of wisdom — Sufi sounds like the Punjabi elder you always wanted in your corner. His easy conversational tone makes advice feel like friendly chat rather than a lecture, keeping every interaction grounded and genuinely relatable. Built for AI companion experiences, conversational voice agents, and regional wisdom-led interactions. Ideal for companion apps, mental wellness platforms, and regional AI products targeting Punjabi and broader North Indian audiences.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/HkrBPy9A2svfb9tZ9YaL/EYpJhSMqis0Ge3pTgTtr.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=HkrBPy9A2svfb9tZ9YaL",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "9UNN0bXPo2Z6G30E64lz",
+        "name": "Simran - Proud Majhi Narrator",
+        "gender": "female",
+        "languageLabel": "pa",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The proud majhi narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Rhythmic emphasis runs through Simran's measured narration like a heartbeat, the Majhi cadence from Amritsar giving each phrase a distinct lift. Warmth and visible pride color a very expressive delivery, making her well suited to cultural storytelling and heritage documentary work.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/9UNN0bXPo2Z6G30E64lz/YTMgddplNSgvhr5p3T08.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=9UNN0bXPo2Z6G30E64lz",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -2976,6 +5129,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "HPdbgrGubKiBta6Pq21b",
+        "name": "Claudiu - Professional Romanian",
+        "gender": "male",
+        "languageLabel": "ro",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The professional romanian delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A calm, confident, and professional male voice with a neutral Romanian accent. Perfect for educational content, technical tutorials, and corporate narrations. The tone is engaging, articulate, and trustworthy, making complex topics easy to follow. Ideal for long-form content, e-learning, or professional advertisements.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/07be35ba16a7430e8f3ee1aff4d2b570/voices/HPdbgrGubKiBta6Pq21b/rpBixTq8Rf2Q2SYwdHZS.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=HPdbgrGubKiBta6Pq21b",
+        "publicOwnerId": "3716f547314d1efbcd496ed501cd4d5014687d7b904fde2892e9116812e4839a"
+      },
+      "mei": {
+        "voiceId": "PvygL1nEyjP7sCIim0uS",
+        "name": "Luisa",
+        "gender": "female",
+        "languageLabel": "ro",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Calm, clear, and thoughtful voice. Suitable for narration, audiobooks, philosophy, education, and long-form spoken content. Natural pacing, strong clarity, and a composed, confident tone.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/PvygL1nEyjP7sCIim0uS/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZWQ1OTA5Zjk0MDU0ODhiYTc2MDkwNjA4YTVkZDUxYiIsImZpbGVuYW1lIjoiMmUwNDUwZjctMDlmZS00OWZjLTk0ZjQtOWI3ODUyNDU1NTQxLm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=PvygL1nEyjP7sCIim0uS",
+        "publicOwnerId": "0d6e6a4878680f37bbddc8247ac302120120bc64bd69d717c2d41b0d8cc39eff"
       }
     },
     {
@@ -3030,6 +5221,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "C1Jbh3J5Tp1r1TyKaVSY",
+        "name": "Egor T - Calm, Natural & Clear",
+        "gender": "male",
+        "languageLabel": "ru",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm, natural & clear delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A steady, grounded AI voice crafted for informative narration, explainer videos, and slow-paced storytelling. Egor’s tone is composed, measured, and trustworthy — ideal for educational videos, museum guides, reflective documentaries, and corporate presentations. His calm cadence and neutral European accent make him perfect for global platforms.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/C1Jbh3J5Tp1r1TyKaVSY/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiN2FnMnA3bkl0MGhORHdyTFVJYVAubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=C1Jbh3J5Tp1r1TyKaVSY",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "t6lBrEl93uCiLR1Lgm8v",
+        "name": "Alisa - Natural Russian Female",
+        "gender": "female",
+        "languageLabel": "ru",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The natural russian female delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Natural, warm, and pleasant young female Russian voice, aged 23-30, with clear, neutral pronunciation and no accent. The voice has a friendly, smooth and expressive tone with excellent clarity and natural intonation. Perfect for audiobooks, videos, podcasts, educational content, narration, storytelling, corporate voice-overs, and relaxation audio. Sounds professional yet approachable, making it ideal for long-form listening and engaging content.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/811005470c4b46c4967e74d79d84d2de/voices/t6lBrEl93uCiLR1Lgm8v/LPeieDGooOBcT5rM9xXj.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=t6lBrEl93uCiLR1Lgm8v",
+        "publicOwnerId": "de5ff50f691a85a040ab22dcce9e4ddc93e1089c62f3b45bdefdcad85dc59d8b"
       }
     },
     {
@@ -3088,6 +5317,47 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "j96cp162VcYdsYfSp1nc",
+        "name": "Ivan - Deep Serbian & Croatian (Balkan)",
+        "gender": "male",
+        "languageLabel": "sr",
+        "accent": null,
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The deep serbian & croatian (balkan) delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Professional Serbian male voice with a deep, authoritative, and calm tone. Designed for Psychology and Motivational Videos, Social Media Educational Content, Documentaries, Stories and More.. Perfect for Balkan languages like Serbian, Croatian, Bosnian, and Montenegrin.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/7ff1b234eed243f3903035c82ee087af/voices/j96cp162VcYdsYfSp1nc/rtADjcCgXD1CAWcYgdB0.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=j96cp162VcYdsYfSp1nc",
+        "publicOwnerId": "4f86bdc0aaf176d5a6253d482897043f916572534274c1938dabbe01c8f5c6b5"
+      },
+      "mei": {
+        "voiceId": "g8TYYIFt2Qo27yGQmTYq",
+        "name": "NPC sr — Jovana - Warm Serbian Narrator",
+        "gender": "female",
+        "languageLabel": "sr",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm serbian narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Jovana narrates the way a favorite teacher reads aloud: warm, measured, never showy. The low timbre and Belgrade-standard cadence give her calm, serious delivery a steady authority that fits documentary narration and audiobooks equally well. Recorded in clean, professional-grade audio.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/g8TYYIFt2Qo27yGQmTYq/QFilWgah5RMdNyosnBaW.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=g8TYYIFt2Qo27yGQmTYq",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -3138,6 +5408,44 @@
         "noticePeriodDays": 30,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "Gbg7vqyL0sYjsoEqVw0j",
+        "name": "Andrej - Mild & Calm",
+        "gender": "male",
+        "languageLabel": "sk",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The mild & calm delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A warm, airy, natural male voice with a calm and confident tone. Clear articulation with a subtle emotional depth, suitable for storytelling, commercials, narration, and conversational content. The voice carries a friendly yet trustworthy presence, with smooth pacing and a balanced energy that adapts well to both informative and expressive delivery. Ideal for audiobooks, explainer videos, ads, and AI narration.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/085c4411b28647a3b881ae5f6d06caa0/voices/Gbg7vqyL0sYjsoEqVw0j/5802a25f-c824-4c21-ab22-060603a971e0.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=Gbg7vqyL0sYjsoEqVw0j",
+        "publicOwnerId": "d7ab56ad2965fec46905ce6a620fbffb949c51bac908728d5933efab83ee01fc"
+      },
+      "mei": {
+        "voiceId": "GsFe19Xn8iGqNR2RxINi",
+        "name": "NPC sk — Jolana",
+        "gender": "female",
+        "languageLabel": "sk",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Calm & Pleasant.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/4d7acecd3b7445a6beba25a5513f5945/voices/GsFe19Xn8iGqNR2RxINi/RF4rSroM4UQgOIBlPP5A.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=GsFe19Xn8iGqNR2RxINi",
+        "publicOwnerId": "1426811503379b0a978c299fd1247eb39c4a9b2a273c368bbd53e7a9994b4c1a"
       }
     },
     {
@@ -3195,6 +5503,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "SmCUS1ekZnVjC5lqnRQG",
+        "name": "NPC sl — Luka - Warm, Amused Creator",
+        "gender": "male",
+        "languageLabel": "sl",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, amused creator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Luka's deep, husky voice carries the distinct color of Štajerska, relaxed and easygoing with warm amusement running underneath. His unhurried rhythm suits casual social content and creator voiceover that wants personality without frantic energy.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/SmCUS1ekZnVjC5lqnRQG/8S6OQkbxl1y8RErGAwX4.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=SmCUS1ekZnVjC5lqnRQG",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "XGfMwCpKmpWdTb1sermJ",
+        "name": "NPC sl — Ana - Calm, Warm Narrator",
+        "gender": "female",
+        "languageLabel": "sl",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The calm, warm narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A round, warm timbre carries Ana's narration at a measured pace, each line settling into a gentle ending. Calm and unshowy, this voice fits audiobooks and documentary narration where the goal is to soothe rather than dazzle.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/XGfMwCpKmpWdTb1sermJ/VNaKGy7hqLkWhv4Hwxxw.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=XGfMwCpKmpWdTb1sermJ",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -3249,6 +5601,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "kw0sLdKrFNCRhdRYGrhU",
+        "name": "Pedro - Spanish Clear Narrator",
+        "gender": "male",
+        "languageLabel": "es",
+        "accent": "peninsular",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The spanish clear narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Professional neutral Spanish voice with a clear, calm, and articulate delivery. Ideal for educational content, e-learning, YouTube explainers, corporate narration, and informative videos.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/kw0sLdKrFNCRhdRYGrhU/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI1M2YzZGMzMmJmNzg0MzJhOTgzOWNhZDIwYThmYzhmNiIsImZpbGVuYW1lIjoiVGV2NGlGN3dmb1JIZ3JyOWJldzkubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=kw0sLdKrFNCRhdRYGrhU",
+        "publicOwnerId": "dce09d1207cc22d98f3d733ae29b53e50dcba22199f6afb27aba8c3733bcf810"
+      },
+      "mei": {
+        "voiceId": "zl1Ut8dvwcVSuQSB9XkG",
+        "name": "Ninoska - Spanish Teacher",
+        "gender": "female",
+        "languageLabel": "es",
+        "accent": "latin american",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The spanish teacher delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A warm and inviting female voice in neutral Spanish. Perfect for narrations, formal presentations, e-learning courses, and explainer videos. Clear, professional, and engaging.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ebe3ed514904452baea8405cb4bd3acf/voices/zl1Ut8dvwcVSuQSB9XkG/PJQKeIBJwA6FkeqPWrMk.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=zl1Ut8dvwcVSuQSB9XkG",
+        "publicOwnerId": "c110f92ec0f150b73a3b935e78375039a60ee3f87b6b5e3462f4476dd434c8c8"
       }
     },
     {
@@ -3306,6 +5696,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "fcJJxRPg9WEEhH0Uqnwn",
+        "name": "NPC sw — Kelvin - Upbeat Ad",
+        "gender": "male",
+        "languageLabel": "sw",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The upbeat ad delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Kelvin keeps his ad reads short, bright, and upbeat, with standard Nairobi cadence and a brisk, direct delivery. No wasted syllables here — a good fit for concise commercial spots and product promos that need to move quickly.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/fcJJxRPg9WEEhH0Uqnwn/xYiU4C9shxQ53fVVHaCG.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=fcJJxRPg9WEEhH0Uqnwn",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "yu6Cy4KnJhEbUubM2XJl",
+        "name": "Wanjiru - Confident Ad",
+        "gender": "female",
+        "languageLabel": "sw",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The confident ad delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Wanjiru's bright, smooth voice moves briskly through short, confident sentences, standard Nairobi cadence giving the read a polished, upbeat edge. Very expressive delivery works well for commercial advertising that wants energy with clarity. Good audio quality.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/yu6Cy4KnJhEbUubM2XJl/NcnZWsNMKN8Lp4j5AL06.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=yu6Cy4KnJhEbUubM2XJl",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -3360,6 +5794,44 @@
         "noticePeriodDays": 180,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "CpPiT1LUZxBP5fFkxF9r",
+        "name": "Christer",
+        "gender": "male",
+        "languageLabel": "sv",
+        "accent": "stockholm",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "A clear, engaging voice ideal for book reading and educational content, delivering information with warmth, clarity, and a natural storytelling style.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/CpPiT1LUZxBP5fFkxF9r/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiI2MDljM2E1YWNmNGU0MjBlOTc4Y2U1NWY5NTQ4Y2ZkMiIsImZpbGVuYW1lIjoiMTkzMzE5ODEtNGY5My00NDc2LTgxNTMtZThlYjdmOWU1NjE0Lm1wMyIsInRpbWVzdGFtcCI6MTc5MjA4NzIwMDAwMDAwMH0%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=CpPiT1LUZxBP5fFkxF9r",
+        "publicOwnerId": "744debe76a4db951dca5c76da1fc89b2678b2cef2fc44b004101cd8228f342c9"
+      },
+      "mei": {
+        "voiceId": "kPdGSxhZAqy4bmPAf9iJ",
+        "name": "NPC sv — Evelina - Calm, Clear and Engaging",
+        "gender": "female",
+        "languageLabel": "sv",
+        "accent": "stockholm",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The calm, clear and engaging delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Evelina’s voice is calm, clear, and emotionally engaging — combining a natural warmth with genuine empathy. Her expressive yet professional tone makes her perfect for customer service, onboarding, or conversational AI that needs a human touch. With balanced pacing and soft confidence, she brings sincerity and ease to every interaction. Powered by Voxifyer.com",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/7dc5c03caf8f40daa575fa9eacbf3de8/voices/kPdGSxhZAqy4bmPAf9iJ/A2ZEj9HQDCioeYPZqwL4.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=kPdGSxhZAqy4bmPAf9iJ",
+        "publicOwnerId": "17f3d10a30c42fdac07a6f26feda26b7892eea50287931c0727fcf66ceb0fd46"
       }
     },
     {
@@ -3410,6 +5882,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "RvklnWaHd4EnW36WPC5c",
+        "name": "Bharadwaj - Friendly and Warm ",
+        "gender": "male",
+        "languageLabel": "ta",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The friendly and warm  delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Bharadwaj offers a warm, grounded, and authentically conversational Tamil tone, blending traditional politeness with a modern, relatable flow. His natural rhythm and \"local\" expertise make him the perfect fit for tech unboxings, app walkthroughs, and gadget reviews where practical advice is key. Whether narrating cultural stories, travel vlogs, or food blogging, his voice carries a rhythmic inflection that builds instant trust. From financial planning and educational tutorials to movie critiques.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/RvklnWaHd4EnW36WPC5c/FWptEJMrXijEBYj4e90p.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=RvklnWaHd4EnW36WPC5c",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "ql6Gx6v8qU9oflZLdTsZ",
+        "name": "Adrishta - Hopeful, Reflective and Calm",
+        "gender": "female",
+        "languageLabel": "ta",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The hopeful, reflective and calm delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "A rich voice crafted for explainers, storytelling, and immersive audiobooks. Adrishta’s warm, authentic tone draws listeners in with ease, making her perfect for brand narratives, educational content, and podcast-style storytelling. Her natural flow and emotional depth enhance formats across YouTube, Audible, Spotify, and e-learning platforms. Designed to hold attention and spark connection, Adrishta brings a sense of comfort and familiarity to every word.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/ql6Gx6v8qU9oflZLdTsZ/wyGluqEWQYz80jRhve0e.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=ql6Gx6v8qU9oflZLdTsZ",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -3460,6 +5970,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "g2tKE8zoQNVS5flc4PQY",
+        "name": "Sai Datta - Warm-Toned Professor",
+        "gender": "male",
+        "languageLabel": "te",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm-toned professor delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Calm, clear, and engaging — Sai Datta makes even dense topics feel easy to follow. His steady pacing and patient delivery keep learners locked in from the first concept to the last, while support calls feel handled with real care. Built for e-learning modules, tutorials, corporate training, and customer service. Ideal for Telugu education and support platforms.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/ed9b05e6324c457685490352e9a1ec90/voices/g2tKE8zoQNVS5flc4PQY/hlwDQHc91Cpg3ZbMbB95.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=g2tKE8zoQNVS5flc4PQY",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
+      },
+      "mei": {
+        "voiceId": "yh3r4dKRD9qGVdBTPArr",
+        "name": "Chandana M - Bright, Clear Tutor",
+        "gender": "female",
+        "languageLabel": "te",
+        "accent": "standard",
+        "ageLabel": "young",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The bright, clear tutor delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm, patient, and genuinely encouraging — Chandana M turns confusing topics into something learners actually enjoy working through. Her steady pacing and confident delivery mean lessons land the first time, without repeated re-explanation. Built for e-learning modules, school lessons, exam prep, and interactive courses. Ideal for Telugu education platforms.",
+        "notes": [],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/yh3r4dKRD9qGVdBTPArr/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiJlZDliMDVlNjMyNGM0NTc2ODU0OTAzNTJlOWExZWM5MCIsImZpbGVuYW1lIjoiTGpuZXJCTndxVlFsZFlTT2FmTDYubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=yh3r4dKRD9qGVdBTPArr",
+        "publicOwnerId": "7398804d9eaf2f463899a907587c33a390591775784f87857b6d0e1e4e3e66f6"
       }
     },
     {
@@ -3520,6 +6068,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "XLXcyPK1jTjw1pYLLcM9",
+        "name": "NPC th — Somchai - Warm Baritone, Serious",
+        "gender": "male",
+        "languageLabel": "th",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm baritone, serious delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "There's an even, unhurried rhythm to Somchai's Thai narration, delivered in a warm baritone that never rushes past a name or a date. He leans serious rather than playful, giving light emphasis exactly where a listener needs it. Works well for history explainers, corporate narration, or documentary-style storytelling in Thai.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/XLXcyPK1jTjw1pYLLcM9/C8YQH9ZwkciuYabRMTwl.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=XLXcyPK1jTjw1pYLLcM9",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "B4NdgwdU97lHqA8Udh2D",
+        "name": "NPC th — Kanya - Warm, Calm Narrator",
+        "gender": "female",
+        "languageLabel": "th",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, calm narrator delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Kanya narrates the way you'd want a favorite aunt to read aloud — slow, soft-spoken, never in a hurry. Her mellow Thai timbre and gentle pauses give audiobooks and documentary voiceover a calm backbone. Character: patient, warm, quietly reassuring.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://api.us.elevenlabs.io/v1/voices/B4NdgwdU97lHqA8Udh2D/previews/audio?payload=eyJ2b2ljZV9zb3VyY2UiOiJjdXN0b20iLCJ3b3Jrc3BhY2VfaWQiOiIxZGEwNmVhNjc5YTU0OTc1YWQ5NmEyMjIxZmU2NTMwZCIsImZpbGVuYW1lIjoiTUhVMUdWOXpRZWFaOGFDa1V1RU8ubXAzIiwidGltZXN0YW1wIjoxNzkyMDg3MjAwMDAwMDAwfQ%3D%3D",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=B4NdgwdU97lHqA8Udh2D",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -3574,6 +6166,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "c9eIhSvMHBxtYhLX4oBt",
+        "name": "Orcun Togan - Engaging and Warm",
+        "gender": "male",
+        "languageLabel": "tr",
+        "accent": "istanbul",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The engaging and warm delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Middle aged - Turkish voice with an Istanbul accent. This broadcast quality audio data was processed from samples with the most accurate intonation and word stress in Turkish. Well suited for corporate and industrial narration, commercials, audiobooks, medical videos, IVR phone systems and on-hold messages, training and tutorial videos, animation and video games, documentary narration, explainer videos, coach-style interactive learning, industrial narration, and all styles of eLearning.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/863ebce641bd426aac82215ac5e18ca6/voices/c9eIhSvMHBxtYhLX4oBt/RdJazbAvgHcoQfk5pFde.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=c9eIhSvMHBxtYhLX4oBt",
+        "publicOwnerId": "48b513da0f990a65929289243a4697ca5f5e673c69d0a7663fb7bec39d75ec3c"
+      },
+      "mei": {
+        "voiceId": "1Iy00CVh3yqYLlZBmEFo",
+        "name": "Amelia - Warm, Friendly and Articulate",
+        "gender": "female",
+        "languageLabel": "tr",
+        "accent": "istanbul",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm, friendly and articulate delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm, friendly, and articulate Turkish voice. Perfect for storytelling, educational videos, and English vocabulary lessons. The tone is clear, confident, and emotionally engaging — designed to help listeners learn and connect effortlessly.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/eaaf68c1a25745daad549d7d2ae871ae/voices/1Iy00CVh3yqYLlZBmEFo/21ad2816-e6a2-4e2c-9a28-b3c6c191f977.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=1Iy00CVh3yqYLlZBmEFo",
+        "publicOwnerId": "8fc757b95c3c614cdfb92b616a398a9f4f449f4fcaf2da2048d175b2535552ce"
       }
     },
     {
@@ -3624,6 +6254,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "Ntd0iVwICtUtA6Fvx27M",
+        "name": "NPC Ukrainian — Evgeniy",
+        "gender": "male",
+        "languageLabel": "uk",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": false,
+        "category": "professional",
+        "v4TurboLanguageVerified": true,
+        "reason": "Fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Warm Male Ukrainian baritone with crystal-clear diction and a gentle Slavic undertone. With years of broadcast and voiceover experience, Evgeniy Shevchenko brings dynamic range and emotive depth to every project. His precise international English accent and natural warmth inspire trust and engagement—ideal for commercials, documentaries, narration, and eLearning.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1afc18e0e03e4ddf95a666b8d12a3053/voices/Ntd0iVwICtUtA6Fvx27M/etVdkbJAlgLzzPLOHWJc.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=Ntd0iVwICtUtA6Fvx27M",
+        "publicOwnerId": "9bc548f7824fc299d93320ebaad6767425ac43b4fd3380eb55a5d676de282884"
+      },
+      "mei": {
+        "voiceId": "yMBZR4SLoc24wOJLWAB2",
+        "name": "Solomiya Vitlitska - Podcast Pro",
+        "gender": "female",
+        "languageLabel": "uk",
+        "accent": "standard",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The podcast pro delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Perfect for podcasts, this Ukrainian female voice is warm, composed, and confident. Ideal for audiobooks, advertising, and educational content, it delivers clarity, depth, and smooth, engaging narration.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/daacdc8e586047ae9a41283f732bb029/voices/yMBZR4SLoc24wOJLWAB2/VFLStdl3CABVf7cQLUBq.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=yMBZR4SLoc24wOJLWAB2",
+        "publicOwnerId": "91b97c421c908600ece61397581a93d0988e831091e187cab0efa3eef07d9562"
       }
     },
     {
@@ -3684,6 +6352,50 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "kGOig3GPePLxobJGHo2M",
+        "name": "Bekzod - Warm, Confident, Deep",
+        "gender": "male",
+        "languageLabel": "uz",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, confident, deep delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Bekzod's deep, round voice carries the standard Tashkent Uzbek accent with real warmth and confidence. He paces his commercial reads deliberately, closing each line with a firm ending that gives the pitch authority. Character: warm, steady, persuasive — suited to advertising and brand voiceover work.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/kGOig3GPePLxobJGHo2M/7edt0jMqsgQU85EAE39T.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=kGOig3GPePLxobJGHo2M",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "6Fkh9WgMXOqBcOWxX91f",
+        "name": "Gulnora - Warm, Calm, Mellow",
+        "gender": "female",
+        "languageLabel": "uz",
+        "accent": "standard",
+        "ageLabel": null,
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm, calm, mellow delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Gulnora's Uzbek narration carries a mellow, round warmth typical of the Bukhara variety, delivered slowly with gentle stress placed just where it's needed. Calm and unhurried, she suits audiobooks, folk storytelling, or any narration that benefits from a soft, grounded presence.",
+        "notes": [
+          "Age not supplied; confirm the sound by listening.",
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/6Fkh9WgMXOqBcOWxX91f/rWm09PAc4W76pZ6O3fCq.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=6Fkh9WgMXOqBcOWxX91f",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     },
     {
@@ -3738,6 +6450,44 @@
         "noticePeriodDays": 730,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "byrMF25Yaim0wRYKttbA",
+        "name": "Thanh Nguyen - Warm Vietnamese Narrator",
+        "gender": "male",
+        "languageLabel": "vi",
+        "accent": "southern",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "professional",
+        "v4TurboLanguageVerified": false,
+        "reason": "The warm vietnamese narrator delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Nguyen is a warm, mature Vietnamese male narrator with a natural Southern Vietnamese accent. His delivery is calm, clear, trustworthy, and conversational, with a steady natural pace. Best suited for narration, business explainers, e-learning, documentaries, product tutorials, soft advertisements, and customer support or IVR. Not intended for character acting, political narration, medical, legal, or financial advice, or identity-verification use.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/26705876450c44bf997f686245688994/voices/byrMF25Yaim0wRYKttbA/ymxIfFeSuAANwJEYm1Ne.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=byrMF25Yaim0wRYKttbA",
+        "publicOwnerId": "8924da6c170635fb08a739ed7839b710a655eaf70a3fafd83424c8cf7e7b4fb5"
+      },
+      "mei": {
+        "voiceId": "Na15FlRRkMEDtEW4nVVP",
+        "name": "Thanh Ngọc - Warm & Trusted Expert",
+        "gender": "female",
+        "languageLabel": "vi",
+        "accent": "southern",
+        "ageLabel": "middle_aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "high_quality",
+        "v4TurboLanguageVerified": true,
+        "reason": "The warm & trusted expert delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Warm, natural and trustworthy Vietnamese female voice. Southern neutral accent. Perfect for podcasts, educational content, storytelling, product reviews, health, finance and professional content. Friendly expert tone, clear pronunciation, conversational and easy to listen to for long-form audio.",
+        "notes": [],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/fe9272e0064e4240a5ba1a8f70facffc/voices/Na15FlRRkMEDtEW4nVVP/efSopyeELYiSzaTdIVHq.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=Na15FlRRkMEDtEW4nVVP",
+        "publicOwnerId": "9ef00b82e797a06b29f48ca424ebfeb520beab84dc10a0d175a6a495ff6eb35f"
       }
     },
     {
@@ -3798,6 +6548,48 @@
         "noticePeriodDays": 365,
         "disabledAt": null,
         "previewDownloaded": true
+      },
+      "kwame": {
+        "voiceId": "GGVwKrfDtVpRbmSQYF5V",
+        "name": "Iestyn - Ad Read",
+        "gender": "male",
+        "languageLabel": "cy",
+        "accent": "standard",
+        "ageLabel": "middle-aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The ad read delivery fits Kwame’s warm, thoughtful professorial style.",
+        "providerDescription": "Iestyn brings confidence and volume -- a deep, full Cardiff-Welsh voice moving briskly with hard emphasis on the offer. Built for advertisements that want energy and authority together.",
+        "notes": [
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/GGVwKrfDtVpRbmSQYF5V/08b61b18-34a1-46b2-980c-b865116ab888.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=GGVwKrfDtVpRbmSQYF5V",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
+      },
+      "mei": {
+        "voiceId": "9rolAbzZghJ8ATSnsIPd",
+        "name": "Ffion - Conversational Partner",
+        "gender": "female",
+        "languageLabel": "cy",
+        "accent": "standard",
+        "ageLabel": "middle-aged",
+        "match": "language-labelled",
+        "availableInAccount": true,
+        "addedToAccount": true,
+        "category": "generated",
+        "v4TurboLanguageVerified": false,
+        "reason": "The conversational partner delivery fits Mei’s warm, clear and patient teaching style.",
+        "providerDescription": "Ffion shares a gentle, soft-toned Carmarthenshire delivery -- calm, quiet, and unhurried, a dependable second option for support dialogue that favors a soothing tone.",
+        "notes": [
+          "Designed voice; language label is not proof of a native human speaker."
+        ],
+        "previewUrl": "https://storage.googleapis.com/eleven-public-prod/database/workspace/1da06ea679a54975ad96a2221fe6530d/voices/9rolAbzZghJ8ATSnsIPd/c4b52e8c-a905-4ad3-9d5a-0b585f28a389.mp3",
+        "libraryUrl": "https://elevenlabs.io/app/voice-library?voiceId=9rolAbzZghJ8ATSnsIPd",
+        "publicOwnerId": "64cbc624eb5aab4e95a968e1f41d75402277cca6e549036ed17e56ea33bbbc9e"
       }
     }
   ],
@@ -3833,6 +6625,22 @@
       "rain/ka",
       "rowan/ka"
     ],
+    "listeningReviewCompleted": false
+  },
+  "kwameMeiCasting": {
+    "reviewedAt": "2026-10-15",
+    "method": "For every language, searched the shared voice library by language and gender (middle-aged, young and unfiltered; male also old) sorted by clone count, combined with all account voices, and excluded Rain and Rowan’s voices, custom-rate and live-moderated voices, and teenage or child labels. Ranked by language label, Eleven v4 Turbo verification for that language, age, use case and description keywords, then reviewed the top candidates for each character by hand. Provider metadata only; no listening audition.",
+    "assignments": 138,
+    "uniqueVoices": 134,
+    "libraryVoicesAdded": 94,
+    "multilingualFallbacks": [
+      "kwame/ka",
+      "kwame/lv",
+      "mei/ka",
+      "mei/my"
+    ],
+    "v4TurboLanguageVerified": 71,
+    "englishNote": "Kwame’s English voice (Dayo) has a Nigerian English accent, chosen to suit the character; swap Avatar:KwameVoiceIds:en for a different accent.",
     "listeningReviewCompleted": false
   }
 }
