@@ -38,6 +38,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Other runtime dependencies">
+    <!-- Pin transitive cryptography dependencies to the October 2026 security fixes. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
     <PackageVersion Include="PdfPig" Version="0.1.14" />
     <PackageVersion Include="Stripe.net" Version="52.1.1" />
