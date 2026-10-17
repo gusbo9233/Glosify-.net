@@ -730,7 +730,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         await Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for house", Exact = true }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "house", Exact = true })).ToBeVisibleAsync();
-        await Expect(Page.Locator(".card-answer .translation")).ToHaveTextAsync("dom");
+        await Expect(Page.Locator(".card-answer .translation .card-text")).ToHaveTextAsync("dom");
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
         await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("1 reviewed today");
@@ -1127,7 +1127,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await RegisterAsync();
         await Page.GotoAsync("/Languages");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Polish", Exact = true }).ClickAsync();
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { NameRegex = new Regex("Polish", RegexOptions.IgnoreCase) }).First).ToBeVisibleAsync();
+        await Expect(Page.Locator(".language-context-pill-active")).ToHaveTextAsync(new Regex(@"\bPolish\s*$"));
+        await Expect(Page.Locator("[data-home-globe]")).ToHaveAttributeAsync("data-region", "PL");
         await Page.GotoAsync("/Quizzes");
     }
 
