@@ -22,7 +22,12 @@ public class ChangeApplierTests
     [InlineData("collection_visibility")]
     [InlineData("copy_quiz")]
     [InlineData("copy_collection")]
-    public async Task Retired_explore_proposals_reject_the_whole_batch(string kind)
+    [InlineData("create_anki_collection")]
+    [InlineData("rename_anki_collection")]
+    [InlineData("anki_create")]
+    [InlineData("anki_rename")]
+    [InlineData("anki_delete")]
+    public async Task Retired_proposals_reject_the_whole_batch(string kind)
     {
         await using var db = CreateContext();
         var changes = new[]
@@ -53,10 +58,10 @@ public class ChangeApplierTests
             expected = LearningChanges.Hash([]), title = "Anki " + action,
         }));
 
-        var result = await CreateApplier(db).ApplyAsync(null, "user-1", [change], CancellationToken.None);
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateApplier(db).ApplyAsync(null, "user-1", [change], CancellationToken.None));
 
-        Assert.Equal(0, result.Applied);
-        Assert.Empty(result.Journal);
+        Assert.Contains("retired", error.Message);
         Assert.Empty(await db.AnkiCollections.ToListAsync());
     }
 
@@ -141,7 +146,12 @@ public class ChangeApplierTests
     [InlineData("collection_visibility")]
     [InlineData("copy_quiz")]
     [InlineData("copy_collection")]
-    public async Task Workflow_terminally_rejects_retired_sharing_proposals(string kind)
+    [InlineData("create_anki_collection")]
+    [InlineData("rename_anki_collection")]
+    [InlineData("anki_create")]
+    [InlineData("anki_rename")]
+    [InlineData("anki_delete")]
+    public async Task Workflow_terminally_rejects_retired_proposals(string kind)
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();

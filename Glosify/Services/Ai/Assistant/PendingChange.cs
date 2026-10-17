@@ -26,11 +26,14 @@ public static class PendingChangeKinds
 }
 
 /// <summary>
-/// Recognizes persisted proposals created before the custom-quiz feature was retired.
+/// Recognizes persisted proposals for retired features.
 /// These names remain only so old saved chats cannot apply a partially supported batch.
 /// </summary>
 internal static class RetiredPendingChangeKinds
 {
+    public static bool IsAnkiCollectionChange(string kind) => kind is
+        "create_anki_collection" or "rename_anki_collection" or "anki_create" or "anki_rename" or "anki_delete";
+
     private static readonly HashSet<string> CustomQuizKinds =
     [
         "create_custom_quiz",

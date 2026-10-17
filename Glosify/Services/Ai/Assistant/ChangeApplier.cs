@@ -87,6 +87,11 @@ public sealed class ChangeApplier : IChangeApplier
             throw new InvalidOperationException("Explore and public sharing have been retired. This proposal can no longer be applied.");
         }
 
+        if (changes.Any(change => RetiredPendingChangeKinds.IsAnkiCollectionChange(change.Kind)))
+        {
+            throw new InvalidOperationException("Anki collection management has been retired. This proposal can no longer be applied.");
+        }
+
         if (changes.Any(RetiredPendingChangeKinds.ContainsCustomQuizChange))
         {
             throw new InvalidOperationException("This proposal contains a retired custom quiz change and can no longer be applied.");
