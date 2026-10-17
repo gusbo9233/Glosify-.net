@@ -1,0 +1,40 @@
+using System.Security.Claims;
+using Glosify.Services.Language;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Routing;
+using Xunit;
+
+namespace Glosify.Tests;
+
+public sealed class SelectedLanguageFilterTests
+{
+    [Theory]
+    [InlineData(null, "Swedish", 1)]
+    [InlineData("German", "German", 0)]
+    public async Task Action_and_view_share_one_resolved_language(string? cookie, string expected, int lookups)
+    {
+        var http = new DefaultHttpContext();
+        http.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "learner")], "test"));
+        if (cookie is not null) http.Request.Headers.Cookie = $"glosify.language={cookie}";
+        var languages = new CookieLanguageContext(new HttpContextAccessor { HttpContext = http });
+        var preferences = new StubChromeServices("sv");
+        var filter = new SelectedLanguageFilter(languages, preferences);
+        var action = new ActionContext(http, new RouteData(), new ActionDescriptor());
+        var executing = new ActionExecutingContext(action, [], new Dictionary<string, object?>(), new object());
+        await filter.OnActionExecutionAsync(executing, () =>
+        {
+            Assert.Equal(expected, languages.CurrentLanguage);
+            return Task.FromResult(new ActionExecutedContext(action, [], executing.Controller));
+        });
+        Assert.Equal(expected, languages.CurrentLanguage);
+        Assert.Equal(lookups, preferences.LanguagePreferenceCalls);
+
+        Assert.True(languages.TrySetLanguage("French"));
+        Assert.Equal("French", languages.CurrentLanguage);
+        languages.Clear();
+        Assert.Null(languages.CurrentLanguage);
+    }
+}

@@ -1,3 +1,6 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Filters;
+
 namespace Glosify.Services.Language;
 
 public interface ILanguageContext
@@ -13,6 +16,8 @@ public class CookieLanguageContext : ILanguageContext
     private const string CookieName = "glosify.language";
 
     private readonly IHttpContextAccessor _accessor;
+    private string? _resolvedLanguage;
+    private bool _initialized;
 
     public CookieLanguageContext(IHttpContextAccessor accessor)
     {
@@ -26,11 +31,19 @@ public class CookieLanguageContext : ILanguageContext
     {
         get
         {
+            if (_initialized) return _resolvedLanguage;
             var ctx = _accessor.HttpContext;
             if (ctx == null) return null;
             if (!ctx.Request.Cookies.TryGetValue(CookieName, out var value)) return null;
             return QuizLanguageCatalog.Find(value)?.Name;
         }
+    }
+
+    internal async Task InitializeAsync(IQuizLanguagePreferenceService preferences, string userId, CancellationToken cancellationToken)
+    {
+        if (_initialized) return;
+        _resolvedLanguage = CurrentLanguage ?? (await preferences.GetSelectedAsync(userId, cancellationToken))?.Name;
+        _initialized = true;
     }
 
     public bool TrySetLanguage(string language)
@@ -44,6 +57,8 @@ public class CookieLanguageContext : ILanguageContext
         var ctx = _accessor.HttpContext;
         if (ctx == null) return false;
 
+        _resolvedLanguage = canonical.Name;
+        _initialized = true;
         ctx.Response.Cookies.Append(CookieName, canonical.Name, new CookieOptions
         {
             Expires = DateTimeOffset.UtcNow.AddYears(1),
@@ -58,7 +73,27 @@ public class CookieLanguageContext : ILanguageContext
 
     public void Clear()
     {
+        _resolvedLanguage = null;
+        _initialized = true;
         var ctx = _accessor.HttpContext;
         ctx?.Response.Cookies.Delete(CookieName);
+    }
+}
+
+/// <summary>Resolve the account fallback once before MVC actions and views read the language.</summary>
+public sealed class SelectedLanguageFilter(
+    ILanguageContext languages,
+    IQuizLanguagePreferenceService preferences) : IAsyncActionFilter
+{
+    public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        var user = context.HttpContext.User;
+        if (user.Identity?.IsAuthenticated == true
+            && user.FindFirstValue(ClaimTypes.NameIdentifier) is { Length: > 0 } userId
+            && languages is CookieLanguageContext cookieLanguages)
+        {
+            await cookieLanguages.InitializeAsync(preferences, userId, context.HttpContext.RequestAborted);
+        }
+        await next();
     }
 }

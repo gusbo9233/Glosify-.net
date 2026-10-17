@@ -86,7 +86,7 @@ internal abstract class ChromeServicesBase
     Task IQuizLanguagePreferenceService.ClearAsync(string userId, CancellationToken cancellationToken) => throw Unused();
 }
 
-internal sealed class StubChromeServices : ChromeServicesBase
+internal sealed class StubChromeServices(string? selectedLanguage = "pl") : ChromeServicesBase
 {
     public override Task<AiCreditAccountView> GetOrCreateAccountAsync(
         string userId,
@@ -130,7 +130,7 @@ internal sealed class StubChromeServices : ChromeServicesBase
         CancellationToken cancellationToken = default)
     {
         LanguagePreferenceCalls++;
-        return Task.FromResult(QuizLanguageCatalog.Find("pl"));
+        return Task.FromResult(QuizLanguageCatalog.Find(selectedLanguage));
     }
 
     public override Task<TranscriptLibraryPage> GetLibraryAsync(

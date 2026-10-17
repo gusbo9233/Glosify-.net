@@ -1,3 +1,5 @@
+using System.Data;
+using System.Data.Common;
 using Glosify.Data;
 using Glosify.Models;
 using Glosify.Models.Entities;
@@ -102,6 +104,136 @@ public sealed class AnkiLanguageMutationTests
             Assert.Equal(competitorId, stored.Id);
             Assert.Equal("Europe/Stockholm", stored.TimeZoneId);
         });
+
+    [Fact]
+    public async Task Duplicate_collection_recovery_restores_accounting_and_keeps_caller_changes()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var seed = new GlosifyContext(options, Options.Create(new AbuseOptions()));
+        await seed.Database.EnsureCreatedAsync();
+        await VerifyAccountedRaceAsync(seed, new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite(connection));
+    }
+
+    [SqlServerFact]
+    public Task SqlServer_duplicate_collection_recovery_restores_accounting_and_keeps_caller_changes() =>
+        SqlServerTestDatabase.RunAsync("anki-accounted-race", async database =>
+        {
+            var options = new DbContextOptionsBuilder<GlosifyContext>()
+                .UseSqlServer(database.Database.GetConnectionString());
+            await using var seed = new GlosifyContext(options.Options, Options.Create(new AbuseOptions()));
+            await VerifyAccountedRaceAsync(seed, options);
+        });
+
+    [Fact]
+    public async Task A_winning_collection_does_not_hide_an_unrelated_save_failure()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var seed = new GlosifyContext(options, Options.Create(new AbuseOptions()));
+        await seed.Database.EnsureCreatedAsync();
+        seed.Add(new ResourceAccountingState { Id = 1, Ready = true });
+        await seed.SaveChangesAsync();
+        await SeedAsync(seed);
+        await new AnkiCollectionService(seed, TimeProvider.System).GetOrCreateAsync(UserId, "Polish", "UTC");
+        var failure = new FailQuizSave();
+        var race = new MissFirstCollectionRead();
+        await using var db = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite(connection).AddInterceptors(race, failure).Options, Options.Create(new AbuseOptions()));
+        var quiz = await db.Quizzes.SingleAsync();
+        quiz.Name = "Pending caller edit";
+
+        var error = await Assert.ThrowsAsync<DbUpdateException>(() =>
+            new AnkiCollectionService(db, TimeProvider.System).GetOrCreateAsync(UserId, "Polish", null));
+
+        Assert.True(race.Fired);
+        Assert.Same(failure.Error, error);
+        // After the caller handles the error, retrying its edit must not save the
+        // failed collection or any accounting mutations left by that failed save.
+        failure.Armed = false;
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        Assert.Equal("Pending caller edit", (await db.Quizzes.SingleAsync()).Name);
+        Assert.Single(await db.AnkiCollections.ToListAsync());
+        Assert.Single(await db.Set<ResourceEntry>().Where(entry => entry.EntityType == nameof(AnkiCollection)).ToListAsync());
+        Assert.Equal(1, (await db.Set<ResourceUsage>().SingleAsync(row => row.Scope == UserId && row.Resource == "collections")).Used);
+    }
+
+    private sealed class FailQuizSave : SaveChangesInterceptor
+    {
+        public bool Armed { get; set; } = true;
+        public DbUpdateException? Error { get; private set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+            InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (Armed)
+            {
+                var quiz = eventData.Context!.ChangeTracker.Entries<Quiz>().Single(entry => entry.State == EntityState.Modified);
+                throw Error = new DbUpdateException("Simulated unrelated quiz write failure.", new InvalidOperationException(), [quiz]);
+            }
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    private static async Task VerifyAccountedRaceAsync(GlosifyContext seed, DbContextOptionsBuilder<GlosifyContext> options)
+    {
+        seed.Add(new ResourceAccountingState { Id = 1, Ready = true });
+        await seed.SaveChangesAsync();
+        var quizId = await SeedAsync(seed);
+        var winner = await new AnkiCollectionService(seed, TimeProvider.System).GetOrCreateAsync(UserId, "Polish", "UTC");
+        var race = new MissFirstCollectionRead();
+        await using var db = new GlosifyContext(options.AddInterceptors(race).Options, Options.Create(new AbuseOptions()));
+        // Exercise both existing tracked counters and snapshots loaded by the failed save.
+        await db.Set<ResourceUsage>().LoadAsync();
+        var quiz = await db.Quizzes.SingleAsync();
+        quiz.Name = "Caller edit that must survive recovery";
+        await using var transaction = await db.Database.BeginTransactionAsync();
+        var service = new AnkiCollectionService(db, TimeProvider.System);
+
+        var collection = await service.GetOrCreateAsync(UserId, "Polish", "Europe/Stockholm");
+        Assert.True(await service.AddItemForLanguageAsync("Polish", "Europe/Stockholm",
+            new(quizId, "word", "word-1"), UserId));
+        // The caller can continue using its tracked entity after recovery.
+        quiz.Name = "Caller edit after recovery";
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        Assert.True(race.Fired);
+        Assert.Equal(winner.Id, collection.Id);
+        db.ChangeTracker.Clear();
+        Assert.Equal("Europe/Stockholm", (await db.AnkiCollections.SingleAsync()).TimeZoneId);
+        Assert.Equal("Caller edit after recovery", (await db.Quizzes.SingleAsync()).Name);
+        Assert.Equal(2, await db.AnkiCards.CountAsync(card => card.IsActive && card.Note.AnkiCollectionId == winner.Id));
+        var entries = await db.Set<ResourceEntry>().ToListAsync();
+        Assert.Single(entries, entry => entry.EntityType == nameof(AnkiCollection));
+        Assert.Equal(1, (await db.Set<ResourceUsage>().SingleAsync(row => row.Scope == UserId && row.Resource == "collections")).Used);
+        var expectedBytes = entries.Sum(entry => ResourceAccounting.Charges(entry.ChargesJson)["content_bytes"]);
+        Assert.Equal(expectedBytes, (await db.Set<ResourceUsage>().SingleAsync(row => row.Scope == UserId && row.Resource == "content_bytes")).Used);
+        Assert.Equal(expectedBytes, (await db.Set<ResourceUsage>().SingleAsync(row => row.Scope == ResourceAccounting.Site && row.Resource == "content_bytes")).Used);
+    }
+
+    // Simulate the initial lookup missing a winner that commits before SaveChanges.
+    // The duplicate constraint failure and all accounting writes use the real provider.
+    private sealed class MissFirstCollectionRead : DbCommandInterceptor
+    {
+        public bool Fired { get; private set; }
+
+        public override async ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command,
+            CommandExecutedEventData eventData, DbDataReader result, CancellationToken cancellationToken = default)
+        {
+            if (Fired || !command.CommandText.StartsWith("SELECT", StringComparison.Ordinal)
+                || !command.CommandText.Contains("AnkiCollections", StringComparison.Ordinal)) return result;
+            Fired = true;
+            var empty = new DataTable();
+            for (var i = 0; i < result.FieldCount; i++) empty.Columns.Add(result.GetName(i), result.GetFieldType(i));
+            await result.DisposeAsync();
+            return empty.CreateDataReader();
+        }
+    }
 
     [Fact]
     public async Task Removing_stale_items_does_not_create_a_collection()

@@ -59,6 +59,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add<ApiProblemDetailsResultFilter>();
+    options.Filters.Add<Glosify.Services.Language.SelectedLanguageFilter>();
     options.Filters.AddService<ApiExceptionFilter>();
 })
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)

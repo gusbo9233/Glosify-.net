@@ -347,6 +347,7 @@ public sealed class DisplayLocalizationTests
             builder.UseEnvironment("Development");
             builder.ConfigureTestServices(services =>
             {
+                services.AddSingleton<Glosify.Services.Language.IQuizLanguagePreferenceService>(new StubChromeServices());
                 services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = SwedishAuthHandler.TestScheme;

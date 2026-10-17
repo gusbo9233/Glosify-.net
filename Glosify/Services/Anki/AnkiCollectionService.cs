@@ -84,6 +84,13 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
     private async Task<AnkiCollection> CreateAsync(string userId, string canonical, string? timeZoneId,
         CancellationToken cancellationToken)
     {
+        // Accounting mutates tracked snapshots and counters before the database save.
+        // Keep the caller's unit of work so duplicate recovery can undo those mutations
+        // without discarding unrelated edits or detaching entities the caller still uses.
+        var initial = _context.ChangeTracker.Entries().Select(entry => (Entry: entry, entry.State,
+            Current: entry.CurrentValues.Clone(), Original: entry.OriginalValues.Clone(),
+            Modified: entry.Properties.Where(property => property.IsModified).Select(property => property.Metadata.Name).ToHashSet())).ToArray();
+        var entities = initial.Select(item => item.Entry.Entity).ToHashSet(ReferenceEqualityComparer.Instance);
         var now = _timeProvider.GetUtcNow();
         var collection = new AnkiCollection
         {
@@ -101,12 +108,31 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             await _context.SaveChangesAsync(cancellationToken);
             return collection;
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception)
         {
-            // A concurrent request created the same (user, language) collection first.
             // Inside a caller's transaction EF rolls the failed save back to its savepoint,
-            // so the transaction stays usable and the winner can be read either way.
-            _context.Entry(collection).State = EntityState.Detached;
+            // but that does not restore the tracker, including accounting changes.
+            foreach (var entry in _context.ChangeTracker.Entries().Where(entry => !entities.Contains(entry.Entity)).ToArray())
+                entry.State = EntityState.Detached;
+            foreach (var item in initial)
+            {
+                item.Entry.CurrentValues.SetValues(item.Current);
+                item.Entry.State = item.State;
+                item.Entry.OriginalValues.SetValues(item.Original);
+                if (item.State == EntityState.Modified)
+                    foreach (var property in item.Entry.Properties)
+                        property.IsModified = item.Modified.Contains(property.Metadata.Name);
+            }
+            // SaveChanges also writes the caller's other pending edits. Only recover
+            // a failure attributed to this insert, never hide an unrelated write error.
+            // SQL Server can attribute a failed batch to several entries, so also
+            // identify the specific unique index reported by the provider.
+            var expectedDuplicate = _context.Database.IsSqlServer()
+                ? exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } sql
+                    && sql.Message.Contains("IX_AnkiCollections_UserId_TargetLanguage", StringComparison.Ordinal)
+                : exception.Entries.Count == 1;
+            if (!expectedDuplicate || !exception.Entries.Any(entry => ReferenceEquals(entry.Entity, collection)))
+                throw;
             var winner = await TrackedForLanguageAsync(userId, canonical, cancellationToken);
             if (winner is null) throw;
             return winner;

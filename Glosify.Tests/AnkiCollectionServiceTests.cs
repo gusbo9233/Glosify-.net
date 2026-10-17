@@ -730,6 +730,36 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
+    public async Task Widening_a_quiz_link_preserves_the_remaining_direction_of_a_partially_removed_word()
+    {
+        await using var f = await Fixture.CreateAsync();
+        Assert.True(await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, false, UserId));
+        var forward = await f.Context.AnkiCards.SingleAsync(card => card.Note.WordId == f.Word.Id
+            && card.Direction == PracticeDirection.SourceToTarget);
+        var reverse = await f.Context.AnkiCards.SingleAsync(card => card.Note.WordId == f.Word.Id
+            && card.Direction == PracticeDirection.TargetToSource);
+        reverse.ReviewCount = 4;
+        reverse.Stability = 12;
+        reverse.DueAt = Now.AddDays(5);
+        await f.Context.SaveChangesAsync();
+        Assert.True(await f.Collections.RemoveCardAsync(forward.Id, UserId));
+
+        Assert.True(await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, true, UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var storedForward = await f.Context.AnkiCards.SingleAsync(card => card.Id == forward.Id);
+        var storedReverse = await f.Context.AnkiCards.SingleAsync(card => card.Id == reverse.Id);
+        Assert.False(storedForward.IsActive);
+        Assert.True(storedForward.ExcludedFromQuizLink);
+        Assert.True(storedReverse.IsActive);
+        Assert.False(storedReverse.ExcludedFromQuizLink);
+        Assert.Equal(4, storedReverse.ReviewCount);
+        Assert.Equal(12, storedReverse.Stability);
+        Assert.Equal(Now.AddDays(5), storedReverse.DueAt);
+        Assert.Equal(4, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.SentenceId != null));
+    }
+
+    [Fact]
     public async Task Get_or_create_inside_a_caller_transaction_recovers_from_a_duplicate_collection()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");

@@ -27,9 +27,11 @@ public sealed partial class AnkiCollectionService
 
             // The picker still offers linked quizzes. Adding one again only adds content: it
             // keeps its sentences and directions, and items the user unticked stay unticked.
-            var widened = !link.WordsSourceToTarget || !link.WordsTargetToSource
-                || includeSentences && (!link.SentencesSourceToTarget || !link.SentencesTargetToSource);
-            if (!widened) return true;
+            var addWordsForward = !link.WordsSourceToTarget;
+            var addWordsReverse = !link.WordsTargetToSource;
+            var addSentencesForward = includeSentences && !link.SentencesSourceToTarget;
+            var addSentencesReverse = includeSentences && !link.SentencesTargetToSource;
+            if (!addWordsForward && !addWordsReverse && !addSentencesForward && !addSentencesReverse) return true;
             var unticked = await _context.AnkiNotes
                 .Where(note => note.AnkiCollectionId == collection.Id && note.QuizId == quizId
                     && note.Cards.Any(card => card.ExcludedFromQuizLink))
@@ -43,7 +45,13 @@ public sealed partial class AnkiCollectionService
             // A newly linked direction of an unticked item is unticked too.
             var newCards = await _context.AnkiCards
                 .Where(card => unticked.Contains(card.AnkiNoteId) && card.QuizLinkIncluded
-                    && !card.ExcludedFromQuizLink && !card.DirectlyIncluded)
+                    && !card.ExcludedFromQuizLink && !card.DirectlyIncluded
+                    && (card.Note.ItemType == PracticeItemType.Words
+                        && (addWordsForward && card.Direction == PracticeDirection.SourceToTarget
+                            || addWordsReverse && card.Direction == PracticeDirection.TargetToSource)
+                        || card.Note.ItemType == PracticeItemType.Sentences
+                        && (addSentencesForward && card.Direction == PracticeDirection.SourceToTarget
+                            || addSentencesReverse && card.Direction == PracticeDirection.TargetToSource)))
                 .ToListAsync(cancellationToken);
             foreach (var card in newCards)
             {

@@ -23,6 +23,10 @@ namespace Glosify.Migrations
             // Their journal entries pointed at the collections cleared above and can never
             // be undone, so drop them rather than keep compatibility code for them.
             migrationBuilder.Sql("DELETE FROM [assistant_changes] WHERE [kind] IN (N'anki_create', N'anki_rename', N'anki_delete');");
+            // Raw deletes bypass accounting. Rebuild snapshots as well as counters at
+            // startup so retired journals and study data stop consuming quota. The
+            // readiness gate blocks content writes until maintenance finishes rebuilding.
+            migrationBuilder.Sql("UPDATE [ResourceAccountingState] SET [Ready] = 0 WHERE [Id] = 1;");
 
             migrationBuilder.DropIndex(
                 name: "IX_AnkiCollections_UserId_Name",

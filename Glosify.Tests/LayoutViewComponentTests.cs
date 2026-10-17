@@ -79,6 +79,33 @@ public sealed class LayoutViewComponentTests
             StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("sv", "Swedish")]
+    [InlineData("freestyle", "Freestyle")]
+    public async Task Saved_language_is_shown_without_a_browser_selection(string savedLanguage, string expectedName)
+    {
+        using var factory = CreateFactory(currentLanguage: null, savedLanguage: savedLanguage);
+        var document = await GetHomeAsync(factory.CreateClient());
+
+        Assert.EndsWith(expectedName,
+            document.QuerySelector(".language-context-pill-active")?.TextContent.Trim(),
+            StringComparison.Ordinal);
+        Assert.Equal(1, factory.Services.GetRequiredService<ChromeServicesBase>().LanguagePreferenceCalls);
+        if (savedLanguage == "freestyle")
+        {
+            Assert.Empty(document.QuerySelectorAll("a[href='/Transcripts']"));
+            Assert.Empty(document.QuerySelectorAll("a[href='/Translations']"));
+        }
+    }
+
+    [Fact]
+    public async Task Missing_browser_and_account_selection_still_asks_for_a_language()
+    {
+        using var factory = CreateFactory(currentLanguage: null, savedLanguage: null);
+        var document = await GetHomeAsync(factory.CreateClient());
+        Assert.Contains("Pick a language", document.QuerySelector(".language-context-pill")?.TextContent);
+    }
+
     [Fact]
     public async Task Admin_settings_are_only_rendered_for_an_approved_account_id()
     {
@@ -163,7 +190,8 @@ public sealed class LayoutViewComponentTests
 
     private static WebApplicationFactory<Program> CreateFactory(
         bool failing = false,
-        string currentLanguage = "Polish",
+        string? currentLanguage = "Polish",
+        string? savedLanguage = "pl",
         string? administratorId = null) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
@@ -183,10 +211,13 @@ public sealed class LayoutViewComponentTests
                 services.RemoveAll<IQuizLanguagePreferenceService>();
                 services.RemoveAll<ILanguageContext>();
 
-                services.AddSingleton<ILanguageContext>(new FixedLanguageContext(currentLanguage));
+                if (currentLanguage is null)
+                    services.AddScoped<ILanguageContext, CookieLanguageContext>();
+                else
+                    services.AddSingleton<ILanguageContext>(new FixedLanguageContext(currentLanguage));
                 ChromeServicesBase chrome = failing
                     ? new ThrowingChromeServices()
-                    : new StubChromeServices();
+                    : new StubChromeServices(savedLanguage);
                 services.AddSingleton(chrome);
                 services.AddSingleton<IAiCreditService>(chrome);
                 services.AddSingleton<IQuizService>(chrome);
