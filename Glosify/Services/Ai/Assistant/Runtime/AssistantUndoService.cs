@@ -124,7 +124,7 @@ internal sealed class AssistantUndoService(
 
     private async Task<bool> RevertAsync(AssistantChange change, string userId, bool studyUnchanged, CancellationToken cancellationToken)
     {
-        if (LearningChanges.Handles(change.Kind))
+        if (LearningChanges.HandlesUndo(change.Kind))
             return await new LearningChanges(db, quizzes, collections, anki).UndoAsync(change, userId, cancellationToken);
         var before = Read(change.BeforeJson);
         var after = Read(change.AfterJson);

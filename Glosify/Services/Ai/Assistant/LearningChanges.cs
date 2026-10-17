@@ -13,9 +13,12 @@ namespace Glosify.Services.Ai.Assistant;
 /// <summary>Scoped snapshots for assistant learning-management changes and conflict-safe Undo.</summary>
 internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, ICollectionService collections, IAnkiCollectionService anki)
 {
-    internal static readonly string[] QuizActions = ["rename_quiz", "delete_quiz", "delete_collection", "quiz_visibility", "collection_visibility", "copy_quiz", "copy_collection"];
+    internal static readonly string[] QuizActions = ["rename_quiz", "delete_quiz", "delete_collection"];
     internal static readonly string[] AnkiActions = ["settings", "direction", "add_quiz", "remove_quiz", "add_item", "remove_card"];
     internal static bool Handles(string kind) => QuizActions.Contains(kind) || kind.StartsWith("anki_", StringComparison.Ordinal);
+    // Historical journals still need Undo, but these kinds cannot be newly applied.
+    internal static bool IsRetiredSharing(string kind) => kind is "quiz_visibility" or "collection_visibility" or "copy_quiz" or "copy_collection";
+    internal static bool HandlesUndo(string kind) => Handles(kind) || IsRetiredSharing(kind);
     internal static bool Permanent(string kind) => kind is "delete_quiz" or "delete_collection" or "anki_delete";
 
     internal static IQueryable<AssistantChange> Undoable(IQueryable<AssistantChange> changes) =>
@@ -30,27 +33,6 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
         [nameof(AnkiNote)] = typeof(AnkiNote), [nameof(AnkiCard)] = typeof(AnkiCard), [nameof(AnkiReview)] = typeof(AnkiReview),
         [nameof(Word)] = typeof(Word), [nameof(QuizSentence)] = typeof(QuizSentence)
     };
-    internal static async Task<bool> IsPublicAsync(GlosifyContext db, string type, Guid id, CancellationToken ct)
-    {
-        if (type == "quiz")
-        {
-            var quiz = await db.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == id, ct);
-            if (quiz is null) return false;
-            if (quiz.IsPublic) return true;
-            if (quiz.CollectionId is not Guid folder) return false;
-            id = folder;
-        }
-        var seen = new HashSet<Guid>();
-        while (seen.Add(id))
-        {
-            var folder = await db.Collections.AsNoTracking().SingleOrDefaultAsync(c => c.Id == id, ct);
-            if (folder is null) return false;
-            if (folder.IsPublic) return true;
-            if (folder.ParentCollectionId is not Guid parent) return false;
-            id = parent;
-        }
-        return false;
-    }
     internal static object CreationState(Quiz quiz) => new
     {
         name = quiz.Name, collection_id = quiz.CollectionId, source_language = quiz.SourceLanguage,
@@ -127,11 +109,9 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
         var p = change.Payload;
         var type = p.GetProperty("entity_type").GetString()!;
         var id = p.TryGetProperty("id", out var idValue) && idValue.ValueKind == JsonValueKind.String ? idValue.GetGuid() : Guid.Empty;
-        var copy = change.Kind.StartsWith("copy_", StringComparison.Ordinal);
-        if (copy && !await IsPublicAsync(db, type, id, ct)) throw new InvalidOperationException("Public content is no longer available.");
         var collectionOnly = type == "anki" && (change.Kind is "anki_rename" or "anki_settings")
             && p.TryGetProperty("snapshot_scope", out var scope) && scope.GetString() == "collection";
-        var before = await SnapshotAsync(db, type, id, copy ? null : user, ct, collectionOnly);
+        var before = await SnapshotAsync(db, type, id, user, ct, collectionOnly);
         if (Hash(before) != p.GetProperty("expected").GetString())
             throw new AssistantRunConflictException("This item changed. Read its current state and request the change again.");
         bool ok = true;
@@ -167,20 +147,12 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
                     q.Name = p.GetProperty("name").GetString()!.Trim(); await db.SaveChangesAsync(ct); break;
                 case "delete_quiz": ok = await quizzes.DeleteQuizAsync(id, user, ct) is not null; break;
                 case "delete_collection": ok = await collections.DeleteCollectionAsync(id, user, ct); break;
-                case "quiz_visibility": ok = await quizzes.SetQuizPublicAsync(id, user, p.GetProperty("isPublic").GetBoolean(), ct); break;
-                case "collection_visibility": ok = await collections.SetCollectionPublicAsync(id, user, p.GetProperty("isPublic").GetBoolean(), ct); break;
-                case "copy_quiz":
-                    var copied = await quizzes.CopyPublicQuizAsync(id, user, cancellationToken: ct);
-                    ok = copied is not null; id = copied?.Id ?? id; break;
-                case "copy_collection":
-                    var copiedFolder = await collections.CopyPublicCollectionAsync(id, user, ct);
-                    ok = copiedFolder is not null; id = copiedFolder?.Id ?? id; break;
             }
         }
         if (!ok) throw new InvalidOperationException("The change could not be applied. Check ownership, compatible languages, membership and child folders, then read the current state.");
         var after = await SnapshotAsync(db, type, id, user, ct, collectionOnly);
         return new AppliedChange(change.Kind, type, id.ToString(), type == "quiz" ? id : null,
-            copy ? null : before, Permanent(change.Kind) ? null : after);
+            before, Permanent(change.Kind) ? null : after);
     }
 
     internal async Task<bool> UndoAsync(AssistantChange change, string user, CancellationToken ct)

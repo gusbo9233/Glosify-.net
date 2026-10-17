@@ -51,13 +51,6 @@ public class CollectionsApiController : ApiControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    [HttpPut("{id:guid}/visibility")]
-    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request, CancellationToken cancellationToken = default)
-    {
-        var updated = await _collectionService.SetCollectionPublicAsync(id, User.GetUserId(), request.IsPublic, cancellationToken: cancellationToken);
-        return updated ? NoContent() : NotFound();
-    }
-
     [HttpPut("quizzes/{quizId:guid}")]
     public async Task<IActionResult> MoveQuiz(Guid quizId, [FromBody] MoveQuizRequest request, CancellationToken cancellationToken = default)
     {

@@ -1,6 +1,7 @@
 @model Glosify.Models.ViewModels.StudyCardViewModel
 @{
     var label = Model.Label ?? $"{Model.PromptLanguage} → {Model.AnswerLanguage}";
+    var labelClass = Model.Label is null ? "card-label card-label-language" : "card-label";
     var pronouncePrompt = Model.Pronunciation && Model.PromptIsTarget;
     var pronounceAnswer = Model.Pronunciation && !Model.PromptIsTarget;
 }
@@ -8,7 +9,7 @@
 @if (Model.Revealed)
 {
     <article class="flashcard is-revealed" aria-live="polite">
-        <span class="card-label">@label</span>
+        <span class="@labelClass">@label</span>
         <h2 class="card-word card-text-row">
             <span class="card-text" dir="auto">@Model.Prompt</span>
             @if (pronouncePrompt)
@@ -37,7 +38,7 @@ else
         @foreach (var field in Model.Fields) { <input type="hidden" name="@field.Key" value="@field.Value" /> }
         <div class="flashcard flashcard-clickable">
             <button class="card-reveal-button" type="submit" aria-label="@Text["Quiz.RevealAnswer", Model.Prompt]"></button>
-            <span class="card-label">@label</span>
+            <span class="@labelClass">@label</span>
             <span class="card-word card-text-row">
                 <span class="card-text" dir="auto">@Model.Prompt</span>
                 @if (pronouncePrompt)

@@ -31,15 +31,12 @@ public sealed record QuizDetailDto(
 {
     public static QuizDetailDto From(Quiz quiz, int wordCount, int sentenceCount) => new(
         quiz.Id, quiz.Name, quiz.SourceLanguage, quiz.TargetLanguage,
-        quiz.Language, quiz.CollectionId, quiz.CreatedAt, wordCount, sentenceCount, quiz.IsPublic);
+        quiz.Language, quiz.CollectionId, quiz.CreatedAt, wordCount, sentenceCount, false);
 }
 
 public sealed record WordDto(string Id, string Lemma, string Translation, DateTimeOffset CreatedAt);
 
 public sealed record SentenceDto(Guid Id, string Text, string Translation, int WordCount);
-
-public sealed record SetVisibilityRequest(
-    [property: JsonRequired] bool IsPublic);
 
 public sealed record ExtractedTextDto(string Text);
 

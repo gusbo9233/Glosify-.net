@@ -39,15 +39,6 @@
                 </a>
                 @if (GameAdministrators.IsAdmin(User) && GameConfiguration.GetValue<bool>("SharedAuth:Enabled"))
                 { <a class="button" href="/sso/game?quizId=@Model.SelectedQuiz.Id">Play in game</a> }
-                <form class="share-form visibility-checkbox-form" method="post" asp-controller="Quiz" asp-action="SetQuizVisibility" asp-route-id="@Model.SelectedQuiz.Id">
-                    @Html.AntiForgeryToken()
-                    <label class="visibility-checkbox">
-                        <input type="checkbox" name="isPublic" value="true" @(Model.SelectedQuiz.IsPublic ? "checked" : "") data-submit-on-change />
-                        <input type="hidden" name="isPublic" value="false" />
-                        <span class="visibility-checkbox-box" aria-hidden="true"></span>
-                        <span>@Text["Quiz.Public"]</span>
-                    </label>
-                </form>
             </div>
         </div>
     </section>

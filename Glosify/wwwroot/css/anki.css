@@ -3,12 +3,11 @@
 .anki-page *{box-sizing:border-box}
 .anki-workspace{--settings-width:clamp(300px,25%,380px);position:relative;display:grid;grid-template-columns:minmax(0,1fr) var(--settings-width);gap:20px;align-items:start}
 .anki-workspace.settings-closed{grid-template-columns:minmax(0,1fr);gap:0}
-.anki-main{min-width:0}
+.anki-main{width:100%;max-width:720px;min-width:0;margin-inline:auto}
 
-.anki-topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding-inline-end:120px}
-.anki-workspace:not(.settings-closed) .anki-topbar{padding-inline-end:0}
-.anki-topbar h1{margin:0;font-family:var(--font-serif);font-size:clamp(28px,3vw,38px);font-weight:500;letter-spacing:-.03em}
-.anki-direction{display:inline-flex;padding:3px;border:1px solid var(--outline-variant);border-radius:11px;background:var(--surface-low)}
+.anki-topbar{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:24px;text-align:center}
+.anki-topbar h1{width:100%;margin:0;font-family:var(--font-serif);font-size:clamp(28px,3vw,38px);font-weight:500;letter-spacing:-.03em}
+.anki-direction{display:inline-flex;max-width:100%;padding:3px;border:1px solid var(--outline-variant);border-radius:11px;background:var(--surface-low)}
 .anki-direction button{min-height:38px;padding:0 14px;border:0;border-radius:8px;background:transparent;color:var(--on-surface-variant);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .anki-direction button:hover{color:var(--on-surface)}
 .anki-direction button[aria-pressed=true]{background:var(--surface-container-high);color:var(--on-surface)}
@@ -68,7 +67,7 @@
 .anki-search{position:relative;display:block}
 .anki-search>.material-symbols-outlined{position:absolute;top:50%;left:12px;color:var(--on-surface-variant);font-size:18px;pointer-events:none;transform:translateY(-50%)}
 .anki-search input{padding-left:38px}
-.anki-item-list{max-height:min(460px,55vh);overflow:auto;overscroll-behavior:contain;border:1px solid rgba(214,227,255,.08);border-radius:10px;background:var(--surface-low)}
+.anki-item-list{height:200px;min-height:200px;flex:none;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;overscroll-behavior:contain;border:1px solid rgba(214,227,255,.08);border-radius:10px;background:var(--surface-low)}
 .anki-item{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(214,227,255,.06);cursor:pointer;font-weight:400!important}
 .anki-item:hover{background:rgba(214,227,255,.03)}
 .anki-item[hidden]{display:none}
@@ -81,18 +80,18 @@
 .anki-item-group[hidden]{display:none}
 
 @media(min-width:1100px){
-    .anki-settings{position:sticky;top:16px;max-height:calc(100dvh - 120px);overflow-y:auto;overscroll-behavior:contain}
+    .anki-settings{position:sticky;top:16px;margin-top:-64px;max-height:calc(100dvh - 120px);overflow-y:auto;overscroll-behavior:contain}
+    .anki-workspace:not(.settings-closed) .anki-settings-toggle{top:-56px}
 }
 /* Below desktop the drawer overlays the session instead of narrowing it. */
 @media(max-width:1099px){
     .anki-workspace{--settings-width:min(360px,calc(100% - 24px));grid-template-columns:minmax(0,1fr);gap:0}
     .anki-settings{position:absolute;z-index:2;top:0;right:0;width:var(--settings-width);max-height:calc(100dvh - 96px);overflow-y:auto;overscroll-behavior:contain;padding:20px;box-shadow:-12px 0 28px #010e2440}
     [dir="rtl"] .anki-settings{right:auto;left:0}
-    .anki-topbar{padding-inline-end:120px}
+    .anki-topbar h1{padding-inline:100px}
 }
 @media(max-width:560px){
     .anki-page{padding:12px 0 24px}
-    .anki-topbar{flex-direction:column;align-items:flex-start}
     .anki-direction{width:100%}
     .anki-direction button{flex:1;padding:0 8px}
 }

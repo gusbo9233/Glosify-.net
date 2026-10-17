@@ -887,6 +887,18 @@ body {
         text-transform: uppercase;
     }
 
+    [data-flashcard-quiz] .flash-kicker,
+    .card-label-language {
+        color: var(--on-surface-var);
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    .card-label-language {
+        background: transparent;
+    }
+
     .card-word {
         font-size: clamp(36px, 8vw, 70px);
         font-weight: 900;
@@ -3879,6 +3891,9 @@ body { margin: 0; }
     flex: 1;
     padding: 32px 32px 64px;
     width: 100%;
+    /* Match Translations' 1180px content width, plus the shared side padding. */
+    max-width: 1244px;
+    margin-inline: auto;
 }
 
 .app-legal-footer {

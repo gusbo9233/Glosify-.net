@@ -5,7 +5,7 @@ namespace Glosify.Models.Api;
 public sealed record CollectionDto(Guid Id, string Name, string Language, Guid? ParentCollectionId, bool IsPublic)
 {
     public static CollectionDto From(Collection collection) =>
-        new(collection.Id, collection.Name, collection.Language, collection.ParentCollectionId, collection.IsPublic);
+        new(collection.Id, collection.Name, collection.Language, collection.ParentCollectionId, false);
 }
 
 public sealed record CreateCollectionRequest(

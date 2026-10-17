@@ -24,7 +24,6 @@ internal sealed class AssistantToolbox
         "create_quiz",
         "list_library",
         "manage_quiz_library",
-        "browse_public_library",
         "open_practice",
         "inspect_anki",
         "manage_anki",

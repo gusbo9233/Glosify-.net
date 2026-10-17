@@ -82,6 +82,11 @@ public sealed class ChangeApplier : IChangeApplier
         IReadOnlyList<PendingChange> changes,
         CancellationToken cancellationToken)
     {
+        if (changes.Any(change => LearningChanges.IsRetiredSharing(change.Kind)))
+        {
+            throw new InvalidOperationException("Explore and public sharing have been retired. This proposal can no longer be applied.");
+        }
+
         if (changes.Any(RetiredPendingChangeKinds.ContainsCustomQuizChange))
         {
             throw new InvalidOperationException("This proposal contains a retired custom quiz change and can no longer be applied.");

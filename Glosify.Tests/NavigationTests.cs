@@ -163,7 +163,6 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("/Quizzes/Index")]
     [InlineData("/Quizzes/Settings")]
     [InlineData("/Languages")]
-    [InlineData("/Explore")]
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
     [InlineData("/Anki")]
@@ -318,7 +317,7 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Home_RendersLearningJourneyWithWorkingAnonymousCallsToAction()
+    public async Task Home_RendersOnlyTheHeroAndSharedNavigation()
     {
         var client = CreateClient();
         var document = await GetDocumentAsync(client, "/");
@@ -326,11 +325,10 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal(
             "Turn new words into real conversations.",
             document.QuerySelector("#home-title")?.TextContent.Trim());
-        Assert.NotNull(document.QuerySelector("a[href*='/Account/Register']"));
         Assert.NotNull(document.QuerySelector("a[href='/login'], a[href*='/Account/Login']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Quiz']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Books']"));
-        Assert.NotNull(document.QuerySelector("a[href*='/Explore']"));
+        Assert.Null(document.QuerySelector("a[href*='/Explore']"));
         Assert.NotNull(document.QuerySelector("a[href*='/Anki']"));
         Assert.Null(document.QuerySelector("a[href*='/Speaking']"));
         Assert.Null(document.QuerySelector("a[href*='/Classroom']"));

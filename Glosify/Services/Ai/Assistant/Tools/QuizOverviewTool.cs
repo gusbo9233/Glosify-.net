@@ -36,7 +36,6 @@ internal sealed class QuizOverviewTool(GlosifyContext db) : AssistantTool<QuizOv
             {
                 id = quiz.Id,
                 name = quiz.Name,
-                is_public = quiz.IsPublic,
                 collection_id = quiz.CollectionId,
                 collection_name = collection,
                 item_count = words,
@@ -50,7 +49,6 @@ internal sealed class QuizOverviewTool(GlosifyContext db) : AssistantTool<QuizOv
             name = quiz.Name,
             source_language = quiz.SourceLanguage,
             target_language = quiz.TargetLanguage,
-            is_public = quiz.IsPublic,
             collection_id = quiz.CollectionId,
             collection_name = collection,
             word_count = words,

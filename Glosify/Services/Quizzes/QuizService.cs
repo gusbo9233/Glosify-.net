@@ -11,14 +11,12 @@ public class QuizService : IQuizService
 {
     private readonly GlosifyContext _context;
     private readonly ILanguageContext _languageContext;
-    private readonly CollectionVisibility _collectionVisibility;
     private readonly IAnkiCollectionService _ankiCollections;
 
     public QuizService(GlosifyContext context, ILanguageContext languageContext, IAnkiCollectionService ankiCollections)
     {
         _context = context;
         _languageContext = languageContext;
-        _collectionVisibility = new CollectionVisibility(context);
         _ankiCollections = ankiCollections;
     }
 
@@ -134,129 +132,6 @@ public class QuizService : IQuizService
         return quiz;
     }
 
-    public async Task<bool> SetQuizPublicAsync(Guid id, string userId, bool isPublic, CancellationToken cancellationToken = default)
-    {
-        var quiz = await _context.Quizzes
-            .FirstOrDefaultAsync(q => q.Id == id && q.UserId == userId, cancellationToken);
-
-        if (quiz == null)
-        {
-            return false;
-        }
-
-        quiz.IsPublic = isPublic;
-        await _context.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<IReadOnlyList<Quiz>> GetPublicQuizzesAsync(string language, CancellationToken cancellationToken = default)
-    {
-        language = language.Trim();
-
-        var publicCollectionIds = await _collectionVisibility.GetPublicCollectionTreeIdsAsync(language, cancellationToken);
-
-        return await _context.Quizzes
-            .AsNoTracking()
-            .Where(q => q.IsPublic
-                && q.TargetLanguage == language
-                && (!q.CollectionId.HasValue || !publicCollectionIds.Contains(q.CollectionId.Value)))
-            .OrderByDescending(q => q.CreatedAt)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<Quiz?> GetPublicQuizAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var quiz = await _context.Quizzes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
-
-        return quiz != null && await IsQuizPubliclyReadableAsync(quiz, cancellationToken)
-            ? quiz
-            : null;
-    }
-
-    public async Task<Quiz?> CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId = null, CancellationToken cancellationToken = default)
-    {
-        var source = await _context.Quizzes
-            .AsNoTracking()
-            .FirstOrDefaultAsync(q => q.Id == id, cancellationToken);
-
-        if (source == null || !await IsQuizPubliclyReadableAsync(source, cancellationToken))
-        {
-            return null;
-        }
-
-        if (collectionId.HasValue)
-        {
-            var targetCollectionExists = await _context.Collections.AnyAsync(c =>
-                c.Id == collectionId.Value
-                && c.UserId == userId
-                && c.Language == source.TargetLanguage, cancellationToken);
-
-            if (!targetCollectionExists)
-            {
-                return null;
-            }
-        }
-
-        return await CopyQuizCoreAsync(source, userId, collectionId, cancellationToken);
-    }
-
-    private async Task<Quiz> CopyQuizCoreAsync(Quiz source, string userId, Guid? collectionId, CancellationToken cancellationToken)
-    {
-        var copy = new Quiz
-        {
-            Id = Guid.NewGuid(),
-            Name = source.Name,
-            UserId = userId,
-            CollectionId = collectionId,
-            CreatedAt = DateTimeOffset.UtcNow,
-            IsSongQuiz = source.IsSongQuiz,
-            ProcessingStatus = source.ProcessingStatus,
-            ProcessingMessage = source.ProcessingMessage,
-            SourceLanguage = source.SourceLanguage,
-            TargetLanguage = source.TargetLanguage,
-            Language = source.Language,
-            IsPublic = false,
-            OriginalQuizId = source.Id
-        };
-
-        var words = await _context.Words
-            .AsNoTracking()
-            .Where(word => word.QuizId == source.Id)
-            .ToListAsync(cancellationToken);
-        var sentences = await _context.QuizSentences
-            .AsNoTracking()
-            .Where(sentence => sentence.QuizId == source.Id)
-            .ToListAsync(cancellationToken);
-
-        _context.Quizzes.Add(copy);
-        foreach (var word in words)
-        {
-            var copiedWordId = Guid.NewGuid().ToString("N");
-            _context.Words.Add(new Word
-            {
-                Id = copiedWordId,
-                QuizId = copy.Id,
-                Lemma = word.Lemma,
-                Translation = word.Translation,
-                CreatedAt = word.CreatedAt
-            });
-        }
-        _context.QuizSentences.AddRange(sentences.Select(sentence => new QuizSentence
-        {
-            Id = Guid.NewGuid(),
-            QuizId = copy.Id,
-            Text = sentence.Text,
-            Translation = sentence.Translation,
-            CreatedAt = sentence.CreatedAt
-        }));
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return copy;
-    }
-
-
     public async Task<bool> UserOwnsQuizAsync(Guid quizId, string userId, CancellationToken cancellationToken = default)
     {
         return await _context.Quizzes.AnyAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken);
@@ -286,14 +161,4 @@ public class QuizService : IQuizService
         return await _context.QuizSentences.CountAsync(sentence => sentence.QuizId == quizId, cancellationToken);
     }
 
-    private async Task<bool> IsQuizPubliclyReadableAsync(Quiz quiz, CancellationToken cancellationToken)
-    {
-        if (quiz.IsPublic)
-        {
-            return true;
-        }
-
-        return quiz.CollectionId.HasValue
-            && await _collectionVisibility.IsCollectionPubliclyReadableAsync(quiz.CollectionId.Value, cancellationToken);
-    }
 }

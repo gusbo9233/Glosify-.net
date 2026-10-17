@@ -474,18 +474,23 @@ public sealed class AssistantReviewRegressionTests
     }
 
     [Fact]
-    public async Task A_disappearing_destination_is_recorded_as_a_visible_placement_failure()
+    public async Task A_legacy_deferred_placement_reports_a_disappearing_destination()
     {
         var collectionId = Guid.NewGuid();
         await using var h = await AssistantHarness.CreateAsync(db => db.Collections.Add(new Collection
         { Id = collectionId, UserId = AssistantHarness.UserId, Name = "Shared", Language = "Polish", IsPublic = true }));
-        h.Model.ThenCall("create_quiz", new { name = "Travel", collection_id = collectionId }).ThenText("Created.");
+        h.Model.ThenCall("create_quiz", new { name = "Travel" }).ThenText("Created.");
         var run = await h.StartAsync("Create a quiz in Shared", quizId: Guid.Empty);
         for (var step = 0; step < 8; step++)
         {
             await h.StepAsync();
             await using var db = h.Db();
             if (!await db.Quizzes.AnyAsync(q => q.Name == "Travel")) continue;
+            // Rehydrate a placement queued by the pre-retirement publishing workflow.
+            var savedRun = await db.AssistantRuns.SingleAsync(r => r.Id == run.Id);
+            var state = RunJson.Read<AssistantRunState>(savedRun.StateJson);
+            state.Placements[(await db.Quizzes.SingleAsync(q => q.Name == "Travel")).Id] = collectionId;
+            savedRun.StateJson = RunJson.Write(state);
             db.Collections.Remove(await db.Collections.SingleAsync(c => c.Id == collectionId));
             await db.SaveChangesAsync();
             break;

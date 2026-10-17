@@ -13,6 +13,52 @@ namespace Glosify.Tests;
 public sealed class AssistantLearningManagementTests
 {
     [Theory]
+    [InlineData("copy_quiz", "quiz")]
+    [InlineData("copy_collection", "collection")]
+    [InlineData("quiz_visibility", "quiz")]
+    [InlineData("collection_visibility", "collection")]
+    public async Task Historical_sharing_journals_can_still_be_undone(string kind, string type)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        h.Model.ThenText("Done.");
+        var run = await h.RunAsync("Hello");
+        var id = Guid.NewGuid();
+        await using (var db = h.Db())
+        {
+            if (type == "quiz") db.Quizzes.Add(new Quiz { Id = id, UserId = AssistantHarness.UserId, Name = "Legacy", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" });
+            else db.Collections.Add(new Collection { Id = id, UserId = AssistantHarness.UserId, Name = "Legacy", Language = "Polish" });
+            await db.SaveChangesAsync();
+            var before = await LearningChanges.SnapshotAsync(db, type, id, AssistantHarness.UserId, default);
+            if (kind.EndsWith("visibility", StringComparison.Ordinal))
+            {
+                if (type == "quiz") (await db.Quizzes.SingleAsync(q => q.Id == id)).IsPublic = true;
+                else (await db.Collections.SingleAsync(c => c.Id == id)).IsPublic = true;
+                await db.SaveChangesAsync();
+            }
+            var after = await LearningChanges.SnapshotAsync(db, type, id, AssistantHarness.UserId, default);
+            var part = await db.AssistantParts.FirstAsync(p => p.RunId == run.Id);
+            db.AssistantChanges.Add(new AssistantChange
+            {
+                Id = Guid.NewGuid(), RunId = run.Id, PartId = part.Id, UserId = AssistantHarness.UserId,
+                Kind = kind, EntityType = type, EntityId = id.ToString(),
+                BeforeJson = kind.StartsWith("copy_", StringComparison.Ordinal) ? null : RunJson.Write(before),
+                AfterJson = RunJson.Write(after), CreatedAt = h.Clock.GetUtcNow().UtcDateTime,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        Assert.Equal(1, (await h.UndoAsync(run.Id)).Undone);
+        await using var result = h.Db();
+        if (kind.StartsWith("copy_", StringComparison.Ordinal))
+        {
+            Assert.False(await result.Quizzes.AnyAsync(q => q.Id == id));
+            Assert.False(await result.Collections.AnyAsync(c => c.Id == id));
+        }
+        else if (type == "quiz") Assert.False((await result.Quizzes.SingleAsync(q => q.Id == id)).IsPublic);
+        else Assert.False((await result.Collections.SingleAsync(c => c.Id == id)).IsPublic);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task Undo_edit_keeps_later_content_with_the_original_text(bool sentence)
@@ -230,13 +276,20 @@ public sealed class AssistantLearningManagementTests
         Assert.Empty((await h.ViewAsync(run.Id)).ResourceChanges);
     }
 
-    [Fact]
-    public async Task Private_quiz_cannot_be_copied_or_disclosed_by_public_tools()
+    [Theory]
+    [InlineData("copy_quiz")]
+    [InlineData("copy_collection")]
+    [InlineData("quiz_visibility")]
+    [InlineData("collection_visibility")]
+    public async Task Retired_public_library_actions_cannot_change_content(string action)
     {
         var other = Guid.NewGuid();
         await using var h = await AssistantHarness.CreateAsync(db => { db.Quizzes.Add(new Quiz { Id = other, UserId = "other", Name = "Private", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" }); });
-        h.Model.ThenCall("manage_quiz_library", JsonSerializer.Serialize(new { action = "copy_quiz", id = other })).ThenText("Not found.");
+        h.Model.ThenCall("manage_quiz_library", JsonSerializer.Serialize(new { action, id = other })).ThenText("Not found.");
         var run = await h.RunAsync("Copy this quiz");
         Assert.Empty(run.ResourceChanges);
+        await using var after = h.Db();
+        Assert.False((await after.Quizzes.SingleAsync(q => q.Id == other)).IsPublic);
+        Assert.Equal(1, await after.Quizzes.CountAsync(q => q.Name == "Private"));
     }
 }

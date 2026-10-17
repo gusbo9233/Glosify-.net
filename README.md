@@ -10,6 +10,9 @@ GlobeGlotter is an ASP.NET Core 10 MVC language-learning application with quizze
 FSRS-6 study collections, books, saved assistant chats, a focused text-translator
 Chrome extension, and a separate extension for live translated subtitles.
 
+Explore and public library sharing were retired on October 17, 2026. See
+[the decision and recovery branch](docs/adr/0003-retire-explore.md).
+
 ## AI services
 
 All generative, text-agent, and vision work goes directly from the GlobeGlotter server

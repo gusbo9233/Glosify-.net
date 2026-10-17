@@ -98,13 +98,6 @@ public sealed class DisplayLocalizationTests
         Assert.Contains("lang=\"sv-SE\"", html);
         var document = await new HtmlParser().ParseDocumentAsync(html);
         Assert.Equal("Gör nya ord till riktiga samtal.", document.QuerySelector("#home-title")?.TextContent.Trim());
-        Assert.Equal("Skapa läromaterial på ditt sätt", document.QuerySelector(".home-story-copy strong")?.TextContent);
-        Assert.Equal("Skriv ett quiz själv, skapa ett med AI-assistenten eller utgå från innehåll du redan har.",
-            document.QuerySelector(".home-story-copy > span")?.TextContent);
-        Assert.Equal("Kommer snart", document.QuerySelector(".home-create-option.is-coming-soon small")?.TextContent);
-        Assert.Equal("Ha användbara ord nära till hands",
-            document.QuerySelector(".home-action-card-anki .home-story-copy strong")?.TextContent);
-        Assert.Equal("Utforska fler sätt att lära", document.QuerySelector(".home-story-footer nav")?.GetAttribute("aria-label"));
         var clientText = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(
             document.Body?.GetAttribute("data-i18n") ?? "{}");
         Assert.Equal("Något gick fel. Försök igen.", clientText?["Client.GenericError"]);
@@ -388,7 +381,7 @@ public sealed class DisplayLocalizationTests
     }
 
     [Fact]
-    public async Task Freestyle_homepage_describes_only_supported_practice_modes()
+    public async Task Freestyle_homepage_keeps_the_hero_without_promotional_sections()
     {
         using var factory = CreateFactory();
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
@@ -397,12 +390,11 @@ public sealed class DisplayLocalizationTests
         var response = await client.GetAsync("/");
         response.EnsureSuccessStatusCode();
         var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
-        var practiceDescription = document.QuerySelector(".home-action-card-vocabulary .home-story-copy > span")?.TextContent;
-
-        Assert.Equal("Choose flashcards or typed answers, and practice in either direction.", practiceDescription);
-        Assert.DoesNotContain("multiple choice", practiceDescription, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("cloze", practiceDescription, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("checkbox", practiceDescription, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Study anything with Freestyle", document.QuerySelector("#home-title")?.TextContent.Trim());
+        Assert.NotNull(document.QuerySelector("[data-home-globe]"));
+        Assert.Single(document.QuerySelectorAll(".home-page > section"));
+        Assert.Null(document.QuerySelector(".home-story"));
+        Assert.Null(document.QuerySelector(".home-final-cta"));
     }
 
     [Theory]

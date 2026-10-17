@@ -1037,7 +1037,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         await signedInPage.GotoAsync("/Languages");
         await signedInPage.Locator("button[name='language'][value='pl']").ClickAsync();
-        foreach (var route in new[] { "/", "/Quizzes", "/Books", "/Anki", "/Explore", "/Transcripts" })
+        foreach (var route in new[] { "/", "/Quizzes", "/Books", "/Anki", "/Transcripts" })
         {
             await signedInPage.GotoAsync(route);
             await Expect(signedInPage.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");

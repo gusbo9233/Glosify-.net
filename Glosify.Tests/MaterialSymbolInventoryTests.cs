@@ -119,19 +119,6 @@ public sealed class MaterialSymbolInventoryTests
         Assert.Equal(expected.Order(StringComparer.Ordinal), IconsIn(source).Order(StringComparer.Ordinal));
     }
 
-    [Fact]
-    public void Explore_community_badge_uses_a_loaded_symbol_instead_of_leaking_a_ligature()
-    {
-        var view = File.ReadAllText(Path.Combine(WebProjectDirectory(), "Views", "Explore", "Index.cshtml"));
-        var styles = File.ReadAllText(Path.Combine(WebProjectDirectory(), "wwwroot", "css", "quiz-library.css"));
-
-        Assert.Contains(">group</span>", view, StringComparison.Ordinal);
-        Assert.DoesNotContain(">groups</span>", view, StringComparison.Ordinal);
-        Assert.DoesNotContain("diversity_3", view, StringComparison.Ordinal);
-        Assert.Contains(".library-page .explore-hero-feature div > span", styles, StringComparison.Ordinal);
-        Assert.DoesNotContain(".library-page .explore-hero-feature span {", styles, StringComparison.Ordinal);
-    }
-
     private static IEnumerable<string> SourceFiles()
     {
         var web = WebProjectDirectory();

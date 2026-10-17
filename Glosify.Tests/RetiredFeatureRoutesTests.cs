@@ -49,7 +49,25 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         });
     }
 
+    [Fact]
+    public void Legacy_public_flags_are_not_advertised_as_public_access()
+    {
+        var quiz = new Quiz { IsPublic = true };
+        var collection = new Collection { IsPublic = true };
+
+        Assert.False(Glosify.Models.Api.QuizDetailDto.From(quiz, 0, 0).IsPublic);
+        Assert.False(Glosify.Models.Api.CollectionDto.From(collection).IsPublic);
+        Assert.True(quiz.IsPublic);
+        Assert.True(collection.IsPublic);
+    }
+
     [Theory]
+    [InlineData("/Explore")]
+    [InlineData("/Explore/Details/00000000-0000-0000-0000-000000000001")]
+    [InlineData("/Explore/Collection/00000000-0000-0000-0000-000000000001")]
+    [InlineData("/api/explore")]
+    [InlineData("/api/explore/quizzes/00000000-0000-0000-0000-000000000001")]
+    [InlineData("/api/explore/collections/00000000-0000-0000-0000-000000000001")]
     [InlineData("/Speaking")]
     [InlineData("/api/speaking/speech-token")]
     [InlineData("/api/speaking/sessions")]
@@ -71,6 +89,14 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
     {
         { HttpMethod.Post, "/Quizzes/00000000-0000-0000-0000-000000000001/Custom/New" },
         { HttpMethod.Post, "/CustomQuizzes" },
+        { HttpMethod.Post, "/Explore/CopyQuiz/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Post, "/Explore/CopyCollection/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Post, "/api/explore/quizzes/00000000-0000-0000-0000-000000000001/copy" },
+        { HttpMethod.Post, "/api/explore/collections/00000000-0000-0000-0000-000000000001/copy" },
+        { HttpMethod.Post, "/Quiz/SetQuizVisibility/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Post, "/Quiz/SetCollectionVisibility/00000000-0000-0000-0000-000000000001" },
+        { HttpMethod.Put, "/api/quizzes/00000000-0000-0000-0000-000000000001/visibility" },
+        { HttpMethod.Put, "/api/collections/00000000-0000-0000-0000-000000000001/visibility" },
         { HttpMethod.Put, "/CustomQuizzes/00000000-0000-0000-0000-000000000001" },
         { HttpMethod.Delete, "/CustomQuizzes/00000000-0000-0000-0000-000000000001" },
         { HttpMethod.Post, "/CustomQuizzes/00000000-0000-0000-0000-000000000001/Grade" },
@@ -94,7 +120,7 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
     }
 
     [Fact]
-    public async Task QuizAndExploreDetailsContainNoCustomQuizSurface()
+    public async Task QuizDetailsContainNoRetiredSurface()
     {
         var quizId = Guid.NewGuid();
         await using (var scope = _factory.Services.CreateAsyncScope())
@@ -117,7 +143,7 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         }
 
         using var client = CreateAdminClient();
-        foreach (var route in new[] { $"/Quiz/Details/{quizId}", $"/Explore/Details/{quizId}" })
+        foreach (var route in new[] { $"/Quiz/Details/{quizId}" })
         {
             var response = await client.GetAsync(route);
             response.EnsureSuccessStatusCode();
@@ -125,6 +151,8 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
             Assert.DoesNotContain("CustomQuizzes", html, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("custom quiz", html, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("data-custom-quiz", html, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("SetQuizVisibility", html, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("SetCollectionVisibility", html, StringComparison.OrdinalIgnoreCase);
         }
     }
 
@@ -139,10 +167,12 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
 
         Assert.NotNull(document.QuerySelector(".home-hero #home-title"));
         Assert.Empty(document.QuerySelectorAll(".home-hero-actions"));
-        Assert.NotNull(document.QuerySelector(".home-action-card-anki[href*='/Anki']"));
-        Assert.NotNull(document.QuerySelector(".home-feature-card-books"));
-        Assert.NotNull(document.QuerySelector(".home-feature-card-explore"));
+        Assert.NotNull(document.QuerySelector("[data-home-globe]"));
+        Assert.Single(document.QuerySelectorAll(".home-page > section"));
+        Assert.Null(document.QuerySelector(".home-story"));
+        Assert.Null(document.QuerySelector(".home-final-cta"));
 
+        Assert.DoesNotContain("/Explore", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/Speaking", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/Classroom", html, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("data-speaking-unavailable", html, StringComparison.OrdinalIgnoreCase);

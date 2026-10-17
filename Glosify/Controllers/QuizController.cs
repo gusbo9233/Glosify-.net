@@ -194,36 +194,6 @@ public class QuizController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> SetQuizVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
-    {
-        var userId = User.GetUserId();
-
-        var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
-        TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? _text["Quiz.NowPublic"].Value : _text["Quiz.NowPrivate"].Value
-            : _text["Quiz.VisibilityFailed"].Value;
-
-        return updated
-            ? RedirectToAction(nameof(Details), new { id })
-            : RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> SetCollectionVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
-    {
-        var userId = User.GetUserId();
-
-        var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
-        TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? _text["Quiz.CollectionNowPublic"].Value : _text["Quiz.CollectionNowPrivate"].Value
-            : _text["Quiz.CollectionVisibilityFailed"].Value;
-
-        return updated
-            ? RedirectToAction(nameof(Collection), new { id })
-            : RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
     public async Task<IActionResult> Create(CreateQuizInput input, CancellationToken cancellationToken = default)
     {
         var userId = User.GetUserId();

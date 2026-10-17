@@ -8,27 +8,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Glosify.Services.Ai.Assistant.Tools;
 
 internal sealed record ManageQuizArgs(
-    [property: Description("rename_quiz, delete_quiz, delete_collection, quiz_visibility, collection_visibility, copy_quiz, or copy_collection.")] string Action,
-    [property: Description("Quiz or library folder id from list_library or browse_public_library.")] Guid Id,
-    string? Name = null, bool? IsPublic = null);
+    [property: Description("rename_quiz, delete_quiz, or delete_collection.")] string Action,
+    [property: Description("Quiz or library folder id from list_library.")] Guid Id,
+    string? Name = null);
 
 internal sealed class ManageQuizTool(GlosifyContext db) : AssistantTool<ManageQuizArgs>
 {
     public override string Name => "manage_quiz_library";
     public override AssistantToolKind Kind => AssistantToolKind.Write;
-    protected override string Describe(AssistantMode mode) => "Rename/delete quizzes, delete library folders, change visibility, or copy public content. Deletion is permanent and requires approval. Deleting a folder keeps quizzes at the root; move/remove child folders first. Use ids from library tools, never guess.";
+    protected override string Describe(AssistantMode mode) => "Rename/delete quizzes or delete library folders. Deletion is permanent and requires approval. Deleting a folder keeps quizzes at the root; move/remove child folders first. Use ids from library tools, never guess.";
     protected override async Task<ToolResult> RunAsync(ManageQuizArgs args, ToolContext context, CancellationToken ct)
     {
         if (!LearningChanges.QuizActions.Contains(args.Action)) return ToolResult.Fail("Unknown action", "Use an action listed in the schema description.");
         if (args.Action == "rename_quiz" && (string.IsNullOrWhiteSpace(args.Name) || args.Name.Trim().Length > 200))
             return ToolResult.Fail("Invalid name", "Provide a name between 1 and 200 characters.");
-        if (args.Action.EndsWith("visibility", StringComparison.Ordinal) && args.IsPublic is null)
-            return ToolResult.Fail("Missing visibility", "is_public is required.");
         var type = args.Action.Contains("collection", StringComparison.Ordinal) ? "collection" : "quiz";
-        var copy = args.Action.StartsWith("copy_", StringComparison.Ordinal);
-        if (copy && !await LearningChanges.IsPublicAsync(db, type, args.Id, ct))
-            return ToolResult.Fail("Not found", "Public content not found. Use browse_public_library.");
-        var snapshot = await LearningChanges.SnapshotAsync(db, type, args.Id, copy ? null : context.UserId, ct);
+        var snapshot = await LearningChanges.SnapshotAsync(db, type, args.Id, context.UserId, ct);
         if (snapshot.Count == 0) return ToolResult.Fail("Not found", "The target was not found. Read the library again.");
         var name = snapshot[0].Values.GetValueOrDefault("Name").GetString() ?? type;
         var title = $"{args.Action.Replace('_', ' ')}: {name}";
@@ -36,7 +31,7 @@ internal sealed class ManageQuizTool(GlosifyContext db) : AssistantTool<ManageQu
         if (args.Action == "delete_quiz") title += "; linked Anki cards will be retired";
         return ToolResult.Propose(title, null, [QuizContent.Change(args.Action, new
         {
-            args.Action, args.Id, args.Name, args.IsPublic, entity_type = type,
+            args.Action, args.Id, args.Name, entity_type = type,
             expected = LearningChanges.Hash(snapshot), title
         })]);
     }
@@ -209,22 +204,6 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         };
     }
 }
-internal sealed record PublicLibraryArgs(string? Language = null);
-internal sealed class BrowsePublicLibraryTool(GlosifyContext db) : AssistantTool<PublicLibraryArgs>
-{
-    public override string Name => "browse_public_library";
-    public override AssistantToolKind Kind => AssistantToolKind.Read;
-    protected override string Describe(AssistantMode mode) => "Find public quizzes and library collections to copy. Returns ids and names for the selected learning language.";
-    protected override async Task<ToolResult> RunAsync(PublicLibraryArgs args, ToolContext context, CancellationToken ct)
-    {
-        var language = context.IsFreestyle ? "Freestyle" : args.Language ?? context.TargetLanguage;
-        return ToolResult.Ok("Public library", new {
-            quizzes = await db.Quizzes.AsNoTracking().Where(q => q.IsPublic && q.TargetLanguage == language).OrderBy(q => q.Name).Take(100).Select(q => new { q.Id, q.Name }).ToListAsync(ct),
-            collections = await db.Collections.AsNoTracking().Where(c => c.IsPublic && c.Language == language).OrderBy(c => c.Name).Take(100).Select(c => new { c.Id, c.Name }).ToListAsync(ct)
-        });
-    }
-}
-
 internal sealed record OpenPracticeArgs(Guid Id, string Mode = "flashcards", string Direction = "source-to-target", string ItemType = "words", int Count = 20);
 internal sealed class OpenPracticeTool(GlosifyContext db) : AssistantTool<OpenPracticeArgs>
 {
