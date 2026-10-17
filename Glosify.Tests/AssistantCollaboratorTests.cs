@@ -187,9 +187,22 @@ public sealed class AssistantCollaboratorTests
             new FixedLanguagePreference());
 
         Assert.Equal("German", await resolver.ResolveLanguageAsync("owner", CancellationToken.None));
+        // Saved transcript libraries remain scoped to the account preference.
+        Assert.Equal("pl", await resolver.ResolveLanguageCodeAsync("owner", CancellationToken.None));
         Assert.Equal(ownedQuiz.Id, (await resolver.ResolveQuizAsync(ownedQuiz.Id, "owner", CancellationToken.None))?.Id);
         await Assert.ThrowsAsync<QuizNotFoundException>(() =>
             resolver.ResolveQuizAsync(ownedQuiz.Id, "another-user", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Context_resolver_uses_saved_language_when_browser_has_no_selection()
+    {
+        await using var context = CreateContext();
+        var resolver = new AssistantContextResolver(
+            context, new NoopBookService(), new FixedLanguageContext(""), new FixedLanguagePreference());
+
+        Assert.Equal("Polish", await resolver.ResolveLanguageAsync("owner", CancellationToken.None));
+        Assert.Equal("pl", await resolver.ResolveLanguageCodeAsync("owner", CancellationToken.None));
     }
 
     /// <summary>

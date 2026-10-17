@@ -311,7 +311,7 @@ public sealed class ResourceAccountingTests
         object Make(bool first) => resource switch
         {
             "collections" when first => new Collection { Id = Guid.NewGuid(), UserId = "owner", Name = "regular", Language = "Swedish" },
-            "collections" => new AnkiCollection { Id = Guid.NewGuid(), UserId = "owner", Name = "anki", SourceLanguage = "English", TargetLanguage = "Swedish" },
+            "collections" => new AnkiCollection { Id = Guid.NewGuid(), UserId = "owner", Name = "anki", TargetLanguage = "Swedish" },
             "chats" => new AssistantThread { Id = Guid.NewGuid(), UserId = "owner", Title = "chat" },
             "transcripts" => new RealtimeTranslationTranscript { UserId = "owner", Title = "transcript", TargetLanguage = "sv" },
             "translations" => new SavedTranslation { UserId = "owner", SessionId = session.Id, RequestId = Guid.NewGuid(), SourceLanguage = "en", TargetLanguage = "sv", SourceText = "hello", TranslatedText = "hej" },

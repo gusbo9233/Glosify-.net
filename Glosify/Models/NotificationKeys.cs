@@ -10,5 +10,4 @@ public static class NotificationKeys
     public const string Quiz = "QuizMessage";
     public const string Admin = "AdminMessage";
     public const string Book = "BookMessage";
-    public const string Explore = "ExploreMessage";
 }

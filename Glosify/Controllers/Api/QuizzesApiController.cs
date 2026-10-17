@@ -59,13 +59,6 @@ public class QuizzesApiController : ApiControllerBase
         return Ok(QuizDetailDto.From(quiz, wordCount, sentenceCount));
     }
 
-    [HttpPut("{id:guid}/visibility")]
-    public async Task<IActionResult> SetVisibility(Guid id, [FromBody] SetVisibilityRequest request, CancellationToken cancellationToken = default)
-    {
-        var updated = await _quizService.SetQuizPublicAsync(id, User.GetUserId(), request.IsPublic, cancellationToken: cancellationToken);
-        return updated ? NoContent() : NotFound();
-    }
-
     [HttpPost]
     public async Task<ActionResult<QuizSummaryDto>> Create([FromBody] CreateQuizRequest request, CancellationToken cancellationToken = default)
     {

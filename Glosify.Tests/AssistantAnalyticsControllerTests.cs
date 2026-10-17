@@ -300,6 +300,8 @@ public sealed class AssistantAnalyticsControllerTests
             builder.UseEnvironment("Testing");
             builder.ConfigureTestServices(services =>
             {
+                services.RemoveAll<Glosify.Services.Language.IQuizLanguagePreferenceService>();
+                services.AddSingleton<Glosify.Services.Language.IQuizLanguagePreferenceService>(new StubChromeServices());
                 services.RemoveAll<IAssistantOrchestrator>();
                 services.AddSingleton(orchestrator);
                 services.RemoveAll<IPolicyEvaluator>();

@@ -65,10 +65,6 @@ internal abstract class ChromeServicesBase
     Task<Quiz> IQuizService.CreateQuizAsync(string name, string sourceLanguage, string targetLanguage, string userId, Guid? collectionId, CancellationToken cancellationToken) => throw Unused();
     Task<Quiz?> IQuizService.DeleteQuizAsync(Guid id, string userId, CancellationToken cancellationToken) => throw Unused();
     Task<bool> IQuizService.UserOwnsQuizAsync(Guid quizId, string userId, CancellationToken cancellationToken) => throw Unused();
-    Task<bool> IQuizService.SetQuizPublicAsync(Guid id, string userId, bool isPublic, CancellationToken cancellationToken) => throw Unused();
-    Task<IReadOnlyList<Quiz>> IQuizService.GetPublicQuizzesAsync(string language, CancellationToken cancellationToken) => throw Unused();
-    Task<Quiz?> IQuizService.GetPublicQuizAsync(Guid id, CancellationToken cancellationToken) => throw Unused();
-    Task<Quiz?> IQuizService.CopyPublicQuizAsync(Guid id, string userId, Guid? collectionId, CancellationToken cancellationToken) => throw Unused();
     Task<int> IQuizService.GetAvailableWordCountAsync(Guid quizId, CancellationToken cancellationToken) => throw Unused();
     Task<IReadOnlyDictionary<Guid, int>> IQuizService.GetWordCountsAsync(IReadOnlyCollection<Guid> quizIds, CancellationToken cancellationToken) => throw Unused();
     Task<int> IQuizService.GetAvailableSentenceCountAsync(Guid quizId, CancellationToken cancellationToken) => throw Unused();
@@ -90,7 +86,7 @@ internal abstract class ChromeServicesBase
     Task IQuizLanguagePreferenceService.ClearAsync(string userId, CancellationToken cancellationToken) => throw Unused();
 }
 
-internal sealed class StubChromeServices : ChromeServicesBase
+internal sealed class StubChromeServices(string? selectedLanguage = "pl") : ChromeServicesBase
 {
     public override Task<AiCreditAccountView> GetOrCreateAccountAsync(
         string userId,
@@ -134,7 +130,7 @@ internal sealed class StubChromeServices : ChromeServicesBase
         CancellationToken cancellationToken = default)
     {
         LanguagePreferenceCalls++;
-        return Task.FromResult(QuizLanguageCatalog.Find("pl"));
+        return Task.FromResult(QuizLanguageCatalog.Find(selectedLanguage));
     }
 
     public override Task<TranscriptLibraryPage> GetLibraryAsync(

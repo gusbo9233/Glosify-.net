@@ -21,7 +21,7 @@ public sealed record AnkiStudyCard(
     public Guid QuizId { get; init; }
 }
 
-public sealed record AnkiStudyState(AnkiStudyCard? Card, DateTimeOffset? NextDueAt, string TimeZoneId);
+public sealed record AnkiStudyState(AnkiStudyCard? Card, DateTimeOffset? NextDueAt, string TimeZoneId, string Direction);
 
 public sealed record RateAnkiCardInput(
     Guid CollectionId,
@@ -36,6 +36,7 @@ public interface IAnkiStudyService
     Task<AnkiStudyState?> GetNextAsync(
         Guid collectionId,
         string userId,
+        string direction,
         Guid? preferredCardId = null,
         CancellationToken cancellationToken = default);
     Task<bool> RateAsync(RateAnkiCardInput input, string userId, CancellationToken cancellationToken = default);

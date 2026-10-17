@@ -64,10 +64,6 @@
                 <path d="M5 9.5V21h14V9.5"></path>
                 <path d="M9 21v-6h6v6"></path>
                 """,
-            "explore" => """
-                <circle cx="12" cy="12" r="9"></circle>
-                <path d="m15.5 8.5-2.2 4.8-4.8 2.2 2.2-4.8 4.8-2.2Z"></path>
-                """,
             "menu_book" => """
                 <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H7a3 3 0 0 0-3 3V5.5Z"></path>
                 <path d="M4 5.5V22"></path>
@@ -184,10 +180,6 @@
                 <a class="@NavClass("Home")" asp-controller="Home" asp-action="Index">
                     @NavIcon("home")
                     @Text["Nav.Home"]
-                </a>
-                <a class="@NavClass("Explore")" asp-controller="Explore" asp-action="Index">
-                    @NavIcon("explore")
-                    @Text["Nav.Explore"]
                 </a>
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")

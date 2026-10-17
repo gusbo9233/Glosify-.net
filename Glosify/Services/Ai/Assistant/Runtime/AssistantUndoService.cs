@@ -124,16 +124,12 @@ internal sealed class AssistantUndoService(
 
     private async Task<bool> RevertAsync(AssistantChange change, string userId, bool studyUnchanged, CancellationToken cancellationToken)
     {
-        if (LearningChanges.Handles(change.Kind))
+        if (LearningChanges.HandlesUndo(change.Kind))
             return await new LearningChanges(db, quizzes, collections, anki).UndoAsync(change, userId, cancellationToken);
         var before = Read(change.BeforeJson);
         var after = Read(change.AfterJson);
         switch (change.Kind)
         {
-            case PendingChangeKinds.CreateAnkiCollection:
-                return await anki.UndoCollectionCreationAsync(RunJson.Read<AnkiCollectionState>(change.AfterJson!), userId, cancellationToken);
-            case PendingChangeKinds.RenameAnkiCollection:
-                return await anki.UndoRenameAsync(new(RunJson.Read<AnkiRenameState>(change.BeforeJson!), RunJson.Read<AnkiRenameState>(change.AfterJson!)), userId, cancellationToken);
             case PendingChangeKinds.SyncAnkiCard:
             case PendingChangeKinds.RemoveAnkiCards:
             case PendingChangeKinds.AddAnkiItems:

@@ -1315,6 +1315,7 @@ test('unused preparation expires without reopening and releases its session', as
     assert.equal(h.sent.some(x => x.microphoneOpened), false);
     assert.equal(h.timerCount(250), 0);
     assert.equal(h.run('canStart()'), true);
+    assert.equal(h.run("el('notice').textContent"), '');
 });
 
 test('cleanup during pending preparation ends a late session without attaching it', async () => {
@@ -1442,7 +1443,7 @@ for (const scenario of ['background', 'ended', 'other error']) test(`preconnect 
     assert.equal(h.run('sessionId'), null);
 });
 
-for (const cleanup of ['client timer', 'server expiry']) test(`release before microphone permission still releases capture on ${cleanup}`, async () => {
+for (const cleanup of ['client timer', 'server expiry']) test(`foreground start keeps its activated lease and explains cleanup on ${cleanup}`, async () => {
     const h = setup(); prepareFirstPress(h);
     h.run(`let allowMicrophone;
         AvatarAudio.prototype.open = () => new Promise(resolve => { allowMicrophone = () => resolve(true); });
@@ -1451,16 +1452,20 @@ for (const cleanup of ['client timer', 'server expiry']) test(`release before mi
     h.run("finishStart({ sessionId: 'cold', memoryId: 'remembered', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     assert.deepEqual(h.commands(), ['activate']);
-    assert.equal(h.timerCount(30000), 1);
+    assert.equal(h.timerCount(30000), 0);
+    assert.equal(h.timerCount(60000), 1);
+    assert.notEqual(h.run('audio'), null);
+    assert.equal(h.run('state'), 'idle');
     h.run('api = async path => wire({ ended: path })');
-    if (cleanup === 'client timer') h.fireTimer(30000);
-    else h.run("connectionHandlers.onEnded('Conversation ended.')");
+    if (cleanup === 'client timer') h.fireTimer(60000);
+    else h.run("connectionHandlers.onEnded('Conversation ended after inactivity. Start again whenever you like.')");
     await tick();
     assert.equal(h.run('audio'), null); assert.equal(h.run('sessionId'), null);
     assert.equal(h.sent.filter(x => x.microphoneClosed).length, 1);
     assert.equal(h.sent.some(x => x.ended === '/api/avatar/sessions/cold/end'), true);
     assert.equal(h.run('memory.get(selection())'), 'remembered');
     assert.equal(h.run('canStart()'), true);
+    assert.match(h.elements.get('avatar-notice').textContent, /ended after inactivity/);
 });
 
 for (const background of [false, true]) for (const resumed of [false, true]) test(`failed startup send preserves recovery state (background: ${background}, resumed: ${resumed})`, async () => {

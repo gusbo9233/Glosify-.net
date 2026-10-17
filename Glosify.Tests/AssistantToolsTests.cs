@@ -23,6 +23,7 @@ public sealed class AssistantToolsTests
 
         var declarations = toolbox.Declarations(mode);
 
+        Assert.DoesNotContain(declarations, tool => tool.Name == "browse_public_library");
         Assert.Equal(declarations.Select(tool => tool.Name).Distinct(), declarations.Select(tool => tool.Name));
         Assert.Equal(JsonSerializer.Serialize(declarations), JsonSerializer.Serialize(toolbox.Declarations(mode)));
         Assert.All(declarations, tool =>

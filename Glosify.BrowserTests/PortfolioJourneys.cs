@@ -395,6 +395,126 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     [BrowserFact]
     [Trait("Category", "Browser")]
+    public async Task AnkiKeyboard_NumberKeysSubmitTheFourRatings()
+    {
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        foreach (var (word, translation) in new[] { ("kot", "cat"), ("pies", "dog") })
+        {
+            await Page.WaitForLoadStateAsync(LoadState.Load);
+            await Page.GetByLabel("Word", new() { Exact = true }).FillAsync(word);
+            await Page.GetByLabel("Translation", new() { Exact = true }).FillAsync(translation);
+            await Page.GetByRole(AriaRole.Button, new() { Name = "Add word" }).ClickAsync();
+            await Expect(Page.Locator(".word-card").Filter(new() { HasText = word })).ToBeVisibleAsync();
+        }
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.GotoAsync("/Anki");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Add to Anki", Exact = true }).ClickAsync();
+        await Expect(Page.Locator(".anki-message")).ToHaveTextAsync("Quiz added to Anki.");
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.Locator("[data-anki-settings-toggle]").ClickAsync();
+
+        foreach (var (key, rating) in new[] { ("1", "again"), ("2", "hard"), ("3", "good"), ("4", "easy") })
+        {
+            await Page.Locator(".card-reveal-button").FocusAsync();
+            await Page.Keyboard.PressAsync("Space");
+            await Expect(Page.Locator(".flashcard.is-revealed")).ToBeVisibleAsync();
+            await Expect(Page.Locator(".study-rating-shortcut")).ToHaveTextAsync(new[] { "1", "2", "3", "4" });
+            if (key == "1" && _settings.TraceDirectory is { } directory)
+            {
+                await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(directory, "anki-rating-shortcuts.png"), Animations = ScreenshotAnimations.Disabled });
+                await Page.SetViewportSizeAsync(390, 844);
+                await Page.Locator(".rating-row").ScrollIntoViewIfNeededAsync();
+                await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(directory, "anki-rating-shortcuts-mobile.png"), Animations = ScreenshotAnimations.Disabled });
+            }
+            var request = await Page.RunAndWaitForRequestAsync(
+                () => Page.Keyboard.PressAsync(key),
+                request => request.Method == "POST" && new Uri(request.Url).AbsolutePath == "/Anki/Rate");
+            Assert.Contains($"name=\"rating\"\r\n\r\n{rating}\r\n", request.PostData);
+            await Expect(Page.Locator(".flashcard.is-revealed")).ToHaveCountAsync(0);
+        }
+
+        await Expect(Page.Locator(".anki-complete")).ToBeVisibleAsync();
+        await AssertNoPageErrorsAsync();
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AnkiAgain_ReturnsAfterOtherCardsWithoutWaiting()
+    {
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.GetByLabel("Word", new() { Exact = true }).FillAsync("kot");
+        await Page.GetByLabel("Translation", new() { Exact = true }).FillAsync("cat");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Add word" }).ClickAsync();
+        await Expect(Page.Locator(".word-card").Filter(new() { HasText = "kot" })).ToBeVisibleAsync();
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.GotoAsync("/Anki");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Add to Anki", Exact = true }).ClickAsync();
+        await Expect(Page.Locator(".anki-message")).ToHaveTextAsync("Quiz added to Anki.");
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.Locator("[data-anki-settings-toggle]").ClickAsync();
+
+        var prompt = Page.Locator(".card-word .card-text");
+        var firstPrompt = await prompt.InnerTextAsync();
+        await Page.Locator(".card-reveal-button").ClickAsync();
+        await Expect(Page.Locator("button[name=rating][value=again]")).ToContainTextAsync("Now");
+        await Page.Locator("button[name=rating][value=again]").ClickAsync();
+        await Expect(prompt).Not.ToHaveTextAsync(firstPrompt);
+        await Page.Locator(".card-reveal-button").ClickAsync();
+        await Page.Locator("button[name=rating][value=easy]").ClickAsync();
+        await Expect(prompt).ToHaveTextAsync(firstPrompt);
+
+        await Page.ReloadAsync();
+        await Expect(prompt).ToHaveTextAsync(firstPrompt);
+        await Page.Locator(".card-reveal-button").ClickAsync();
+        await Page.Locator("button[name=rating][value=again]").ClickAsync();
+        await Expect(Page.Locator(".card-reveal-button")).ToBeVisibleAsync();
+        await Expect(prompt).ToHaveTextAsync(firstPrompt);
+        await Page.Locator(".card-reveal-button").ClickAsync();
+        await Page.Locator("button[name=rating][value=easy]").ClickAsync();
+        await Expect(Page.Locator(".anki-complete")).ToBeVisibleAsync();
+        await AssertNoPageErrorsAsync();
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
+    public async Task AnkiDrawer_KeepsQuizAndWordControlsVisible()
+    {
+        await RegisterAndSelectPolishAsync();
+        await CreateQuizWithWordAsync();
+        await Page.GotoAsync("/Anki");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Add to Anki", Exact = true }).ClickAsync();
+        await Expect(Page.Locator(".anki-message")).ToHaveTextAsync("Quiz added to Anki.");
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        var drawer = Page.Locator("#anki-settings");
+        await Expect(drawer.Locator("input[type=number]")).ToHaveCountAsync(0);
+        await Expect(drawer.GetByLabel("Quiz", new() { Exact = true })).ToBeVisibleAsync();
+        await Expect(drawer.Locator("[data-anki-item-key]:checked")).ToHaveCountAsync(1);
+        var word = drawer.Locator(".anki-item").First;
+        foreach (var (width, height, label) in new[] { (1280, 720, "desktop"), (390, 844, "mobile") })
+        {
+            await Page.SetViewportSizeAsync(width, height);
+            // Let navigation initialize for this viewport before measuring the drawer.
+            await Page.ReloadAsync();
+            await Page.WaitForLoadStateAsync(LoadState.Load);
+            var bounds = (await word.BoundingBoxAsync())!;
+            Assert.True(bounds.Y < height, "The word picker should start in the initial drawer viewport.");
+            await word.ScrollIntoViewIfNeededAsync();
+            bounds = (await word.BoundingBoxAsync())!;
+            // Chromium rounds scrolling to CSS pixels; layout bounds can be fractional.
+            Assert.True(bounds.Y >= -1 && bounds.Y + bounds.Height <= height + 1, "Scrolling the drawer should expose the complete word row.");
+            if (_settings.TraceDirectory is { } directory)
+                await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(directory, $"anki-drawer-{label}.png"), Animations = ScreenshotAnimations.Disabled });
+        }
+        await Page.Locator("[data-anki-settings-toggle]").ClickAsync();
+        await Expect(Page.Locator(".flashcard")).ToBeVisibleAsync();
+        await AssertNoPageErrorsAsync();
+    }
+
+    [BrowserFact]
+    [Trait("Category", "Browser")]
     public async Task CreateQuizAddWordAndStartPractice()
     {
         await RegisterAndSelectPolishAsync();
@@ -412,18 +532,48 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(Page).ToHaveURLAsync(new Regex("/FlashcardQuiz", RegexOptions.IgnoreCase));
         await Expect(Page.Locator("[data-flashcard-session]")).ToBeVisibleAsync();
         var revealForm = Page.Locator("[data-card-reveal-form]");
-        var revealButton = revealForm.Locator(":scope > .flashcard-clickable");
-        var pronunciationButton = revealForm.Locator(":scope > button[data-tts]");
+        var revealButton = revealForm.Locator(".card-reveal-button");
+        var pronunciationButton = revealForm.Locator(".card-word button[data-tts]");
         await Expect(revealButton).ToBeVisibleAsync();
         await Expect(revealButton.Locator("[data-tts]")).ToHaveCountAsync(0);
         await Expect(pronunciationButton).ToBeVisibleAsync();
         await Expect(pronunciationButton).ToHaveAttributeAsync("aria-pressed", "false");
         await pronunciationButton.FocusAsync();
         await Expect(pronunciationButton).ToBeFocusedAsync();
+        var speakerBounds = (await pronunciationButton.BoundingBoxAsync())!;
+        var wordBounds = (await revealForm.Locator(".card-text").BoundingBoxAsync())!;
+        Assert.True(wordBounds.X + wordBounds.Width <= speakerBounds.X);
         await revealButton.ClickAsync();
-        // Both languages remain playable after restoring the original card faces.
+        // Only the target language is playable, in the same row to the word's right.
         await Expect(Page.Locator(".flashcard.is-revealed .card-word button[data-tts]")).ToBeVisibleAsync();
-        await Expect(Page.Locator(".flashcard.is-revealed .translation button[data-tts]")).ToBeVisibleAsync();
+        await Expect(Page.Locator(".flashcard.is-revealed .translation button[data-tts]")).ToHaveCountAsync(0);
+        await Page.SetViewportSizeAsync(390, 844);
+        speakerBounds = (await Page.Locator(".flashcard.is-revealed button[data-tts]").BoundingBoxAsync())!;
+        wordBounds = (await Page.Locator(".flashcard.is-revealed .card-word .card-text").BoundingBoxAsync())!;
+        Assert.True(wordBounds.X + wordBounds.Width <= speakerBounds.X);
+        await Expect(Page.Locator(".study-rating-shortcut")).ToHaveTextAsync(new[] { "1", "4" });
+        if (_settings.TraceDirectory is { } directory)
+        {
+            await Page.Locator(".rating-row").ScrollIntoViewIfNeededAsync();
+            await Page.ScreenshotAsync(new PageScreenshotOptions { Path = Path.Combine(directory, "flashcard-rating-shortcuts.png"), Animations = ScreenshotAnimations.Disabled });
+        }
+
+        var againRequest = await Page.RunAndWaitForRequestAsync(
+            () => Page.Keyboard.PressAsync("1"),
+            request => request.Method == "POST" && new Uri(request.Url).AbsolutePath == "/FlashcardQuiz/Rate");
+        Assert.Contains("name=\"rating\"\r\n\r\nagain\r\n", againRequest.PostData);
+        await Expect(Page.Locator(".results.visible")).ToBeVisibleAsync();
+        // Regular quizzes finish the stack; retrying Again cards remains explicit.
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Practice Again", Exact = true }).ClickAsync();
+        await Page.WaitForLoadStateAsync(LoadState.Load);
+        await Page.Locator(".card-reveal-button").ClickAsync();
+        await Expect(Page.Locator(".study-rating-shortcut")).ToHaveTextAsync(new[] { "1", "4" });
+        var goodRequest = await Page.RunAndWaitForRequestAsync(
+            () => Page.Keyboard.PressAsync("4"),
+            request => request.Method == "POST" && new Uri(request.Url).AbsolutePath == "/FlashcardQuiz/Rate");
+        Assert.Contains("name=\"rating\"\r\n\r\ngood\r\n", goodRequest.PostData);
+        await Expect(Page.Locator(".results.visible .result-score")).ToHaveTextAsync("100%");
+        await AssertNoPageErrorsAsync();
     }
 
     [BrowserFact]
@@ -565,39 +715,31 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task CreateLinkStudyAndInspectAnkiCollection()
+    public async Task AddQuizToAnkiStudyAndSwitchDirection()
     {
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
-        await Page.GotoAsync("/Anki?create=true");
+        await Page.GotoAsync("/Anki");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your Anki collection is empty" })).ToBeVisibleAsync();
 
-        var createForm = Page.Locator("[data-anki-create-form]");
-        await createForm.GetByLabel("Collection name").FillAsync("Portfolio Anki");
-        await createForm.GetByLabel("Source language").SelectOptionAsync(new SelectOptionValue { Label = "English" });
-        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create collection" }).ClickAsync();
-        await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
+        var settings = Page.Locator("[data-anki-settings]");
+        await settings.GetByLabel("Quiz").SelectOptionAsync(new SelectOptionValue { Label = "Portfolio Polish" });
+        await settings.GetByRole(AriaRole.Button, new() { Name = "Add to Anki" }).ClickAsync();
+        await Expect(Page.Locator(".anki-linked")).ToContainTextAsync("Portfolio Polish");
+        await Expect(settings.Locator("label.anki-item", new() { HasText = "dom" }).Locator("input")).ToBeCheckedAsync();
 
-        var addQuizPanel = Page.Locator(".anki-add-quiz-panel");
-        await addQuizPanel.GetByLabel("Quiz").SelectOptionAsync(new SelectOptionValue { Label = "Portfolio Polish" });
-        await addQuizPanel.GetByRole(AriaRole.Button, new() { Name = "Add or update quiz" }).ClickAsync();
-        await Expect(Page.Locator(".anki-list").GetByText("Portfolio Polish", new() { Exact = true })).ToBeVisibleAsync();
-
-        // Adding the already-linked word individually is intentionally idempotent and
-        // preserves the same durable card while recording both inclusion sources.
-        await Page.GetByRole(AriaRole.Form, new() { NameRegex = new Regex("^Add .+ to Anki$") }).First
-            .GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for house", Exact = true }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "house", Exact = true })).ToBeVisibleAsync();
-        await Expect(Page.Locator(".card-answer .translation")).ToHaveTextAsync("dom");
+        await Expect(Page.Locator(".card-answer .translation .card-text")).ToHaveTextAsync("dom");
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("1 reviewed today");
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("100% retention");
 
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Back to collections" }).ClickAsync();
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Portfolio Anki" }).ClickAsync();
-        await Expect(Page.GetByText("Studied today").Locator("..").Locator("strong")).ToHaveTextAsync("1");
-        await Expect(Page.GetByText("30-day retention").Locator("..").Locator("strong")).ToHaveTextAsync("100%");
+        // The other direction is a separate track: its card is still new.
+        await Page.Locator(".anki-direction button[aria-pressed=false]").ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for dom", Exact = true })).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("0 reviewed today");
         await AssertNoPageErrorsAsync();
     }
 
@@ -895,7 +1037,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
         await signedInPage.GotoAsync("/Languages");
         await signedInPage.Locator("button[name='language'][value='pl']").ClickAsync();
-        foreach (var route in new[] { "/", "/Quizzes", "/Books", "/Anki", "/Explore", "/Transcripts" })
+        foreach (var route in new[] { "/", "/Quizzes", "/Books", "/Anki", "/Transcripts" })
         {
             await signedInPage.GotoAsync(route);
             await Expect(signedInPage.Locator("html")).ToHaveAttributeAsync("lang", "sv-SE");
@@ -985,7 +1127,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await RegisterAsync();
         await Page.GotoAsync("/Languages");
         await Page.GetByRole(AriaRole.Button, new() { Name = "Polish", Exact = true }).ClickAsync();
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { NameRegex = new Regex("Polish", RegexOptions.IgnoreCase) }).First).ToBeVisibleAsync();
+        await Expect(Page.Locator(".language-context-pill-active")).ToHaveTextAsync(new Regex(@"\bPolish\s*$"));
+        await Expect(Page.Locator("[data-home-globe]")).ToHaveAttributeAsync("data-region", "PL");
         await Page.GotoAsync("/Quizzes");
     }
 

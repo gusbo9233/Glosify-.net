@@ -78,56 +78,6 @@ public sealed record BookCard(
 }
 
 /// <summary>
-/// One node of a public collection tree, with its breadcrumb already resolved.
-/// </summary>
-/// <remarks>
-/// Explore/Collection.cshtml used to do this work itself, in an <c>@functions</c> block that
-/// recursed through <c>ChildCollections</c> and walked <c>ParentCollection</c> upwards to
-/// build each breadcrumb. That only worked because the controller had eagerly loaded the
-/// whole graph; any query change would have turned it into a silent per-node round trip, or
-/// a null-reference once the tracked graph was gone. The traversal happens once, here.
-/// </remarks>
-public sealed record ExploreCollectionNode(
-    Guid Id,
-    string Name,
-    string Language,
-    string Path,
-    IReadOnlyList<QuizCard> Quizzes,
-    IReadOnlyList<ExploreCollectionNode> ChildCollections)
-{
-    /// <summary>Every descendant, depth-first and name-ordered. Excludes this node.</summary>
-    public IEnumerable<ExploreCollectionNode> Descendants() =>
-        ChildCollections.SelectMany(child => new[] { child }.Concat(child.Descendants()));
-
-    public int DescendantCollectionCount => Descendants().Count();
-
-    public int TotalQuizCount => Quizzes.Count + Descendants().Sum(node => node.Quizzes.Count);
-
-    /// <summary>
-    /// Projects a loaded collection graph. <paramref name="ancestors"/> accumulates the
-    /// breadcrumb on the way down, which is why no node needs a parent backreference.
-    /// </summary>
-    public static ExploreCollectionNode From(Collection collection, IReadOnlyList<string>? ancestors = null)
-    {
-        ancestors ??= [];
-        var path = ancestors.Count == 0 ? collection.Language : string.Join(" / ", ancestors);
-        var childAncestors = ancestors.Append(collection.Name).ToArray();
-
-        return new ExploreCollectionNode(
-            collection.Id,
-            collection.Name,
-            collection.Language,
-            path,
-            collection.Quizzes.OrderBy(quiz => quiz.Name, StringComparer.CurrentCulture)
-                .Select(QuizCard.From)
-                .ToArray(),
-            collection.ChildCollections.OrderBy(child => child.Name, StringComparer.CurrentCulture)
-                .Select(child => From(child, childAncestors))
-                .ToArray());
-    }
-}
-
-/// <summary>
 /// One row of the AI credit admin ledger.
 /// </summary>
 /// <remarks>

@@ -20,7 +20,8 @@ public sealed class AnkiSchedulerTests
         var good = _scheduler.Schedule(card, AnkiRatings.Good, .9, Now);
         var easy = _scheduler.Schedule(card, AnkiRatings.Easy, .9, Now);
 
-        Assert.Equal(Now.AddMinutes(1), again.DueAt);
+        Assert.Equal(Now, again.DueAt);
+        Assert.Equal("Now", again.IntervalLabel);
         Assert.Equal(Now.AddMinutes(6), hard.DueAt);
         Assert.Equal(Now.AddMinutes(10), good.DueAt);
         Assert.Equal(0.212, again.Stability, 6);
@@ -67,8 +68,26 @@ public sealed class AnkiSchedulerTests
         Assert.True(hard.Stability < good.Stability);
         Assert.True(good.Stability < easy.Stability);
         Assert.Equal(AnkiCardStates.Relearning, again.State);
-        Assert.Equal(Now.AddMinutes(10), again.DueAt);
+        Assert.Equal(Now, again.DueAt);
         Assert.Equal(card.LapseCount + 1, again.LapseCount);
+    }
+
+    [Theory]
+    [InlineData(AnkiCardStates.Learning)]
+    [InlineData(AnkiCardStates.Relearning)]
+    public void Again_during_learning_is_available_immediately(string state)
+    {
+        var card = ReviewCard(8, Now.AddMinutes(-1));
+        card.State = state;
+        card.LearningStep = 1;
+
+        var again = _scheduler.Schedule(card, AnkiRatings.Again, .9, Now);
+
+        Assert.Equal(Now, again.DueAt);
+        Assert.Equal("Now", again.IntervalLabel);
+        Assert.Equal(state, again.State);
+        Assert.Equal(0, again.LearningStep);
+        Assert.Equal(0, again.ScheduledDays);
     }
 
     [Fact]

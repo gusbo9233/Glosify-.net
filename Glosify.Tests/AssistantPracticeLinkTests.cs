@@ -71,7 +71,7 @@ public sealed class AssistantPracticeLinkTests
         else Assert.Equal(ExpectedUrl(mode, h.QuizId), JsonSerializer.SerializeToElement(result.Output).GetProperty("url").GetString());
     }
 
-    private static string ExpectedUrl(string mode, Guid id) => mode == "anki" ? $"/Anki/Study?id={id}"
+    private static string ExpectedUrl(string mode, Guid id) => mode == "anki" ? "/Anki"
         : $"/Quiz/{(mode == "typing" ? "Type" : "Flashcard")}?id={id}&wordCount=20&practiceDirection=source-to-target&practiceItemType=words";
 
     private static async Task<AssistantHarness> SeedAsync()
@@ -81,9 +81,9 @@ public sealed class AssistantPracticeLinkTests
         db.Quizzes.AddRange(new Quiz { Id = SpanishId, UserId = AssistantHarness.UserId, Name = "Spanish", SourceLanguage = "English", TargetLanguage = "Spanish", Language = "Spanish" },
             new Quiz { Id = ForeignId, UserId = "other", Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" });
         // The Anki ownership/language service accepts catalog aliases as well as names.
-        db.AnkiCollections.AddRange(new AnkiCollection { Id = h.QuizId, UserId = AssistantHarness.UserId, Name = "Polish study", SourceLanguage = "English", TargetLanguage = "pl" },
-            new AnkiCollection { Id = SpanishId, UserId = AssistantHarness.UserId, Name = "Spanish study", SourceLanguage = "English", TargetLanguage = "Spanish" },
-            new AnkiCollection { Id = ForeignId, UserId = "other", Name = "Other study", SourceLanguage = "English", TargetLanguage = "Polish" });
+        db.AnkiCollections.AddRange(new AnkiCollection { Id = h.QuizId, UserId = AssistantHarness.UserId, Name = "Polish study", TargetLanguage = "pl" },
+            new AnkiCollection { Id = SpanishId, UserId = AssistantHarness.UserId, Name = "Spanish study", TargetLanguage = "Spanish" },
+            new AnkiCollection { Id = ForeignId, UserId = "other", Name = "Other study", TargetLanguage = "Polish" });
         await db.SaveChangesAsync();
         return h;
     }

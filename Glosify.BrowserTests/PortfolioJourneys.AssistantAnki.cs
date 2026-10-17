@@ -16,7 +16,7 @@ public sealed partial class PortfolioJourneys
 {
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task AssistantAnki_SelectedQuizItemsAppearInCollectionAndUndoRemovesThem()
+    public async Task AssistantAnki_SelectedQuizItemsAppearInAnkiAndUndoRemovesThem()
     {
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
@@ -32,13 +32,9 @@ public sealed partial class PortfolioJourneys
             // Finish this navigation before posting again or leaving for Anki.
             await Page.WaitForLoadStateAsync(LoadState.Load);
         }
-        await Page.GotoAsync("/Anki?create=true");
-        var form = Page.Locator("[data-anki-create-form]");
-        await form.GetByLabel("Collection name").FillAsync("Assistant Revision");
-        await form.GetByLabel("Source language").SelectOptionAsync(new SelectOptionValue { Label = "English" });
-        await form.GetByRole(AriaRole.Button, new() { Name = "Create collection" }).ClickAsync();
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Assistant Revision", Exact = true }).First).ToBeVisibleAsync();
-        var collectionUrl = Page.Url;
+        // Anki has one collection per learning language; it starts empty.
+        await Page.GotoAsync("/Anki");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your Anki collection is empty" })).ToBeVisibleAsync();
         await Page.GotoAsync(quizUrl);
 
         // Script only model completion. The applier persists real cards and the production
@@ -54,23 +50,24 @@ public sealed partial class PortfolioJourneys
         });
         await Page.Locator("[data-assistant-toggle]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToBeVisibleAsync();
-        await Page.Locator("[data-assistant-textarea]").FillAsync("Add the first 2 words to my Anki Assistant Revision collection");
+        await Page.Locator("[data-assistant-textarea]").FillAsync("Add the first 2 words to Anki");
         await Page.Locator("[data-assistant-submit]").ClickAsync();
         await Expect(Page.Locator("[data-assistant-pane='chat']")).ToContainTextAsync("Added 2 cards");
         var undo = Page.GetByRole(AriaRole.Button, new() { Name = "Undo changes", Exact = true });
         await Expect(undo).ToBeVisibleAsync();
 
-        var collectionPage = await Page.Context.NewPageAsync();
-        await collectionPage.GotoAsync(collectionUrl);
-        await Expect(collectionPage.GetByLabel("Collection statistics").GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("2");
-        await Expect(collectionPage.GetByText("No quizzes linked yet.", new() { Exact = true })).ToBeVisibleAsync();
+        var ankiPage = await Page.Context.NewPageAsync();
+        await ankiPage.GotoAsync("/Anki");
+        await Expect(ankiPage.Locator(".anki-stats")).ToContainTextAsync("2 new");
+        await Expect(ankiPage.Locator("[data-anki-item-key]:checked")).ToHaveCountAsync(2);
         Page.Dialog += (_, dialog) => dialog.AcceptAsync();
         await undo.ClickAsync();
         await Expect(Page.Locator(".assistant-undo")).ToContainTextAsync("Changes undone");
-        await collectionPage.ReloadAsync();
-        await Expect(collectionPage.GetByLabel("Collection statistics").GetByText("New", new() { Exact = true }).Locator("..").Locator("strong")).ToHaveTextAsync("0");
+        await ankiPage.ReloadAsync();
+        await Expect(ankiPage.GetByRole(AriaRole.Heading, new() { Name = "Your Anki collection is empty" })).ToBeVisibleAsync();
+        await Expect(ankiPage.Locator("[data-anki-item-key]:checked")).ToHaveCountAsync(0);
         await Expect(Page.Locator(".word-card")).ToHaveCountAsync(3);
-        await collectionPage.CloseAsync();
+        await ankiPage.CloseAsync();
         await AssertNoPageErrorsAsync();
     }
 
@@ -82,7 +79,6 @@ public sealed partial class PortfolioJourneys
         await using var transaction = await db.Database.BeginTransactionAsync();
         var thread = await db.AssistantThreads.SingleAsync(t => t.Id == threadId);
         var quiz = await db.Quizzes.SingleAsync(q => q.UserId == thread.UserId && q.Name == "Portfolio Polish");
-        var collection = await db.AnkiCollections.SingleAsync(c => c.UserId == thread.UserId && c.Name == "Assistant Revision");
         var ids = await db.Words.Where(w => w.QuizId == quiz.Id).OrderBy(w => w.CreatedAt).ThenBy(w => w.Id).Take(2).Select(w => w.Id).ToListAsync();
         Assert.Equal(2, ids.Count);
         var web = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -91,14 +87,14 @@ public sealed partial class PortfolioJourneys
         var applier = new ChangeApplier(db, null!, null!, NullLogger<ChangeApplier>.Instance, anki);
         var applied = await applier.ApplyAsync(quiz.Id, thread.UserId,
             [new PendingChange(PendingChangeKinds.AddAnkiItems, JsonSerializer.SerializeToElement(
-                new AddAnkiItemsInput(collection.Id, quiz.Id, PracticeItemType.Words, ids, true, false), web))], CancellationToken.None);
+                new AddAnkiItemsInput(Guid.Empty, quiz.Id, PracticeItemType.Words, ids, true, false), web))], CancellationToken.None);
         Assert.Equal(2, applied.AnkiCardsAdded);
         var now = DateTime.UtcNow;
         var runId = Guid.NewGuid();
         var turnId = Guid.NewGuid();
         var messageId = Guid.NewGuid();
         var partId = Guid.NewGuid();
-        var text = $"Added 2 cards to [Assistant Revision](/Anki/Collection/{collection.Id}).";
+        var text = "Added 2 cards to [Anki](/Anki).";
         var sequence = (await db.AssistantMessages.Where(m => m.ThreadId == threadId).MaxAsync(m => (int?)m.Sequence) ?? -1) + 1;
         db.AssistantTurns.Add(new AssistantTurn { Id = turnId, ThreadId = threadId, Profile = "QuizAssistant",
             Status = AssistantTurnStatus.Completed, StartedAt = now, CompletedAt = now, FinalMessageId = messageId });

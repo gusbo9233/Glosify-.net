@@ -144,7 +144,6 @@ public sealed class AssistantChatTests
     [Theory]
     [InlineData("delete_quiz")]
     [InlineData("delete_collection")]
-    [InlineData("anki_delete")]
     public async Task History_and_live_view_agree_that_permanent_only_changes_cannot_be_undone(string kind)
     {
         await using var h = await AssistantHarness.CreateAsync();

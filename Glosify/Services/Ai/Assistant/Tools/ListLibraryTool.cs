@@ -40,7 +40,6 @@ internal sealed class ListLibraryTool(GlosifyContext db) : AssistantTool<ListLib
                 id = collection.Id,
                 name = collection.Name,
                 parent_collection_id = collection.ParentCollectionId,
-                is_public = collection.IsPublic,
             })
             .ToListAsync(cancellationToken);
         var quizzes = db.Quizzes.AsNoTracking()
@@ -58,7 +57,6 @@ internal sealed class ListLibraryTool(GlosifyContext db) : AssistantTool<ListLib
                 source_language = quiz.SourceLanguage,
                 target_language = quiz.TargetLanguage,
                 collection_id = quiz.CollectionId,
-                is_public = quiz.IsPublic,
             })
             .ToListAsync(cancellationToken);
         return ToolResult.Ok(

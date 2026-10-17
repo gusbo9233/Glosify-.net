@@ -614,8 +614,7 @@ internal sealed class AssistantRunExecutor(
                     return;
                 }
 
-                var prepared = await PlaceAsync(current, changes, cancellationToken);
-                var applied = await applier.ApplyAsync(quizId, current.UserId, prepared.Changes, cancellationToken);
+                var applied = await applier.ApplyAsync(quizId, current.UserId, changes, cancellationToken);
                 foreach (var entry in applied.Journal)
                 {
                     db.AssistantChanges.Add(new AssistantChange
@@ -641,11 +640,6 @@ internal sealed class AssistantRunExecutor(
                 if (applied.CreatedQuizId is Guid createdId)
                 {
                     state.CreatedQuizzes.Add(createdId);
-                    if (prepared.Collection is Guid collectionId)
-                    {
-                        state.Placements[createdId] = collectionId;
-                    }
-
                     var created = await db.Quizzes.SingleAsync(quiz => quiz.Id == createdId, cancellationToken);
                     created.ProcessingStatus = "Building";
                     created.ProcessingMessage = "The assistant is still working on this quiz.";
@@ -713,30 +707,6 @@ internal sealed class AssistantRunExecutor(
             "The quiz changed first",
             "The quiz changed since you last read it, probably because the user edited it. Nothing was saved. Read it again and redo the change only if it is still needed."), cancellationToken);
         return false;
-    }
-
-    private sealed record Placement(IReadOnlyList<PendingChange> Changes, Guid? Collection);
-
-    /// <summary>
-    /// A new quiz bound for a public collection is built privately at the root and moved in
-    /// when the run finishes, so a half-built quiz is never published.
-    /// </summary>
-    private async Task<Placement> PlaceAsync(AssistantRun run, IReadOnlyList<PendingChange> changes, CancellationToken cancellationToken)
-    {
-        var create = changes.FirstOrDefault(change => change.Kind == PendingChangeKinds.CreateQuiz);
-        if (create is null
-            || !create.Payload.TryGetProperty("collection_id", out var destination)
-            || destination.ValueKind != JsonValueKind.String
-            || !Guid.TryParse(destination.GetString(), out var collectionId)
-            || !await new CollectionVisibility(db).IsCollectionPubliclyReadableAsync(collectionId, cancellationToken))
-        {
-            return new Placement(changes, null);
-        }
-
-        var payload = System.Text.Json.Nodes.JsonNode.Parse(create.Payload.GetRawText())!.AsObject();
-        payload["collection_id"] = null;
-        var privateCreate = create with { Payload = JsonSerializer.SerializeToElement(payload) };
-        return new Placement(changes.Select(change => ReferenceEquals(change, create) ? privateCreate : change).ToList(), collectionId);
     }
 
     private async Task FinishAsync(AssistantRun run, AssistantRunState state, Guid lease, CancellationToken cancellationToken)
@@ -829,8 +799,7 @@ internal sealed class AssistantRunExecutor(
                     collection_name = collection.Name,
                 });
                 var title = $"Move quiz “{quiz.Name}” into “{collection.Name}”";
-                var isPublic = await new CollectionVisibility(db).IsCollectionPubliclyReadableAsync(collection.Id, cancellationToken);
-                if (!isPublic || rules.Contains(PendingChangeKinds.MoveQuiz))
+                if (rules.Contains(PendingChangeKinds.MoveQuiz))
                 {
                     var applied = await applier.ApplyAsync(null, current.UserId, [move], cancellationToken);
                     var part = await AddSyntheticToolAsync(current, state, title, AssistantToolStates.Completed, null, cancellationToken);

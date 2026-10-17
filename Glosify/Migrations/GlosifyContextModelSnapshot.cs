@@ -326,11 +326,6 @@ namespace Glosify.Migrations
                     b.Property<int>("NewCardsPerDay")
                         .HasColumnType("int");
 
-                    b.Property<string>("SourceLanguage")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<string>("TargetLanguage")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -351,10 +346,8 @@ namespace Glosify.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "Name")
+                    b.HasIndex("UserId", "TargetLanguage")
                         .IsUnique();
-
-                    b.HasIndex("UserId", "SourceLanguage", "TargetLanguage");
 
                     b.ToTable("AnkiCollections");
                 });
@@ -384,6 +377,11 @@ namespace Glosify.Migrations
 
                     b.Property<Guid?>("SentenceId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SourceLanguage")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("SourceText")
                         .IsRequired()

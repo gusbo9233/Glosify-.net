@@ -26,6 +26,10 @@
             if (itemId instanceof HTMLInputElement) itemId.value = button.dataset.itemId || '';
             const label = ankiDialog?.querySelector('[data-anki-item-label]');
             if (label) label.textContent = button.dataset.itemLabel || 'card';
+            const timeZone = ankiDialog?.querySelector('[data-browser-timezone]');
+            if (timeZone instanceof HTMLInputElement) {
+                try { timeZone.value = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch { /* Keep the collection's zone. */ }
+            }
             button.closest('[data-item-menu]')?.removeAttribute('open');
             ankiDialog?.showModal();
         }, { signal: bindings.signal }));

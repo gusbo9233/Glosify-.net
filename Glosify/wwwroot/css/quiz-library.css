@@ -158,56 +158,11 @@
     box-shadow: none;
 }
 
-.library-page .collection-share-form {
-    margin-top: 18px;
-}
 
-.library-page .explore-hero-feature {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    align-self: flex-end;
-    min-width: 230px;
-    padding: 18px 20px;
-    border: 1px solid rgba(120, 183, 255, 0.16);
-    border-radius: 18px;
-    background: rgba(1,14,36, 0.34);
-    box-shadow: 0 16px 38px rgba(1, 10, 28, 0.2);
-    backdrop-filter: blur(14px);
-}
 
-.library-page .explore-hero-feature > .material-symbols-outlined {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 15px;
-    background: rgba(120, 183, 255, 0.12);
-    color: var(--library-blue);
-    font-size: 25px;
-    font-variation-settings: "FILL" 1;
-}
 
-.library-page .explore-hero-feature div {
-    display: grid;
-    gap: 3px;
-}
 
-.library-page .explore-hero-feature div > span {
-    color: rgba(214,227,255, 0.5);
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-}
 
-.library-page .explore-hero-feature strong {
-    color: var(--on-surface);
-    font-size: 16px;
-}
 
 .library-page .library-section {
     gap: 20px;
@@ -861,9 +816,6 @@
         max-width: none;
     }
 
-    .library-page .explore-hero-feature {
-        align-self: flex-start;
-    }
 
     .library-page .library-section--collections .quiz-grid,
     .library-page .library-section--quizzes .quiz-grid {
@@ -892,9 +844,6 @@
         grid-template-columns: 1fr;
     }
 
-    .library-page .explore-hero-feature {
-        display: none;
-    }
 
     .library-page .library-section--collections .quiz-grid,
     .library-page .library-section--quizzes .quiz-grid {
@@ -926,14 +875,7 @@
         width: 100%;
     }
 
-    .library-page.explore-page .quiz-meta,
-    .library-page.explore-page .quiz-meta-actions {
-        gap: 4px;
-    }
 
-    .library-page.explore-page .status-pill {
-        padding-inline: 7px;
-    }
 }
 
 @media (prefers-reduced-motion: reduce) {

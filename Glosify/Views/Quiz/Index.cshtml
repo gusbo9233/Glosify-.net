@@ -36,18 +36,6 @@
                     <a class="language-change-link" asp-controller="Languages" asp-action="Index">@Text["Quiz.ChangeLanguage"]</a>
                 }
             </p>
-            @if (currentCollection != null)
-            {
-                <form class="share-form collection-share-form" method="post" asp-controller="Quiz" asp-action="SetCollectionVisibility" asp-route-id="@currentCollection.Id">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="isPublic" value="@(currentCollection.IsPublic ? "false" : "true")" />
-                    <button class="btn-inline-share" type="submit">
-                        <span class="material-symbols-outlined">@(currentCollection.IsPublic ? "lock" : "public")</span>
-                        @(currentCollection.IsPublic ? Text["Quiz.MakePrivate"] : Text["Quiz.MakePublic"])
-                    </button>
-                    <span class="status-pill">@(currentCollection.IsPublic ? Text["Quiz.PublicSubtree"] : Text["Quiz.Private"])</span>
-                </form>
-            }
             <div class="library-overview" aria-label="@Text["Quiz.LibrarySummary"]">
                 <span class="overview-item">
                     <span class="material-symbols-outlined" aria-hidden="true">folder_open</span>

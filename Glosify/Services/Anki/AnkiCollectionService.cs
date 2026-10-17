@@ -8,6 +8,8 @@ namespace Glosify.Services.Anki;
 
 public sealed partial class AnkiCollectionService : IAnkiCollectionService
 {
+    public const int MaximumMembershipChanges = 2_000;
+
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
 
@@ -19,31 +21,13 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
 
     public async Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(
         string userId,
-        CancellationToken cancellationToken = default) =>
-        await ListAsync(userId, null, cancellationToken);
-
-    public async Task<IReadOnlyList<AnkiCollectionSummary>> ListForLanguageAsync(
-        string userId,
-        string targetLanguage,
-        CancellationToken cancellationToken = default) =>
-        await ListAsync(userId, CanonicalLanguageName(targetLanguage), cancellationToken);
-
-    private async Task<IReadOnlyList<AnkiCollectionSummary>> ListAsync(
-        string userId,
-        string? targetLanguage,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken = default)
     {
         var collections = await _context.AnkiCollections
             .AsNoTracking()
             .Where(collection => collection.UserId == userId)
-            .OrderBy(collection => collection.Name)
+            .OrderBy(collection => collection.TargetLanguage)
             .ToListAsync(cancellationToken);
-        if (targetLanguage is not null)
-        {
-            collections = collections
-                .Where(collection => SameLanguage(collection.TargetLanguage, targetLanguage))
-                .ToList();
-        }
         foreach (var collection in collections)
             await SyncCollectionAsync(collection.Id, cancellationToken);
 
@@ -54,12 +38,105 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             summaries.Add(new AnkiCollectionSummary(
                 collection.Id,
                 collection.Name,
-                collection.SourceLanguage,
                 collection.TargetLanguage,
                 collection.DefaultDirection,
-                await CountsAsync(collection, now, cancellationToken)));
+                await CountsAsync(collection, now, null, cancellationToken)));
         }
         return summaries;
+    }
+
+    public async Task<AnkiCollection?> FindForLanguageAsync(
+        string userId,
+        string targetLanguage,
+        CancellationToken cancellationToken = default)
+    {
+        var canonical = CanonicalLanguageName(targetLanguage);
+        return await _context.AnkiCollections.AsNoTracking().SingleOrDefaultAsync(
+            collection => collection.UserId == userId && collection.TargetLanguage == canonical,
+            cancellationToken);
+    }
+
+    public async Task<AnkiCollection> GetOrCreateAsync(
+        string userId,
+        string targetLanguage,
+        string? timeZoneId,
+        CancellationToken cancellationToken = default)
+    {
+        var canonical = CanonicalLanguageName(targetLanguage);
+        var existing = await TrackedForLanguageAsync(userId, canonical, cancellationToken)
+            ?? await CreateAsync(userId, canonical, timeZoneId, cancellationToken);
+        // The browser reports its zone with every add, so the study day follows
+        // the user after travel without a separate setting.
+        if (!string.IsNullOrWhiteSpace(timeZoneId) && NormalizeTimeZone(timeZoneId) is var zone && zone != existing.TimeZoneId)
+        {
+            existing.TimeZoneId = zone;
+            existing.UpdatedAt = _timeProvider.GetUtcNow();
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        return existing;
+    }
+
+    private Task<AnkiCollection?> TrackedForLanguageAsync(string userId, string canonical, CancellationToken cancellationToken) =>
+        _context.AnkiCollections.SingleOrDefaultAsync(
+            collection => collection.UserId == userId && collection.TargetLanguage == canonical,
+            cancellationToken);
+
+    private async Task<AnkiCollection> CreateAsync(string userId, string canonical, string? timeZoneId,
+        CancellationToken cancellationToken)
+    {
+        // Accounting mutates tracked snapshots and counters before the database save.
+        // Keep the caller's unit of work so duplicate recovery can undo those mutations
+        // without discarding unrelated edits or detaching entities the caller still uses.
+        var initial = _context.ChangeTracker.Entries().Select(entry => (Entry: entry, entry.State,
+            Current: entry.CurrentValues.Clone(), Original: entry.OriginalValues.Clone(),
+            Modified: entry.Properties.Where(property => property.IsModified).Select(property => property.Metadata.Name).ToHashSet())).ToArray();
+        var entities = initial.Select(item => item.Entry.Entity).ToHashSet(ReferenceEqualityComparer.Instance);
+        var now = _timeProvider.GetUtcNow();
+        var collection = new AnkiCollection
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Name = canonical,
+            TargetLanguage = canonical,
+            TimeZoneId = NormalizeTimeZone(timeZoneId),
+            CreatedAt = now,
+            UpdatedAt = now,
+        };
+        _context.AnkiCollections.Add(collection);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return collection;
+        }
+        catch (DbUpdateException exception)
+        {
+            // Inside a caller's transaction EF rolls the failed save back to its savepoint,
+            // but that does not restore the tracker, including accounting changes.
+            foreach (var entry in _context.ChangeTracker.Entries().Where(entry => !entities.Contains(entry.Entity)).ToArray())
+                entry.State = EntityState.Detached;
+            foreach (var item in initial)
+            {
+                item.Entry.CurrentValues.SetValues(item.Current);
+                item.Entry.State = item.State;
+                item.Entry.OriginalValues.SetValues(item.Original);
+                if (item.State == EntityState.Modified)
+                    foreach (var property in item.Entry.Properties)
+                        property.IsModified = item.Modified.Contains(property.Metadata.Name);
+            }
+            // SaveChanges also writes the caller's other pending edits. Only recover
+            // a failure attributed to this insert, never hide an unrelated write error.
+            // SQL Server can attribute a failed batch to several entries, so also
+            // identify the specific unique index reported by the provider.
+            var expectedDuplicate = _context.Database.IsSqlServer()
+                ? exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } sql
+                    && sql.Message.Contains("IX_AnkiCollections_UserId_TargetLanguage", StringComparison.Ordinal)
+                : exception.Entries.Count == 1;
+            if (!expectedDuplicate || !exception.Entries.Any(entry => ReferenceEquals(entry.Entity, collection)))
+                throw;
+            var winner = await TrackedForLanguageAsync(userId, canonical, cancellationToken);
+            if (winner is null) throw;
+            return winner;
+        }
     }
 
     public async Task<bool> IsOwnedByLanguageAsync(
@@ -77,246 +154,81 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         return storedTarget is not null && SameLanguage(storedTarget, canonicalTarget);
     }
 
-    public async Task<bool> IsCardInOwnedLanguageAsync(
-        Guid cardId,
-        Guid collectionId,
+    public async Task<AnkiWorkspace> GetWorkspaceAsync(
+        string userId,
         string targetLanguage,
-        string userId,
         CancellationToken cancellationToken = default)
     {
-        var canonicalTarget = CanonicalLanguageName(targetLanguage);
-        var storedTarget = await _context.AnkiCards.AsNoTracking()
-            .Where(card => card.Id == cardId
-                && card.Note.AnkiCollectionId == collectionId
-                && card.Note.Collection.UserId == userId)
-            .Select(card => card.Note.Collection.TargetLanguage)
-            .SingleOrDefaultAsync(cancellationToken);
-        return storedTarget is not null && SameLanguage(storedTarget, canonicalTarget);
-    }
+        var canonical = CanonicalLanguageName(targetLanguage);
+        var collection = await FindForLanguageAsync(userId, canonical, cancellationToken);
+        IReadOnlyList<AnkiQuizLink> links = [];
+        var included = new HashSet<string>(StringComparer.Ordinal);
+        if (collection is not null)
+        {
+            await SyncCollectionAsync(collection.Id, cancellationToken);
+            links = await _context.AnkiQuizLinks
+                .AsNoTracking()
+                .Include(link => link.Quiz)
+                .Where(link => link.AnkiCollectionId == collection.Id)
+                .OrderBy(link => link.Quiz.Name)
+                .ToListAsync(cancellationToken);
+            var activeNotes = await _context.AnkiNotes.AsNoTracking()
+                .Where(note => note.AnkiCollectionId == collection.Id && note.Cards.Any(card => card.IsActive))
+                .Select(note => new { note.WordId, note.SentenceId })
+                .ToListAsync(cancellationToken);
+            foreach (var note in activeNotes)
+                included.Add(note.WordId is not null ? ItemKey(PracticeItemType.Words, note.WordId) : ItemKey(PracticeItemType.Sentences, note.SentenceId!.Value.ToString()));
+        }
 
-    public async Task<AnkiCollectionDetails?> GetDetailsAsync(
-        Guid collectionId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var owned = await _context.AnkiCollections
-            .AsNoTracking()
-            .AnyAsync(collection => collection.Id == collectionId && collection.UserId == userId, cancellationToken);
-        if (!owned)
-            return null;
-
-        await SyncCollectionAsync(collectionId, cancellationToken);
-        var collection = await _context.AnkiCollections
-            .AsNoTracking()
-            .SingleAsync(item => item.Id == collectionId, cancellationToken);
-        var links = await _context.AnkiQuizLinks
-            .AsNoTracking()
-            .Include(link => link.Quiz)
-            .Where(link => link.AnkiCollectionId == collectionId)
-            .OrderBy(link => link.Quiz.Name)
-            .ToListAsync(cancellationToken);
-        var cards = await _context.AnkiCards
-            .AsNoTracking()
-            .Include(card => card.Note)
-            .Where(card => card.Note.AnkiCollectionId == collectionId && card.IsActive)
-            .OrderBy(card => card.Note.TargetText)
-            .ThenBy(card => card.Direction)
-            .Select(card => new AnkiCardListItem(
-                card.Id,
-                card.Note.Id,
-                card.Note.QuizId,
-                card.Note.ItemType,
-                card.Note.TargetText,
-                card.Note.SourceText,
-                card.Direction,
-                card.State,
-                card.DueAt,
-                card.DirectlyIncluded,
-                card.QuizLinkIncluded))
-            .ToListAsync(cancellationToken);
         var quizzes = (await _context.Quizzes
             .AsNoTracking()
             .Where(quiz => quiz.UserId == userId)
             .OrderBy(quiz => quiz.Name)
             .ToListAsync(cancellationToken))
-            .Where(quiz => SameLanguage(quiz.SourceLanguage, collection.SourceLanguage)
-                && SameLanguage(quiz.TargetLanguage, collection.TargetLanguage))
+            .Where(quiz => SameLanguage(QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language), canonical))
             .ToList();
         var quizIds = quizzes.Select(quiz => quiz.Id).ToList();
-        var quizNames = quizzes.ToDictionary(quiz => quiz.Id, quiz => quiz.Name);
-        var availableItems = (await _context.Words.AsNoTracking()
+        var quizzesById = quizzes.ToDictionary(quiz => quiz.Id);
+        var words = (await _context.Words.AsNoTracking()
                 .Where(word => quizIds.Contains(word.QuizId))
                 .OrderBy(word => word.CreatedAt)
-                .Select(word => new { word.QuizId, ItemId = word.Id, TargetText = word.Lemma, SourceText = word.Translation })
+                .Select(word => new { word.QuizId, word.Id, word.Lemma, word.Translation })
                 .ToListAsync(cancellationToken))
-            .Select(word => new AnkiAvailableItem(word.QuizId, quizNames[word.QuizId], "word", word.ItemId, word.TargetText, word.SourceText))
-            .Concat((await _context.QuizSentences.AsNoTracking()
+            .Select(word => Item(quizzesById[word.QuizId], PracticeItemType.Words, word.Id, word.Lemma, word.Translation));
+        var sentences = (await _context.QuizSentences.AsNoTracking()
                 .Where(sentence => quizIds.Contains(sentence.QuizId))
                 .OrderBy(sentence => sentence.CreatedAt)
-                .Select(sentence => new { sentence.QuizId, ItemId = sentence.Id, TargetText = sentence.Text, SourceText = sentence.Translation })
+                .Select(sentence => new { sentence.QuizId, sentence.Id, sentence.Text, sentence.Translation })
                 .ToListAsync(cancellationToken))
-                .Select(sentence => new AnkiAvailableItem(sentence.QuizId, quizNames[sentence.QuizId], "sentence", sentence.ItemId.ToString(), sentence.TargetText, sentence.SourceText)))
-            .ToList();
+            .Select(sentence => Item(quizzesById[sentence.QuizId], PracticeItemType.Sentences, sentence.Id.ToString(), sentence.Text, sentence.Translation));
 
-        return new AnkiCollectionDetails(
-            collection,
-            links,
-            cards,
-            quizzes,
-            availableItems,
-            await CountsAsync(collection, _timeProvider.GetUtcNow(), cancellationToken));
+        return new AnkiWorkspace(collection, links, quizzes, words.Concat(sentences).ToList());
+
+        AnkiAvailableItem Item(Quiz quiz, string itemType, string id, string target, string source) =>
+            new(quiz.Id, quiz.Name, quiz.SourceLanguage, itemType, id, target, source, included.Contains(ItemKey(itemType, id)));
     }
 
-    public async Task<AnkiCollection> CreateAsync(
-        CreateAnkiCollectionInput input,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var name = Required(input.Name, "Enter a collection name.", 160);
-        var source = Required(input.SourceLanguage, "Choose a source language.", 64);
-        var target = CanonicalLanguageName(input.TargetLanguage);
-        if (SameLanguage(source, target))
-            throw new AnkiValidationException("Source and target languages must be different.");
-        if (await _context.AnkiCollections.AnyAsync(
-            collection => collection.UserId == userId && collection.Name == name,
-            cancellationToken))
-        {
-            throw new AnkiValidationException("An Anki collection with that name already exists.");
-        }
+    private static string ItemKey(string itemType, string id) => itemType + ":" + id;
 
-        var now = _timeProvider.GetUtcNow();
-        var collection = new AnkiCollection
-        {
-            Id = Guid.NewGuid(),
-            UserId = userId,
-            Name = name,
-            SourceLanguage = source,
-            TargetLanguage = target,
-            TimeZoneId = NormalizeTimeZone(input.TimeZoneId),
-            CreatedAt = now,
-            UpdatedAt = now,
-        };
-        _context.AnkiCollections.Add(collection);
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            throw new AnkiValidationException("An Anki collection with that name already exists.");
-        }
-        return collection;
-    }
-
-    public async Task<AnkiCollection?> CreateFromQuizAsync(
-        CreateAnkiCollectionFromQuizInput input,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        return await ExecuteAtomicallyAsync(async () =>
-        {
-            var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(
-                candidate => candidate.Id == input.QuizId && candidate.UserId == userId,
-                cancellationToken);
-            if (quiz is null)
-                return null;
-            var targetLanguage = CanonicalLanguageName(input.TargetLanguage);
-            var quizTargetLanguage = CanonicalLanguageName(quiz.TargetLanguage);
-            if (!SameLanguage(quizTargetLanguage, targetLanguage))
-                throw new AnkiValidationException("This quiz belongs to a different app language.");
-            var collection = await CreateAsync(new CreateAnkiCollectionInput(
-                input.Name, quiz.SourceLanguage, quizTargetLanguage, input.TimeZoneId), userId, cancellationToken);
-            var linked = await AddQuizAsync(new AddAnkiQuizInput(collection.Id, quiz.Id,
-                input.WordsSourceToTarget, input.WordsTargetToSource,
-                input.SentencesSourceToTarget, input.SentencesTargetToSource), userId, cancellationToken);
-            if (!linked)
-                throw new AnkiValidationException("The quiz is not compatible with this collection.");
-            return collection;
-        }, cancellationToken);
-    }
-
-    public Task<bool> SetDirectionAsync(Guid collectionId, string direction, string userId,
+    public async Task<bool> SetPracticeDirectionAsync(Guid collectionId, string direction, string userId,
         CancellationToken cancellationToken = default)
     {
         if (direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource))
             throw new AnkiValidationException("Choose source-to-target or target-to-source.");
-        return ExecuteAtomicallyAsync(async () =>
-        {
-            var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
-            if (collection is null) return false;
-            await SyncCollectionAsync(collectionId, cancellationToken);
-            var links = await _context.AnkiQuizLinks.Where(link => link.AnkiCollectionId == collectionId).ToListAsync(cancellationToken);
-            var notes = await _context.AnkiNotes.Include(note => note.Cards)
-                .Where(note => note.AnkiCollectionId == collectionId).ToListAsync(cancellationToken);
-            var forward = direction == PracticeDirection.SourceToTarget;
-            foreach (var note in notes)
-            {
-                var included = note.Cards.Any(card => card.IsActive);
-                var direct = note.Cards.Any(card => card.DirectlyIncluded);
-                var excluded = note.Cards.Any(card => card.ExcludedFromQuizLink) && !included;
-                foreach (var card in note.Cards) card.DirectlyIncluded = false;
-                // Keep removed notes removed in the new direction too.
-                var existing = note.Cards.FirstOrDefault(card => card.Direction == direction);
-                var selected = existing ?? EnsureCard(note, direction);
-                if (existing is null) _context.AnkiCards.Add(selected);
-                selected.DirectlyIncluded = direct;
-                // An existing direction keeps its own removal decision. Only a new
-                // direction inherits a fully removed note's exclusion; an inactive
-                // opposite direction may still be intentionally included.
-                selected.ExcludedFromQuizLink = existing?.ExcludedFromQuizLink ?? excluded;
-            }
-            foreach (var link in links)
-            {
-                var words = link.WordsSourceToTarget || link.WordsTargetToSource;
-                var sentences = link.SentencesSourceToTarget || link.SentencesTargetToSource;
-                link.WordsSourceToTarget = words && forward;
-                link.WordsTargetToSource = words && !forward;
-                link.SentencesSourceToTarget = sentences && forward;
-                link.SentencesTargetToSource = sentences && !forward;
-                link.UpdatedAt = _timeProvider.GetUtcNow();
-            }
-            collection.DefaultDirection = direction;
-            collection.UpdatedAt = _timeProvider.GetUtcNow();
-            await _context.SaveChangesAsync(cancellationToken);
-            await SyncCollectionAsync(collectionId, cancellationToken);
-            return true;
-        }, cancellationToken);
-    }
-
-    public async Task<bool> RenameAsync(
-        Guid collectionId,
-        string name,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
         var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
         if (collection is null)
             return false;
-        var normalized = Required(name, "Enter a collection name.", 160);
-        if (await _context.AnkiCollections.AnyAsync(
-            candidate => candidate.UserId == userId && candidate.Id != collectionId && candidate.Name == normalized,
-            cancellationToken))
+        if (collection.DefaultDirection != direction)
         {
-            throw new AnkiValidationException("An Anki collection with that name already exists.");
-        }
-        collection.Name = normalized;
-        collection.UpdatedAt = _timeProvider.GetUtcNow();
-        try
-        {
+            collection.DefaultDirection = direction;
+            collection.UpdatedAt = _timeProvider.GetUtcNow();
             await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            throw new AnkiValidationException("An Anki collection with that name already exists.");
         }
         return true;
     }
 
-    public async Task<bool> UpdateSettingsAsync(
+    public async Task<bool> UpdateTimeZoneAsync(
         Guid collectionId,
-        double desiredRetention,
-        int newCardsPerDay,
-        int maximumReviewsPerDay,
         string timeZoneId,
         string userId,
         CancellationToken cancellationToken = default)
@@ -324,32 +236,8 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
         if (collection is null)
             return false;
-        collection.DesiredRetention = Math.Clamp(desiredRetention, 0.70, 0.97);
-        collection.NewCardsPerDay = Math.Clamp(newCardsPerDay, 0, 999);
-        collection.MaximumReviewsPerDay = Math.Clamp(maximumReviewsPerDay, 1, 9_999);
         collection.TimeZoneId = NormalizeTimeZone(timeZoneId);
         collection.UpdatedAt = _timeProvider.GetUtcNow();
-        await _context.SaveChangesAsync(cancellationToken);
-        return true;
-    }
-
-    public async Task<bool> DeleteAsync(
-        Guid collectionId,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        var collection = await _context.AnkiCollections
-            .Include(item => item.Reviews)
-            .Include(item => item.Notes).ThenInclude(note => note.Cards)
-            .Include(item => item.QuizLinks)
-            .SingleOrDefaultAsync(item => item.Id == collectionId && item.UserId == userId, cancellationToken);
-        if (collection is null)
-            return false;
-        _context.AnkiReviews.RemoveRange(collection.Reviews);
-        _context.AnkiCards.RemoveRange(collection.Notes.SelectMany(note => note.Cards));
-        _context.AnkiNotes.RemoveRange(collection.Notes);
-        _context.AnkiQuizLinks.RemoveRange(collection.QuizLinks);
-        _context.AnkiCollections.Remove(collection);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
@@ -380,6 +268,12 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         if (collection is null || quiz is null || !Matches(collection, quiz))
             return false;
 
+        return await ApplyQuizAsync(input, collection, cancellationToken);
+    }
+
+    private async Task<bool> ApplyQuizAsync(AddAnkiQuizInput input, AnkiCollection collection,
+        CancellationToken cancellationToken)
+    {
         var now = _timeProvider.GetUtcNow();
         var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(
             item => item.AnkiCollectionId == input.CollectionId && item.QuizId == input.QuizId,
@@ -400,11 +294,6 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         link.SentencesSourceToTarget = input.SentencesSourceToTarget;
         link.SentencesTargetToSource = input.SentencesTargetToSource;
         link.UpdatedAt = now;
-        var hasSourceToTarget = input.WordsSourceToTarget || input.SentencesSourceToTarget;
-        var hasTargetToSource = input.WordsTargetToSource || input.SentencesTargetToSource;
-        collection.DefaultDirection = hasTargetToSource && !hasSourceToTarget
-            ? PracticeDirection.TargetToSource
-            : PracticeDirection.SourceToTarget;
         collection.UpdatedAt = now;
         await _context.SaveChangesAsync(cancellationToken);
         await SyncCollectionAsync(input.CollectionId, cancellationToken);
@@ -507,13 +396,14 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         var note = await FindNoteAsync(input.CollectionId, wordId, sentenceId, cancellationToken);
         if (note is null)
         {
-            note = NewNote(input.CollectionId, input.QuizId, itemType, wordId, sentenceId, target, source);
+            note = NewNote(input.CollectionId, input.QuizId, itemType, wordId, sentenceId, target, source, quiz.SourceLanguage);
             _context.AnkiNotes.Add(note);
         }
         else
         {
             note.TargetText = target;
             note.SourceText = source;
+            note.SourceLanguage = quiz.SourceLanguage;
             note.IsActive = true;
             note.UpdatedAt = _timeProvider.GetUtcNow();
         }
@@ -521,9 +411,6 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             EnsureDirectCard(note, PracticeDirection.SourceToTarget);
         if (input.TargetToSource)
             EnsureDirectCard(note, PracticeDirection.TargetToSource);
-        collection.DefaultDirection = input.TargetToSource && !input.SourceToTarget
-            ? PracticeDirection.TargetToSource
-            : PracticeDirection.SourceToTarget;
         collection.UpdatedAt = _timeProvider.GetUtcNow();
         await _context.SaveChangesAsync(cancellationToken);
         return true;
@@ -621,13 +508,14 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         {
             foreach (var card in note.Cards)
                 card.QuizLinkIncluded = false;
+            var sourceLanguage = quizzes.TryGetValue(note.QuizId, out var noteQuiz) ? noteQuiz.SourceLanguage : note.SourceLanguage;
             if (note.WordId is not null && wordsById.TryGetValue(note.WordId, out var word))
             {
-                UpdateSnapshot(note, word.Lemma, word.Translation);
+                UpdateSnapshot(note, word.Lemma, word.Translation, sourceLanguage);
             }
             else if (note.SentenceId.HasValue && sentencesById.TryGetValue(note.SentenceId.Value, out var sentence))
             {
-                UpdateSnapshot(note, sentence.Text, sentence.Translation);
+                UpdateSnapshot(note, sentence.Text, sentence.Translation, sourceLanguage);
             }
         }
 
@@ -637,7 +525,7 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
                 continue;
             foreach (var word in wordsByQuiz[link.QuizId])
             {
-                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Words, word.Id, null, word.Lemma, word.Translation);
+                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Words, word.Id, null, word.Lemma, word.Translation, quiz.SourceLanguage);
                 if (link.WordsSourceToTarget)
                     EnsureLinkedCard(note, PracticeDirection.SourceToTarget);
                 if (link.WordsTargetToSource)
@@ -645,7 +533,7 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             }
             foreach (var sentence in sentencesByQuiz[link.QuizId])
             {
-                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Sentences, null, sentence.Id, sentence.Text, sentence.Translation);
+                var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Sentences, null, sentence.Id, sentence.Text, sentence.Translation, quiz.SourceLanguage);
                 if (link.SentencesSourceToTarget)
                     EnsureLinkedCard(note, PracticeDirection.SourceToTarget);
                 if (link.SentencesTargetToSource)
@@ -673,18 +561,21 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
     private async Task<AnkiCollectionCounts> CountsAsync(
         AnkiCollection collection,
         DateTimeOffset now,
+        string? direction,
         CancellationToken cancellationToken)
     {
         var dayStart = StartOfCollectionDay(collection.TimeZoneId, now);
         var query = _context.AnkiCards.AsNoTracking()
-            .Where(card => card.Note.AnkiCollectionId == collection.Id && card.IsActive);
+            .Where(card => card.Note.AnkiCollectionId == collection.Id && card.IsActive
+                && (direction == null || card.Direction == direction));
         var due = IsSqlite()
             ? (await query.ToListAsync(cancellationToken)).Count(card => card.State != AnkiCardStates.New && card.DueAt <= now)
             : await query.CountAsync(card => card.State != AnkiCardStates.New && card.DueAt <= now, cancellationToken);
         var newCount = await query.CountAsync(card => card.State == AnkiCardStates.New, cancellationToken);
         var learning = await query.CountAsync(card => card.State == AnkiCardStates.Learning || card.State == AnkiCardStates.Relearning, cancellationToken);
         var total = await query.CountAsync(cancellationToken);
-        var reviewQuery = _context.AnkiReviews.AsNoTracking().Where(review => review.AnkiCollectionId == collection.Id);
+        var reviewQuery = _context.AnkiReviews.AsNoTracking().Where(review => review.AnkiCollectionId == collection.Id
+            && (direction == null || review.Card.Direction == direction));
         var studied = IsSqlite()
             ? (await reviewQuery.Select(review => review.ReviewedAt).ToListAsync(cancellationToken)).Count(reviewedAt => reviewedAt >= dayStart)
             : await reviewQuery.CountAsync(review => review.ReviewedAt >= dayStart, cancellationToken);
@@ -764,17 +655,18 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         string? wordId,
         Guid? sentenceId,
         string target,
-        string source)
+        string source,
+        string sourceLanguage)
     {
         AnkiNote? note = wordId is not null
             ? notesByWord.GetValueOrDefault(wordId)
             : sentenceId.HasValue ? notesBySentence.GetValueOrDefault(sentenceId.Value) : null;
         if (note is not null)
         {
-            UpdateSnapshot(note, target, source);
+            UpdateSnapshot(note, target, source, sourceLanguage);
             return note;
         }
-        note = NewNote(collectionId, quizId, itemType, wordId, sentenceId, target, source);
+        note = NewNote(collectionId, quizId, itemType, wordId, sentenceId, target, source, sourceLanguage);
         notes.Add(note);
         if (wordId is not null)
             notesByWord[wordId] = note;
@@ -784,14 +676,15 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         return note;
     }
 
-    private void UpdateSnapshot(AnkiNote note, string target, string source)
+    private void UpdateSnapshot(AnkiNote note, string target, string source, string sourceLanguage)
     {
         var normalizedTarget = target.Trim();
         var normalizedSource = source.Trim();
-        if (note.TargetText == normalizedTarget && note.SourceText == normalizedSource)
+        if (note.TargetText == normalizedTarget && note.SourceText == normalizedSource && note.SourceLanguage == sourceLanguage)
             return;
         note.TargetText = normalizedTarget;
         note.SourceText = normalizedSource;
+        note.SourceLanguage = sourceLanguage;
         note.UpdatedAt = _timeProvider.GetUtcNow();
     }
 
@@ -802,7 +695,8 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         string? wordId,
         Guid? sentenceId,
         string target,
-        string source)
+        string source,
+        string sourceLanguage)
     {
         var now = _timeProvider.GetUtcNow();
         return new AnkiNote
@@ -815,6 +709,7 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             SentenceId = sentenceId,
             TargetText = target.Trim(),
             SourceText = source.Trim(),
+            SourceLanguage = sourceLanguage,
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now,
@@ -855,9 +750,9 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         return card;
     }
 
+    // Quizzes from any source language share the collection for their learning language.
     private static bool Matches(AnkiCollection collection, Quiz quiz) =>
-        SameLanguage(collection.SourceLanguage, quiz.SourceLanguage)
-        && SameLanguage(collection.TargetLanguage, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language));
+        SameLanguage(collection.TargetLanguage, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language));
 
     private static bool SameLanguage(string left, string right)
     {

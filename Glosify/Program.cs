@@ -59,6 +59,7 @@ builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     options.Filters.Add<ApiProblemDetailsResultFilter>();
+    options.Filters.Add<Glosify.Services.Language.SelectedLanguageFilter>();
     options.Filters.AddService<ApiExceptionFilter>();
 })
     .AddViewLocalization(LanguageViewLocationExpanderFormat.Suffix)
@@ -362,11 +363,11 @@ app.Use(async (context, next) =>
 });
 
 // The static-asset endpoint intentionally answers unsupported HTTP methods with 405.
-// Short-circuit the retired custom-quiz paths after authorization so every former
+// Short-circuit the retired feature paths after authorization so every former
 // authenticated endpoint instead has the same 404 contract, without keeping MVC routes.
 app.Use(async (context, next) =>
 {
-    if (IsRetiredCustomQuizPath(context.Request.Path))
+    if (IsRetiredCustomQuizPath(context.Request.Path) || IsRetiredExplorePath(context.Request.Path))
     {
         context.Response.StatusCode = StatusCodes.Status404NotFound;
         return;
@@ -488,6 +489,24 @@ app.MapGroup("/api/auth").MapIdentityApi<ApplicationUser>().AllowAnonymous();
 
 app.Run();
 return 0;
+
+static bool IsRetiredExplorePath(PathString path)
+{
+    if (path.StartsWithSegments("/Explore") || path.StartsWithSegments("/api/explore")
+        || path.StartsWithSegments("/Quiz/SetQuizVisibility")
+        || path.StartsWithSegments("/Quiz/SetCollectionVisibility"))
+    {
+        return true;
+    }
+
+    var segments = path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries);
+    return segments is { Length: 4 }
+        && string.Equals(segments[0], "api", StringComparison.OrdinalIgnoreCase)
+        && (string.Equals(segments[1], "quizzes", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(segments[1], "collections", StringComparison.OrdinalIgnoreCase))
+        && Guid.TryParse(segments[2], out _)
+        && string.Equals(segments[3], "visibility", StringComparison.OrdinalIgnoreCase);
+}
 
 static bool IsRetiredCustomQuizPath(PathString path)
 {

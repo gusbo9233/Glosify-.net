@@ -17,6 +17,54 @@ public class ChangeApplierTests
     private static readonly DateTimeOffset SeededAt =
         new(2026, 8, 11, 12, 0, 0, TimeSpan.Zero);
 
+    [Theory]
+    [InlineData("quiz_visibility")]
+    [InlineData("collection_visibility")]
+    [InlineData("copy_quiz")]
+    [InlineData("copy_collection")]
+    [InlineData("create_anki_collection")]
+    [InlineData("rename_anki_collection")]
+    [InlineData("anki_create")]
+    [InlineData("anki_rename")]
+    [InlineData("anki_delete")]
+    public async Task Retired_proposals_reject_the_whole_batch(string kind)
+    {
+        await using var db = CreateContext();
+        var changes = new[]
+        {
+            new PendingChange(PendingChangeKinds.CreateCollection,
+                JsonSerializer.SerializeToElement(new { name = "Must not apply", language = "Polish" })),
+            new PendingChange(kind, JsonSerializer.SerializeToElement(new { id = Guid.NewGuid(), isPublic = true })),
+        };
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateApplier(db).ApplyAsync(null, "user-1", changes, CancellationToken.None));
+
+        Assert.Contains("retired", error.Message);
+        Assert.Empty(await db.Collections.ToListAsync());
+        Assert.Empty(await db.Quizzes.ToListAsync());
+    }
+
+    [Theory]
+    [InlineData("create")]
+    [InlineData("rename")]
+    [InlineData("delete")]
+    public async Task Removed_anki_collection_actions_are_not_applied_or_journaled(string action)
+    {
+        await using var db = CreateContext();
+        var change = new PendingChange("anki_" + action, JsonSerializer.SerializeToElement(new
+        {
+            args = new { action, name = "Polish" }, entity_type = "anki", id = (Guid?)null,
+            expected = LearningChanges.Hash([]), title = "Anki " + action,
+        }));
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            CreateApplier(db).ApplyAsync(null, "user-1", [change], CancellationToken.None));
+
+        Assert.Contains("retired", error.Message);
+        Assert.Empty(await db.AnkiCollections.ToListAsync());
+    }
+
     [Fact]
     public async Task Workflow_rolls_back_quiz_and_keeps_proposal_active_when_a_later_change_fails()
     {
@@ -90,6 +138,49 @@ public class ChangeApplierTests
         Assert.Single(await db.Quizzes.ToListAsync());
         Assert.Equal(
             AssistantMessageStatus.Applied,
+            (await db.AssistantMessages.SingleAsync(message => message.Id == messageId)).Status);
+    }
+
+    [Theory]
+    [InlineData("quiz_visibility")]
+    [InlineData("collection_visibility")]
+    [InlineData("copy_quiz")]
+    [InlineData("copy_collection")]
+    [InlineData("create_anki_collection")]
+    [InlineData("rename_anki_collection")]
+    [InlineData("anki_create")]
+    [InlineData("anki_rename")]
+    [InlineData("anki_delete")]
+    public async Task Workflow_terminally_rejects_retired_proposals(string kind)
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using var db = new SqliteGlosifyContext(options);
+        await db.Database.EnsureCreatedAsync();
+        var messageId = await SeedProposalAsync(db,
+        [
+            new PendingChange(PendingChangeKinds.CreateCollection, JsonSerializer.SerializeToElement(new
+            {
+                name = "Must not apply",
+                language = "Polish",
+            })),
+            new PendingChange(kind, JsonSerializer.SerializeToElement(new { id = Guid.NewGuid(), isPublic = true })),
+        ]);
+        var workflow = new AssistantChangeWorkflow(
+            db,
+            CreateApplier(db),
+            new AssistantMessagePresenter(),
+            null!,
+            new FakeTimeProvider(SeededAt));
+
+        var result = await workflow.ApplyAsync(messageId, "user-1", CancellationToken.None);
+
+        Assert.Equal(0, result.Applied);
+        Assert.Empty(await db.Collections.ToListAsync());
+        Assert.Empty(await db.Quizzes.ToListAsync());
+        Assert.Equal(
+            AssistantMessageStatus.Rejected,
             (await db.AssistantMessages.SingleAsync(message => message.Id == messageId)).Status);
     }
 

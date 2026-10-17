@@ -574,7 +574,7 @@ public sealed class AssistantRunTests
     }
 
     [Fact]
-    public async Task A_quiz_bound_for_a_public_collection_is_published_only_after_approval()
+    public async Task Legacy_public_flag_does_not_publish_or_delay_an_owned_quiz()
     {
         var collectionId = Guid.NewGuid();
         await using var h = await AssistantHarness.CreateAsync(db => db.Collections.Add(new Collection
@@ -584,16 +584,6 @@ public sealed class AssistantRunTests
         h.Model.ThenCall("create_quiz", new { name = "Travel", source_language = (string?)null, target_language = (string?)null, collection_id = collectionId.ToString(), words = (object?)null, sentences = (object?)null })
             .ThenText("Created.");
         var run = await h.StartAsync("Create a travel quiz in Shared", quizId: Guid.Empty);
-        await h.DrainAsync();
-
-        var waiting = await h.ViewAsync(run.Id);
-        Assert.Equal(AssistantRunStatus.AwaitingApproval, waiting.Status);
-        await using (var db = h.Db())
-        {
-            Assert.Null((await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel")).CollectionId);
-        }
-
-        await h.CommandAsync(run.Id, "approve");
         await h.DrainAsync();
 
         Assert.Equal(AssistantRunStatus.Completed, (await h.ViewAsync(run.Id)).Status);

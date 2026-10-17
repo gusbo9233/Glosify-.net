@@ -14,11 +14,6 @@
 </div>
 
 <div class="card-stage">
-    <p class="page-message flashcard-request-status"
-       data-flashcard-status
-       role="status"
-       aria-live="polite"
-       hidden></p>
     @if (Model.IsComplete)
     {
         <section class="results visible" aria-live="polite">
@@ -53,86 +48,14 @@
     }
     else if (Model.CurrentCard != null)
     {
-        @if (Model.IsAnswerRevealed)
-        {
-            <article class="flashcard is-revealed" aria-live="polite">
-                <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                <h2 class="card-word" dir="auto">
-                    @Model.CurrentCard.Prompt
-                    @if (!isFreestyle)
-                    {
-                        <button class="btn-icon-tts"
-                                type="button"
-                                data-tts="@Model.CurrentCard.Prompt"
-                                data-tts-lang="@Model.PromptLanguage"
-                                title="@Text["Quiz.PlayPronunciationGeneric"]"
-                                aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]"
-                                aria-pressed="false">
-                            <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
-                        </button>
-                    }
-                </h2>
-                <div class="card-answer revealed">
-                    <div class="translation" dir="auto">
-                        @Model.CurrentCard.Answer
-                        @if (!isFreestyle)
-                        {
-                            <button class="btn-icon-tts"
-                                    type="button"
-                                    data-tts="@Model.CurrentCard.Answer"
-                                    data-tts-lang="@Model.AnswerLanguage"
-                                    title="@Text["Quiz.PlayPronunciationGeneric"]"
-                                    aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Answer]"
-                                    aria-pressed="false">
-                                <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
-                            </button>
-                        }
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleSentence))
-                    {
-                        <div class="example" dir="auto">@Model.CurrentCard.ExampleSentence</div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.CurrentCard.ExampleTranslation))
-                    {
-                        <div class="example" dir="auto">@Model.CurrentCard.ExampleTranslation</div>
-                    }
-                </div>
-            </article>
-        }
-        else
-        {
-            <form class="card-reveal-form" method="post" asp-controller="FlashcardQuiz" asp-action="Reveal" data-flashcard-form data-card-reveal-form>
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="sessionId" value="@Model.SessionId" />
-                <input type="hidden" name="expectedIndex" value="@Model.CompletedCards" />
-                <button class="flashcard flashcard-clickable" type="submit" aria-label="@Text["Quiz.RevealAnswer", Model.CurrentCard.Prompt]">
-                    <span class="card-label">@Model.CardLabel @Model.CurrentCardNumber</span>
-                    <span class="card-word" dir="auto">@Model.CurrentCard.Prompt</span>
-                </button>
-                @if (!isFreestyle)
-                {
-                    <button class="btn-icon-tts card-preview-tts"
-                            type="button"
-                            data-tts="@Model.CurrentCard.Prompt"
-                            data-tts-lang="@Model.PromptLanguage"
-                            title="@Text["Quiz.PlayPronunciationGeneric"]"
-                            aria-label="@Text["Quiz.PlayPronunciation", Model.CurrentCard.Prompt]"
-                            aria-pressed="false">
-                        <span class="material-symbols-outlined" aria-hidden="true">volume_up</span>
-                    </button>
-                }
-            </form>
-        }
-
-        @if (Model.IsAnswerRevealed)
-        {
-            @await Html.PartialAsync("_StudyRatingControls", new Glosify.Models.ViewModels.StudyCardViewModel(
-                Model.CurrentCard.Prompt, Model.CurrentCard.Answer, Model.PromptLanguage, Model.AnswerLanguage,
-                Model.IsAnswerRevealed, Url.Action("Reveal", "FlashcardQuiz")!, Url.Action("Rate", "FlashcardQuiz")!,
-                new Dictionary<string, string> { ["sessionId"] = Model.SessionId, ["expectedIndex"] = Model.CompletedCards.ToString() },
-                new[] { new Glosify.Models.ViewModels.StudyRating("again", "Quiz.Again"), new Glosify.Models.ViewModels.StudyRating("good", "Quiz.GotIt") },
-                Pronunciation: !isFreestyle, Example: Model.CurrentCard.ExampleSentence, ExampleTranslation: Model.CurrentCard.ExampleTranslation))
-        }
+        @await Html.PartialAsync("_StudyCard", new StudyCardViewModel(
+            Model.CurrentCard.Prompt, Model.CurrentCard.Answer, Model.PromptLanguage, Model.AnswerLanguage,
+            PracticeDirection.IsTargetToSource(Model.PracticeDirection), Model.IsAnswerRevealed,
+            Url.Action("Reveal", "FlashcardQuiz")!, Url.Action("Rate", "FlashcardQuiz")!,
+            new Dictionary<string, string> { ["sessionId"] = Model.SessionId, ["expectedIndex"] = Model.CompletedCards.ToString() },
+            new[] { new StudyRating("again", "Quiz.Again", ShortcutKey: 1), new StudyRating("good", "Quiz.GotIt", ShortcutKey: 4) },
+            Pronunciation: !isFreestyle, Example: Model.CurrentCard.ExampleSentence,
+            ExampleTranslation: Model.CurrentCard.ExampleTranslation, Label: $"{Model.CardLabel} {Model.CurrentCardNumber}", ShowRatingShortcuts: true))
 
         <form class="session-reset" method="post" asp-controller="FlashcardQuiz" asp-action="Restart">
             @Html.AntiForgeryToken()

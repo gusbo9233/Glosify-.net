@@ -8,27 +8,22 @@ using Microsoft.EntityFrameworkCore;
 namespace Glosify.Services.Ai.Assistant.Tools;
 
 internal sealed record ManageQuizArgs(
-    [property: Description("rename_quiz, delete_quiz, delete_collection, quiz_visibility, collection_visibility, copy_quiz, or copy_collection.")] string Action,
-    [property: Description("Quiz or library folder id from list_library or browse_public_library.")] Guid Id,
-    string? Name = null, bool? IsPublic = null);
+    [property: Description("rename_quiz, delete_quiz, or delete_collection.")] string Action,
+    [property: Description("Quiz or library folder id from list_library.")] Guid Id,
+    string? Name = null);
 
 internal sealed class ManageQuizTool(GlosifyContext db) : AssistantTool<ManageQuizArgs>
 {
     public override string Name => "manage_quiz_library";
     public override AssistantToolKind Kind => AssistantToolKind.Write;
-    protected override string Describe(AssistantMode mode) => "Rename/delete quizzes, delete library folders, change visibility, or copy public content. Deletion is permanent and requires approval. Deleting a folder keeps quizzes at the root; move/remove child folders first. Use ids from library tools, never guess.";
+    protected override string Describe(AssistantMode mode) => "Rename/delete quizzes or delete library folders. Deletion is permanent and requires approval. Deleting a folder keeps quizzes at the root; move/remove child folders first. Use ids from library tools, never guess.";
     protected override async Task<ToolResult> RunAsync(ManageQuizArgs args, ToolContext context, CancellationToken ct)
     {
         if (!LearningChanges.QuizActions.Contains(args.Action)) return ToolResult.Fail("Unknown action", "Use an action listed in the schema description.");
         if (args.Action == "rename_quiz" && (string.IsNullOrWhiteSpace(args.Name) || args.Name.Trim().Length > 200))
             return ToolResult.Fail("Invalid name", "Provide a name between 1 and 200 characters.");
-        if (args.Action.EndsWith("visibility", StringComparison.Ordinal) && args.IsPublic is null)
-            return ToolResult.Fail("Missing visibility", "is_public is required.");
         var type = args.Action.Contains("collection", StringComparison.Ordinal) ? "collection" : "quiz";
-        var copy = args.Action.StartsWith("copy_", StringComparison.Ordinal);
-        if (copy && !await LearningChanges.IsPublicAsync(db, type, args.Id, ct))
-            return ToolResult.Fail("Not found", "Public content not found. Use browse_public_library.");
-        var snapshot = await LearningChanges.SnapshotAsync(db, type, args.Id, copy ? null : context.UserId, ct);
+        var snapshot = await LearningChanges.SnapshotAsync(db, type, args.Id, context.UserId, ct);
         if (snapshot.Count == 0) return ToolResult.Fail("Not found", "The target was not found. Read the library again.");
         var name = snapshot[0].Values.GetValueOrDefault("Name").GetString() ?? type;
         var title = $"{args.Action.Replace('_', ' ')}: {name}";
@@ -36,17 +31,16 @@ internal sealed class ManageQuizTool(GlosifyContext db) : AssistantTool<ManageQu
         if (args.Action == "delete_quiz") title += "; linked Anki cards will be retired";
         return ToolResult.Propose(title, null, [QuizContent.Change(args.Action, new
         {
-            args.Action, args.Id, args.Name, args.IsPublic, entity_type = type,
+            args.Action, args.Id, args.Name, entity_type = type,
             expected = LearningChanges.Hash(snapshot), title
         })]);
     }
 }
 
 internal sealed record ManageAnkiArgs(
-    [property: Description("create, rename, delete, settings, direction, add_quiz, remove_quiz, add_item, or remove_card.")] string Action,
-    Guid? CollectionId = null, string? Name = null, string? SourceLanguage = null, string? TargetLanguage = null,
-    string? TimeZoneId = null, string? Direction = null, double? DesiredRetention = null,
-    int? NewCardsPerDay = null, int? MaximumReviewsPerDay = null, Guid? QuizId = null,
+    [property: Description("settings, direction, add_quiz, remove_quiz, add_item, or remove_card.")] string Action,
+    Guid? CollectionId = null,
+    string? TimeZoneId = null, string? Direction = null, Guid? QuizId = null,
     string? ItemType = null, string? ItemId = null, Guid? CardId = null,
     bool? WordsSourceToTarget = null, bool? WordsTargetToSource = null,
     bool? SentencesSourceToTarget = null, bool? SentencesTargetToSource = null);
@@ -56,17 +50,17 @@ internal sealed class ManageAnkiTool(GlosifyContext db) : AssistantTool<ManageAn
     public override string Name => "manage_anki";
     public override AssistantToolKind Kind => AssistantToolKind.Write;
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
-    protected override string Describe(AssistantMode mode) => "Manage Anki study collections and card membership. Read inspect_anki first. direction replaces active directions, retaining inactive review history; source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz requires at least one of its four direction flags; add_item uses direction and item_type (word/words, sentence/sentences; omitted defaults to words). Deletion is permanent. Removals/deletion require approval. settings changes only supplied values.";
+    protected override string Describe(AssistantMode mode) => "Manage the Anki collection for the current learning language and its card membership. Read inspect_anki first. direction sets which direction the learner practices; each direction keeps its own schedule. source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz requires at least one of its four direction flags; add_item uses direction and item_type (word/words, sentence/sentences; omitted defaults to words). Removals require approval. settings only changes time_zone_id. Retention and daily card limits are shared defaults for everyone and cannot be customized.";
     protected override async Task<ToolResult> RunAsync(ManageAnkiArgs args, ToolContext context, CancellationToken ct)
     {
-        args = args with { CollectionId = args.Action == "create" ? null : args.CollectionId ?? context.AnkiCollectionId,
-            SourceLanguage = args.SourceLanguage ?? context.SourceLanguage, TargetLanguage = args.TargetLanguage ?? context.TargetLanguage };
-        if (args.DesiredRetention is < .70 or > .97 || args.NewCardsPerDay is < 0 or > 999 || args.MaximumReviewsPerDay is < 1 or > 9999)
-            return ToolResult.Fail("Invalid settings", "Retention must be 0.70–0.97, new cards/day 0–999, reviews/day 1–9999.");
+        var language = QuizLanguageCatalog.Find(context.TargetLanguage ?? "")?.Name;
+        args = args with { CollectionId = args.CollectionId ?? context.AnkiCollectionId
+            ?? await db.AnkiCollections.Where(c => c.UserId == context.UserId && c.TargetLanguage == language).Select(c => (Guid?)c.Id).SingleOrDefaultAsync(ct) };
+        if (args.Action == "settings" && string.IsNullOrWhiteSpace(args.TimeZoneId))
+            return ToolResult.Fail("Timezone required", "settings requires time_zone_id. Retention and daily limits use shared defaults for everyone.");
         if (!LearningChanges.AnkiActions.Contains(args.Action)) return ToolResult.Fail("Unknown action", "Use an action listed in the schema description.");
         if (args.Action is "direction" or "add_item" && args.Direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource))
             return ToolResult.Fail("Invalid direction", "Use source-to-target or target-to-source.");
-        if (args.Action is "create" or "rename" && string.IsNullOrWhiteSpace(args.Name)) return ToolResult.Fail("Name required", "Provide a collection name.");
         if (args.Action is "add_quiz" or "remove_quiz" or "add_item" && args.QuizId is null) return ToolResult.Fail("Quiz required", "Provide quiz_id from list_library.");
         if (args.Action == "remove_card" && (args.CardId is null || args.CardId == Guid.Empty))
             return ToolResult.Fail("Card required", "Provide card_id from inspect_anki.");
@@ -92,11 +86,11 @@ internal sealed class ManageAnkiTool(GlosifyContext db) : AssistantTool<ManageAn
         if (args.Action == "remove_card" && !await db.AnkiCards.AnyAsync(card => card.Id == args.CardId
                 && card.Note.AnkiCollectionId == args.CollectionId && card.Note.Collection.UserId == context.UserId, ct))
             return ToolResult.Fail("Card not found", "Use inspect_anki to find a card in this owned collection.");
-        var collectionOnly = args.Action is "rename" or "settings";
-        var snapshot = args.Action == "create" ? [] : await LearningChanges.SnapshotAsync(db, "anki", args.CollectionId ?? Guid.Empty, context.UserId, ct, collectionOnly);
-        if (args.Action != "create" && snapshot.Count == 0) return ToolResult.Fail("Collection not found", "Use inspect_anki to find an owned collection.");
-        var title = $"Anki {args.Action.Replace('_', ' ')}: {args.Name ?? (snapshot.Count > 0 ? snapshot[0].Values["Name"].GetString() : "collection")}";
-        if (args.Action == "delete") title += " (permanent; deletes scheduling history; cannot Undo)";
+        var collectionOnly = args.Action is "settings";
+        var snapshot = await LearningChanges.SnapshotAsync(db, "anki", args.CollectionId ?? Guid.Empty, context.UserId, ct, collectionOnly);
+        if (snapshot.Count == 0) return ToolResult.Fail("Collection not found",
+            "This learning language has no Anki collection yet. add_anki_items and link_anki_quiz create it.");
+        var title = $"Anki {args.Action.Replace('_', ' ')}";
         return ToolResult.Propose(title, null, [QuizContent.Change("anki_" + args.Action, new
         {
             args, expected = LearningChanges.Hash(snapshot), title, entity_type = "anki", id = args.CollectionId,
@@ -111,13 +105,13 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
     public override string Name => "inspect_anki";
     public override AssistantToolKind Kind => AssistantToolKind.Read;
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
-    protected override string Describe(AssistantMode mode) => "List owned Anki study collections, or inspect a collection's settings, linked quizzes, cards and review statistics. Cards are paged in batches of 100; use offset for more. Set list_all to list collections even when one is selected. These are study collections, not library folders.";
+    protected override string Describe(AssistantMode mode) => "List the user's Anki collections (one per learning language; cards from any translation language), or inspect a collection's settings, linked quizzes, cards and review statistics. Cards are paged in batches of 100; use offset for more. Set list_all to list collections even when one is selected. These are study collections, not library folders.";
     protected override async Task<ToolResult> RunAsync(InspectAnkiArgs args, ToolContext context, CancellationToken ct)
     {
         args = args with { CollectionId = args.ListAll ? null : args.CollectionId ?? context.AnkiCollectionId };
         var collections = db.AnkiCollections.AsNoTracking().Where(c => c.UserId == context.UserId);
         if (args.CollectionId is not Guid id)
-            return ToolResult.Ok("Anki collections", await collections.Select(c => new { c.Id, c.Name, c.SourceLanguage, c.TargetLanguage, c.DefaultDirection }).ToListAsync(ct));
+            return ToolResult.Ok("Anki collections", await collections.Select(c => new { c.Id, c.TargetLanguage, c.DefaultDirection }).ToListAsync(ct));
         var collection = await collections.SingleOrDefaultAsync(c => c.Id == id, ct);
         if (collection is null) return ToolResult.Fail("Not found", "Anki collection not found.");
         var cards = db.AnkiCards.AsNoTracking().Where(c => c.Note.AnkiCollectionId == id);
@@ -127,8 +121,8 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         var active = await CardSummaryAsync(db, id, now, ct);
         return ToolResult.Ok("Anki collection details", new
         {
-            collection.Id, collection.Name, collection.SourceLanguage, collection.TargetLanguage, collection.DefaultDirection,
-            collection.DesiredRetention, collection.NewCardsPerDay, collection.MaximumReviewsPerDay, collection.TimeZoneId,
+            collection.Id, collection.TargetLanguage, collection.DefaultDirection,
+            AnkiStudyDefaults.DesiredRetention, AnkiStudyDefaults.NewCardsPerDay, AnkiStudyDefaults.MaximumReviewsPerDay, collection.TimeZoneId,
             total_cards = await cards.CountAsync(ct), active_cards = active.Active, total_reviews = reviews.Total,
             due_cards = active.Due,
             new_cards = active.New,
@@ -210,22 +204,6 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         };
     }
 }
-internal sealed record PublicLibraryArgs(string? Language = null);
-internal sealed class BrowsePublicLibraryTool(GlosifyContext db) : AssistantTool<PublicLibraryArgs>
-{
-    public override string Name => "browse_public_library";
-    public override AssistantToolKind Kind => AssistantToolKind.Read;
-    protected override string Describe(AssistantMode mode) => "Find public quizzes and library collections to copy. Returns ids and names for the selected learning language.";
-    protected override async Task<ToolResult> RunAsync(PublicLibraryArgs args, ToolContext context, CancellationToken ct)
-    {
-        var language = context.IsFreestyle ? "Freestyle" : args.Language ?? context.TargetLanguage;
-        return ToolResult.Ok("Public library", new {
-            quizzes = await db.Quizzes.AsNoTracking().Where(q => q.IsPublic && q.TargetLanguage == language).OrderBy(q => q.Name).Take(100).Select(q => new { q.Id, q.Name }).ToListAsync(ct),
-            collections = await db.Collections.AsNoTracking().Where(c => c.IsPublic && c.Language == language).OrderBy(c => c.Name).Take(100).Select(c => new { c.Id, c.Name }).ToListAsync(ct)
-        });
-    }
-}
-
 internal sealed record OpenPracticeArgs(Guid Id, string Mode = "flashcards", string Direction = "source-to-target", string ItemType = "words", int Count = 20);
 internal sealed class OpenPracticeTool(GlosifyContext db) : AssistantTool<OpenPracticeArgs>
 {
@@ -250,7 +228,7 @@ internal sealed class OpenPracticeTool(GlosifyContext db) : AssistantTool<OpenPr
             return ToolResult.Fail("Choose a language", "Select a learning language before opening Anki practice.");
         if (language is not null && QuizLanguageCatalog.Find(target)?.Code != language.Code)
             return ToolResult.Fail("Different learning language", $"Switch the app's learning language to {target} before opening this practice.");
-        var url = args.Mode == "anki" ? $"/Anki/Study?id={args.Id}" : $"/Quiz/{(args.Mode == "typing" ? "Type" : "Flashcard")}?id={args.Id}&wordCount={args.Count}&practiceDirection={args.Direction}&practiceItemType={args.ItemType}";
+        var url = args.Mode == "anki" ? "/Anki" : $"/Quiz/{(args.Mode == "typing" ? "Type" : "Flashcard")}?id={args.Id}&wordCount={args.Count}&practiceDirection={args.Direction}&practiceItemType={args.ItemType}";
         return ToolResult.Ok("Open practice", new { url });
     }
 }

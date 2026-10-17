@@ -1,5 +1,4 @@
 using Glosify.Localization;
-using Glosify.Services.Anki;
 
 namespace Glosify.Models.ViewModels;
 
@@ -45,7 +44,6 @@ public class QuizWorkspaceViewModel
     public QuizCard SelectedQuiz { get; set; } = null!;
     public IReadOnlyList<WordRow> Words { get; set; } = [];
     public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
-    public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
 }
 
 public class QuizSentenceViewModel
@@ -54,33 +52,6 @@ public class QuizSentenceViewModel
     public string Text { get; set; } = string.Empty;
     public string Translation { get; set; } = string.Empty;
     public int WordCount { get; set; }
-}
-
-public class ExploreIndexViewModel
-{
-    public string CurrentLanguage { get; set; } = string.Empty;
-    public IReadOnlyList<ExploreCollectionCardViewModel> Collections { get; set; } = [];
-    public IReadOnlyList<ExploreQuizCardViewModel> Quizzes { get; set; } = [];
-}
-
-public class ExploreCollectionCardViewModel
-{
-    public CollectionCard Collection { get; set; } = null!;
-    public int CollectionCount { get; set; }
-    public int QuizCount { get; set; }
-}
-
-public class ExploreQuizCardViewModel
-{
-    public QuizCard Quiz { get; set; } = null!;
-    public int WordCount { get; set; }
-}
-
-public class ExploreCollectionViewModel
-{
-    public ExploreCollectionNode Collection { get; set; } = null!;
-    public int CollectionCount { get; set; }
-    public int QuizCount { get; set; }
 }
 
 public class QuizSettingsViewModel

@@ -69,7 +69,9 @@ internal sealed class AssistantChangeWorkflow(
             return new AssistantApplyResult(0);
         }
 
-        if (changes.Any(RetiredPendingChangeKinds.ContainsCustomQuizChange))
+        if (changes.Any(RetiredPendingChangeKinds.ContainsCustomQuizChange)
+            || changes.Any(change => LearningChanges.IsRetiredSharing(change.Kind)
+                || RetiredPendingChangeKinds.IsAnkiCollectionChange(change.Kind)))
         {
             message.Status = AssistantMessageStatus.Rejected;
             await UpdateTurnOutcomeAsync(message.TurnId, AssistantChangeOutcome.Rejected, cancellationToken);

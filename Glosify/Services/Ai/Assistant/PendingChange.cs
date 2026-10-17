@@ -6,12 +6,10 @@ public sealed record PendingChange(string Kind, JsonElement Payload);
 
 public static class PendingChangeKinds
 {
-    public const string RenameAnkiCollection = "rename_anki_collection";
     public const string RemoveAnkiCards = "remove_anki_cards";
     public const string UnlinkAnkiQuiz = "unlink_anki_quiz";
     // Journal-only side effect of quiz content synchronization, never offered as a tool.
     public const string SyncAnkiCard = "sync_anki_card";
-    public const string CreateAnkiCollection = "create_anki_collection";
     public const string AddAnkiItems = "add_anki_items";
     public const string LinkAnkiQuiz = "link_anki_quiz";
     public const string AddWord = "add_word";
@@ -28,11 +26,14 @@ public static class PendingChangeKinds
 }
 
 /// <summary>
-/// Recognizes persisted proposals created before the custom-quiz feature was retired.
+/// Recognizes persisted proposals for retired features.
 /// These names remain only so old saved chats cannot apply a partially supported batch.
 /// </summary>
 internal static class RetiredPendingChangeKinds
 {
+    public static bool IsAnkiCollectionChange(string kind) => kind is
+        "create_anki_collection" or "rename_anki_collection" or "anki_create" or "anki_rename" or "anki_delete";
+
     private static readonly HashSet<string> CustomQuizKinds =
     [
         "create_custom_quiz",

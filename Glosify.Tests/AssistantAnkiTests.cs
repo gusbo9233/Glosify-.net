@@ -35,14 +35,14 @@ public sealed class AssistantAnkiTests
             {
                 selected = Output(request).GetProperty("words").EnumerateArray().Take(20).Select(w => w.GetProperty("id").GetString()!).ToArray();
                 Assert.Equal(Enumerable.Range(0, 20).Select(Id), selected);
-                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = selected }));
+                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = selected, direction = "source_to_target" }));
             })
             .Then(request =>
             {
                 var output = Output(request);
                 Assert.Equal(20, output.GetProperty("anki_cards_added").GetInt32());
-                Assert.Equal($"/Anki/Collection/{CollectionId}", output.GetProperty("anki_url").GetString());
-                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = selected }));
+                Assert.Equal("/Anki", output.GetProperty("anki_url").GetString());
+                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = selected, direction = "source_to_target" }));
             })
             .Then(request =>
             {
@@ -68,37 +68,38 @@ public sealed class AssistantAnkiTests
     }
 
     [Fact]
-    public async Task Creation_uses_quiz_language_pair_and_undo_removes_only_its_new_collection()
+    public async Task Adding_without_a_collection_creates_the_learning_language_collection_and_undo_keeps_it()
     {
-        await using var h = await SeedAsync(2);
-        Guid createdId = default;
-        h.Model.ThenCall("create_anki_collection", new { name = "New revision" })
-            .Then(request =>
-            {
-                createdId = Output(request).GetProperty("anki_collection_id").GetGuid();
-                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = createdId, kind = "words", item_ids = new[] { Id(0), Id(1) }, direction = "both" }));
-            }).ThenText("Created the collection and added four cards.");
-        var run = await h.RunAsync("Create a new Anki collection for these two words in both directions");
+        await using var h = await AssistantHarness.CreateAsync(db =>
+        {
+            for (var i = 0; i < 2; i++) db.Words.Add(new Word { Id = Id(i), Lemma = $"word {i}", Translation = $"translation {i}", CreatedAt = Now });
+        });
+        h.Model.ThenCall("add_anki_items", new { kind = "words", item_ids = new[] { Id(0), Id(1) } })
+            .ThenText("Added four cards.");
+        var run = await h.RunAsync("Add these two words to Anki");
         Assert.Equal(AssistantRunStatus.Completed, run.Status);
+        Guid createdId;
         await using (var db = h.Db())
         {
-            var collection = await db.AnkiCollections.SingleAsync(c => c.Id == createdId);
+            var collection = await db.AnkiCollections.SingleAsync();
+            createdId = collection.Id;
             Assert.Equal("Polish", collection.TargetLanguage);
-            Assert.Equal("English", collection.SourceLanguage);
             Assert.Equal("UTC", collection.TimeZoneId);
+            // Both directions by default, each its own track.
             Assert.Equal(4, await db.AnkiCards.CountAsync());
+            Assert.All(await db.AnkiNotes.ToListAsync(), note => Assert.Equal("English", note.SourceLanguage));
         }
-        Assert.Equal(5, (await h.UndoAsync(run.Id)).Undone);
+        Assert.Equal(4, (await h.UndoAsync(run.Id)).Undone);
         await using var after = h.Db();
-        Assert.False(await after.AnkiCollections.AnyAsync(c => c.Id == createdId));
-        Assert.Equal(CollectionId, (await after.AnkiCollections.SingleAsync()).Id);
+        Assert.Equal(createdId, (await after.AnkiCollections.SingleAsync()).Id);
+        Assert.Empty(await after.AnkiCards.ToListAsync());
     }
 
     [Fact]
     public async Task Restarted_run_commits_anki_call_once_and_reports_actual_counts()
     {
         await using var h = await SeedAsync(1);
-        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0) } }).ThenText("Added.");
+        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0) }, direction = "source_to_target" }).ThenText("Added.");
         var run = await h.StartAsync("Add this word to Revision");
         await h.StepAsync();
         await h.StepAsync();
@@ -116,7 +117,7 @@ public sealed class AssistantAnkiTests
     public async Task Undo_keeps_reviewed_cards_and_reverts_other_additions()
     {
         await using var h = await SeedAsync(2);
-        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0), Id(1) } }).ThenText("Added.");
+        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0), Id(1) }, direction = "source_to_target" }).ThenText("Added.");
         var run = await h.RunAsync("Add both words");
         Guid reviewed;
         await using (var db = h.Db())
@@ -154,7 +155,7 @@ public sealed class AssistantAnkiTests
         {
             if (scenario == "foreign_collection") (await db.AnkiCollections.SingleAsync()).UserId = "other";
             if (scenario == "foreign_quiz") (await db.Quizzes.SingleAsync()).UserId = "other";
-            if (scenario == "wrong_pair") (await db.AnkiCollections.SingleAsync()).SourceLanguage = "Swedish";
+            if (scenario == "wrong_pair") (await db.AnkiCollections.SingleAsync()).TargetLanguage = "Spanish";
             if (scenario == "missing_item") ids[1] = "gone";
             if (scenario == "wrong_quiz_item")
             {
@@ -196,7 +197,7 @@ public sealed class AssistantAnkiTests
         await using (var db = h.Db())
         {
             db.AnkiQuizLinks.Add(new AnkiQuizLink { Id = Guid.NewGuid(), AnkiCollectionId = CollectionId, QuizId = h.QuizId, WordsSourceToTarget = true });
-            for (var i = 0; i < 53; i++) db.AnkiCollections.Add(Collection(Guid.NewGuid(), $"Study {i:D2}"));
+            for (var i = 0; i < 53; i++) db.AnkiCollections.Add(Collection(Guid.NewGuid(), $"Study {i:D2}", $"Language {i:D2}"));
             var foreign = Collection(Guid.NewGuid(), "Foreign");
             foreign.UserId = "other";
             db.AnkiCollections.Add(foreign);
@@ -278,7 +279,7 @@ public sealed class AssistantAnkiTests
             card.Stability = 9;
             await db.SaveChangesAsync();
         }
-        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0) } }).Then(request =>
+        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "words", item_ids = new[] { Id(0) }, direction = "source_to_target" }).Then(request =>
         {
             Assert.Equal(0, Output(request).GetProperty("anki_cards_added").GetInt32());
             Assert.Equal(1, Output(request).GetProperty("anki_already_included").GetInt32());
@@ -325,7 +326,7 @@ public sealed class AssistantAnkiTests
     public async Task Undo_link_keeps_future_synced_cards_and_later_user_changes()
     {
         await using var h = await SeedAsync(1);
-        h.Model.ThenCall("link_anki_quiz", new { collection_id = CollectionId, content = "words" }).ThenText("Linked.");
+        h.Model.ThenCall("link_anki_quiz", new { collection_id = CollectionId, content = "words", direction = "source_to_target" }).ThenText("Linked.");
         var run = await h.RunAsync("Link quiz");
         await h.WithAsync(async sp =>
         {
@@ -344,7 +345,7 @@ public sealed class AssistantAnkiTests
     }
 
     [Fact]
-    public async Task Sentences_use_collection_default_and_both_directions_without_duplicate_notes()
+    public async Task Sentences_default_to_both_directions_without_duplicate_notes()
     {
         await using var h = await SeedAsync(0);
         var sentenceId = Guid.NewGuid();
@@ -354,18 +355,18 @@ public sealed class AssistantAnkiTests
             db.QuizSentences.Add(new QuizSentence { Id = sentenceId, QuizId = h.QuizId, Text = "To jest dom.", Translation = "This is a house." });
             await db.SaveChangesAsync();
         }
-        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "sentences", item_ids = new[] { sentenceId.ToString() } })
+        h.Model.ThenCall("add_anki_items", new { collection_id = CollectionId, kind = "sentences", item_ids = new[] { sentenceId.ToString() }, direction = "target_to_source" })
             .Then(request =>
             {
                 Assert.Equal(1, Output(request).GetProperty("anki_cards_added").GetInt32());
-                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "sentences", item_ids = new[] { sentenceId.ToString() }, direction = "both" }));
+                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = CollectionId, kind = "sentences", item_ids = new[] { sentenceId.ToString() } }));
             }).Then(request =>
             {
                 Assert.Equal(1, Output(request).GetProperty("anki_cards_added").GetInt32());
                 Assert.Equal(1, Output(request).GetProperty("anki_already_included").GetInt32());
                 return ScriptedModel.Reply("Added.");
             });
-        var run = await h.RunAsync("Add this sentence, then also the reverse card");
+        var run = await h.RunAsync("Add the reverse card for this sentence, then both directions");
         Assert.Equal(AssistantRunStatus.Completed, run.Status);
         await using var after = h.Db();
         Assert.Equal(sentenceId, (await after.AnkiNotes.SingleAsync()).SentenceId);
@@ -405,21 +406,18 @@ public sealed class AssistantAnkiTests
             db.Words.Add(new Word { Id = "chained", QuizId = h.QuizId, Lemma = "dom", Translation = "house" });
             await db.SaveChangesAsync();
         }
-        Guid created = default;
-        h.Model.ThenCall("create_anki_collection", new { name = "Chained" })
-            .Then(request =>
-            {
-                created = Output(request).GetProperty("anki_collection_id").GetGuid();
-                return ScriptedModel.Reply("", ("add_anki_items", new { collection_id = created, kind = "words", item_ids = new[] { "chained" } }));
-            }).Then(_ => ScriptedModel.Reply("", ("link_anki_quiz", new { collection_id = created, content = "words", direction = "both" })))
-            .ThenText("Created and linked.");
-        var run = await h.RunAsync("Create a collection, add this word, then link the quiz in both directions");
+        h.Model.ThenCall("add_anki_items", new { kind = "words", item_ids = new[] { "chained" }, direction = "source_to_target" })
+            .Then(_ => ScriptedModel.Reply("", ("link_anki_quiz", new { content = "words" })))
+            .ThenText("Added and linked.");
+        var run = await h.RunAsync("Add this word to Anki, then link the quiz");
         Assert.Equal(AssistantRunStatus.Completed, run.Status);
         var undone = await h.UndoAsync(run.Id);
-        Assert.Equal(3, undone.Undone);
+        Assert.Equal(2, undone.Undone);
         Assert.Equal(0, undone.Kept);
         await using var after = h.Db();
-        Assert.Empty(await after.AnkiCollections.ToListAsync());
+        // The collection created on demand stays; everything the run added is gone.
+        Assert.Single(await after.AnkiCollections.ToListAsync());
+        Assert.Empty(await after.AnkiQuizLinks.ToListAsync());
         Assert.Empty(await after.AnkiNotes.ToListAsync());
         Assert.Empty(await after.AnkiCards.ToListAsync());
         Assert.Single(await after.Words.ToListAsync());
@@ -432,8 +430,8 @@ public sealed class AssistantAnkiTests
         await using var db = h.Db();
         var tools = AssistantToolFactory.Create(db);
         var context = new ToolContext { UserId = AssistantHarness.UserId, Mode = AssistantMode.Language, QuizId = h.QuizId };
-        Assert.Equal(new[] { "add_anki_items", "create_anki_collection", "get_anki_collection", "inspect_anki", "link_anki_quiz",
-                "list_anki_collections", "manage_anki", "remove_anki_cards", "rename_anki_collection", "unlink_anki_quiz" },
+        Assert.Equal(new[] { "add_anki_items", "get_anki_collection", "inspect_anki", "link_anki_quiz",
+                "list_anki_collections", "manage_anki", "remove_anki_cards", "unlink_anki_quiz" },
             tools.Toolbox.Declarations(AssistantMode.Language).Where(t => t.Name.Contains("anki")).Select(t => t.Name).Order());
         Assert.DoesNotContain(tools.Toolbox.Declarations(AssistantMode.Freestyle), t => t.Name.Contains("anki"));
         foreach (var ids in new[] { Array.Empty<string>(), Enumerable.Repeat(Id(0), 101).ToArray(), new[] { " " } })
@@ -442,26 +440,9 @@ public sealed class AssistantAnkiTests
             Assert.True(result.IsError);
             Assert.Empty(result.Changes);
         }
-        var duplicate = await tools.RunAsync("create_anki_collection", "{\"name\":\"Revision\"}", context);
-        Assert.True(duplicate.IsError);
-        Assert.Empty(duplicate.Changes);
-    }
-
-    [Fact]
-    public async Task Undo_keeps_a_new_collection_that_the_user_renamed()
-    {
-        await using var h = await SeedAsync(0);
-        Guid created = default;
-        h.Model.ThenCall("create_anki_collection", new { name = "Original" }).Then(request =>
-        {
-            created = Output(request).GetProperty("anki_collection_id").GetGuid();
-            return ScriptedModel.Reply("Created.");
-        });
-        var run = await h.RunAsync("Create an Anki collection");
-        await h.WithAsync(sp => sp.GetRequiredService<IAnkiCollectionService>().RenameAsync(created, "My edited name", AssistantHarness.UserId));
-        Assert.Equal(1, (await h.UndoAsync(run.Id)).Kept);
-        await using var after = h.Db();
-        Assert.Equal("My edited name", (await after.AnkiCollections.SingleAsync(c => c.Id == created)).Name);
+        var foreign = await tools.RunAsync("add_anki_items", JsonSerializer.Serialize(new { collection_id = Guid.NewGuid(), kind = "words", item_ids = new[] { Id(0) } }), context);
+        Assert.True(foreign.IsError);
+        Assert.Empty(foreign.Changes);
     }
 
     private static JsonElement Output(AgentRequest request)
@@ -477,8 +458,8 @@ public sealed class AssistantAnkiTests
     }
 
     private static string Id(int i) => $"word-{i:D3}";
-    private static AnkiCollection Collection(Guid id, string name) => new() { Id = id, Name = name, UserId = AssistantHarness.UserId,
-        SourceLanguage = "English", TargetLanguage = "Polish", CreatedAt = Now, UpdatedAt = Now };
+    private static AnkiCollection Collection(Guid id, string name, string language = "Polish") => new() { Id = id, Name = name, UserId = AssistantHarness.UserId,
+        TargetLanguage = language, CreatedAt = Now, UpdatedAt = Now };
     private static Task<AssistantHarness> SeedAsync(int count) => AssistantHarness.CreateAsync(db =>
     {
         db.AnkiCollections.Add(Collection(CollectionId, "Revision"));

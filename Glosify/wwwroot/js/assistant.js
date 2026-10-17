@@ -1220,7 +1220,6 @@ import {
         onChanges: run => {
             for (const change of run.resourceChanges || []) {
                 if (change.kind === 'delete_quiz' && change.entityId === quizId) void setQuizContext(null, 'GlobeGlotter');
-                if (change.kind === 'anki_delete' && change.entityId === panel.dataset.ankiCollectionId) delete panel.dataset.ankiCollectionId;
             }
             window.dispatchEvent(new CustomEvent('assistant:changes', { detail: run }));
             void loadContextOptions();

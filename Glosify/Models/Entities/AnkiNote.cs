@@ -10,6 +10,7 @@ public class AnkiNote
     public Guid? SentenceId { get; set; }
     public string TargetText { get; set; } = string.Empty;
     public string SourceText { get; set; } = string.Empty;
+    public string SourceLanguage { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

@@ -46,6 +46,8 @@ public sealed class SpeechHttpContractTests
             builder.UseEnvironment("Testing");
             builder.ConfigureTestServices(services =>
             {
+                services.RemoveAll<Glosify.Services.Language.IQuizLanguagePreferenceService>();
+                services.AddSingleton<Glosify.Services.Language.IQuizLanguagePreferenceService>(new StubChromeServices());
                 if (configure is not null) services.Configure(configure);
                 services.AddControllers().AddApplicationPart(typeof(SpeechTokenProbeController).Assembly);
                 services.AddAuthentication(options =>

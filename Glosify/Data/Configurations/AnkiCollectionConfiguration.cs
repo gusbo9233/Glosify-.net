@@ -11,12 +11,10 @@ internal sealed class AnkiCollectionConfiguration : IEntityTypeConfiguration<Ank
         entity.HasKey(collection => collection.Id);
         entity.Property(collection => collection.UserId).HasMaxLength(450).IsRequired();
         entity.Property(collection => collection.Name).HasMaxLength(160).IsRequired();
-        entity.Property(collection => collection.SourceLanguage).HasMaxLength(64).IsRequired();
         entity.Property(collection => collection.TargetLanguage).HasMaxLength(64).IsRequired();
         entity.Property(collection => collection.DefaultDirection).HasMaxLength(32).IsRequired();
         entity.Property(collection => collection.TimeZoneId).HasMaxLength(128).IsRequired();
-        entity.HasIndex(collection => new { collection.UserId, collection.SourceLanguage, collection.TargetLanguage });
-        entity.HasIndex(collection => new { collection.UserId, collection.Name }).IsUnique();
+        entity.HasIndex(collection => new { collection.UserId, collection.TargetLanguage }).IsUnique();
 
         entity.HasOne<ApplicationUser>()
             .WithMany()

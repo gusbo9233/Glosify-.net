@@ -455,7 +455,7 @@ async function onMessage(message, generation) {
         // A pending flush may still deliver the only audio of a short first press.
         else if (audio && !audioOpening && (holding || (awaitingCommit && (preRoll.length || flushing)))) listen(true);
         else {
-            if (!audioOpening) { awaitingCommit = false; armIdleCleanup(message.resumed ? 60000 : 30000); }
+            if (!audioOpening) { awaitingCommit = false; armIdleCleanup(message.resumed || audio || preconnectActivated ? 60000 : 30000); }
             refreshStart();
         }
         return;
@@ -522,7 +522,11 @@ function schedulePreparation() {
 }
 function armIdleCleanup(milliseconds = 60000) {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => { if (!holding && !audioOpening) void end(); }, milliseconds);
+    idleTimer = setTimeout(() => {
+        if (holding || audioOpening) return;
+        if (audio) notice('Conversation ended after inactivity. Start again whenever you like.');
+        void end();
+    }, milliseconds);
 }
 // A new capture starts empty, and a release from an older capture cannot commit it.
 function beginCapture() { holding = mode() === 'push-to-talk'; awaitingCommit = false; preRoll = []; ++captureEpoch; }
@@ -609,7 +613,7 @@ async function start(background = false) {
                 if (generation !== epoch) return;
                 if (!audio || audioOpening) void end(); else connectionLost();
             },
-            onEnded: detail => { if (generation === epoch) { if (audio && !['off', 'idle'].includes(state)) notice(detail); void end(); } }
+            onEnded: detail => { if (generation === epoch) { if (audio) notice(detail); void end(); } }
         });
         // Construction can fail synchronously and trigger cleanup before assignment.
         if (generation !== epoch) { connection.close(); return; }

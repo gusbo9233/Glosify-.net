@@ -56,7 +56,7 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
         {
             (state, learningStep, dueAt, scheduledDays) = grade switch
             {
-                1 => (AnkiCardStates.Learning, 0, now.AddMinutes(1), 0),
+                1 => (AnkiCardStates.Learning, 0, now, 0),
                 2 => (AnkiCardStates.Learning, 0, now.AddMinutes(6), 0),
                 3 => (AnkiCardStates.Learning, 1, now.AddMinutes(10), 0),
                 _ => Graduate(card, grade, stability, retention, now),
@@ -66,7 +66,7 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
         {
             (state, learningStep, dueAt, scheduledDays) = grade switch
             {
-                1 => (AnkiCardStates.Learning, 0, now.AddMinutes(1), 0),
+                1 => (AnkiCardStates.Learning, 0, now, 0),
                 2 => (AnkiCardStates.Learning, learningStep, now.AddMinutes(6), 0),
                 3 when learningStep == 0 => (AnkiCardStates.Learning, 1, now.AddMinutes(10), 0),
                 _ => Graduate(card, grade, stability, retention, now),
@@ -76,7 +76,7 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
         {
             state = AnkiCardStates.Relearning;
             learningStep = 0;
-            dueAt = now.AddMinutes(10);
+            dueAt = now;
             scheduledDays = 0;
         }
         else if (card.State == AnkiCardStates.Relearning)
@@ -220,6 +220,8 @@ public sealed class Fsrs6AnkiScheduler : IAnkiScheduler
 
     private static string FormatInterval(TimeSpan interval)
     {
+        if (interval <= TimeSpan.Zero)
+            return "Now";
         if (interval.TotalMinutes < 60)
             return $"{Math.Max(1, (int)Math.Round(interval.TotalMinutes))}m";
         if (interval.TotalHours < 24)

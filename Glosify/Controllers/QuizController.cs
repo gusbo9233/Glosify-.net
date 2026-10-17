@@ -10,7 +10,6 @@ using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
 using Glosify.Localization;
-using Glosify.Services.Anki;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,22 +24,19 @@ public class QuizController : Controller
     private readonly IImageTextExtractionService _imageTextExtractionService;
     private readonly ILanguageContext _languageContext;
     private readonly UiTextStringLocalizer _text = new();
-    private readonly IAnkiCollectionService _ankiCollections;
 
     public QuizController(
         IQuizService quizService,
         ICollectionService collectionService,
         IWordService wordService,
         IImageTextExtractionService imageTextExtractionService,
-        ILanguageContext languageContext,
-        IAnkiCollectionService ankiCollections)
+        ILanguageContext languageContext)
     {
         _quizService = quizService;
         _collectionService = collectionService;
         _wordService = wordService;
         _imageTextExtractionService = imageTextExtractionService;
         _languageContext = languageContext;
-        _ankiCollections = ankiCollections;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
@@ -87,10 +83,6 @@ public class QuizController : Controller
         var words = await _wordService.GetWordsAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
         var sentences = await _wordService.GetSentencesAsync(selectedQuiz.Id, cancellationToken: cancellationToken);
 
-        var ankiCollections = (await _ankiCollections.ListAsync(userId, cancellationToken))
-            .Where(collection => string.Equals(collection.SourceLanguage, selectedQuiz.SourceLanguage, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(collection.TargetLanguage, selectedQuiz.TargetLanguage, StringComparison.OrdinalIgnoreCase))
-            .ToList();
         return View(new QuizWorkspaceViewModel
         {
             SelectedQuiz = QuizCard.From(selectedQuiz),
@@ -102,7 +94,6 @@ public class QuizController : Controller
                 Translation = s.Translation,
                 WordCount = s.WordCount
             }).ToList(),
-            AnkiCollections = ankiCollections,
         });
     }
 
@@ -200,36 +191,6 @@ public class QuizController : Controller
         }
 
         return RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> SetQuizVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
-    {
-        var userId = User.GetUserId();
-
-        var updated = await _quizService.SetQuizPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
-        TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? _text["Quiz.NowPublic"].Value : _text["Quiz.NowPrivate"].Value
-            : _text["Quiz.VisibilityFailed"].Value;
-
-        return updated
-            ? RedirectToAction(nameof(Details), new { id })
-            : RedirectToAction(nameof(Index));
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> SetCollectionVisibility(Guid id, bool isPublic, CancellationToken cancellationToken = default)
-    {
-        var userId = User.GetUserId();
-
-        var updated = await _collectionService.SetCollectionPublicAsync(id, userId, isPublic, cancellationToken: cancellationToken);
-        TempData[NotificationKeys.Quiz] = updated
-            ? isPublic ? _text["Quiz.CollectionNowPublic"].Value : _text["Quiz.CollectionNowPrivate"].Value
-            : _text["Quiz.CollectionVisibilityFailed"].Value;
-
-        return updated
-            ? RedirectToAction(nameof(Collection), new { id })
-            : RedirectToAction(nameof(Index));
     }
 
     [HttpPost]

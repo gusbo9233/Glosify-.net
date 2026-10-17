@@ -4,40 +4,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
 
+// Statistics only read. The study page synchronizes in GetNextAsync just before reading
+// them, and assistant reads are deliberately observational.
 public sealed class AnkiStatisticsService : IAnkiStatisticsService
 {
     private readonly GlosifyContext _context;
-    private readonly IAnkiCollectionService _collections;
     private readonly TimeProvider _timeProvider;
 
     public AnkiStatisticsService(
         GlosifyContext context,
-        IAnkiCollectionService collections,
         TimeProvider timeProvider)
     {
         _context = context;
-        _collections = collections;
         _timeProvider = timeProvider;
     }
 
-    public Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, true, cancellationToken);
-
-    public Task<AnkiStatistics?> ReadSnapshotAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, false, cancellationToken);
-
-    private async Task<AnkiStatistics?> ReadCoreAsync(
+    public async Task<AnkiStatistics?> ReadSnapshotAsync(
         Guid collectionId,
         string userId,
-        bool synchronize,
-        CancellationToken cancellationToken)
+        string? direction = null,
+        CancellationToken cancellationToken = default)
     {
         var collection = await _context.AnkiCollections.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == collectionId && item.UserId == userId,
             cancellationToken);
         if (collection is null)
             return null;
-        if (synchronize) await _collections.SyncCollectionAsync(collectionId, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
         var zone = FindTimeZone(collection.TimeZoneId);
@@ -45,7 +37,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         var periodStartLocal = localToday.AddDays(-29);
         var periodStart = LocalStart(periodStartLocal, zone);
         var reviewQuery = _context.AnkiReviews.AsNoTracking()
-            .Where(review => review.AnkiCollectionId == collectionId);
+            .Where(review => review.AnkiCollectionId == collectionId
+                && (direction == null || review.Card.Direction == direction));
         var reviews = IsSqlite()
             ? (await reviewQuery.ToListAsync(cancellationToken)).Where(review => review.ReviewedAt >= periodStart).ToList()
             : await reviewQuery.Where(review => review.ReviewedAt >= periodStart).ToListAsync(cancellationToken);
@@ -61,7 +54,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         var dueQuery = _context.AnkiCards.AsNoTracking()
             .Where(card => card.Note.AnkiCollectionId == collectionId
                 && card.IsActive
-                && card.State != AnkiCardStates.New);
+                && card.State != AnkiCardStates.New
+                && (direction == null || card.Direction == direction));
         var dueCards = IsSqlite()
             ? (await dueQuery.Select(card => card.DueAt).ToListAsync(cancellationToken)).Where(due => due < forecastEnd).ToList()
             : await dueQuery.Where(card => card.DueAt < forecastEnd).Select(card => card.DueAt).ToListAsync(cancellationToken);
@@ -75,7 +69,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
             .ToList();
 
         var activeCards = await _context.AnkiCards.AsNoTracking()
-            .Where(card => card.Note.AnkiCollectionId == collectionId && card.IsActive)
+            .Where(card => card.Note.AnkiCollectionId == collectionId && card.IsActive
+                && (direction == null || card.Direction == direction))
             .ToListAsync(cancellationToken);
         var dayStart = AnkiCollectionService.StartOfCollectionDay(collection.TimeZoneId, now);
         var counts = new AnkiCollectionCounts(
