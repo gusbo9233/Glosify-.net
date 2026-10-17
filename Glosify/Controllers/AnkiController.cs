@@ -1,4 +1,5 @@
 using Glosify.Extensions;
+using Glosify.Models;
 using Glosify.Models.ViewModels;
 using Glosify.Services.Anki;
 using Glosify.Services.Language;
@@ -7,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Glosify.Controllers;
 
+// One Anki collection per user and learning language. Collection-scoped actions
+// resolve it from the current app language, never from a client-supplied id.
 [Authorize]
 public sealed class AnkiController : Controller
 {
@@ -28,124 +31,54 @@ public sealed class AnkiController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(bool create = false, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(
+        bool reveal = false,
+        Guid? cardId = null,
+        CancellationToken cancellationToken = default)
     {
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
 
+        var userId = User.GetUserId();
+        var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken);
+        var direction = workspace.Collection?.DefaultDirection ?? PracticeDirection.SourceToTarget;
+        AnkiStudyViewModel? study = null;
+        if (workspace.Collection is { } collection)
+        {
+            study = await StudyModelAsync(collection.Id, userId, targetLanguage, direction, reveal, cardId, cancellationToken);
+            if (study is null)
+                return NotFound();
+        }
         return View(new AnkiIndexViewModel
         {
-            Collections = await _collections.ListForLanguageAsync(
-                User.GetUserId(), targetLanguage, cancellationToken),
-            SourceLanguages = _languages.SupportedLanguages
-                .Where(language => QuizLanguageCatalog.Find(language)?.IsLanguageLearning == true)
-                .Where(language => !string.Equals(language, targetLanguage, StringComparison.OrdinalIgnoreCase))
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Order(StringComparer.OrdinalIgnoreCase)
-                .ToList(),
             TargetLanguage = targetLanguage,
-            CreateDialogOpen = create,
+            Direction = direction,
+            Workspace = workspace,
+            Study = study,
         });
     }
 
+    // Old collection links (bookmarks, assistant messages) land on the single page.
+    [HttpGet]
+    public IActionResult Collection(Guid? id) => RedirectToActionPermanent(nameof(Index));
+
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(CreateAnkiCollectionForm form, CancellationToken cancellationToken)
+    public async Task<IActionResult> Direction(string direction, CancellationToken cancellationToken)
     {
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
-
-        if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index));
         try
         {
-            var collection = await _collections.CreateAsync(new(
-                form.Name, form.SourceLanguage, targetLanguage, form.TimeZoneId),
-                User.GetUserId(), cancellationToken);
-            return RedirectToAction(nameof(Collection), new { id = collection.Id });
-        }
-        catch (AnkiValidationException exception)
-        {
-            TempData["AnkiMessage"] = exception.Message;
-            return RedirectToAction(nameof(Index));
-        }
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> Collection(Guid id, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken))
-            return NotFound();
-        var details = await _collections.GetDetailsAsync(id, userId, cancellationToken);
-        var statistics = await _statistics.GetAsync(id, userId, cancellationToken);
-        if (details is null || statistics is null)
-            return NotFound();
-        return View(new AnkiCollectionViewModel { Details = details, Statistics = statistics });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Rename(Guid id, string name, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken))
-            return NotFound();
-        try
-        {
-            if (!await _collections.RenameAsync(id, name, userId, cancellationToken))
-                return NotFound();
+            var collection = await _collections.GetOrCreateAsync(User.GetUserId(), targetLanguage, null, cancellationToken);
+            await _collections.SetPracticeDirectionAsync(collection.Id, direction, User.GetUserId(), cancellationToken);
         }
         catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Collection), new { id });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Direction(Guid id, string direction, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken)) return NotFound();
-        try
-        {
-            if (!await _collections.SetDirectionAsync(id, direction, userId, cancellationToken))
-                return NotFound();
-        }
-        catch (AnkiValidationException exception)
-        {
-            TempData["AnkiMessage"] = exception.Message;
-        }
-        return RedirectToAction(nameof(Collection), new { id });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Settings(Guid id, double desiredRetention, int newCardsPerDay,
-        int maximumReviewsPerDay, string timeZoneId, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken))
-            return NotFound();
-        if (!await _collections.UpdateSettingsAsync(id, desiredRetention, newCardsPerDay,
-                maximumReviewsPerDay, timeZoneId, userId, cancellationToken))
-            return NotFound();
-        return RedirectToAction(nameof(Collection), new { id });
-    }
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken))
-            return NotFound();
-        if (!await _collections.DeleteAsync(id, userId, cancellationToken))
-            return NotFound();
         return RedirectToAction(nameof(Index));
     }
 
@@ -153,76 +86,88 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddQuiz(AddAnkiQuizForm form, CancellationToken cancellationToken)
     {
+        var targetLanguage = _languages.CurrentLanguage;
+        if (targetLanguage is null)
+            return RedirectToAction("Index", "Languages");
+        if (!ModelState.IsValid)
+            return RedirectToAction(nameof(Index));
         var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(form.CollectionId, userId, cancellationToken))
-            return NotFound();
         try
         {
-            var added = await _collections.AddQuizAsync(new(form.CollectionId, form.QuizId,
-                form.WordsSourceToTarget, form.WordsTargetToSource,
-                form.SentencesSourceToTarget, form.SentencesTargetToSource),
-                userId, cancellationToken);
+            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
+            var added = await _collections.AddQuizAsync(new(collection.Id, form.QuizId,
+                true, true, form.IncludeSentences, form.IncludeSentences), userId, cancellationToken);
             if (!added) return NotFound();
+            TempData["AnkiMessage"] = "Quiz added to Anki.";
         }
         catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Collection), new { id = form.CollectionId });
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateFromQuiz(CreateAnkiFromQuizForm form, CancellationToken cancellationToken)
+    public async Task<IActionResult> RemoveQuiz(Guid quizId, CancellationToken cancellationToken)
+    {
+        var collection = await CurrentCollectionAsync(cancellationToken);
+        if (collection is null || !await _collections.RemoveQuizAsync(collection.Id, quizId, User.GetUserId(), cancellationToken))
+            return NotFound();
+        return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Items(SaveAnkiItemsForm form, CancellationToken cancellationToken)
     {
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
-
         if (!ModelState.IsValid)
-            return RedirectToAction("Settings", "Quiz", new { id = form.QuizId });
+            return RedirectToAction(nameof(Index));
+        var add = ParseKeys(form.Add);
+        var remove = ParseKeys(form.Remove);
+        if (add is null || remove is null)
+            return BadRequest();
+        if (add.Count + remove.Count == 0)
+            return RedirectToAction(nameof(Index));
 
         var userId = User.GetUserId();
         try
         {
-            var collection = await _collections.CreateFromQuizAsync(new(form.Name, form.QuizId, form.TimeZoneId, targetLanguage,
-                form.WordsSourceToTarget, form.WordsTargetToSource,
-                form.SentencesSourceToTarget, form.SentencesTargetToSource), userId, cancellationToken);
-            if (collection is null) return NotFound();
-            return RedirectToAction(nameof(Collection), new { id = collection.Id });
+            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
+            if (!await _collections.SetMembershipAsync(collection.Id, add, remove, userId, cancellationToken))
+                return NotFound();
+            TempData["AnkiMessage"] = (add.Count, remove.Count) switch
+            {
+                (> 0, 0) => $"Added {add.Count} {(add.Count == 1 ? "item" : "items")} to Anki.",
+                (0, > 0) => $"Removed {remove.Count} {(remove.Count == 1 ? "item" : "items")} from Anki.",
+                _ => $"Added {add.Count} and removed {remove.Count}.",
+            };
         }
         catch (AnkiValidationException exception)
         {
             TempData["AnkiMessage"] = exception.Message;
-            return RedirectToAction("Settings", "Quiz", new { id = form.QuizId });
         }
+        return RedirectToAction(nameof(Index));
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RemoveQuiz(Guid collectionId, Guid quizId, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(collectionId, userId, cancellationToken))
-            return NotFound();
-        if (!await _collections.RemoveQuizAsync(collectionId, quizId, userId, cancellationToken))
-            return NotFound();
-        return RedirectToAction(nameof(Collection), new { id = collectionId });
-    }
-
+    // Used by the quiz page's "Add to Anki" dialog.
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddItem(AddAnkiItemForm form, string? returnUrl, CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid) return BadRequest();
+        var targetLanguage = _languages.CurrentLanguage;
+        if (targetLanguage is null)
+            return RedirectToAction("Index", "Languages");
         var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(form.CollectionId, userId, cancellationToken))
-            return NotFound();
         try
         {
-            var added = await _collections.AddItemAsync(new(form.CollectionId, form.QuizId,
-                form.ItemType, form.ItemId, form.SourceToTarget, form.TargetToSource),
-                userId, cancellationToken);
+            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
+            var added = await _collections.AddItemAsync(new(collection.Id, form.QuizId,
+                form.ItemType, form.ItemId, true, true), userId, cancellationToken);
             if (!added) return NotFound();
         }
         catch (AnkiValidationException exception)
@@ -230,45 +175,30 @@ public sealed class AnkiController : Controller
             TempData["AnkiMessage"] = exception.Message;
         }
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)) return LocalRedirect(returnUrl);
-        return RedirectToAction(nameof(Collection), new { id = form.CollectionId });
+        return RedirectToAction(nameof(Index));
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> RemoveCard(Guid id, Guid collectionId, CancellationToken cancellationToken)
-    {
-        var userId = User.GetUserId();
-        var targetLanguage = _languages.CurrentLanguage;
-        if (targetLanguage is null || !await _collections.IsCardInOwnedLanguageAsync(
-                id, collectionId, targetLanguage, userId, cancellationToken))
-            return NotFound();
-        if (!await _collections.RemoveCardAsync(id, userId, cancellationToken))
-            return NotFound();
-        return RedirectToAction(nameof(Collection), new { id = collectionId });
-    }
-
+    // The session partial for in-place updates. Full-page requests (including
+    // old /Anki/Study/{id} links) are sent to the single Anki page.
     [HttpGet]
     public async Task<IActionResult> Study(
-        Guid id,
+        Guid? id = null,
         bool reveal = false,
         Guid? cardId = null,
         CancellationToken cancellationToken = default)
     {
-        var userId = User.GetUserId();
-        if (!await IsCurrentLanguageCollectionAsync(id, userId, cancellationToken))
+        if (!IsAjax())
+            return RedirectToAction(nameof(Index), new { reveal = reveal ? true : (bool?)null, cardId });
+        var targetLanguage = _languages.CurrentLanguage;
+        var collection = await CurrentCollectionAsync(cancellationToken);
+        if (targetLanguage is null || collection is null)
             return NotFound();
-        var state = await _study.GetNextAsync(id, userId, cardId, cancellationToken);
-        if (state is null) return NotFound();
-        if (reveal && cardId.HasValue && state.Card?.CardId != cardId.Value)
-            return Problem(statusCode: 409, detail: "This card changed. Reopen the collection to continue.");
-        var model = new AnkiStudyViewModel
-        {
-            State = state,
-            AnswerRevealed = reveal,
-            ClientToken = Guid.NewGuid(),
-        };
-        return Request.Headers["X-Requested-With"] == "XMLHttpRequest"
-            ? PartialView("_StudySession", model) : View(model);
+        var model = await StudyModelAsync(collection.Id, User.GetUserId(), targetLanguage,
+            collection.DefaultDirection, reveal, cardId, cancellationToken);
+        if (model is null) return NotFound();
+        if (reveal && cardId.HasValue && model.State.Card?.CardId != cardId.Value)
+            return Problem(statusCode: 409, detail: "This card changed. Reload Anki to continue.");
+        return PartialView("_StudySession", model);
     }
 
     [HttpPost]
@@ -280,7 +210,7 @@ public sealed class AnkiController : Controller
     {
         if (!await IsCurrentLanguageCollectionAsync(id, User.GetUserId(), cancellationToken))
             return NotFound();
-        return RedirectToAction(nameof(Study), new { id, cardId, reveal = true });
+        return RedirectToAction(nameof(Study), new { cardId, reveal = true });
     }
 
     [HttpPost]
@@ -296,7 +226,7 @@ public sealed class AnkiController : Controller
             TempData["AnkiMessage"] = ModelState[nameof(form.ClientToken)]?.Errors.Count > 0
                 ? "Reload the card before rating it."
                 : "Choose Again, Hard, Good, or Easy to rate the card.";
-            return RedirectToAction(nameof(Study), new { id = form.CollectionId });
+            return RedirectToAction(nameof(Study));
         }
         var userId = User.GetUserId();
         if (!await IsCurrentLanguageCollectionAsync(form.CollectionId, userId, cancellationToken))
@@ -306,14 +236,37 @@ public sealed class AnkiController : Controller
             var rated = await _study.RateAsync(new(form.CollectionId, form.CardId, form.Rating,
                 clientToken, form.RowVersion, form.DurationMilliseconds),
                 userId, cancellationToken);
-            if (!rated) return Problem(statusCode: 409, detail: "This card is no longer available. Reopen the collection.");
+            if (!rated) return Problem(statusCode: 409, detail: "This card is no longer available. Reload Anki to continue.");
         }
         catch (AnkiReviewConflictException exception)
         {
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest") return Problem(statusCode: 409, detail: exception.Message);
+            if (IsAjax()) return Problem(statusCode: 409, detail: exception.Message);
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Study), new { id = form.CollectionId });
+        return RedirectToAction(nameof(Study));
+    }
+
+    private async Task<AnkiStudyViewModel?> StudyModelAsync(Guid collectionId, string userId, string targetLanguage,
+        string direction, bool reveal, Guid? cardId, CancellationToken cancellationToken)
+    {
+        var state = await _study.GetNextAsync(collectionId, userId, direction, cardId, cancellationToken);
+        if (state is null) return null;
+        return new AnkiStudyViewModel
+        {
+            State = state,
+            TargetLanguage = targetLanguage,
+            Statistics = await _statistics.GetAsync(collectionId, userId, state.Direction, cancellationToken),
+            AnswerRevealed = reveal && state.Card is not null && state.Card.CardId == cardId,
+            ClientToken = Guid.NewGuid(),
+        };
+    }
+
+    private async Task<Models.Entities.AnkiCollection?> CurrentCollectionAsync(CancellationToken cancellationToken)
+    {
+        var targetLanguage = _languages.CurrentLanguage;
+        return targetLanguage is null
+            ? null
+            : await _collections.FindForLanguageAsync(User.GetUserId(), targetLanguage, cancellationToken);
     }
 
     private Task<bool> IsCurrentLanguageCollectionAsync(
@@ -326,5 +279,22 @@ public sealed class AnkiController : Controller
             ? Task.FromResult(false)
             : _collections.IsOwnedByLanguageAsync(
                 collectionId, targetLanguage, userId, cancellationToken);
+    }
+
+    private bool IsAjax() => Request.Headers.XRequestedWith == "XMLHttpRequest";
+
+    private static List<AnkiItemKey>? ParseKeys(IEnumerable<string> keys)
+    {
+        var parsed = new List<AnkiItemKey>();
+        foreach (var key in keys.Distinct(StringComparer.Ordinal))
+        {
+            // Word ids are opaque strings, so only the first two separators count.
+            var parts = key.Split(':', 3);
+            if (parts.Length != 3 || parts[0] is not (PracticeItemType.Words or PracticeItemType.Sentences)
+                || !Guid.TryParse(parts[1], out var quizId) || string.IsNullOrWhiteSpace(parts[2]))
+                return null;
+            parsed.Add(new AnkiItemKey(quizId, parts[0], parts[2]));
+        }
+        return parsed;
     }
 }

@@ -1,13 +1,38 @@
 @model AnkiStudyViewModel
-@{ var card = Model.State.Card; var collectionZone = TimeZoneInfo.FindSystemTimeZoneById(Model.State.TimeZoneId); }
+@{
+    var card = Model.State.Card;
+    var collectionZone = TimeZoneInfo.FindSystemTimeZoneById(Model.State.TimeZoneId);
+    var stats = Model.Statistics;
+    var due = card?.DueRemaining ?? stats?.Counts.Due ?? 0;
+    var newCards = card?.NewRemaining ?? 0;
+}
 <div class="flash-shell" data-anki-study data-study-quiz-id="@card?.QuizId" data-study-anki-collection-id="@card?.CollectionId" data-study-card-id="@card?.CardId">
+    <p class="anki-stats" aria-label="Today in this direction">
+        <span>@due due</span>
+        <span>@newCards new</span>
+        <span>@(stats?.Counts.StudiedToday ?? 0) reviewed today</span>
+        @if (stats is { ReviewsLast30Days: > 0 })
+        {
+            <span title="Share of reviews in the last 30 days not rated Again">@stats.RetentionPercent.ToString("0")% retention</span>
+        }
+    </p>
     @if (card is null)
     {
-        <section class="anki-complete"><span class="material-symbols-outlined" aria-hidden="true">task_alt</span><p class="eyebrow is-primary">Session complete</p><h1>You’re done for now</h1>@if (Model.State.NextDueAt.HasValue) { <p>Next card is due @TimeZoneInfo.ConvertTime(Model.State.NextDueAt.Value, collectionZone).ToString("g").</p> } else { <p>No active cards are waiting.</p> }<a class="btn-submit anki-primary-action" asp-action="Index"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Back to collections</a></section>
+        <section class="anki-complete">
+            <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+            <h2>You’re done for now</h2>
+            @if (Model.State.NextDueAt.HasValue)
+            {
+                <p>The next card is due @TimeZoneInfo.ConvertTime(Model.State.NextDueAt.Value, collectionZone).ToString("g").</p>
+            }
+            else
+            {
+                <p>No cards are waiting in this direction.</p>
+            }
+        </section>
     }
     else
     {
-        <header class="anki-study-header"><a asp-action="Collection" asp-route-id="@card.CollectionId"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> @card.CollectionName</a><div class="anki-session-counts"><span><strong>@card.DueRemaining</strong> due</span><span><strong>@card.NewRemaining</strong> new</span></div></header>
         <div class="card-stage">
         @await Html.PartialAsync("_StudyCard", new Glosify.Models.ViewModels.StudyCardViewModel(
             card.Prompt, card.Answer, card.PromptLanguage, card.AnswerLanguage, Model.AnswerRevealed,

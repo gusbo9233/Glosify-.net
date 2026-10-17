@@ -565,39 +565,31 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
 
     [BrowserFact]
     [Trait("Category", "Browser")]
-    public async Task CreateLinkStudyAndInspectAnkiCollection()
+    public async Task AddQuizToAnkiStudyAndSwitchDirection()
     {
         await RegisterAndSelectPolishAsync();
         await CreateQuizWithWordAsync();
-        await Page.GotoAsync("/Anki?create=true");
+        await Page.GotoAsync("/Anki");
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Your Anki collection is empty" })).ToBeVisibleAsync();
 
-        var createForm = Page.Locator("[data-anki-create-form]");
-        await createForm.GetByLabel("Collection name").FillAsync("Portfolio Anki");
-        await createForm.GetByLabel("Source language").SelectOptionAsync(new SelectOptionValue { Label = "English" });
-        await createForm.GetByRole(AriaRole.Button, new() { Name = "Create collection" }).ClickAsync();
-        await Expect(Page).ToHaveURLAsync(new Regex("/Anki/Collection", RegexOptions.IgnoreCase));
-        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Portfolio Anki", Exact = true }).First).ToBeVisibleAsync();
+        var settings = Page.Locator("[data-anki-settings]");
+        await settings.GetByLabel("Quiz").SelectOptionAsync(new SelectOptionValue { Label = "Portfolio Polish" });
+        await settings.GetByRole(AriaRole.Button, new() { Name = "Add to Anki" }).ClickAsync();
+        await Expect(Page.Locator(".anki-linked")).ToContainTextAsync("Portfolio Polish");
+        await Expect(settings.Locator("label.anki-item", new() { HasText = "dom" }).Locator("input")).ToBeCheckedAsync();
 
-        var addQuizPanel = Page.Locator(".anki-add-quiz-panel");
-        await addQuizPanel.GetByLabel("Quiz").SelectOptionAsync(new SelectOptionValue { Label = "Portfolio Polish" });
-        await addQuizPanel.GetByRole(AriaRole.Button, new() { Name = "Add or update quiz" }).ClickAsync();
-        await Expect(Page.Locator(".anki-list").GetByText("Portfolio Polish", new() { Exact = true })).ToBeVisibleAsync();
-
-        // Adding the already-linked word individually is intentionally idempotent and
-        // preserves the same durable card while recording both inclusion sources.
-        await Page.GetByRole(AriaRole.Form, new() { NameRegex = new Regex("^Add .+ to Anki$") }).First
-            .GetByRole(AriaRole.Button, new() { Name = "Add", Exact = true }).ClickAsync();
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Start session" }).ClickAsync();
         await Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for house", Exact = true }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "house", Exact = true })).ToBeVisibleAsync();
         await Expect(Page.Locator(".card-answer .translation")).ToHaveTextAsync("dom");
         await Page.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("good", RegexOptions.IgnoreCase) }).ClickAsync();
         await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "You’re done for now" })).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("1 reviewed today");
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("100% retention");
 
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Back to collections" }).ClickAsync();
-        await Page.GetByRole(AriaRole.Link, new() { Name = "Portfolio Anki" }).ClickAsync();
-        await Expect(Page.GetByText("Studied today").Locator("..").Locator("strong")).ToHaveTextAsync("1");
-        await Expect(Page.GetByText("30-day retention").Locator("..").Locator("strong")).ToHaveTextAsync("100%");
+        // The other direction is a separate track: its card is still new.
+        await Page.Locator(".anki-direction button[aria-pressed=false]").ClickAsync();
+        await Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Reveal answer for dom", Exact = true })).ToBeVisibleAsync();
+        await Expect(Page.Locator(".anki-stats")).ToContainTextAsync("0 reviewed today");
         await AssertNoPageErrorsAsync();
     }
 

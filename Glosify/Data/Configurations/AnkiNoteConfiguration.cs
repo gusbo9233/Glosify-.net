@@ -13,6 +13,7 @@ internal sealed class AnkiNoteConfiguration : IEntityTypeConfiguration<AnkiNote>
         entity.Property(note => note.WordId).HasMaxLength(450);
         entity.Property(note => note.TargetText).HasMaxLength(4000).IsRequired();
         entity.Property(note => note.SourceText).HasMaxLength(4000).IsRequired();
+        entity.Property(note => note.SourceLanguage).HasMaxLength(64).IsRequired();
         entity.HasIndex(note => new { note.AnkiCollectionId, note.WordId })
             .IsUnique()
             .HasFilter("[WordId] IS NOT NULL");

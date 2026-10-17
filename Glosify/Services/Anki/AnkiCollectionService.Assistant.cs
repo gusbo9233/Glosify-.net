@@ -45,25 +45,32 @@ public sealed partial class AnkiCollectionService
             .SingleOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
         if (collection is null) return null;
         var now = _timeProvider.GetUtcNow();
-        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, cancellationToken);
-        var cards = availability.Cards;
-        var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
-        var reviews = Math.Min(Math.Max(0, collection.MaximumReviewsPerDay - availability.ReviewsStudied),
-            cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
-        var newCards = Math.Min(Math.Max(0, collection.NewCardsPerDay - availability.NewStudied),
-            cards.Count(c => c.State == AnkiCardStates.New));
-        return new(learning + reviews, newCards, learning, cards.Count, availability.StudiedToday);
+        // Daily limits apply to each direction separately, so add up both tracks.
+        var total = new AnkiCollectionCounts(0, 0, 0, 0, 0);
+        foreach (var direction in new[] { PracticeDirection.SourceToTarget, PracticeDirection.TargetToSource })
+        {
+            var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, direction, cancellationToken);
+            var cards = availability.Cards;
+            var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
+            var reviews = Math.Min(Math.Max(0, collection.MaximumReviewsPerDay - availability.ReviewsStudied),
+                cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
+            var newCards = Math.Min(Math.Max(0, collection.NewCardsPerDay - availability.NewStudied),
+                cards.Count(c => c.State == AnkiCardStates.New));
+            total = new(total.Due + learning + reviews, total.New + newCards, total.Learning + learning,
+                total.Total + cards.Count, total.StudiedToday + availability.StudiedToday);
+        }
+        return total;
     }
 
     private async Task<AnkiCollectionSummary> SummaryAsync(AnkiCollection c, CancellationToken ct) =>
-        new(c.Id, c.Name, c.SourceLanguage, c.TargetLanguage, c.DefaultDirection, await CountsAsync(c, _timeProvider.GetUtcNow(), ct));
+        new(c.Id, c.Name, c.TargetLanguage, c.DefaultDirection, await CountsAsync(c, _timeProvider.GetUtcNow(), null, ct));
 
     private static int? Next(int offset, int count, int total) => offset + count < total ? offset + count : null;
 
     public Task<AnkiAdditionResult> AddItemsAsync(AddAnkiItemsInput input, string userId, CancellationToken cancellationToken = default) =>
         ExecuteAtomicallyAsync(async () =>
         {
-            await CompatibleOwnedAsync(input.CollectionId, input.QuizId, userId, cancellationToken);
+            var quiz = await CompatibleOwnedAsync(input.CollectionId, input.QuizId, userId, cancellationToken);
             if (!input.SourceToTarget && !input.TargetToSource)
                 throw new AnkiValidationException("Choose at least one direction.");
             if (input.ItemIds.Count is < 1 or > 100 || input.ItemIds.Any(string.IsNullOrWhiteSpace))
@@ -99,7 +106,7 @@ public sealed partial class AnkiCollectionService
                 var note = await FindNoteAsync(input.CollectionId, item.WordId, item.SentenceId, cancellationToken);
                 if (note is null)
                 {
-                    note = NewNote(input.CollectionId, input.QuizId, input.ItemType, item.WordId, item.SentenceId, item.Target, item.Source);
+                    note = NewNote(input.CollectionId, input.QuizId, input.ItemType, item.WordId, item.SentenceId, item.Target, item.Source, quiz.SourceLanguage);
                     _context.AnkiNotes.Add(note);
                 }
                 foreach (var direction in Directions(input.SourceToTarget, input.TargetToSource))
@@ -163,12 +170,13 @@ public sealed partial class AnkiCollectionService
                 changed || added > 0 ? new(before, after) : null, excluded);
         }, cancellationToken);
 
-    private async Task CompatibleOwnedAsync(Guid collectionId, Guid quizId, string userId, CancellationToken ct)
+    private async Task<Quiz> CompatibleOwnedAsync(Guid collectionId, Guid quizId, string userId, CancellationToken ct)
     {
         var collection = await OwnedCollectionAsync(collectionId, userId, ct);
         var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, ct);
         if (collection is null || quiz is null || !Matches(collection, quiz))
-            throw new AnkiValidationException("The quiz and Anki collection must belong to you and have matching learning and translation languages.");
+            throw new AnkiValidationException("The quiz and Anki collection must belong to you and use the same learning language.");
+        return quiz;
     }
 
     private static IEnumerable<string> Directions(bool forward, bool reverse)
@@ -251,19 +259,6 @@ public sealed partial class AnkiCollectionService
             await _context.SaveChangesAsync(cancellationToken);
             var emptyNotes = await _context.AnkiNotes.Where(n => n.AnkiCollectionId == current.CollectionId && n.QuizId == current.QuizId && !n.Cards.Any()).ToListAsync(cancellationToken);
             _context.AnkiNotes.RemoveRange(emptyNotes);
-            await _context.SaveChangesAsync(cancellationToken);
-            return true;
-        }, cancellationToken);
-
-    public Task<bool> UndoCollectionCreationAsync(AnkiCollectionState state, string userId, CancellationToken cancellationToken = default) =>
-        ExecuteAtomicallyAsync(async () =>
-        {
-            var collection = await OwnedCollectionAsync(state.Id, userId, cancellationToken);
-            if (collection is null || AnkiCollectionState.From(collection) != state
-                || await _context.AnkiNotes.AnyAsync(n => n.AnkiCollectionId == state.Id, cancellationToken)
-                || await _context.AnkiQuizLinks.AnyAsync(l => l.AnkiCollectionId == state.Id, cancellationToken)
-                || await _context.AnkiReviews.AnyAsync(r => r.AnkiCollectionId == state.Id, cancellationToken)) return false;
-            _context.AnkiCollections.Remove(collection);
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }, cancellationToken);

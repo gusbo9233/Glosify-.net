@@ -3,9 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
 
-public sealed record AnkiRenameInput(Guid CollectionId, string Name, AnkiCollectionState Expected);
-public sealed record AnkiRenameState(AnkiCollectionState Collection, string Name, DateTimeOffset UpdatedAt);
-public sealed record AnkiRenameChange(AnkiRenameState Before, AnkiRenameState After);
 public sealed record RemoveAnkiCardsInput(Guid CollectionId, IReadOnlyList<AnkiCardState> ExpectedCards);
 
 public sealed partial class AnkiCollectionService
@@ -26,18 +23,6 @@ public sealed partial class AnkiCollectionService
         if (!await OwnsCollectionAsync(collectionId, userId, cancellationToken)) throw new AnkiValidationException("Anki collection not found.");
         return await LinkSnapshotAsync(collectionId, quizId, cancellationToken);
     }
-
-    public Task<AnkiRenameChange?> RenameWithUndoAsync(AnkiRenameInput input, string userId, CancellationToken cancellationToken = default) =>
-        ExecuteAtomicallyAsync(async () =>
-        {
-            var collection = await OwnedCollectionAsync(input.CollectionId, userId, cancellationToken)
-                ?? throw new AnkiValidationException("Anki collection not found.");
-            if (AnkiCollectionState.From(collection) != input.Expected) throw new AnkiValidationException("The collection changed. Read it again before renaming.");
-            var before = new AnkiRenameState(AnkiCollectionState.From(collection), collection.Name, collection.UpdatedAt);
-            if (collection.Name == input.Name.Trim()) return null;
-            await RenameAsync(collection.Id, input.Name, userId, cancellationToken);
-            return new AnkiRenameChange(before, new(AnkiCollectionState.From(collection), collection.Name, collection.UpdatedAt));
-        }, cancellationToken);
 
     public Task<IReadOnlyList<AnkiCardChange>> RemoveCardsWithUndoAsync(RemoveAnkiCardsInput input, string userId, CancellationToken cancellationToken = default) =>
         ExecuteAtomicallyAsync<IReadOnlyList<AnkiCardChange>>(async () =>
@@ -69,17 +54,5 @@ public sealed partial class AnkiCollectionService
                 throw new AnkiValidationException("The quiz link or its cards changed. Read the collection again before unlinking.");
             await RemoveQuizAsync(expected.CollectionId, expected.QuizId, userId, cancellationToken);
             return new AnkiLinkChange(current, await LinkSnapshotAsync(expected.CollectionId, expected.QuizId, cancellationToken));
-        }, cancellationToken);
-
-    public Task<bool> UndoRenameAsync(AnkiRenameChange change, string userId, CancellationToken cancellationToken = default) =>
-        ExecuteAtomicallyAsync(async () =>
-        {
-            var collection = await OwnedCollectionAsync(change.After.Collection.Id, userId, cancellationToken);
-            if (collection is null || AnkiCollectionState.From(collection) != change.After.Collection
-                || await _context.AnkiCollections.AnyAsync(c => c.UserId == userId && c.Id != collection.Id && c.Name == change.Before.Name, cancellationToken)) return false;
-            collection.Name = change.Before.Name;
-            collection.UpdatedAt = change.Before.UpdatedAt;
-            await _context.SaveChangesAsync(cancellationToken);
-            return true;
         }, cancellationToken);
 }

@@ -1,12 +1,14 @@
 using System.Security.Claims;
 using Glosify.Controllers;
 using Glosify.Data;
+using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Models.ViewModels;
 using Glosify.Services.Anki;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
@@ -25,75 +27,136 @@ public sealed class AnkiControllerLanguageTests
     public async Task Invalid_direction_returns_validation_feedback_without_changing_the_collection(string direction)
     {
         await using var context = CreateContext();
-        var collection = await CreateCollectionService(context).CreateAsync(new("Study", "English", "Polish", "UTC"), UserId);
+        await CreateCollectionService(context).GetOrCreateAsync(UserId, "Polish", "UTC");
         var original = (await context.AnkiCollections.SingleAsync()).DefaultDirection;
         var controller = CreateController(context, "Polish");
-        var result = Assert.IsType<RedirectToActionResult>(await controller.Direction(collection.Id, direction, default));
-        Assert.Equal(nameof(AnkiController.Collection), result.ActionName);
-        Assert.Equal(collection.Id, result.RouteValues!["id"]);
+        var result = Assert.IsType<RedirectToActionResult>(await controller.Direction(direction, default));
+        Assert.Equal(nameof(AnkiController.Index), result.ActionName);
         Assert.NotEmpty(Assert.IsType<string>(controller.TempData["AnkiMessage"]));
         Assert.Equal(original, (await context.AnkiCollections.SingleAsync()).DefaultDirection);
     }
 
     [Fact]
-    public async Task Index_only_shows_collections_for_the_current_app_language()
+    public async Task Direction_is_saved_on_the_current_language_collection()
     {
         await using var context = CreateContext();
-        var controller = CreateController(context, "Polish");
         var collections = CreateCollectionService(context);
-        await collections.CreateAsync(new("Polish deck", "English", "Polish", "UTC"), UserId);
-        await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
+        var spanish = await collections.GetOrCreateAsync(UserId, "Spanish", "UTC");
+        var controller = CreateController(context, "Polish");
+
+        await controller.Direction(PracticeDirection.TargetToSource, default);
+
+        var polish = await context.AnkiCollections.SingleAsync(c => c.TargetLanguage == "Polish");
+        Assert.Equal(PracticeDirection.TargetToSource, polish.DefaultDirection);
+        Assert.Equal(PracticeDirection.SourceToTarget, (await context.AnkiCollections.SingleAsync(c => c.Id == spanish.Id)).DefaultDirection);
+    }
+
+    [Fact]
+    public async Task Index_opens_the_current_language_collection_with_the_next_card()
+    {
+        await using var context = CreateContext();
+        var (quiz, word) = await SeedQuizAsync(context, "Polish");
+        var collections = CreateCollectionService(context);
+        var polish = await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await collections.GetOrCreateAsync(UserId, "Spanish", "UTC");
+        Assert.True(await collections.AddItemAsync(new(polish.Id, quiz.Id, "words", word.Id, true, true), UserId));
+        var controller = CreateController(context, "Polish");
 
         var result = await controller.Index(cancellationToken: CancellationToken.None);
 
         var model = Assert.IsType<AnkiIndexViewModel>(Assert.IsType<ViewResult>(result).Model);
-        var collection = Assert.Single(model.Collections);
-        Assert.Equal("Polish deck", collection.Name);
+        Assert.Equal(polish.Id, model.Workspace.Collection!.Id);
         Assert.Equal("Polish", model.TargetLanguage);
-        Assert.Contains("English", model.SourceLanguages);
-        Assert.DoesNotContain("Polish", model.SourceLanguages);
+        Assert.Equal(PracticeDirection.SourceToTarget, model.Direction);
+        var card = model.Study!.State.Card!;
+        Assert.Equal("house", card.Prompt);
+        Assert.Equal("English", card.PromptLanguage);
+        Assert.Equal(1, model.Study.Statistics!.Counts.Total);
+        Assert.False(model.Study.AnswerRevealed);
     }
 
     [Fact]
-    public async Task Create_derives_target_from_the_current_app_language()
+    public async Task Index_without_a_collection_lists_quizzes_and_does_not_create_one()
     {
         await using var context = CreateContext();
+        await SeedQuizAsync(context, "Polish");
         var controller = CreateController(context, "Polish");
 
-        var result = await controller.Create(new CreateAnkiCollectionForm
-        {
-            Name = "Bound deck",
-            SourceLanguage = "English",
-            TimeZoneId = "UTC",
-        }, CancellationToken.None);
+        var result = await controller.Index(cancellationToken: CancellationToken.None);
 
-        Assert.Equal(nameof(AnkiController.Collection), Assert.IsType<RedirectToActionResult>(result).ActionName);
-        var collection = Assert.Single(await context.AnkiCollections.ToListAsync());
-        Assert.Equal("English", collection.SourceLanguage);
-        Assert.Equal("Polish", collection.TargetLanguage);
-    }
-
-    [Fact]
-    public async Task CreateFromQuiz_does_not_create_a_collection_when_model_state_is_invalid()
-    {
-        await using var context = CreateContext();
-        var controller = CreateController(context, "Polish");
-        var form = new CreateAnkiFromQuizForm
-        {
-            Name = "Invalid deck",
-            QuizId = Guid.NewGuid(),
-            TimeZoneId = new string('x', 129),
-            WordsSourceToTarget = true,
-        };
-        controller.ModelState.AddModelError(nameof(form.TimeZoneId), "The time zone is too long.");
-
-        var result = await controller.CreateFromQuiz(form, CancellationToken.None);
-
-        var redirect = Assert.IsType<RedirectToActionResult>(result);
-        Assert.Equal("Settings", redirect.ActionName);
-        Assert.Equal("Quiz", redirect.ControllerName);
-        Assert.Equal(form.QuizId, redirect.RouteValues!["id"]);
+        var model = Assert.IsType<AnkiIndexViewModel>(Assert.IsType<ViewResult>(result).Model);
+        Assert.Null(model.Workspace.Collection);
+        Assert.Null(model.Study);
+        Assert.Single(model.Workspace.CompatibleQuizzes);
         Assert.Empty(await context.AnkiCollections.ToListAsync());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AddQuiz_links_both_directions_and_optional_sentences(bool includeSentences)
+    {
+        await using var context = CreateContext();
+        var (quiz, _) = await SeedQuizAsync(context, "Polish");
+        var controller = CreateController(context, "Polish");
+
+        var result = await controller.AddQuiz(new AddAnkiQuizForm { QuizId = quiz.Id, IncludeSentences = includeSentences, TimeZoneId = "Europe/Stockholm" }, default);
+
+        Assert.Equal(nameof(AnkiController.Index), Assert.IsType<RedirectToActionResult>(result).ActionName);
+        var collection = await context.AnkiCollections.SingleAsync();
+        Assert.Equal("Polish", collection.TargetLanguage);
+        Assert.Equal("Europe/Stockholm", collection.TimeZoneId);
+        var link = await context.AnkiQuizLinks.SingleAsync();
+        Assert.True(link.WordsSourceToTarget && link.WordsTargetToSource);
+        Assert.Equal(includeSentences, link.SentencesSourceToTarget);
+        Assert.Equal(includeSentences, link.SentencesTargetToSource);
+    }
+
+    [Fact]
+    public async Task AddQuiz_rejects_a_quiz_from_another_app_language()
+    {
+        await using var context = CreateContext();
+        var (spanishQuiz, _) = await SeedQuizAsync(context, "Spanish");
+        var controller = CreateController(context, "Polish");
+
+        var result = await controller.AddQuiz(new AddAnkiQuizForm { QuizId = spanishQuiz.Id }, default);
+
+        Assert.IsType<NotFoundResult>(result);
+        Assert.Empty(await context.AnkiQuizLinks.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Items_applies_posted_changes_and_rejects_malformed_keys()
+    {
+        await using var context = CreateContext();
+        var (quiz, word) = await SeedQuizAsync(context, "Polish");
+        var controller = CreateController(context, "Polish");
+
+        Assert.IsType<BadRequestResult>(await controller.Items(new SaveAnkiItemsForm { Add = ["words:not-a-guid:x"] }, default));
+        Assert.IsType<BadRequestResult>(await controller.Items(new SaveAnkiItemsForm { Add = [$"quizzes:{quiz.Id}:x"] }, default));
+        Assert.Empty(await context.AnkiCollections.ToListAsync());
+
+        var added = await controller.Items(new SaveAnkiItemsForm { Add = [$"words:{quiz.Id}:{word.Id}"] }, default);
+        Assert.Equal(nameof(AnkiController.Index), Assert.IsType<RedirectToActionResult>(added).ActionName);
+        Assert.Equal(2, await context.AnkiCards.CountAsync(card => card.IsActive));
+
+        await controller.Items(new SaveAnkiItemsForm { Remove = [$"words:{quiz.Id}:{word.Id}"] }, default);
+        Assert.Equal(0, await context.AnkiCards.CountAsync(card => card.IsActive));
+        Assert.Equal("Removed 1 item from Anki.", controller.TempData["AnkiMessage"]);
+    }
+
+    [Fact]
+    public async Task AddItem_from_the_quiz_page_adds_both_directions_and_returns_locally()
+    {
+        await using var context = CreateContext();
+        var (quiz, word) = await SeedQuizAsync(context, "Polish");
+        var controller = CreateController(context, "Polish");
+        controller.Url = new LocalUrlHelper();
+
+        var result = await controller.AddItem(new AddAnkiItemForm { QuizId = quiz.Id, ItemType = "word", ItemId = word.Id }, "/Quiz/Details/1", default);
+
+        Assert.Equal("/Quiz/Details/1", Assert.IsType<LocalRedirectResult>(result).Url);
+        Assert.Equal(2, await context.AnkiCards.CountAsync(card => card.IsActive));
     }
 
     [Fact]
@@ -122,8 +185,7 @@ public sealed class AnkiControllerLanguageTests
         context.AddRange(quiz, word);
         await context.SaveChangesAsync();
         var collections = CreateCollectionService(context);
-        var collection = await collections.CreateAsync(
-            new("Polish deck", "English", "Polish", "UTC"), UserId);
+        var collection = await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
         Assert.True(await collections.AddItemAsync(
             new(collection.Id, quiz.Id, "word", word.Id, true, false), UserId));
         var cardId = await context.AnkiCards.Select(card => card.Id).SingleAsync();
@@ -174,43 +236,80 @@ public sealed class AnkiControllerLanguageTests
     }
 
     [Fact]
-    public async Task Collection_is_not_found_when_it_belongs_to_another_app_language()
+    public void Old_collection_links_redirect_to_the_single_page()
+    {
+        using var context = CreateContext();
+        var result = CreateController(context, "Polish").Collection(Guid.NewGuid());
+
+        var redirect = Assert.IsType<RedirectToActionResult>(result);
+        Assert.Equal(nameof(AnkiController.Index), redirect.ActionName);
+        Assert.True(redirect.Permanent);
+    }
+
+    [Fact]
+    public async Task Study_partial_cannot_open_a_collection_from_another_app_language()
     {
         await using var context = CreateContext();
-        var collections = CreateCollectionService(context);
-        var spanish = await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
+        await CreateCollectionService(context).GetOrCreateAsync(UserId, "Spanish", "UTC");
         var controller = CreateController(context, "Polish");
+        controller.Request.Headers.XRequestedWith = "XMLHttpRequest";
 
-        var result = await controller.Collection(spanish.Id, CancellationToken.None);
+        var result = await controller.Study(cancellationToken: CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
-    public async Task Rename_cannot_mutate_a_collection_from_another_app_language()
+    public async Task Study_full_page_requests_redirect_to_the_single_page()
     {
         await using var context = CreateContext();
-        var collections = CreateCollectionService(context);
-        var spanish = await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
         var controller = CreateController(context, "Polish");
 
-        var result = await controller.Rename(spanish.Id, "Changed", CancellationToken.None);
+        var result = await controller.Study(Guid.NewGuid(), cancellationToken: CancellationToken.None);
 
-        Assert.IsType<NotFoundResult>(result);
-        Assert.Equal("Spanish deck", (await context.AnkiCollections.SingleAsync()).Name);
+        Assert.Equal(nameof(AnkiController.Index), Assert.IsType<RedirectToActionResult>(result).ActionName);
     }
 
     [Fact]
-    public async Task Study_cannot_open_a_collection_from_another_app_language()
+    public async Task Rate_cannot_review_a_card_from_another_app_language()
     {
         await using var context = CreateContext();
+        var (quiz, word) = await SeedQuizAsync(context, "Spanish");
         var collections = CreateCollectionService(context);
-        var spanish = await collections.CreateAsync(new("Spanish deck", "English", "Spanish", "UTC"), UserId);
-        var controller = CreateController(context, "Polish");
+        var spanish = await collections.GetOrCreateAsync(UserId, "Spanish", "UTC");
+        Assert.True(await collections.AddItemAsync(new(spanish.Id, quiz.Id, "words", word.Id, true, false), UserId));
+        var cardId = await context.AnkiCards.Select(card => card.Id).SingleAsync();
 
-        var result = await controller.Study(spanish.Id, cancellationToken: CancellationToken.None);
+        var result = await CreateController(context, "Polish").Rate(new RateAnkiCardForm
+        {
+            CollectionId = spanish.Id,
+            CardId = cardId,
+            Rating = AnkiRatings.Good,
+            ClientToken = Guid.NewGuid(),
+        }, CancellationToken.None);
 
         Assert.IsType<NotFoundResult>(result);
+        Assert.Empty(await context.AnkiReviews.ToListAsync());
+    }
+
+    private static async Task<(Quiz Quiz, Word Word)> SeedQuizAsync(GlosifyContext context, string targetLanguage)
+    {
+        var quiz = new Quiz
+        {
+            Id = Guid.NewGuid(),
+            UserId = UserId,
+            Name = $"{targetLanguage} basics",
+            SourceLanguage = "English",
+            TargetLanguage = targetLanguage,
+            Language = targetLanguage,
+            ProcessingStatus = "Ready",
+            CreatedAt = Now,
+        };
+        var word = new Word { Id = $"word-{Guid.NewGuid():N}", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };
+        context.AddRange(quiz, word,
+            new QuizSentence { Id = Guid.NewGuid(), QuizId = quiz.Id, Text = "To jest dom.", Translation = "This is a house.", CreatedAt = Now });
+        await context.SaveChangesAsync();
+        return (quiz, word);
     }
 
     private static AnkiController CreateController(GlosifyContext context, string language)
@@ -253,6 +352,16 @@ public sealed class AnkiControllerLanguageTests
         public IReadOnlyList<string> SupportedLanguages { get; } = ["English", "Polish", "Spanish", "Freestyle"];
         public bool TrySetLanguage(string language) => true;
         public void Clear() { }
+    }
+
+    private sealed class LocalUrlHelper : IUrlHelper
+    {
+        public ActionContext ActionContext { get; } = new();
+        public string? Action(UrlActionContext actionContext) => null;
+        public string? Content(string? contentPath) => contentPath;
+        public bool IsLocalUrl(string? url) => url?.StartsWith('/') == true && !url.StartsWith("//", StringComparison.Ordinal);
+        public string? Link(string? routeName, object? values) => null;
+        public string? RouteUrl(UrlRouteContext routeContext) => null;
     }
 
     private sealed class InMemoryTempDataProvider : ITempDataProvider

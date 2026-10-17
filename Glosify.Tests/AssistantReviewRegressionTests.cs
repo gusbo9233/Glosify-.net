@@ -103,7 +103,7 @@ public sealed class AssistantReviewRegressionTests
         db.Words.Add(new Word { Id = "w1", QuizId = quiz.Id, Lemma = "dom", Translation = "house" });
         await db.SaveChangesAsync();
         var collections = new AnkiCollectionService(db, clock);
-        var collection = await collections.CreateAsync(new("Study", "English", "Polish", "UTC"), "user");
+        var collection = await collections.GetOrCreateAsync("user", "Polish", "UTC");
         await collections.AddItemAsync(new(collection.Id, quiz.Id, "words", "w1", true, false), "user");
         var card = await db.AnkiCards.SingleAsync();
         var emptySize = JsonSerializer.Serialize(await LearningChanges.SnapshotAsync(db, "anki", collection.Id, "user", default)).Length;
@@ -447,7 +447,7 @@ public sealed class AssistantReviewRegressionTests
     {
         await using var h = await AssistantHarness.CreateAsync();
         var collection = await h.WithAsync(services => services.GetRequiredService<IAnkiCollectionService>()
-            .CreateAsync(new("Study", "English", "Polish", "UTC"), AssistantHarness.UserId));
+            .GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC"));
         if (scenario != "later") await h.WithAsync(services => services.GetRequiredService<IAnkiCollectionService>()
             .AddQuizAsync(new(collection.Id, h.QuizId, true, false, true, false), AssistantHarness.UserId));
         h.Model.ThenCall("add_items", kind == "word"

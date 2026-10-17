@@ -33,13 +33,3 @@ public sealed record AnkiCardState(Guid Id, Guid NoteId, bool DirectlyIncluded, 
             card.Note.TargetText, card.Note.SourceText,
         }));
 }
-
-public sealed record AnkiCollectionState(Guid Id, string Fingerprint)
-{
-    public static AnkiCollectionState From(AnkiCollection collection) => new(collection.Id, JsonSerializer.Serialize(new
-    {
-        collection.Name, collection.SourceLanguage, collection.TargetLanguage, collection.DefaultDirection,
-        collection.DesiredRetention, collection.NewCardsPerDay, collection.MaximumReviewsPerDay,
-        collection.TimeZoneId, collection.UpdatedAt,
-    }));
-}

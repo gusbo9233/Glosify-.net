@@ -1,5 +1,4 @@
 using Glosify.Localization;
-using Glosify.Services.Anki;
 
 namespace Glosify.Models.ViewModels;
 
@@ -45,7 +44,6 @@ public class QuizWorkspaceViewModel
     public QuizCard SelectedQuiz { get; set; } = null!;
     public IReadOnlyList<WordRow> Words { get; set; } = [];
     public IReadOnlyList<QuizSentenceViewModel> Sentences { get; set; } = [];
-    public IReadOnlyList<AnkiCollectionSummary> AnkiCollections { get; set; } = [];
 }
 
 public class QuizSentenceViewModel

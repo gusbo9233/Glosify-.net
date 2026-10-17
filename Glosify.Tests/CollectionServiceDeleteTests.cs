@@ -66,7 +66,7 @@ public class CollectionServiceDeleteTests
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
         var anki = new AnkiCollectionService(context, new FakeTimeProvider(Now));
-        var deck = await anki.CreateAsync(new("Chapter deck", "English", "Polish", "UTC"), UserId);
+        var deck = await anki.GetOrCreateAsync(UserId, "Polish", "UTC");
         Assert.True(await anki.AddQuizAsync(new(deck.Id, quiz.Id, true, false, false, false), UserId));
         Assert.Single(await context.AnkiCards.Where(card => card.IsActive).ToListAsync());
         var service = new CollectionService(context, anki);

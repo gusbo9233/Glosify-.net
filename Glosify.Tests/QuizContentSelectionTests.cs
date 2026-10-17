@@ -80,7 +80,7 @@ public sealed class QuizContentSelectionTests
         var quizId = await SeedAsync(db, language);
         var languageContext = new CookieLanguageContext(new HttpContextAccessor());
         var controller = Authenticate(new QuizController(new QuizService(db, languageContext, null!),
-            null!, new WordService(db, null!), null!, languageContext, null!));
+            null!, new WordService(db, null!), null!, languageContext));
         var result = Assert.IsType<RedirectToActionResult>(await controller.Start(new QuizSessionSettings
         {
             QuizId = quizId, Mode = mode, WordCount = 2,

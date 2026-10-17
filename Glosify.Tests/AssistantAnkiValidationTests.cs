@@ -103,8 +103,8 @@ public sealed class AssistantAnkiValidationTests
             new Word { Id = "foreign-word", QuizId = otherQuiz, Lemma = "kot", Translation = "cat" });
         db.QuizSentences.Add(new QuizSentence { Id = SentenceId, QuizId = h.QuizId, Text = "To jest dom.", Translation = "This is a house." });
         var otherCollection = Guid.NewGuid();
-        db.AnkiCollections.AddRange(new AnkiCollection { Id = CollectionId, UserId = AssistantHarness.UserId, Name = "Study", SourceLanguage = "English", TargetLanguage = "Polish" },
-            new AnkiCollection { Id = otherCollection, UserId = "other", Name = "Other study", SourceLanguage = "English", TargetLanguage = "Polish" });
+        db.AnkiCollections.AddRange(new AnkiCollection { Id = CollectionId, UserId = AssistantHarness.UserId, Name = "Study", TargetLanguage = "Polish" },
+            new AnkiCollection { Id = otherCollection, UserId = "other", Name = "Other study", TargetLanguage = "Polish" });
         db.AnkiNotes.AddRange(new AnkiNote { Id = Guid.NewGuid(), AnkiCollectionId = CollectionId, QuizId = h.QuizId, WordId = "word-id", ItemType = "words", TargetText = "dom", SourceText = "house",
                 Cards = [new AnkiCard { Id = CardId, Direction = PracticeDirection.SourceToTarget, IsActive = true, DirectlyIncluded = true }] },
             new AnkiNote { Id = Guid.NewGuid(), AnkiCollectionId = otherCollection, QuizId = otherQuiz, WordId = "foreign-word", ItemType = "words", TargetText = "kot", SourceText = "cat",

@@ -20,15 +20,17 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         _timeProvider = timeProvider;
     }
 
-    public Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, true, cancellationToken);
+    public Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, string? direction = null,
+        CancellationToken cancellationToken = default) =>
+        ReadCoreAsync(collectionId, userId, direction, true, cancellationToken);
 
     public Task<AnkiStatistics?> ReadSnapshotAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, false, cancellationToken);
+        ReadCoreAsync(collectionId, userId, null, false, cancellationToken);
 
     private async Task<AnkiStatistics?> ReadCoreAsync(
         Guid collectionId,
         string userId,
+        string? direction,
         bool synchronize,
         CancellationToken cancellationToken)
     {
@@ -45,7 +47,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         var periodStartLocal = localToday.AddDays(-29);
         var periodStart = LocalStart(periodStartLocal, zone);
         var reviewQuery = _context.AnkiReviews.AsNoTracking()
-            .Where(review => review.AnkiCollectionId == collectionId);
+            .Where(review => review.AnkiCollectionId == collectionId
+                && (direction == null || review.Card.Direction == direction));
         var reviews = IsSqlite()
             ? (await reviewQuery.ToListAsync(cancellationToken)).Where(review => review.ReviewedAt >= periodStart).ToList()
             : await reviewQuery.Where(review => review.ReviewedAt >= periodStart).ToListAsync(cancellationToken);
@@ -61,7 +64,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
         var dueQuery = _context.AnkiCards.AsNoTracking()
             .Where(card => card.Note.AnkiCollectionId == collectionId
                 && card.IsActive
-                && card.State != AnkiCardStates.New);
+                && card.State != AnkiCardStates.New
+                && (direction == null || card.Direction == direction));
         var dueCards = IsSqlite()
             ? (await dueQuery.Select(card => card.DueAt).ToListAsync(cancellationToken)).Where(due => due < forecastEnd).ToList()
             : await dueQuery.Where(card => card.DueAt < forecastEnd).Select(card => card.DueAt).ToListAsync(cancellationToken);
@@ -75,7 +79,8 @@ public sealed class AnkiStatisticsService : IAnkiStatisticsService
             .ToList();
 
         var activeCards = await _context.AnkiCards.AsNoTracking()
-            .Where(card => card.Note.AnkiCollectionId == collectionId && card.IsActive)
+            .Where(card => card.Note.AnkiCollectionId == collectionId && card.IsActive
+                && (direction == null || card.Direction == direction))
             .ToListAsync(cancellationToken);
         var dayStart = AnkiCollectionService.StartOfCollectionDay(collection.TimeZoneId, now);
         var counts = new AnkiCollectionCounts(

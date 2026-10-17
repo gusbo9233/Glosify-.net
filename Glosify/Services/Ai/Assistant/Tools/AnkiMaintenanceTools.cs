@@ -4,27 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant.Tools;
 
-internal sealed record RenameAnkiArgs(string CollectionId, string Name);
 internal sealed record RemoveAnkiCardsArgs(string CollectionId, IReadOnlyList<Guid> CardIds);
 internal sealed record UnlinkAnkiQuizArgs(string CollectionId, string? QuizId = null);
-
-internal sealed class RenameAnkiCollectionTool(GlosifyContext db) : AssistantTool<RenameAnkiArgs>
-{
-    public override string Name => "rename_anki_collection";
-    public override AssistantToolKind Kind => AssistantToolKind.Write;
-    public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
-    protected override string Describe(AssistantMode mode) => "Rename an owned Anki collection. Saved with Undo. Does not change cards, schedules or review history.";
-    protected override async Task<ToolResult> RunAsync(RenameAnkiArgs args, ToolContext context, CancellationToken ct)
-    {
-        var collection = await AnkiTools.OwnedAsync(db, args.CollectionId, context.UserId, ct);
-        if (collection is null) return ToolResult.Fail("Could not rename collection", "Anki collection not found.");
-        var name = args.Name.Trim();
-        if (name.Length is < 1 or > 160) return ToolResult.Fail("Could not rename collection", "Use a name between 1 and 160 characters.");
-        var summary = $"Rename Anki collection “{collection.Name}” to “{name}”";
-        return ToolResult.Propose(summary, null, [QuizContent.Change(PendingChangeKinds.RenameAnkiCollection,
-            new { input = new AnkiRenameInput(collection.Id, name, AnkiCollectionState.From(collection)), summary })]);
-    }
-}
 
 internal sealed class RemoveAnkiCardsTool(GlosifyContext db, IAnkiCollectionService anki) : AssistantTool<RemoveAnkiCardsArgs>
 {

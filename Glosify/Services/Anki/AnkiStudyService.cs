@@ -27,6 +27,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
     public async Task<AnkiStudyState?> GetNextAsync(
         Guid collectionId,
         string userId,
+        string direction,
         Guid? preferredCardId = null,
         CancellationToken cancellationToken = default)
     {
@@ -35,10 +36,12 @@ public sealed class AnkiStudyService : IAnkiStudyService
             cancellationToken);
         if (collection is null)
             return null;
+        if (direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource))
+            direction = PracticeDirection.SourceToTarget;
         await _collections.SyncCollectionAsync(collectionId, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
-        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, cancellationToken);
+        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, direction, cancellationToken);
         var cards = availability.Cards;
         var newStudied = availability.NewStudied;
         var reviewsStudied = availability.ReviewsStudied;
@@ -76,7 +79,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
             var nextDue = cards
                 .Where(card => card.State != AnkiCardStates.New && card.DueAt > now)
                 .MinBy(card => card.DueAt)?.DueAt;
-            return new AnkiStudyState(null, nextDue, collection.TimeZoneId);
+            return new AnkiStudyState(null, nextDue, collection.TimeZoneId, direction);
         }
 
         var sourceToTarget = PracticeDirection.IsSourceToTarget(selected.Direction);
@@ -92,14 +95,14 @@ public sealed class AnkiStudyService : IAnkiStudyService
             selected.RowVersion is not { Length: > 0 } ? string.Empty : Convert.ToBase64String(selected.RowVersion),
             sourceToTarget ? selected.Note.SourceText : selected.Note.TargetText,
             sourceToTarget ? selected.Note.TargetText : selected.Note.SourceText,
-            sourceToTarget ? collection.SourceLanguage : collection.TargetLanguage,
-            sourceToTarget ? collection.TargetLanguage : collection.SourceLanguage,
+            sourceToTarget ? selected.Note.SourceLanguage : collection.TargetLanguage,
+            sourceToTarget ? collection.TargetLanguage : selected.Note.SourceLanguage,
             selected.Note.ItemType,
             selected.Direction,
             selected.State,
             previews.ToDictionary(pair => pair.Key, pair => pair.Value.IntervalLabel, StringComparer.Ordinal),
             dueRemaining,
-            newRemaining) { QuizId = selected.Note.QuizId }, null, collection.TimeZoneId);
+            newRemaining) { QuizId = selected.Note.QuizId }, null, collection.TimeZoneId, direction);
     }
 
     public async Task<bool> RateAsync(
@@ -160,9 +163,6 @@ public sealed class AnkiStudyService : IAnkiStudyService
         card.ReviewCount = scheduled.ReviewCount;
         card.LapseCount = scheduled.LapseCount;
         card.LastReviewedAt = now;
-        var nextCollectionDay = AnkiCollectionService.StartOfNextCollectionDay(collection.TimeZoneId, now);
-        foreach (var sibling in card.Note.Cards.Where(sibling => sibling.Id != card.Id && sibling.IsActive))
-            sibling.BuriedUntil = nextCollectionDay;
         _context.AnkiReviews.Add(new AnkiReview
         {
             Id = Guid.NewGuid(),

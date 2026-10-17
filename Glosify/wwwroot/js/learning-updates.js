@@ -21,8 +21,8 @@ export function affectsStudy(run, { studyQuizId, studyAnkiCollectionId, studyCar
     if (!Array.isArray(run.resourceChanges) || !run.resourceChanges.length) return true;
     if (!studyQuizId && !studyAnkiCollectionId) return true;
     const metadataOnly = new Set(['rename_quiz', 'rename_collection', 'move_quiz', 'move_collection',
-        'quiz_visibility', 'collection_visibility', 'anki_rename', 'rename_anki_collection',
-        'create_quiz', 'create_collection', 'copy_quiz', 'copy_collection', 'create_anki_collection', 'anki_create']);
+        'quiz_visibility', 'collection_visibility',
+        'create_quiz', 'create_collection', 'copy_quiz', 'copy_collection']);
     return run.resourceChanges.some(change => {
         if (metadataOnly.has(change.kind)) return false;
         if (['word', 'sentence', 'quiz'].includes(change.entityType)) {

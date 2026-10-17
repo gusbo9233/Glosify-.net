@@ -182,18 +182,6 @@ public sealed class ChangeApplier : IChangeApplier
                 case PendingChangeKinds.MoveCollection:
                     applied += await ApplyMoveCollectionAsync(change.Payload, userId, journal, cancellationToken) ? 1 : 0;
                     break;
-                case PendingChangeKinds.RenameAnkiCollection:
-                {
-                    var input = change.Payload.GetProperty("input").Deserialize<AnkiRenameInput>(JsonOptions)!;
-                    var renamed = await _ankiCollections.RenameWithUndoAsync(input, userId, cancellationToken);
-                    ankiCollectionId = input.CollectionId;
-                    if (renamed is not null)
-                    {
-                        journal.Add(new(change.Kind, AppliedEntityTypes.AnkiCollection, input.CollectionId.ToString(), null, renamed.Before, renamed.After));
-                        applied++;
-                    }
-                    break;
-                }
                 case PendingChangeKinds.RemoveAnkiCards:
                 {
                     var input = change.Payload.GetProperty("input").Deserialize<RemoveAnkiCardsInput>(JsonOptions)!;
@@ -217,24 +205,12 @@ public sealed class ChangeApplier : IChangeApplier
                     applied++;
                     break;
                 }
-                case PendingChangeKinds.CreateAnkiCollection:
-                {
-                    var sourceId = GetNullableGuid(change.Payload, "quiz_id") ?? throw new QuizNotFoundException();
-                    var source = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == sourceId && q.UserId == userId, cancellationToken)
-                        ?? throw new QuizNotFoundException();
-                    var created = await _ankiCollections.CreateAsync(new(GetString(change.Payload, "name") ?? string.Empty,
-                        source.SourceLanguage, QuizLanguageCatalog.TargetName(source.TargetLanguage, source.Language), "UTC"), userId, cancellationToken);
-                    ankiCollectionId = created.Id;
-                    journal.Add(new(change.Kind, AppliedEntityTypes.AnkiCollection, created.Id.ToString(), null, null, AnkiCollectionState.From(created)));
-                    applied++;
-                    break;
-                }
                 case PendingChangeKinds.AddAnkiItems:
                 case PendingChangeKinds.LinkAnkiQuiz:
                 {
                     var result = change.Kind == PendingChangeKinds.AddAnkiItems
-                        ? await _ankiCollections.AddItemsAsync(change.Payload.Deserialize<AddAnkiItemsInput>(JsonOptions)!, userId, cancellationToken)
-                        : await _ankiCollections.LinkQuizAdditiveAsync(change.Payload.Deserialize<AddAnkiQuizInput>(JsonOptions)!, userId, cancellationToken);
+                        ? await AddAnkiItemsAsync(change.Payload.Deserialize<AddAnkiItemsInput>(JsonOptions)!, userId, cancellationToken)
+                        : await LinkAnkiQuizAsync(change.Payload.Deserialize<AddAnkiQuizInput>(JsonOptions)!, userId, cancellationToken);
                     ankiCollectionId = result.CollectionId;
                     ankiSelectedItems += result.SelectedItems;
                     ankiCardsAdded += result.CardsAdded;
@@ -730,6 +706,30 @@ public sealed class ChangeApplier : IChangeApplier
             parentCollectionId, cancellationToken: ct);
         journal.Add(new AppliedChange(PendingChangeKinds.CreateCollection, AppliedEntityTypes.Collection, collection.Id.ToString(), null,
             null, LearningChanges.CreationState(collection)));
+        return collection.Id;
+    }
+
+    private async Task<AnkiAdditionResult> AddAnkiItemsAsync(AddAnkiItemsInput input, string userId, CancellationToken cancellationToken) =>
+        await _ankiCollections.AddItemsAsync(input with
+        {
+            CollectionId = await AnkiCollectionForAsync(input.CollectionId, input.QuizId, userId, cancellationToken),
+        }, userId, cancellationToken);
+
+    private async Task<AnkiAdditionResult> LinkAnkiQuizAsync(AddAnkiQuizInput input, string userId, CancellationToken cancellationToken) =>
+        await _ankiCollections.LinkQuizAdditiveAsync(input with
+        {
+            CollectionId = await AnkiCollectionForAsync(input.CollectionId, input.QuizId, userId, cancellationToken),
+        }, userId, cancellationToken);
+
+    // Tools propose Guid.Empty when the quiz's learning language has no Anki collection
+    // yet. It is created here, inside the run's transaction, and kept on Undo.
+    private async Task<Guid> AnkiCollectionForAsync(Guid collectionId, Guid quizId, string userId, CancellationToken cancellationToken)
+    {
+        if (collectionId != Guid.Empty) return collectionId;
+        var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(q => q.Id == quizId && q.UserId == userId, cancellationToken)
+            ?? throw new QuizNotFoundException();
+        var collection = await _ankiCollections.GetOrCreateAsync(userId,
+            QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language), null, cancellationToken);
         return collection.Id;
     }
 

@@ -12,5 +12,5 @@ public sealed record AnkiStatistics(
 public interface IAnkiStatisticsService
 {
     Task<AnkiStatistics?> ReadSnapshotAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
-    Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default);
+    Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, string? direction = null, CancellationToken cancellationToken = default);
 }

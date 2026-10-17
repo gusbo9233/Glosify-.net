@@ -1,16 +1,26 @@
 # Anki requests in assistant chat
 
-The language assistant can work with Glosify's built-in Anki study collections.
-They are separate from the collections that organize quizzes in the library.
-External Anki export/synchronization, whole-collection deletion and study-setting
-changes are not exposed by these tools.
+Glosify's built-in Anki is one collection per user and learning language. Opening
+`/Anki` shows the due cards for the current app language straight away. Cards from
+quizzes with different translation (source) languages share that collection; each
+note stores the source language it came from. The learner chooses which direction
+to practice (translation → learning language or the reverse). Each direction is its
+own track: separate cards, schedules, daily new/review limits and statistics, and a
+review in one direction never hides the other direction for the day.
+
+The collection is created on demand the first time something is added, from the
+Anki page's settings drawer (a whole quiz, optionally with sentences, or individual
+words and sentences ticked in a list), the quiz page's "Add to Anki" dialog, or the
+assistant. Content added from the page always gets both directions. These Anki
+collections are separate from the collections that organize quizzes in the library.
+External Anki export/synchronization and collection deletion are not exposed.
 
 Examples:
 
-- “Add the first 20 words of this quiz to my Revision Anki collection.”
-- “Create an Anki collection for these words, with cards in both directions.”
-- “Link this quiz so future words and sentences appear in my collection.”
-- “Which Anki collections have cards due?”
+- “Add the first 20 words of this quiz to Anki.”
+- “Add these words to Anki, only Polish → English.”
+- “Link this quiz so future words and sentences appear in Anki.”
+- “How many Anki cards are due?”
 
 “First” means quiz-page creation order, with an ID tie-breaker. The existing
 alphabetical default of `list_items` remains compatible; the assistant chooses
@@ -18,19 +28,26 @@ alphabetical default of `list_items` remains compatible; the assistant chooses
 IDs, up to 100 per addition. If fewer items exist, the assistant reports the
 available count. Missing items fail the batch rather than substituting others.
 
-Existing collections supply the default direction. New collections inherit the
-source quiz's language pair and default to translation → learning language and
-UTC. Explicit “both directions” creates two cards per item. Existing active cards
-are counted as already included without resetting their scheduling. A card that
-was only quiz-linked gains direct inclusion, so it remains if the quiz is later
-unlinked; Undo restores its previous membership.
+`add_anki_items` and `link_anki_quiz` default to both directions. `collection_id` is
+optional: without it the applier uses, or creates, the collection for the quiz's
+learning language. A collection created this way is kept on Undo; only the cards and
+links the run added are reversed. Existing active cards are counted as already
+included without resetting their scheduling. A card that was only quiz-linked gains
+direct inclusion, so it remains if the quiz is later unlinked; Undo restores its
+previous membership. `manage_anki` can change settings, the practiced direction,
+quiz links and card membership; it cannot create, rename or delete collections.
+
+The `SimplifyAnki` migration introduced this model. It deletes all existing Anki
+collections, notes, cards, links and reviews (the owner chose a fresh start over
+merging), drops the collection source language, adds `AnkiNotes.SourceLanguage`,
+and enforces one collection per `(UserId, TargetLanguage)`. Down restores the schema
+only.
 
 ## Tools and persistence
 
 `list_anki_collections` and `get_anki_collection` provide read-only, owned,
-paginated views. They do not invoke the synchronizing MVC read paths.
-`create_anki_collection`, `add_anki_items`, and `link_anki_quiz` return proposed
-changes; the existing runtime applies them immediately and journals them in the
+paginated views (at most one collection per learning language). They do not invoke the synchronizing MVC read paths.
+`add_anki_items` and `link_anki_quiz` return proposed changes; the existing runtime applies them immediately and journals them in the
 same transaction. No new HTTP endpoints are required. Learning history adds the
 `TrackQuizAttemptItems` migration described below.
 
@@ -47,9 +64,7 @@ whole-run Undo to remove those unreviewed cards before undoing the earlier link.
 Undo restores membership without resetting study progress. It compares the
 saved semantic state with current state, preserves reviewed/edited cards, and
 reports conflicts as kept changes. A whole-quiz link is kept if its affected
-cards or link changed later, including new synchronized cards. A newly created
-collection is removed only when unchanged and empty after reversing its content
-changes. EF rowversion tokens still enforce write concurrency, but are not part
+cards or link changed later, including new synchronized cards. EF rowversion tokens still enforce write concurrency, but are not part
 of the semantic Undo fingerprint: reversing a later change in the same run can
 advance a token without changing the meaning of an earlier journal entry.
 
@@ -58,12 +73,12 @@ advance a token without changing the meaning of an earlier journal entry.
 `AssistantAnkiTests` exercises discovery, exact first-20 selection, both
 directions, sentences, duplicates, ownership, language compatibility, stale
 selection, rollback, restarts, read-only pagination, and conflict-aware Undo.
-The opt-in SQL Server test covers chained creation/addition/link Undo with real
+The opt-in SQL Server test covers chained addition/link Undo with real
 rowversion generation.
 
-The browser journey `AssistantAnki_SelectedQuizItemsAppearInCollectionAndUndoRemovesThem`
-scripts model completion, writes through the real change applier, checks the
-collection page and uses the production Undo endpoint. It requires the normal
+The browser journey `AssistantAnki_SelectedQuizItemsAppearInAnkiAndUndoRemovesThem`
+scripts model completion, writes through the real change applier (creating the
+collection on demand), checks the Anki page and uses the production Undo endpoint. It requires the normal
 isolated browser host/database configuration described in README. It does not
 claim to test a live model's interpretation of the request.
 
@@ -74,10 +89,10 @@ journeys report skips when their explicit test prerequisites are absent.
 
 Additional requests supported by the language assistant:
 
-- “Add the 20 words I struggled with most this month to Revision.”
+- “Add the 20 words I struggled with most this month to Anki.”
 - “How did my quiz practice go, and what Anki reviews are coming up?”
 - “Make a quiz from my mistakes, with example sentences.”
-- “Rename Revision to Travel; remove these cards; stop syncing this quiz.”
+- “Remove these cards from Anki; stop syncing this quiz.”
 - “I have ten minutes. Give me something to practice.”
 - “Make a quiz from the first page of this book/transcript and add it to Anki.”
 
@@ -100,11 +115,10 @@ All assistant statistics reads are observational and do not synchronize cards.
 `prepare_study_session` provides an owned local study link. Automatic selection
 prefers due Anki cards, then new cards, then the current quiz (or an owned quiz in
 the selected language). The time budget is an estimate at two items per minute,
-not a timer. Anki suggestions exclude buried cards and reviewed siblings, cap new/review cards by remaining daily limits, and retain due learning/relearning cards. Availability reads share the study service’s eligibility rules and never synchronize cards. Typing and flashcard links
+not a timer. Anki suggestions add up both direction tracks, exclude buried cards, cap new/review cards by each direction's remaining daily limits, and retain due learning/relearning cards. Availability reads share the study service’s eligibility rules and never synchronize cards. Typing and flashcard links
 can select exact words; sentence subsets require a focused quiz first.
 
-`rename_anki_collection` saves with Undo. `remove_anki_cards` and
-`unlink_anki_quiz` use the chat's approval policy and provide readable summaries.
+`remove_anki_cards` and `unlink_anki_quiz` use the chat's approval policy and provide readable summaries.
 Removal excludes linked cards from future synchronization. Unlinking leaves
 directly included cards active. Both retain card scheduling and review history.
 Changes are checked against the proposed state at apply time; Undo also preserves

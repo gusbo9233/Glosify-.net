@@ -198,16 +198,9 @@
         <input type="hidden" name="ItemId" data-anki-item-id />
         <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
         <header><h2>Add <span data-anki-item-label></span> to Anki</h2><button class="btn-icon" type="button" data-close-anki-item aria-label="Close"><span class="material-symbols-outlined">close</span></button></header>
-        @if (Model.AnkiCollections.Count > 0)
-        {
-            <label>Collection<select class="form-input" name="CollectionId" required>@foreach (var collection in Model.AnkiCollections) { <option value="@collection.Id">@collection.Name</option> }</select></label>
-            <fieldset><legend>Directions</legend><label><input type="checkbox" name="SourceToTarget" value="true" checked /> @Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage</label><label><input type="checkbox" name="TargetToSource" value="true" /> @Model.SelectedQuiz.TargetLanguage &rarr; @Model.SelectedQuiz.SourceLanguage</label></fieldset>
-            <button class="btn-submit" type="submit">Add card</button>
-        }
-        else
-        {
-            <p>Create a compatible @Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage collection first.</p><a class="btn-submit" asp-controller="Anki" asp-action="Index">Go to Anki</a>
-        }
+        <p>It will be practiced in both directions: @Model.SelectedQuiz.SourceLanguage &rarr; @Model.SelectedQuiz.TargetLanguage and @Model.SelectedQuiz.TargetLanguage &rarr; @Model.SelectedQuiz.SourceLanguage.</p>
+        <input type="hidden" name="TimeZoneId" data-browser-timezone />
+        <button class="btn-submit" type="submit">Add to Anki</button>
     </form>
 </dialog>
 

@@ -106,7 +106,7 @@ internal sealed class AssistantRunContext(
             transcript,
             page,
             sourceLines));
-        if (anki is not null) note += $"\nSelected Anki study collection: {anki.Name} (id {anki.Id}), {anki.SourceLanguage} / {anki.TargetLanguage}, direction {anki.DefaultDirection}. Use inspect_anki for current contents.";
+        if (anki is not null) note += $"\nSelected Anki collection: {anki.TargetLanguage} (id {anki.Id}), the user's only collection for this learning language, practicing {anki.DefaultDirection}. Use inspect_anki for current contents.";
         if (run.AvatarSnapshotId is not null)
         {
             note += $"\nAttached avatar conversation: {run.AvatarConversationTurnCount} spoken turns. This is the latest version shared with this chat when the request was sent; the live conversation may have ended. "

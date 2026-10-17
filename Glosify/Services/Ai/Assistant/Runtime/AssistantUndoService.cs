@@ -130,10 +130,6 @@ internal sealed class AssistantUndoService(
         var after = Read(change.AfterJson);
         switch (change.Kind)
         {
-            case PendingChangeKinds.CreateAnkiCollection:
-                return await anki.UndoCollectionCreationAsync(RunJson.Read<AnkiCollectionState>(change.AfterJson!), userId, cancellationToken);
-            case PendingChangeKinds.RenameAnkiCollection:
-                return await anki.UndoRenameAsync(new(RunJson.Read<AnkiRenameState>(change.BeforeJson!), RunJson.Read<AnkiRenameState>(change.AfterJson!)), userId, cancellationToken);
             case PendingChangeKinds.SyncAnkiCard:
             case PendingChangeKinds.RemoveAnkiCards:
             case PendingChangeKinds.AddAnkiItems:

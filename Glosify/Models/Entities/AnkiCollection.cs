@@ -1,11 +1,12 @@
 namespace Glosify.Models.Entities;
 
+// One collection per user and learning language. Notes carry their own source
+// language, so quizzes translated from different languages share one queue.
 public class AnkiCollection
 {
     public Guid Id { get; set; }
     public string UserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public string SourceLanguage { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;
     public string DefaultDirection { get; set; } = PracticeDirection.SourceToTarget;
     public double DesiredRetention { get; set; } = 0.9;

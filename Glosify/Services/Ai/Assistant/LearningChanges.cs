@@ -14,7 +14,7 @@ namespace Glosify.Services.Ai.Assistant;
 internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, ICollectionService collections, IAnkiCollectionService anki)
 {
     internal static readonly string[] QuizActions = ["rename_quiz", "delete_quiz", "delete_collection", "quiz_visibility", "collection_visibility", "copy_quiz", "copy_collection"];
-    internal static readonly string[] AnkiActions = ["create", "rename", "delete", "settings", "direction", "add_quiz", "remove_quiz", "add_item", "remove_card"];
+    internal static readonly string[] AnkiActions = ["settings", "direction", "add_quiz", "remove_quiz", "add_item", "remove_card"];
     internal static bool Handles(string kind) => QuizActions.Contains(kind) || kind.StartsWith("anki_", StringComparison.Ordinal);
     internal static bool Permanent(string kind) => kind is "delete_quiz" or "delete_collection" or "anki_delete";
 
@@ -139,12 +139,7 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
             var a = JsonSerializer.Deserialize<ManageAnkiArgs>(p.GetProperty("args"), RunJson.Options)!;
             switch (a.Action)
             {
-                case "create":
-                    var created = await anki.CreateAsync(new(a.Name!, a.SourceLanguage ?? "English", a.TargetLanguage ?? "", a.TimeZoneId ?? "UTC"), user, ct);
-                    id = created.Id; break;
-                case "rename": ok = await anki.RenameAsync(id, a.Name!, user, ct); break;
-                case "delete": ok = await anki.DeleteAsync(id, user, ct); break;
-                case "direction": ok = await anki.SetDirectionAsync(id, a.Direction!, user, ct); break;
+                case "direction": ok = await anki.SetPracticeDirectionAsync(id, a.Direction!, user, ct); break;
                 case "settings":
                     var c = await db.AnkiCollections.SingleAsync(c => c.Id == id && c.UserId == user, ct);
                     ok = await anki.UpdateSettingsAsync(id, a.DesiredRetention ?? c.DesiredRetention, a.NewCardsPerDay ?? c.NewCardsPerDay,
@@ -198,7 +193,9 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
             if (await db.AnkiNotes.AnyAsync(n => createdQuizIds.Contains(n.QuizId), ct)
                 || await db.AnkiQuizLinks.AnyAsync(l => createdQuizIds.Contains(l.QuizId), ct)
                 || await db.QuizAttempts.AnyAsync(a => createdQuizIds.Contains(a.QuizId), ct)) return false;
-            if (change.EntityType == "anki") return await anki.DeleteAsync(id, user, ct);
+            // Collections are created on demand and never removed by Undo; only
+            // journals from before the single-collection model reach this.
+            if (change.EntityType == "anki") return false;
             if (change.EntityType == "quiz") return await quizzes.DeleteQuizAsync(id, user, ct) is not null;
             foreach (var quiz in current.Where(r => r.Type == nameof(Quiz)))
                 if (await quizzes.DeleteQuizAsync(Guid.Parse(quiz.Id), user, ct) is null) return false;

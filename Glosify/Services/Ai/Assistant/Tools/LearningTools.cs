@@ -98,7 +98,7 @@ internal sealed class PrepareStudySessionTool(GlosifyContext db, IAnkiCollection
                 .ThenByDescending(c => c.Counts.New).FirstOrDefault();
             if (selected != default && (selected.Counts.Due + selected.Counts.New > 0 || args.CollectionId.HasValue || mode == StudyMode.Anki))
                 return ToolResult.Ok("Prepared Anki study link", new { mode = "anki", selected.Name,
-                    url = $"/Anki/Study/{selected.Id}", minutes, suggested_items = Math.Min(suggested, selected.Counts.Due + selected.Counts.New),
+                    url = "/Anki", minutes, suggested_items = Math.Min(suggested, selected.Counts.Due + selected.Counts.New),
                     time_is_estimate = true, daily_limits_apply = true, counts = selected.Counts });
             if (mode == StudyMode.Anki || args.CollectionId.HasValue)
                 return ToolResult.Fail("Could not prepare Anki study", "No Anki collection found for the selected language.");

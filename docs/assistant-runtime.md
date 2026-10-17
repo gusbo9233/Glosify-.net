@@ -217,14 +217,16 @@ An optional `contextAnkiCollectionId` on run requests is ownership-validated and
 retained in the saved run facts for subsequent requests in that chat.
 
 Deletions, removals, moves and visibility changes use the approval gate. Whole
-quiz/folder/Anki collection deletion is permanent and excluded from Undo;
+quiz/folder deletion is permanent and excluded from Undo;
 other management changes use owned aggregate snapshots. Approvals compare the
 current snapshot with the preview; Undo also refuses to overwrite later edits
 or reviews. Permanent changes are identified separately in run responses.
 
-Changing Anki direction changes linked-quiz flags and directly included cards,
-retains inactive directional scheduling history, and reuses reverse cards when
-present. Stored learning/translation languages and source quiz content stay intact.
+Each user has one Anki collection per learning language, created on demand by
+`add_anki_items`, `link_anki_quiz` or the Anki page; Undo keeps the collection.
+Added content gets a card per direction, each with its own schedule. Changing
+the Anki direction only records which direction the learner practices; it never
+changes membership, links or scheduling.
 
 Run responses contain `changeRevision`, `resourceChanges`, and `permanentChanges`.
 The revision comes from committed journal rows and their Undo status. The client

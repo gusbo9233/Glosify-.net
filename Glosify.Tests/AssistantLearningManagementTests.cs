@@ -63,46 +63,48 @@ public sealed class AssistantLearningManagementTests
             db.Words.Add(new Word { Id = "dom", QuizId = h.QuizId, Lemma = "dom", Translation = "house" });
             await db.SaveChangesAsync();
             var service = scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>();
-            collectionId = (await service.CreateAsync(new("Study", "English", "Polish", "UTC"), AssistantHarness.UserId)).Id;
-            await service.AddQuizAsync(new(collectionId, h.QuizId, true, false, false, false), AssistantHarness.UserId);
+            collectionId = (await service.GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC")).Id;
+            await service.AddQuizAsync(new(collectionId, h.QuizId, true, true, false, false), AssistantHarness.UserId);
         }
         h.Model.ThenCall("manage_anki", JsonSerializer.Serialize(new { action = "direction", collection_id = collectionId, direction = "target-to-source" })).ThenText("Reversed.");
         var run = await h.RunAsync("Reverse my collection");
         Assert.Equal(1, run.SavedChanges);
-        await using (var db = h.Db()) Assert.Equal(PracticeDirection.TargetToSource, (await db.AnkiCards.SingleAsync(c => c.IsActive)).Direction);
+        await using (var db = h.Db())
+        {
+            // Direction is the practice preference; both cards stay in the collection.
+            Assert.Equal(PracticeDirection.TargetToSource, (await db.AnkiCollections.SingleAsync()).DefaultDirection);
+            Assert.Equal(2, await db.AnkiCards.CountAsync(c => c.IsActive));
+        }
         if (reviewBeforeUndo)
         {
             await using var scope = h.Scope();
             var study = new AnkiStudyService(scope.ServiceProvider.GetRequiredService<Glosify.Data.GlosifyContext>(),
                 scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>(), new Fsrs6AnkiScheduler(), h.Clock);
-            var card = (await study.GetNextAsync(collectionId, AssistantHarness.UserId))!.Card!;
+            var card = (await study.GetNextAsync(collectionId, AssistantHarness.UserId, PracticeDirection.TargetToSource))!.Card!;
             Assert.True(await study.RateAsync(new(collectionId, card.CardId, "good", Guid.NewGuid(), card.RowVersion, 500), AssistantHarness.UserId));
         }
         var undo = await h.UndoAsync(run.Id);
         Assert.Equal(reviewBeforeUndo ? 0 : 1, undo.Undone);
         await using (var db = h.Db())
         {
-            var card = await db.AnkiCards.SingleAsync(c => c.IsActive);
-            Assert.Equal(reviewBeforeUndo ? PracticeDirection.TargetToSource : PracticeDirection.SourceToTarget, card.Direction);
-            Assert.Equal(reviewBeforeUndo ? 1 : 0, card.ReviewCount);
+            Assert.Equal(reviewBeforeUndo ? PracticeDirection.TargetToSource : PracticeDirection.SourceToTarget,
+                (await db.AnkiCollections.SingleAsync()).DefaultDirection);
+            Assert.Equal(reviewBeforeUndo ? 1 : 0, (await db.AnkiCards.SingleAsync(c => c.Direction == PracticeDirection.TargetToSource)).ReviewCount);
         }
     }
 
     [Fact]
-    public async Task Creating_anki_from_a_selected_collection_creates_a_new_collection()
+    public async Task Manage_anki_cannot_create_a_second_collection_for_a_language()
     {
         await using var h = await AssistantHarness.CreateAsync();
         Guid selected;
-        await using (var scope = h.Scope()) selected = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>().CreateAsync(new("Existing", "English", "Polish", "UTC"), AssistantHarness.UserId)).Id;
-        h.Model.ThenCall("manage_anki", "{\"action\":\"create\",\"name\":\"New study\"}").ThenText("Created.");
+        await using (var scope = h.Scope()) selected = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>().GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC")).Id;
+        h.Model.ThenCall("manage_anki", "{\"action\":\"create\"}").ThenText("I can't create another collection.");
         var run = await h.StartAsync("Create another study collection", input: new AssistantRunInput("Create another study collection", ContextAnkiCollectionId: selected));
         await h.DrainAsync();
-        Assert.Equal(1, (await h.ViewAsync(run.Id)).SavedChanges);
+        Assert.Equal(0, (await h.ViewAsync(run.Id)).SavedChanges);
         await using var db = h.Db();
-        var collections = await db.AnkiCollections.ToListAsync();
-        Assert.Equal(2, collections.Count);
-        Assert.Contains(collections, c => c.Id == selected && c.Name == "Existing");
-        Assert.Contains(collections, c => c.Id != selected && c.Name == "New study");
+        Assert.Equal(selected, (await db.AnkiCollections.SingleAsync()).Id);
     }
 
     [Fact]
@@ -110,7 +112,7 @@ public sealed class AssistantLearningManagementTests
     {
         await using var h = await AssistantHarness.CreateAsync();
         Guid id;
-        await using (var scope = h.Scope()) id = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>().CreateAsync(new("Study", "English", "Polish", "UTC"), AssistantHarness.UserId)).Id;
+        await using (var scope = h.Scope()) id = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>().GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC")).Id;
         h.Model.ThenCall("manage_anki", JsonSerializer.Serialize(new { action = "settings", collection_id = id, new_cards_per_day = 12 })).ThenText("Updated.");
         var run = await h.RunAsync("Change daily limit");
         Assert.Equal(1, run.SavedChanges);
