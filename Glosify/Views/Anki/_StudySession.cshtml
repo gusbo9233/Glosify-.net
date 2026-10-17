@@ -35,14 +35,15 @@
     {
         <div class="card-stage">
         @await Html.PartialAsync("_StudyCard", new Glosify.Models.ViewModels.StudyCardViewModel(
-            card.Prompt, card.Answer, card.PromptLanguage, card.AnswerLanguage, Model.AnswerRevealed,
+            card.Prompt, card.Answer, card.PromptLanguage, card.AnswerLanguage,
+            PracticeDirection.IsTargetToSource(card.Direction), Model.AnswerRevealed,
             Url.Action("Reveal", "Anki")!, Url.Action("Rate", "Anki")!,
             new Dictionary<string, string> { ["id"] = card.CollectionId.ToString(), ["CollectionId"] = card.CollectionId.ToString(),
                 ["CardId"] = card.CardId.ToString(), ["ClientToken"] = Model.ClientToken.ToString(), ["RowVersion"] = card.RowVersion },
             new[] { new Glosify.Models.ViewModels.StudyRating("again", "Quiz.Again", card.Intervals.GetValueOrDefault("again")),
                 new Glosify.Models.ViewModels.StudyRating("hard", "Quiz.Hard", card.Intervals.GetValueOrDefault("hard")),
                 new Glosify.Models.ViewModels.StudyRating("good", "Quiz.Good", card.Intervals.GetValueOrDefault("good")),
-                new Glosify.Models.ViewModels.StudyRating("easy", "Quiz.Easy", card.Intervals.GetValueOrDefault("easy")) }, "easy"))
+                new Glosify.Models.ViewModels.StudyRating("easy", "Quiz.Easy", card.Intervals.GetValueOrDefault("easy")) }, "easy", ShowRatingShortcuts: true))
         </div>
     }
 </div>

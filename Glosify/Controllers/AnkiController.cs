@@ -70,9 +70,14 @@ public sealed class AnkiController : Controller
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
+        var collection = await CurrentCollectionAsync(cancellationToken);
+        if (collection is null)
+        {
+            TempData["AnkiMessage"] = "Add cards before choosing a practice direction.";
+            return RedirectToAction(nameof(Index));
+        }
         try
         {
-            var collection = await _collections.GetOrCreateAsync(User.GetUserId(), targetLanguage, null, cancellationToken);
             await _collections.SetPracticeDirectionAsync(collection.Id, direction, User.GetUserId(), cancellationToken);
         }
         catch (AnkiValidationException exception)
@@ -94,9 +99,8 @@ public sealed class AnkiController : Controller
         var userId = User.GetUserId();
         try
         {
-            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
-            var added = await _collections.AddQuizAsync(new(collection.Id, form.QuizId,
-                true, true, form.IncludeSentences, form.IncludeSentences), userId, cancellationToken);
+            var added = await _collections.AddQuizForLanguageAsync(targetLanguage, form.TimeZoneId,
+                form.QuizId, form.IncludeSentences, userId, cancellationToken);
             if (!added) return NotFound();
             TempData["AnkiMessage"] = "Quiz added to Anki.";
         }
@@ -119,6 +123,8 @@ public sealed class AnkiController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // Changed item keys plus the antiforgery token and browser timezone.
+    [RequestFormLimits(ValueCountLimit = AnkiCollectionService.MaximumMembershipChanges + 2)]
     public async Task<IActionResult> Items(SaveAnkiItemsForm form, CancellationToken cancellationToken)
     {
         var targetLanguage = _languages.CurrentLanguage;
@@ -136,8 +142,8 @@ public sealed class AnkiController : Controller
         var userId = User.GetUserId();
         try
         {
-            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
-            if (!await _collections.SetMembershipAsync(collection.Id, add, remove, userId, cancellationToken))
+            if (!await _collections.SetMembershipForLanguageAsync(targetLanguage, form.TimeZoneId,
+                add, remove, userId, cancellationToken))
                 return NotFound();
             TempData["AnkiMessage"] = (add.Count, remove.Count) switch
             {
@@ -165,9 +171,8 @@ public sealed class AnkiController : Controller
         var userId = User.GetUserId();
         try
         {
-            var collection = await _collections.GetOrCreateAsync(userId, targetLanguage, form.TimeZoneId, cancellationToken);
-            var added = await _collections.AddItemAsync(new(collection.Id, form.QuizId,
-                form.ItemType, form.ItemId, true, true), userId, cancellationToken);
+            var added = await _collections.AddItemForLanguageAsync(targetLanguage, form.TimeZoneId,
+                new(form.QuizId, form.ItemType, form.ItemId), userId, cancellationToken);
             if (!added) return NotFound();
         }
         catch (AnkiValidationException exception)

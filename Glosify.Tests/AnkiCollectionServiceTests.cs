@@ -121,21 +121,138 @@ public sealed class AnkiCollectionServiceTests
         Assert.Contains(("hund", "Swedish"), prompts);
     }
 
+    [Theory]
+    [InlineData(AnkiCardStates.New)]
+    [InlineData(AnkiCardStates.Review)]
+    public async Task Again_rejoins_the_back_of_the_stack_immediately_and_survives_reload(string state)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, false, false, false), UserId);
+        foreach (var card in await f.Context.AnkiCards.ToListAsync())
+        {
+            card.State = state;
+            card.DueAt = Now.AddDays(-1);
+        }
+        await f.Context.SaveChangesAsync();
+        var first = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+
+        Assert.True(await f.Study.RateAsync(new(collection.Id, first.CardId, AnkiRatings.Again, Guid.NewGuid(), first.RowVersion, 100), UserId));
+        var second = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+        Assert.NotEqual(first.CardId, second.CardId);
+        Assert.Equal(1, (await f.Collections.ReadCountsAsync(collection.Id, UserId))!.Learning);
+        Assert.True(await f.Study.RateAsync(new(collection.Id, second.CardId, AnkiRatings.Easy, Guid.NewGuid(), second.RowVersion, 100), UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var reloaded = new AnkiStudyService(f.Context, f.Collections, new Fsrs6AnkiScheduler(), new FakeTimeProvider(Now));
+        var repeated = (await reloaded.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card;
+        Assert.NotNull(repeated);
+        Assert.Equal(first.CardId, repeated.CardId);
+        // No clock advance, and repeated Again still keeps the only remaining card available.
+        Assert.True(await reloaded.RateAsync(new(collection.Id, repeated.CardId, AnkiRatings.Again, Guid.NewGuid(), repeated.RowVersion, 100), UserId));
+        Assert.Equal(first.CardId, (await reloaded.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card?.CardId);
+        Assert.Equal(3, await f.Context.AnkiReviews.CountAsync());
+        Assert.All(await f.Context.AnkiReviews.Where(r => r.Rating == AnkiRatings.Again).ToListAsync(), review =>
+            Assert.Equal(review.ReviewedAt, review.NewDueAt));
+    }
+
+    [Fact]
+    public async Task Multiple_again_cards_rotate_in_review_order()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, false, false, false), UserId);
+        var clock = new FakeTimeProvider(Now);
+        var study = new AnkiStudyService(f.Context, f.Collections, new Fsrs6AnkiScheduler(), clock);
+        var ids = new List<Guid>();
+
+        for (var i = 0; i < 4; i++)
+        {
+            var card = (await study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+            ids.Add(card.CardId);
+            Assert.True(await study.RateAsync(new(collection.Id, card.CardId, AnkiRatings.Again, Guid.NewGuid(), card.RowVersion, 100), UserId));
+            clock.Advance(TimeSpan.FromMilliseconds(100));
+        }
+
+        Assert.NotEqual(ids[0], ids[1]);
+        Assert.Equal(ids[0], ids[2]);
+        Assert.Equal(ids[1], ids[3]);
+    }
+
+    [Fact]
+    public async Task Again_remains_available_after_the_daily_new_card_limit()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await AddMoreThanADaysNewCardsAsync(f, collection.Id);
+        Guid missedId = default;
+        for (var i = 0; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        {
+            var card = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+            var rating = i == 0 ? AnkiRatings.Again : AnkiRatings.Easy;
+            if (i == 0) missedId = card.CardId;
+            Assert.True(await f.Study.RateAsync(new(collection.Id, card.CardId, rating, Guid.NewGuid(), card.RowVersion, 100), UserId));
+        }
+
+        var repeated = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+        Assert.Equal(missedId, repeated.CardId);
+        Assert.Equal(0, repeated.NewRemaining);
+        Assert.True(await f.Study.RateAsync(new(collection.Id, repeated.CardId, AnkiRatings.Easy, Guid.NewGuid(), repeated.RowVersion, 100), UserId));
+        Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
+        Assert.Equal(1, await f.Context.AnkiCards.CountAsync(card => card.Direction == PracticeDirection.SourceToTarget && card.State == AnkiCardStates.New));
+    }
+
+    [Theory]
+    [InlineData(AnkiCardStates.New)]
+    [InlineData(AnkiCardStates.Review)]
+    public async Task Study_and_suggestions_use_shared_defaults_despite_legacy_collection_settings(string state)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        collection.DesiredRetention = 0.7;
+        collection.NewCardsPerDay = 0;
+        collection.MaximumReviewsPerDay = 0;
+        await f.Context.SaveChangesAsync();
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "words", f.Word.Id, true, false), UserId);
+        var stored = await f.Context.AnkiCards.SingleAsync();
+        stored.State = state;
+        stored.DueAt = Now;
+        stored.Stability = 10;
+        stored.Difficulty = 5;
+        stored.LastReviewedAt = Now.AddDays(-10);
+        await f.Context.SaveChangesAsync();
+        var scheduler = new Fsrs6AnkiScheduler();
+        var expected = scheduler.Schedule(stored, AnkiRatings.Good, AnkiStudyDefaults.DesiredRetention, Now);
+
+        var counts = await f.Collections.ReadCountsAsync(collection.Id, UserId);
+        Assert.Equal(state == AnkiCardStates.New ? 1 : 0, counts!.New);
+        Assert.Equal(state == AnkiCardStates.Review ? 1 : 0, counts.Due);
+        var next = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card;
+        Assert.NotNull(next);
+        Assert.Equal(expected.IntervalLabel, next.Intervals[AnkiRatings.Good]);
+        Assert.True(await f.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Good, Guid.NewGuid(), next.RowVersion, 100), UserId));
+        Assert.Equal(expected.DueAt, (await f.Context.AnkiCards.SingleAsync()).DueAt);
+    }
+
     [Fact]
     public async Task Directions_are_separate_tracks_with_their_own_queue_and_daily_limit()
     {
         await using var f = await Fixture.CreateAsync();
         var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
-        await f.Collections.UpdateSettingsAsync(collection.Id, .9, 1, 200, "UTC", UserId);
-        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "words", f.Word.Id, true, true), UserId);
-        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "words", f.SecondWord.Id, true, true), UserId);
+        await AddMoreThanADaysNewCardsAsync(f, collection.Id);
 
         var forward = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
         Assert.Equal(PracticeDirection.SourceToTarget, forward.Direction);
-        Assert.Contains(forward.Prompt, new[] { "house", "cat" });
+        Assert.Contains(forward.Prompt, await f.Context.Words.Select(word => word.Translation).ToListAsync());
         Assert.True(await f.Study.RateAsync(new(collection.Id, forward.CardId, AnkiRatings.Easy, Guid.NewGuid(), forward.RowVersion, 100), UserId));
 
-        // One new card per day in this direction is used up...
+        for (var i = 1; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        {
+            var next = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+            Assert.True(await f.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
+        }
+
+        // The shared daily allowance in this direction is used up...
         Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
         // ...but the reverse track has its own allowance, and the word just reviewed is not hidden.
         var noteId = (await f.Context.AnkiCards.AsNoTracking().SingleAsync(c => c.Id == forward.CardId)).AnkiNoteId;
@@ -149,8 +266,8 @@ public sealed class AnkiCollectionServiceTests
 
         var stats = await new AnkiStatisticsService(f.Context, f.Collections, new FakeTimeProvider(Now))
             .GetAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
-        Assert.Equal(1, stats!.Counts.StudiedToday);
-        Assert.Equal(2, stats.Counts.Total);
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, stats!.Counts.StudiedToday);
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay + 1, stats.Counts.Total);
         var reverseStats = await new AnkiStatisticsService(f.Context, f.Collections, new FakeTimeProvider(Now))
             .GetAsync(collection.Id, UserId, PracticeDirection.TargetToSource);
         Assert.Equal(0, reverseStats!.Counts.StudiedToday);
@@ -426,8 +543,7 @@ public sealed class AnkiCollectionServiceTests
     {
         await using var fixture = await Fixture.CreateAsync();
         var collection = await fixture.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
-        await fixture.Collections.UpdateSettingsAsync(collection.Id, .9, 1, 200, "UTC", UserId);
-        await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.Word.Id, true, true), UserId);
+        await AddMoreThanADaysNewCardsAsync(fixture, collection.Id);
 
         var first = (await fixture.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
         Assert.Equal(fixture.Quiz.Id, first.QuizId);
@@ -437,7 +553,12 @@ public sealed class AnkiCollectionServiceTests
         Assert.False(await fixture.Study.RateAsync(rating, UserId));
         Assert.Single(await fixture.Context.AnkiReviews.ToListAsync());
 
-        await fixture.Collections.AddItemAsync(new(collection.Id, fixture.Quiz.Id, "word", fixture.SecondWord.Id, true, false), UserId);
+        for (var i = 1; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        {
+            var next = (await fixture.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+            Assert.True(await fixture.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
+        }
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, await fixture.Context.AnkiReviews.CountAsync());
         var after = await fixture.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
         Assert.NotNull(after);
         Assert.Null(after!.Card);
@@ -560,6 +681,15 @@ public sealed class AnkiCollectionServiceTests
             }
             return result;
         }
+    }
+
+    private static async Task AddMoreThanADaysNewCardsAsync(Fixture fixture, Guid collectionId)
+    {
+        for (var i = 2; i <= AnkiStudyDefaults.NewCardsPerDay; i++)
+            fixture.Context.Words.Add(new Word { Id = $"extra-{i}", QuizId = fixture.Quiz.Id,
+                Lemma = $"word-{i}", Translation = $"translation-{i}", CreatedAt = Now.AddMinutes(i) });
+        await fixture.Context.SaveChangesAsync();
+        await fixture.Collections.AddQuizAsync(new(collectionId, fixture.Quiz.Id, true, true, false, false), UserId);
     }
 
     private sealed class Fixture : IAsyncDisposable

@@ -13,6 +13,7 @@
 .anki-direction button:hover{color:var(--on-surface)}
 .anki-direction button[aria-pressed=true]{background:var(--surface-container-high);color:var(--on-surface)}
 .anki-direction button:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.anki-direction button:disabled{opacity:.5;cursor:default}
 
 .anki-message{margin:0 0 16px;padding:10px 14px;border:1px solid rgba(83,224,118,.2);border-radius:10px;background:rgba(83,224,118,.06);color:var(--on-surface);font-size:13px}
 

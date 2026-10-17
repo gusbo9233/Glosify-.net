@@ -451,18 +451,20 @@ public sealed class AssistantLearningTests
         await AddAsync(h);
         await using (var db = h.Db())
         {
-            var collection = await db.AnkiCollections.SingleAsync(c => c.Id == CollectionId);
             var card = await db.AnkiCards.SingleAsync();
             card.State = blockedBy == "new-limit" ? AnkiCardStates.New : AnkiCardStates.Review;
             card.DueAt = h.Clock.GetUtcNow().AddDays(-10);
             if (blockedBy == "buried") card.BuriedUntil = h.Clock.GetUtcNow().AddHours(1);
             if (blockedBy is "review-limit" or "new-limit")
             {
-                collection.MaximumReviewsPerDay = 1; collection.NewCardsPerDay = 1;
-                var review = Review(h, card.Id, "good");
-                review.ReviewedAt = h.Clock.GetUtcNow();
-                review.PreviousState = card.State;
-                db.AnkiReviews.Add(review);
+                var allowance = blockedBy == "new-limit" ? AnkiStudyDefaults.NewCardsPerDay : AnkiStudyDefaults.MaximumReviewsPerDay;
+                for (var i = 0; i < allowance; i++)
+                {
+                    var review = Review(h, card.Id, "good");
+                    review.ReviewedAt = h.Clock.GetUtcNow();
+                    review.PreviousState = card.State;
+                    db.AnkiReviews.Add(review);
+                }
             }
             await db.SaveChangesAsync();
         }
@@ -512,9 +514,14 @@ public sealed class AssistantLearningTests
         await AddAsync(h);
         await using (var db = h.Db())
         {
-            var collection = await db.AnkiCollections.SingleAsync();
-            collection.NewCardsPerDay = 0; collection.MaximumReviewsPerDay = 0;
             var card = await db.AnkiCards.SingleAsync();
+            foreach (var (state, allowance) in new[] { (AnkiCardStates.New, AnkiStudyDefaults.NewCardsPerDay), (AnkiCardStates.Review, AnkiStudyDefaults.MaximumReviewsPerDay) })
+                for (var i = 0; i < allowance; i++)
+                {
+                    var review = Review(h, card.Id, "good");
+                    review.PreviousState = state;
+                    db.AnkiReviews.Add(review);
+                }
             card.State = AnkiCardStates.Relearning; card.DueAt = h.Clock.GetUtcNow();
             await db.SaveChangesAsync();
         }

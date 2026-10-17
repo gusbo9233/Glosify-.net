@@ -7,7 +7,11 @@
             @for (var i = 0; i < Model.Ratings.Count; i++)
             {
                 var rating = Model.Ratings[i];
-                <button class="btn-rating @rating.Value" type="submit" name="rating" value="@rating.Value" data-rating-key="@(i + 1)"><span>@Text[rating.LabelKey]</span>@if (rating.Interval is not null) { <small class="study-interval">@rating.Interval</small> }</button>
+                var shortcutKey = rating.ShortcutKey ?? i + 1;
+                <button class="btn-rating @rating.Value" type="submit" name="rating" value="@rating.Value" data-rating-key="@shortcutKey" aria-keyshortcuts="@shortcutKey">
+                    <span class="study-rating-label">@Text[rating.LabelKey]@if (Model.ShowRatingShortcuts) { <kbd class="study-rating-shortcut" aria-hidden="true">@shortcutKey</kbd> }</span>
+                    @if (rating.Interval is not null) { <small class="study-interval">@rating.Interval</small> }
+                </button>
             }
         </div>
         <p class="swipe-hint">@Text[Model.RightRating == "easy" ? "Quiz.AnkiSwipeHint" : "Quiz.TwoChoiceSwipeHint"]</p>

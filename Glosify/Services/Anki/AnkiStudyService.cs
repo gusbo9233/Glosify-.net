@@ -53,11 +53,11 @@ public sealed class AnkiStudyService : IAnkiStudyService
         {
             selected = cards
                 .Where(card => (card.State == AnkiCardStates.Learning || card.State == AnkiCardStates.Relearning)
-                    && card.DueAt <= now)
+                    && card.DueAt <= now && !IsImmediateRepeat(card))
                 .OrderBy(card => card.DueAt)
                 .FirstOrDefault();
         }
-        if (selected is null && !preferredCardId.HasValue && reviewsStudied < collection.MaximumReviewsPerDay)
+        if (selected is null && !preferredCardId.HasValue && reviewsStudied < AnkiStudyDefaults.MaximumReviewsPerDay)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.Review && card.DueAt <= now)
@@ -65,11 +65,21 @@ public sealed class AnkiStudyService : IAnkiStudyService
                 .ThenBy(card => card.DueAt)
                 .FirstOrDefault();
         }
-        if (selected is null && !preferredCardId.HasValue && newStudied < collection.NewCardsPerDay)
+        if (selected is null && !preferredCardId.HasValue && newStudied < AnkiStudyDefaults.NewCardsPerDay)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.New)
                 .OrderBy(card => card.Note.CreatedAt)
+                .ThenBy(card => card.Id)
+                .FirstOrDefault();
+        }
+        if (selected is null && !preferredCardId.HasValue)
+        {
+            // Again joins the back of the eligible stack, including after a reload.
+            // These learning cards remain available when the daily new/review limit is reached.
+            selected = cards
+                .Where(card => IsImmediateRepeat(card) && card.DueAt <= now)
+                .OrderBy(card => card.DueAt)
                 .ThenBy(card => card.Id)
                 .FirstOrDefault();
         }
@@ -83,10 +93,10 @@ public sealed class AnkiStudyService : IAnkiStudyService
         }
 
         var sourceToTarget = PracticeDirection.IsSourceToTarget(selected.Direction);
-        var previews = _scheduler.Preview(selected, collection.DesiredRetention, now);
+        var previews = _scheduler.Preview(selected, AnkiStudyDefaults.DesiredRetention, now);
         var dueRemaining = cards.Count(card => card.State != AnkiCardStates.New && card.DueAt <= now);
         var newRemaining = Math.Max(0, Math.Min(
-            collection.NewCardsPerDay - newStudied,
+            AnkiStudyDefaults.NewCardsPerDay - newStudied,
             cards.Count(card => card.State == AnkiCardStates.New)));
         return new AnkiStudyState(new AnkiStudyCard(
             collection.Id,
@@ -104,6 +114,11 @@ public sealed class AnkiStudyService : IAnkiStudyService
             dueRemaining,
             newRemaining) { QuizId = selected.Note.QuizId }, null, collection.TimeZoneId, direction);
     }
+
+    private static bool IsImmediateRepeat(AnkiCard card) =>
+        // Only Again schedules a learning card at its review time, without a delay.
+        card.State is AnkiCardStates.Learning or AnkiCardStates.Relearning
+        && card.LastReviewedAt.HasValue && card.DueAt == card.LastReviewedAt;
 
     public async Task<bool> RateAsync(
         RateAnkiCardInput input,
@@ -152,7 +167,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
         var previousDueAt = card.DueAt;
         var previousStability = card.Stability;
         var previousDifficulty = card.Difficulty;
-        var scheduled = _scheduler.Schedule(card, normalizedRating, collection.DesiredRetention, now);
+        var scheduled = _scheduler.Schedule(card, normalizedRating, AnkiStudyDefaults.DesiredRetention, now);
 
         card.State = scheduled.State;
         card.DueAt = scheduled.DueAt;

@@ -22,6 +22,7 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
         changes.Where(change => change.Status == AssistantChangeStatus.Applied
             && change.Kind != "delete_quiz" && change.Kind != "delete_collection" && change.Kind != "anki_delete");
     internal sealed record Row(string Type, string Id, SortedDictionary<string, JsonElement> Values);
+    private sealed record LegacyAnkiStudySettings(double? DesiredRetention, int? NewCardsPerDay, int? MaximumReviewsPerDay);
     private static readonly Dictionary<string, Type> Types = new()
     {
         [nameof(Quiz)] = typeof(Quiz), [nameof(Collection)] = typeof(Collection),
@@ -141,9 +142,13 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
             {
                 case "direction": ok = await anki.SetPracticeDirectionAsync(id, a.Direction!, user, ct); break;
                 case "settings":
-                    var c = await db.AnkiCollections.SingleAsync(c => c.Id == id && c.UserId == user, ct);
-                    ok = await anki.UpdateSettingsAsync(id, a.DesiredRetention ?? c.DesiredRetention, a.NewCardsPerDay ?? c.NewCardsPerDay,
-                        a.MaximumReviewsPerDay ?? c.MaximumReviewsPerDay, a.TimeZoneId ?? c.TimeZoneId, user, ct); break;
+                    // Previously queued changes may still contain per-collection limits.
+                    var legacy = JsonSerializer.Deserialize<LegacyAnkiStudySettings>(p.GetProperty("args"), RunJson.Options)!;
+                    if (legacy.DesiredRetention.HasValue || legacy.NewCardsPerDay.HasValue || legacy.MaximumReviewsPerDay.HasValue)
+                        throw new AnkiValidationException("Retention and daily limits use shared defaults for everyone.");
+                    if (string.IsNullOrWhiteSpace(a.TimeZoneId))
+                        throw new AnkiValidationException("Choose a timezone.");
+                    ok = await anki.UpdateTimeZoneAsync(id, a.TimeZoneId, user, ct); break;
                 case "add_quiz": ok = await anki.AddQuizAsync(new(id, a.QuizId!.Value, a.WordsSourceToTarget ?? false, a.WordsTargetToSource ?? false, a.SentencesSourceToTarget ?? false, a.SentencesTargetToSource ?? false), user, ct); break;
                 case "remove_quiz": ok = await anki.RemoveQuizAsync(id, a.QuizId!.Value, user, ct); break;
                 case "add_item": ok = await anki.AddItemAsync(new(id, a.QuizId!.Value, a.ItemType ?? "words", a.ItemId ?? "", a.Direction == PracticeDirection.SourceToTarget, a.Direction == PracticeDirection.TargetToSource), user, ct); break;

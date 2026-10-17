@@ -8,6 +8,8 @@ namespace Glosify.Services.Anki;
 
 public sealed partial class AnkiCollectionService : IAnkiCollectionService
 {
+    public const int MaximumMembershipChanges = 2_000;
+
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
 
@@ -194,11 +196,8 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         return true;
     }
 
-    public async Task<bool> UpdateSettingsAsync(
+    public async Task<bool> UpdateTimeZoneAsync(
         Guid collectionId,
-        double desiredRetention,
-        int newCardsPerDay,
-        int maximumReviewsPerDay,
         string timeZoneId,
         string userId,
         CancellationToken cancellationToken = default)
@@ -206,9 +205,6 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
         if (collection is null)
             return false;
-        collection.DesiredRetention = Math.Clamp(desiredRetention, 0.70, 0.97);
-        collection.NewCardsPerDay = Math.Clamp(newCardsPerDay, 0, 999);
-        collection.MaximumReviewsPerDay = Math.Clamp(maximumReviewsPerDay, 1, 9_999);
         collection.TimeZoneId = NormalizeTimeZone(timeZoneId);
         collection.UpdatedAt = _timeProvider.GetUtcNow();
         await _context.SaveChangesAsync(cancellationToken);
@@ -241,6 +237,12 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         if (collection is null || quiz is null || !Matches(collection, quiz))
             return false;
 
+        return await ApplyQuizAsync(input, collection, cancellationToken);
+    }
+
+    private async Task<bool> ApplyQuizAsync(AddAnkiQuizInput input, AnkiCollection collection,
+        CancellationToken cancellationToken)
+    {
         var now = _timeProvider.GetUtcNow();
         var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(
             item => item.AnkiCollectionId == input.CollectionId && item.QuizId == input.QuizId,
@@ -381,56 +383,6 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         collection.UpdatedAt = _timeProvider.GetUtcNow();
         await _context.SaveChangesAsync(cancellationToken);
         return true;
-    }
-
-    public async Task<bool> SetMembershipAsync(
-        Guid collectionId,
-        IReadOnlyList<AnkiItemKey> add,
-        IReadOnlyList<AnkiItemKey> remove,
-        string userId,
-        CancellationToken cancellationToken = default)
-    {
-        if (add.Count + remove.Count > 2_000)
-            throw new AnkiValidationException("Save at most 2,000 changes at a time.");
-        return await ExecuteAtomicallyAsync(async () =>
-        {
-            if (!await OwnsCollectionAsync(collectionId, userId, cancellationToken))
-                return false;
-            // Items picked from the list always get both directions; each direction is
-            // studied and scheduled as its own track. The batch path validates every id
-            // and synchronizes once per quiz and content type.
-            foreach (var group in add.GroupBy(item => (item.QuizId, ItemType: PracticeItemType.Normalize(item.ItemType))))
-            {
-                foreach (var chunk in group.Select(item => item.ItemId).Chunk(100))
-                    await AddItemsAsync(new AddAnkiItemsInput(collectionId, group.Key.QuizId, group.Key.ItemType, chunk, true, true),
-                        userId, cancellationToken);
-            }
-            foreach (var item in remove)
-            {
-                var itemType = string.Equals(item.ItemType, "sentence", StringComparison.OrdinalIgnoreCase)
-                    ? PracticeItemType.Sentences
-                    : PracticeItemType.Normalize(item.ItemType);
-                string? wordId = PracticeItemType.IsSentences(itemType) ? null : item.ItemId;
-                Guid? sentenceId = null;
-                if (wordId is null)
-                {
-                    if (!Guid.TryParse(item.ItemId, out var parsed)) continue;
-                    sentenceId = parsed;
-                }
-                var note = await FindNoteAsync(collectionId, wordId, sentenceId, cancellationToken);
-                if (note is null || note.QuizId != item.QuizId) continue;
-                foreach (var card in note.Cards)
-                {
-                    card.DirectlyIncluded = false;
-                    card.ExcludedFromQuizLink = card.QuizLinkIncluded;
-                    card.IsActive = false;
-                }
-                note.IsActive = false;
-                note.UpdatedAt = _timeProvider.GetUtcNow();
-            }
-            await _context.SaveChangesAsync(cancellationToken);
-            return true;
-        }, cancellationToken);
     }
 
     public async Task<bool> RemoveCardAsync(

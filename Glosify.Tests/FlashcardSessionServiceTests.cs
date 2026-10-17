@@ -68,6 +68,8 @@ public class FlashcardSessionServiceTests
 
         service.ApplyRating(session, "again");
 
+        Assert.Single(session.Cards);
+        Assert.Equal(session.Cards.Count, session.CurrentIndex);
         var restarted = service.RestartWithAgainCards(session);
 
         Assert.Equal(PracticeDirection.TargetToSource, restarted.PracticeDirection);

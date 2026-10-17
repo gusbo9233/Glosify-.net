@@ -9,9 +9,11 @@ public class AnkiCollection
     public string Name { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;
     public string DefaultDirection { get; set; } = PracticeDirection.SourceToTarget;
-    public double DesiredRetention { get; set; } = 0.9;
-    public int NewCardsPerDay { get; set; } = 20;
-    public int MaximumReviewsPerDay { get; set; } = 200;
+    // Retained for existing database rows and assistant Undo journals. Scheduling
+    // uses AnkiStudyDefaults, including for collections with old custom values.
+    public double DesiredRetention { get; set; } = AnkiStudyDefaults.DesiredRetention;
+    public int NewCardsPerDay { get; set; } = AnkiStudyDefaults.NewCardsPerDay;
+    public int MaximumReviewsPerDay { get; set; } = AnkiStudyDefaults.MaximumReviewsPerDay;
     public string TimeZoneId { get; set; } = "UTC";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

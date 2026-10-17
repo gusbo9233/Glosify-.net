@@ -130,7 +130,10 @@ public sealed class WordServiceAnkiAtomicityTests
         public Task<AnkiWorkspace> GetWorkspaceAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> SetPracticeDirectionAsync(Guid collectionId, string direction, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> SetMembershipAsync(Guid collectionId, IReadOnlyList<AnkiItemKey> add, IReadOnlyList<AnkiItemKey> remove, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<bool> UpdateSettingsAsync(Guid collectionId, double desiredRetention, int newCardsPerDay, int maximumReviewsPerDay, string timeZoneId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> UpdateTimeZoneAsync(Guid collectionId, string timeZoneId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> AddQuizForLanguageAsync(string targetLanguage, string? timeZoneId, Guid quizId, bool includeSentences, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> AddItemForLanguageAsync(string targetLanguage, string? timeZoneId, AnkiItemKey item, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> SetMembershipForLanguageAsync(string targetLanguage, string? timeZoneId, IReadOnlyList<AnkiItemKey> add, IReadOnlyList<AnkiItemKey> remove, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> AddQuizAsync(AddAnkiQuizInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> RemoveQuizAsync(Guid collectionId, Guid quizId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> AddItemAsync(AddAnkiItemInput input, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

@@ -244,6 +244,7 @@ test('flashcards allow only one rating request and restore controls after failur
         },
         FormData: FakeFormData,
         window: {
+            addEventListener() {},
             glosifyText: null,
             location: { href: '' },
             matchMedia: () => ({ matches: false }),
@@ -288,7 +289,7 @@ for (const [mode, rightRating] of [['regular', 'good'], ['anki', 'easy']]) {
         container.querySelectorAll = () => [];
         vm.runInNewContext(flashcardQuizScript, {
             document: { querySelector: () => container, addEventListener() {} },
-            performance: { now: () => 0 }, window: {},
+            performance: { now: () => 0 }, window: { addEventListener() {} },
         });
         const swipe = (dx, dy = 0, cancel = false) => {
             const event = { target: card, pointerId: 1, pointerType: 'touch', clientX: 100, clientY: 100 };

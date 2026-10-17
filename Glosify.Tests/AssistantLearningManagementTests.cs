@@ -3,6 +3,7 @@ using Glosify.Services.Anki;
 using Microsoft.Extensions.DependencyInjection;
 using Glosify.Models;
 using Glosify.Models.Entities;
+using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -107,19 +108,70 @@ public sealed class AssistantLearningManagementTests
         Assert.Equal(selected, (await db.AnkiCollections.SingleAsync()).Id);
     }
 
+    [Theory]
+    [InlineData("desired_retention", 0.8)]
+    [InlineData("new_cards_per_day", 12)]
+    [InlineData("maximum_reviews_per_day", 100)]
+    public async Task Assistant_cannot_customize_shared_study_defaults(string field, double value)
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        Guid id;
+        await using (var scope = h.Scope())
+            id = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>()
+                .GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC")).Id;
+        h.Model.ThenCall("manage_anki", JsonSerializer.Serialize(new Dictionary<string, object>
+        {
+            ["action"] = "settings", ["collection_id"] = id, [field] = value,
+        })).ThenText("Study limits use shared defaults.");
+
+        var run = await h.RunAsync("Change my study limits");
+
+        Assert.Equal(0, run.SavedChanges);
+        await using var db = h.Db();
+        var collection = await db.AnkiCollections.SingleAsync();
+        Assert.Equal(AnkiStudyDefaults.DesiredRetention, collection.DesiredRetention);
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, collection.NewCardsPerDay);
+        Assert.Equal(AnkiStudyDefaults.MaximumReviewsPerDay, collection.MaximumReviewsPerDay);
+    }
+
     [Fact]
-    public async Task Anki_settings_undo_keeps_intervening_settings_edits()
+    public async Task Previously_queued_study_limit_changes_are_rejected_without_changing_timezone()
+    {
+        await using var h = await AssistantHarness.CreateAsync();
+        await using var db = h.Db();
+        var collections = new AnkiCollectionService(db, h.Clock);
+        var collection = await collections.GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC");
+        var snapshot = await LearningChanges.SnapshotAsync(db, "anki", collection.Id, AssistantHarness.UserId,
+            default, collectionOnly: true);
+        var payload = JsonSerializer.SerializeToElement(new
+        {
+            args = new { action = "settings", desiredRetention = 0.8, timeZoneId = "Europe/Stockholm" },
+            entity_type = "anki", id = collection.Id, snapshot_scope = "collection",
+            expected = LearningChanges.Hash(snapshot),
+        });
+        var applier = new LearningChanges(db, null!, null!, collections);
+
+        await Assert.ThrowsAsync<AnkiValidationException>(() =>
+            applier.ApplyAsync(new PendingChange("anki_settings", payload), AssistantHarness.UserId, default));
+
+        var saved = await db.AnkiCollections.AsNoTracking().SingleAsync();
+        Assert.Equal("UTC", saved.TimeZoneId);
+        Assert.Equal(AnkiStudyDefaults.DesiredRetention, saved.DesiredRetention);
+    }
+
+    [Fact]
+    public async Task Anki_timezone_undo_keeps_intervening_timezone_edits()
     {
         await using var h = await AssistantHarness.CreateAsync();
         Guid id;
         await using (var scope = h.Scope()) id = (await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>().GetOrCreateAsync(AssistantHarness.UserId, "Polish", "UTC")).Id;
-        h.Model.ThenCall("manage_anki", JsonSerializer.Serialize(new { action = "settings", collection_id = id, new_cards_per_day = 12 })).ThenText("Updated.");
-        var run = await h.RunAsync("Change daily limit");
+        h.Model.ThenCall("manage_anki", JsonSerializer.Serialize(new { action = "settings", collection_id = id, time_zone_id = "Europe/Stockholm" })).ThenText("Updated.");
+        var run = await h.RunAsync("Change timezone");
         Assert.Equal(1, run.SavedChanges);
-        await using (var db = h.Db()) { (await db.AnkiCollections.SingleAsync()).NewCardsPerDay = 15; await db.SaveChangesAsync(); }
+        await using (var db = h.Db()) { (await db.AnkiCollections.SingleAsync()).TimeZoneId = "America/New_York"; await db.SaveChangesAsync(); }
         var undo = await h.UndoAsync(run.Id);
         Assert.Equal(0, undo.Undone);
-        await using (var db = h.Db()) Assert.Equal(15, (await db.AnkiCollections.SingleAsync()).NewCardsPerDay);
+        await using (var db = h.Db()) Assert.Equal("America/New_York", (await db.AnkiCollections.SingleAsync()).TimeZoneId);
     }
 
     [Fact]

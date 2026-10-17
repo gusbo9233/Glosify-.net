@@ -36,12 +36,26 @@ public sealed class AnkiControllerLanguageTests
         Assert.Equal(original, (await context.AnkiCollections.SingleAsync()).DefaultDirection);
     }
 
+    [Theory]
+    [InlineData("invalid")]
+    [InlineData(PracticeDirection.TargetToSource)]
+    public async Task Direction_does_not_create_a_collection_before_the_first_add(string direction)
+    {
+        await using var context = CreateContext();
+        var controller = CreateController(context, "Polish");
+
+        await controller.Direction(direction, default);
+
+        Assert.Empty(await context.AnkiCollections.ToListAsync());
+    }
+
     [Fact]
     public async Task Direction_is_saved_on_the_current_language_collection()
     {
         await using var context = CreateContext();
         var collections = CreateCollectionService(context);
         var spanish = await collections.GetOrCreateAsync(UserId, "Spanish", "UTC");
+        await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
         var controller = CreateController(context, "Polish");
 
         await controller.Direction(PracticeDirection.TargetToSource, default);
@@ -122,6 +136,51 @@ public sealed class AnkiControllerLanguageTests
         var result = await controller.AddQuiz(new AddAnkiQuizForm { QuizId = spanishQuiz.Id }, default);
 
         Assert.IsType<NotFoundResult>(result);
+        Assert.Empty(await context.AnkiQuizLinks.ToListAsync());
+        Assert.Empty(await context.AnkiCollections.ToListAsync());
+    }
+
+    [Theory]
+    [InlineData("quiz", false)]
+    [InlineData("item", false)]
+    [InlineData("items", false)]
+    [InlineData("quiz", true)]
+    [InlineData("item", true)]
+    [InlineData("items", true)]
+    public async Task Rejected_additions_do_not_create_collections_or_update_their_timezone(string action, bool existing)
+    {
+        await using var context = CreateContext();
+        var (quiz, word) = await SeedQuizAsync(context, "Polish");
+        if (existing)
+            await CreateCollectionService(context).GetOrCreateAsync(UserId, "Polish", "UTC");
+        var controller = CreateController(context, "Polish");
+        const string zone = "Europe/Stockholm";
+
+        switch (action)
+        {
+            case "quiz":
+                Assert.IsType<NotFoundResult>(await controller.AddQuiz(
+                    new AddAnkiQuizForm { QuizId = Guid.NewGuid(), TimeZoneId = zone }, default));
+                break;
+            case "item":
+                Assert.IsType<NotFoundResult>(await controller.AddItem(new AddAnkiItemForm
+                {
+                    QuizId = quiz.Id, ItemType = "word", ItemId = "missing", TimeZoneId = zone,
+                }, null, default));
+                break;
+            default:
+                Assert.IsType<RedirectToActionResult>(await controller.Items(new SaveAnkiItemsForm
+                {
+                    Add = [$"words:{quiz.Id}:{word.Id}", $"words:{quiz.Id}:missing"], TimeZoneId = zone,
+                }, default));
+                Assert.NotEmpty(Assert.IsType<string>(controller.TempData["AnkiMessage"]));
+                break;
+        }
+
+        var collections = await context.AnkiCollections.AsNoTracking().ToListAsync();
+        if (existing) Assert.Equal("UTC", Assert.Single(collections).TimeZoneId);
+        else Assert.Empty(collections);
+        Assert.Empty(await context.AnkiNotes.ToListAsync());
         Assert.Empty(await context.AnkiQuizLinks.ToListAsync());
     }
 

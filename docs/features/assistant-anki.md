@@ -15,6 +15,12 @@ assistant. Content added from the page always gets both directions. These Anki
 collections are separate from the collections that organize quizzes in the library.
 External Anki export/synchronization and collection deletion are not exposed.
 
+Study uses common defaults for every learner and language: 90% desired retention,
+20 new cards and 200 reviews per day in each direction. The drawer only manages
+quiz and item membership; neither the browser nor the assistant customizes these
+limits. Existing stored custom limits are ignored by study and assistant session
+suggestions. Changing direction never creates a collection.
+
 Examples:
 
 - “Add the first 20 words of this quiz to Anki.”
@@ -34,7 +40,7 @@ learning language. A collection created this way is kept on Undo; only the cards
 links the run added are reversed. Existing active cards are counted as already
 included without resetting their scheduling. A card that was only quiz-linked gains
 direct inclusion, so it remains if the quiz is later unlinked; Undo restores its
-previous membership. `manage_anki` can change settings, the practiced direction,
+previous membership. `manage_anki` can change the timezone, the practiced direction,
 quiz links and card membership; it cannot create, rename or delete collections.
 
 The `SimplifyAnki` migration introduced this model. It deletes all existing Anki
@@ -44,6 +50,12 @@ and enforces one collection per `(UserId, TargetLanguage)`. Down restores the sc
 only.
 
 ## Tools and persistence
+
+In Anki study, **Again** immediately returns the card to the back of the eligible
+stack. If it is the only card left, it appears again straight away. The repeat
+survives reloading and remains available after the daily new/review limit is
+reached. Other ratings retain their scheduled intervals. Regular flashcard
+quizzes keep their existing behavior.
 
 `list_anki_collections` and `get_anki_collection` provide read-only, owned,
 paginated views (at most one collection per learning language). They do not invoke the synchronizing MVC read paths.

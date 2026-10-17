@@ -45,8 +45,7 @@ internal sealed class ManageQuizTool(GlosifyContext db) : AssistantTool<ManageQu
 internal sealed record ManageAnkiArgs(
     [property: Description("settings, direction, add_quiz, remove_quiz, add_item, or remove_card.")] string Action,
     Guid? CollectionId = null,
-    string? TimeZoneId = null, string? Direction = null, double? DesiredRetention = null,
-    int? NewCardsPerDay = null, int? MaximumReviewsPerDay = null, Guid? QuizId = null,
+    string? TimeZoneId = null, string? Direction = null, Guid? QuizId = null,
     string? ItemType = null, string? ItemId = null, Guid? CardId = null,
     bool? WordsSourceToTarget = null, bool? WordsTargetToSource = null,
     bool? SentencesSourceToTarget = null, bool? SentencesTargetToSource = null);
@@ -56,14 +55,14 @@ internal sealed class ManageAnkiTool(GlosifyContext db) : AssistantTool<ManageAn
     public override string Name => "manage_anki";
     public override AssistantToolKind Kind => AssistantToolKind.Write;
     public override bool Supports(AssistantMode mode) => mode == AssistantMode.Language;
-    protected override string Describe(AssistantMode mode) => "Manage the Anki collection for the current learning language and its card membership. Read inspect_anki first. direction sets which direction the learner practices; each direction keeps its own schedule. source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz requires at least one of its four direction flags; add_item uses direction and item_type (word/words, sentence/sentences; omitted defaults to words). Removals require approval. settings changes only supplied values.";
+    protected override string Describe(AssistantMode mode) => "Manage the Anki collection for the current learning language and its card membership. Read inspect_anki first. direction sets which direction the learner practices; each direction keeps its own schedule. source-to-target prompts in the translation language, target-to-source prompts in the learning language. add_quiz requires at least one of its four direction flags; add_item uses direction and item_type (word/words, sentence/sentences; omitted defaults to words). Removals require approval. settings only changes time_zone_id. Retention and daily card limits are shared defaults for everyone and cannot be customized.";
     protected override async Task<ToolResult> RunAsync(ManageAnkiArgs args, ToolContext context, CancellationToken ct)
     {
         var language = QuizLanguageCatalog.Find(context.TargetLanguage ?? "")?.Name;
         args = args with { CollectionId = args.CollectionId ?? context.AnkiCollectionId
             ?? await db.AnkiCollections.Where(c => c.UserId == context.UserId && c.TargetLanguage == language).Select(c => (Guid?)c.Id).SingleOrDefaultAsync(ct) };
-        if (args.DesiredRetention is < .70 or > .97 || args.NewCardsPerDay is < 0 or > 999 || args.MaximumReviewsPerDay is < 1 or > 9999)
-            return ToolResult.Fail("Invalid settings", "Retention must be 0.70–0.97, new cards/day 0–999, reviews/day 1–9999.");
+        if (args.Action == "settings" && string.IsNullOrWhiteSpace(args.TimeZoneId))
+            return ToolResult.Fail("Timezone required", "settings requires time_zone_id. Retention and daily limits use shared defaults for everyone.");
         if (!LearningChanges.AnkiActions.Contains(args.Action)) return ToolResult.Fail("Unknown action", "Use an action listed in the schema description.");
         if (args.Action is "direction" or "add_item" && args.Direction is not (PracticeDirection.SourceToTarget or PracticeDirection.TargetToSource))
             return ToolResult.Fail("Invalid direction", "Use source-to-target or target-to-source.");
@@ -128,7 +127,7 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         return ToolResult.Ok("Anki collection details", new
         {
             collection.Id, collection.TargetLanguage, collection.DefaultDirection,
-            collection.DesiredRetention, collection.NewCardsPerDay, collection.MaximumReviewsPerDay, collection.TimeZoneId,
+            AnkiStudyDefaults.DesiredRetention, AnkiStudyDefaults.NewCardsPerDay, AnkiStudyDefaults.MaximumReviewsPerDay, collection.TimeZoneId,
             total_cards = await cards.CountAsync(ct), active_cards = active.Active, total_reviews = reviews.Total,
             due_cards = active.Due,
             new_cards = active.New,
