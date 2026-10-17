@@ -19,6 +19,10 @@ namespace Glosify.Migrations
             migrationBuilder.Sql("DELETE FROM [AnkiNotes];");
             migrationBuilder.Sql("DELETE FROM [AnkiQuizLinks];");
             migrationBuilder.Sql("DELETE FROM [AnkiCollections];");
+            // Assistant create, rename and delete actions for Anki collections are removed.
+            // Their journal entries pointed at the collections cleared above and can never
+            // be undone, so drop them rather than keep compatibility code for them.
+            migrationBuilder.Sql("DELETE FROM [assistant_changes] WHERE [kind] IN (N'anki_create', N'anki_rename', N'anki_delete');");
 
             migrationBuilder.DropIndex(
                 name: "IX_AnkiCollections_UserId_Name",

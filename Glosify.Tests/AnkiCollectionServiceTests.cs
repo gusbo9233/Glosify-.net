@@ -6,6 +6,7 @@ using Glosify.Services.Anki;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
 
@@ -264,12 +265,12 @@ public sealed class AnkiCollectionServiceTests
         Assert.Equal("Polish", reverse.PromptLanguage);
         Assert.All(await f.Context.AnkiCards.AsNoTracking().ToListAsync(), card => Assert.Null(card.BuriedUntil));
 
-        var stats = await new AnkiStatisticsService(f.Context, f.Collections, new FakeTimeProvider(Now))
-            .GetAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
+        var stats = await new AnkiStatisticsService(f.Context, new FakeTimeProvider(Now))
+            .ReadSnapshotAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
         Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, stats!.Counts.StudiedToday);
         Assert.Equal(AnkiStudyDefaults.NewCardsPerDay + 1, stats.Counts.Total);
-        var reverseStats = await new AnkiStatisticsService(f.Context, f.Collections, new FakeTimeProvider(Now))
-            .GetAsync(collection.Id, UserId, PracticeDirection.TargetToSource);
+        var reverseStats = await new AnkiStatisticsService(f.Context, new FakeTimeProvider(Now))
+            .ReadSnapshotAsync(collection.Id, UserId, PracticeDirection.TargetToSource);
         Assert.Equal(0, reverseStats!.Counts.StudiedToday);
     }
 
@@ -665,7 +666,103 @@ public sealed class AnkiCollectionServiceTests
 
     // Inserts the same (user, language) collection from another context just before
     // the service's own insert, as a concurrent request would.
-    private sealed class CompetingCollectionInterceptor(DbContextOptions<GlosifyContext> options, Guid competitorId) : SaveChangesInterceptor
+    [Fact]
+    public async Task Study_suggestions_count_only_the_practice_direction()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await AddMoreThanADaysNewCardsAsync(f, collection.Id);
+        for (var i = 0; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        {
+            var next = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
+            Assert.True(await f.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
+        }
+
+        // /Anki has nothing left today in the practice direction, so nothing is suggested...
+        Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
+        var counts = (await f.Collections.ReadCountsAsync(collection.Id, UserId))!;
+        Assert.Equal(0, counts.Due + counts.New);
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, counts.StudiedToday);
+
+        // ...until the learner switches to the untouched reverse track.
+        Assert.True(await f.Collections.SetPracticeDirectionAsync(collection.Id, PracticeDirection.TargetToSource, UserId));
+        counts = (await f.Collections.ReadCountsAsync(collection.Id, UserId))!;
+        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, counts.New);
+        Assert.Equal(0, counts.StudiedToday);
+    }
+
+    [Fact]
+    public async Task Adding_a_linked_quiz_again_keeps_its_sentences_and_unticked_items()
+    {
+        await using var f = await Fixture.CreateAsync();
+        Assert.True(await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, includeSentences: true, UserId));
+        Assert.True(await f.Collections.SetMembershipForLanguageAsync("Polish", "UTC", [],
+            [new AnkiItemKey(f.Quiz.Id, PracticeItemType.Words, f.Word.Id)], UserId));
+
+        Assert.True(await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, includeSentences: false, UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var link = await f.Context.AnkiQuizLinks.SingleAsync();
+        Assert.True(link.SentencesSourceToTarget && link.SentencesTargetToSource);
+        Assert.Equal(4, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.SentenceId != null));
+        Assert.Equal(0, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.WordId == f.Word.Id));
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.WordId == f.SecondWord.Id));
+    }
+
+    [Fact]
+    public async Task Adding_a_linked_quiz_again_with_sentences_adds_them_and_keeps_unticked_words()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        // The assistant can link one direction; the browser add then widens it to both.
+        Assert.True(await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, false, false, false), UserId));
+        Assert.True(await f.Collections.SetMembershipForLanguageAsync("Polish", "UTC", [],
+            [new AnkiItemKey(f.Quiz.Id, PracticeItemType.Words, f.Word.Id)], UserId));
+
+        Assert.True(await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, includeSentences: true, UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var link = await f.Context.AnkiQuizLinks.SingleAsync();
+        Assert.True(link.WordsSourceToTarget && link.WordsTargetToSource && link.SentencesSourceToTarget && link.SentencesTargetToSource);
+        Assert.Equal(4, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.SentenceId != null));
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.WordId == f.SecondWord.Id));
+        Assert.Equal(0, await f.Context.AnkiCards.CountAsync(card => card.IsActive && card.Note.WordId == f.Word.Id));
+    }
+
+    [Fact]
+    public async Task Get_or_create_inside_a_caller_transaction_recovers_from_a_duplicate_collection()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var plain = new DbContextOptionsBuilder<GlosifyContext>().UseSqlite(connection).Options;
+        await using (var setup = new GlosifyContext(plain))
+        {
+            await setup.Database.EnsureCreatedAsync();
+            setup.Users.Add(new ApplicationUser { Id = UserId, UserName = "anki@example.test", NormalizedUserName = "ANKI@EXAMPLE.TEST" });
+            await setup.SaveChangesAsync();
+        }
+        var competitorId = Guid.NewGuid();
+        var race = new CompetingCollectionInterceptor(plain, competitorId, shareTransaction: true);
+        await using var context = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite(connection).AddInterceptors(race).Options);
+        // The assistant applies changes inside its run transaction. The duplicate insert
+        // must not abort it: EF rolls back to its savepoint and the winner is reused.
+        await using var transaction = await context.Database.BeginTransactionAsync();
+
+        var collection = await new AnkiCollectionService(context, new FakeTimeProvider(Now))
+            .GetOrCreateAsync(UserId, "Polish", "Europe/Stockholm");
+        await transaction.CommitAsync();
+
+        Assert.True(race.Fired);
+        Assert.Equal(competitorId, collection.Id);
+        await using var check = new GlosifyContext(plain);
+        var stored = Assert.Single(await check.AnkiCollections.ToListAsync());
+        Assert.Equal(competitorId, stored.Id);
+        Assert.Equal("Europe/Stockholm", stored.TimeZoneId);
+    }
+
+    private sealed class CompetingCollectionInterceptor(DbContextOptions<GlosifyContext> options, Guid competitorId,
+        bool shareTransaction = false) : SaveChangesInterceptor
     {
         public bool Fired { get; private set; }
 
@@ -676,6 +773,10 @@ public sealed class AnkiCollectionServiceTests
             {
                 Fired = true;
                 await using var other = new GlosifyContext(options);
+                // SQLite cannot interleave two writers, so a shared transaction stands in for
+                // a row another connection committed just before this insert.
+                if (shareTransaction)
+                    await other.Database.UseTransactionAsync(eventData.Context.Database.CurrentTransaction!.GetDbTransaction(), cancellationToken);
                 other.AnkiCollections.Add(new AnkiCollection { Id = competitorId, UserId = UserId, Name = "Polish", TargetLanguage = "Polish", TimeZoneId = "UTC" });
                 await other.SaveChangesAsync(cancellationToken);
             }

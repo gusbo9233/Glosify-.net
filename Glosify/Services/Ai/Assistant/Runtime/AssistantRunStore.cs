@@ -730,7 +730,7 @@ internal static class AssistantPermissions
         PendingChangeKinds.RemoveAnkiCards,
         PendingChangeKinds.UnlinkAnkiQuiz,
         "delete_quiz", "delete_collection", "quiz_visibility", "collection_visibility",
-        "anki_delete", "anki_remove_quiz", "anki_remove_card",
+        "anki_remove_quiz", "anki_remove_card",
         PendingChangeKinds.DeleteWord,
         PendingChangeKinds.DeleteSentence,
         PendingChangeKinds.MoveQuiz,

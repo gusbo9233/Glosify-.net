@@ -63,22 +63,27 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         CancellationToken cancellationToken = default)
     {
         var canonical = CanonicalLanguageName(targetLanguage);
-        var existing = await _context.AnkiCollections.SingleOrDefaultAsync(
+        var existing = await TrackedForLanguageAsync(userId, canonical, cancellationToken)
+            ?? await CreateAsync(userId, canonical, timeZoneId, cancellationToken);
+        // The browser reports its zone with every add, so the study day follows
+        // the user after travel without a separate setting.
+        if (!string.IsNullOrWhiteSpace(timeZoneId) && NormalizeTimeZone(timeZoneId) is var zone && zone != existing.TimeZoneId)
+        {
+            existing.TimeZoneId = zone;
+            existing.UpdatedAt = _timeProvider.GetUtcNow();
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        return existing;
+    }
+
+    private Task<AnkiCollection?> TrackedForLanguageAsync(string userId, string canonical, CancellationToken cancellationToken) =>
+        _context.AnkiCollections.SingleOrDefaultAsync(
             collection => collection.UserId == userId && collection.TargetLanguage == canonical,
             cancellationToken);
-        if (existing is not null)
-        {
-            // The browser reports its zone with every add, so the study day follows
-            // the user after travel without a separate setting.
-            if (!string.IsNullOrWhiteSpace(timeZoneId) && NormalizeTimeZone(timeZoneId) is var zone && zone != existing.TimeZoneId)
-            {
-                existing.TimeZoneId = zone;
-                existing.UpdatedAt = _timeProvider.GetUtcNow();
-                await _context.SaveChangesAsync(cancellationToken);
-            }
-            return existing;
-        }
 
+    private async Task<AnkiCollection> CreateAsync(string userId, string canonical, string? timeZoneId,
+        CancellationToken cancellationToken)
+    {
         var now = _timeProvider.GetUtcNow();
         var collection = new AnkiCollection
         {
@@ -96,15 +101,15 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             await _context.SaveChangesAsync(cancellationToken);
             return collection;
         }
-        catch (DbUpdateException) when (_context.Database.CurrentTransaction is null)
+        catch (DbUpdateException)
         {
             // A concurrent request created the same (user, language) collection first.
-            // Inside a caller's transaction the failed statement may have aborted it,
-            // so let the caller's execution strategy retry instead.
+            // Inside a caller's transaction EF rolls the failed save back to its savepoint,
+            // so the transaction stays usable and the winner can be read either way.
             _context.Entry(collection).State = EntityState.Detached;
-            return await _context.AnkiCollections.SingleAsync(
-                item => item.UserId == userId && item.TargetLanguage == canonical,
-                cancellationToken);
+            var winner = await TrackedForLanguageAsync(userId, canonical, cancellationToken);
+            if (winner is null) throw;
+            return winner;
         }
     }
 

@@ -380,7 +380,7 @@ public sealed class AnkiControllerLanguageTests
         return new AnkiController(
             collections,
             new AnkiStudyService(context, collections, new Fsrs6AnkiScheduler(), clock),
-            new AnkiStatisticsService(context, collections, clock),
+            new AnkiStatisticsService(context, clock),
             new FixedLanguageContext(language))
         {
             ControllerContext = new ControllerContext

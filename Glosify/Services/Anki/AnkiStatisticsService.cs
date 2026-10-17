@@ -4,42 +4,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Anki;
 
+// Statistics only read. The study page synchronizes in GetNextAsync just before reading
+// them, and assistant reads are deliberately observational.
 public sealed class AnkiStatisticsService : IAnkiStatisticsService
 {
     private readonly GlosifyContext _context;
-    private readonly IAnkiCollectionService _collections;
     private readonly TimeProvider _timeProvider;
 
     public AnkiStatisticsService(
         GlosifyContext context,
-        IAnkiCollectionService collections,
         TimeProvider timeProvider)
     {
         _context = context;
-        _collections = collections;
         _timeProvider = timeProvider;
     }
 
-    public Task<AnkiStatistics?> GetAsync(Guid collectionId, string userId, string? direction = null,
-        CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, direction, true, cancellationToken);
-
-    public Task<AnkiStatistics?> ReadSnapshotAsync(Guid collectionId, string userId, CancellationToken cancellationToken = default) =>
-        ReadCoreAsync(collectionId, userId, null, false, cancellationToken);
-
-    private async Task<AnkiStatistics?> ReadCoreAsync(
+    public async Task<AnkiStatistics?> ReadSnapshotAsync(
         Guid collectionId,
         string userId,
-        string? direction,
-        bool synchronize,
-        CancellationToken cancellationToken)
+        string? direction = null,
+        CancellationToken cancellationToken = default)
     {
         var collection = await _context.AnkiCollections.AsNoTracking().SingleOrDefaultAsync(
             item => item.Id == collectionId && item.UserId == userId,
             cancellationToken);
         if (collection is null)
             return null;
-        if (synchronize) await _collections.SyncCollectionAsync(collectionId, cancellationToken);
 
         var now = _timeProvider.GetUtcNow();
         var zone = FindTimeZone(collection.TimeZoneId);

@@ -15,15 +15,16 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
 {
     internal static readonly string[] QuizActions = ["rename_quiz", "delete_quiz", "delete_collection"];
     internal static readonly string[] AnkiActions = ["settings", "direction", "add_quiz", "remove_quiz", "add_item", "remove_card"];
-    internal static bool Handles(string kind) => QuizActions.Contains(kind) || kind.StartsWith("anki_", StringComparison.Ordinal);
+    internal static bool Handles(string kind) => QuizActions.Contains(kind)
+        || kind.StartsWith("anki_", StringComparison.Ordinal) && AnkiActions.Contains(kind["anki_".Length..]);
     // Historical journals still need Undo, but these kinds cannot be newly applied.
     internal static bool IsRetiredSharing(string kind) => kind is "quiz_visibility" or "collection_visibility" or "copy_quiz" or "copy_collection";
     internal static bool HandlesUndo(string kind) => Handles(kind) || IsRetiredSharing(kind);
-    internal static bool Permanent(string kind) => kind is "delete_quiz" or "delete_collection" or "anki_delete";
+    internal static bool Permanent(string kind) => kind is "delete_quiz" or "delete_collection";
 
     internal static IQueryable<AssistantChange> Undoable(IQueryable<AssistantChange> changes) =>
         changes.Where(change => change.Status == AssistantChangeStatus.Applied
-            && change.Kind != "delete_quiz" && change.Kind != "delete_collection" && change.Kind != "anki_delete");
+            && change.Kind != "delete_quiz" && change.Kind != "delete_collection");
     internal sealed record Row(string Type, string Id, SortedDictionary<string, JsonElement> Values);
     private sealed record LegacyAnkiStudySettings(double? DesiredRetention, int? NewCardsPerDay, int? MaximumReviewsPerDay);
     private static readonly Dictionary<string, Type> Types = new()
@@ -109,7 +110,7 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
         var p = change.Payload;
         var type = p.GetProperty("entity_type").GetString()!;
         var id = p.TryGetProperty("id", out var idValue) && idValue.ValueKind == JsonValueKind.String ? idValue.GetGuid() : Guid.Empty;
-        var collectionOnly = type == "anki" && (change.Kind is "anki_rename" or "anki_settings")
+        var collectionOnly = type == "anki" && change.Kind == "anki_settings"
             && p.TryGetProperty("snapshot_scope", out var scope) && scope.GetString() == "collection";
         var before = await SnapshotAsync(db, type, id, user, ct, collectionOnly);
         if (Hash(before) != p.GetProperty("expected").GetString())
@@ -160,7 +161,7 @@ internal sealed class LearningChanges(GlosifyContext db, IQuizService quizzes, I
         if (Permanent(change.Kind) || change.AfterJson is null) return false;
         var id = Guid.Parse(change.EntityId);
         var after = RunJson.Read<List<Row>>(change.AfterJson);
-        var collectionOnly = (change.Kind is "anki_rename" or "anki_settings") && after.Count == 1 && after[0].Type == nameof(AnkiCollection);
+        var collectionOnly = change.Kind == "anki_settings" && after.Count == 1 && after[0].Type == nameof(AnkiCollection);
         var current = await SnapshotAsync(db, change.EntityType, id, user, ct, collectionOnly);
         if (current.Count == 0 || Hash(current) != Hash(after)) return false;
         var before = change.BeforeJson is null ? [] : RunJson.Read<List<Row>>(change.BeforeJson);

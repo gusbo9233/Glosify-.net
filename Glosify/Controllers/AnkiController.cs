@@ -260,7 +260,7 @@ public sealed class AnkiController : Controller
         {
             State = state,
             TargetLanguage = targetLanguage,
-            Statistics = await _statistics.GetAsync(collectionId, userId, state.Direction, cancellationToken),
+            Statistics = await _statistics.ReadSnapshotAsync(collectionId, userId, state.Direction, cancellationToken),
             AnswerRevealed = reveal && state.Card is not null && state.Card.CardId == cardId,
             ClientToken = Guid.NewGuid(),
         };

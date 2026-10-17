@@ -11,7 +11,7 @@ public sealed partial class AnkiCollectionService
     // change its timezone. Creation and the subsequent writes share one transaction.
     public Task<bool> AddQuizForLanguageAsync(string targetLanguage, string? timeZoneId, Guid quizId,
         bool includeSentences, string userId, CancellationToken cancellationToken = default) =>
-        ExecuteLanguageMutationAsync(targetLanguage, userId, async () =>
+        ExecuteAtomicallyAsync(async () =>
         {
             var canonical = CanonicalLanguageName(targetLanguage);
             var quiz = await _context.Quizzes.AsNoTracking().SingleOrDefaultAsync(
@@ -19,13 +19,44 @@ public sealed partial class AnkiCollectionService
             if (quiz is null || !SameLanguage(canonical, QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language)))
                 return false;
             var collection = await GetOrCreateAsync(userId, canonical, timeZoneId, cancellationToken);
-            return await ApplyQuizAsync(new(collection.Id, quizId, true, true, includeSentences, includeSentences),
-                collection, cancellationToken);
+            var link = await _context.AnkiQuizLinks.SingleOrDefaultAsync(
+                item => item.AnkiCollectionId == collection.Id && item.QuizId == quizId, cancellationToken);
+            if (link is null)
+                return await ApplyQuizAsync(new(collection.Id, quizId, true, true, includeSentences, includeSentences),
+                    collection, cancellationToken);
+
+            // The picker still offers linked quizzes. Adding one again only adds content: it
+            // keeps its sentences and directions, and items the user unticked stay unticked.
+            var widened = !link.WordsSourceToTarget || !link.WordsTargetToSource
+                || includeSentences && (!link.SentencesSourceToTarget || !link.SentencesTargetToSource);
+            if (!widened) return true;
+            var unticked = await _context.AnkiNotes
+                .Where(note => note.AnkiCollectionId == collection.Id && note.QuizId == quizId
+                    && note.Cards.Any(card => card.ExcludedFromQuizLink))
+                .Select(note => note.Id)
+                .ToListAsync(cancellationToken);
+            link.WordsSourceToTarget = link.WordsTargetToSource = true;
+            if (includeSentences) link.SentencesSourceToTarget = link.SentencesTargetToSource = true;
+            link.UpdatedAt = collection.UpdatedAt = _timeProvider.GetUtcNow();
+            await _context.SaveChangesAsync(cancellationToken);
+            await SyncCollectionAsync(collection.Id, cancellationToken);
+            // A newly linked direction of an unticked item is unticked too.
+            var newCards = await _context.AnkiCards
+                .Where(card => unticked.Contains(card.AnkiNoteId) && card.QuizLinkIncluded
+                    && !card.ExcludedFromQuizLink && !card.DirectlyIncluded)
+                .ToListAsync(cancellationToken);
+            foreach (var card in newCards)
+            {
+                card.ExcludedFromQuizLink = true;
+                card.IsActive = false;
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }, cancellationToken);
 
     public Task<bool> AddItemForLanguageAsync(string targetLanguage, string? timeZoneId, AnkiItemKey item,
         string userId, CancellationToken cancellationToken = default) =>
-        ExecuteLanguageMutationAsync(targetLanguage, userId, async () =>
+        ExecuteAtomicallyAsync(async () =>
         {
             var canonical = CanonicalLanguageName(targetLanguage);
             IReadOnlyList<MembershipItem> items;
@@ -48,7 +79,7 @@ public sealed partial class AnkiCollectionService
         CancellationToken cancellationToken = default)
     {
         ValidateMembershipSize(add, remove);
-        return ExecuteLanguageMutationAsync(targetLanguage, userId, async () =>
+        return ExecuteAtomicallyAsync(async () =>
         {
             var canonical = CanonicalLanguageName(targetLanguage);
             var items = await ReadMembershipAdditionsAsync(add, canonical, userId, cancellationToken);
@@ -59,26 +90,6 @@ public sealed partial class AnkiCollectionService
             await ApplyMembershipAsync(collection, items, remove, cancellationToken);
             return true;
         }, cancellationToken);
-    }
-
-    private async Task<bool> ExecuteLanguageMutationAsync(string targetLanguage, string userId,
-        Func<Task<bool>> operation, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await ExecuteAtomicallyAsync(operation, cancellationToken);
-        }
-        catch (DbUpdateException exception) when (_context.Database.IsRelational()
-            && _context.Database.CurrentTransaction is null)
-        {
-            // A first add may race another request creating this language's collection.
-            // Retry only after the failed transaction rolled back and a different row won.
-            var attempted = exception.Entries.Select(entry => entry.Entity).OfType<AnkiCollection>().SingleOrDefault();
-            if (attempted is null) throw;
-            var winner = await FindForLanguageAsync(userId, targetLanguage, cancellationToken);
-            if (winner is null || winner.Id == attempted.Id) throw;
-            return await ExecuteAtomicallyAsync(operation, cancellationToken);
-        }
     }
 
     public Task<bool> SetMembershipAsync(Guid collectionId, IReadOnlyList<AnkiItemKey> add,

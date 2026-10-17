@@ -45,21 +45,16 @@ public sealed partial class AnkiCollectionService
             .SingleOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
         if (collection is null) return null;
         var now = _timeProvider.GetUtcNow();
-        // Daily limits apply to each direction separately, so add up both tracks.
-        var total = new AnkiCollectionCounts(0, 0, 0, 0, 0);
-        foreach (var direction in new[] { PracticeDirection.SourceToTarget, PracticeDirection.TargetToSource })
-        {
-            var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, direction, cancellationToken);
-            var cards = availability.Cards;
-            var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
-            var reviews = Math.Min(Math.Max(0, AnkiStudyDefaults.MaximumReviewsPerDay - availability.ReviewsStudied),
-                cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
-            var newCards = Math.Min(Math.Max(0, AnkiStudyDefaults.NewCardsPerDay - availability.NewStudied),
-                cards.Count(c => c.State == AnkiCardStates.New));
-            total = new(total.Due + learning + reviews, total.New + newCards, total.Learning + learning,
-                total.Total + cards.Count, total.StudiedToday + availability.StudiedToday);
-        }
-        return total;
+        // /Anki studies only the collection's practice direction, and each direction has
+        // its own daily limits, so suggestions count that track alone.
+        var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, collection.DefaultDirection, cancellationToken);
+        var cards = availability.Cards;
+        var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
+        var reviews = Math.Min(Math.Max(0, AnkiStudyDefaults.MaximumReviewsPerDay - availability.ReviewsStudied),
+            cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
+        var newCards = Math.Min(Math.Max(0, AnkiStudyDefaults.NewCardsPerDay - availability.NewStudied),
+            cards.Count(c => c.State == AnkiCardStates.New));
+        return new(learning + reviews, newCards, learning, cards.Count, availability.StudiedToday);
     }
 
     private async Task<AnkiCollectionSummary> SummaryAsync(AnkiCollection c, CancellationToken ct) =>

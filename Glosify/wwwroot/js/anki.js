@@ -62,16 +62,24 @@
         // Only changed rows are posted, as add/remove keys, so large lists stay small.
         const form = settings.querySelector('[data-anki-items-form]');
         const save = form?.querySelector('[data-anki-items-save]');
+        const limit = form?.querySelector('[data-anki-items-limit]');
+        // The server rejects larger saves outright, so explain the limit before posting.
+        const maxChanges = Number(form?.dataset.ankiMaxChanges) || Infinity;
         const boxes = () => [...(list?.querySelectorAll('[data-anki-item-key]') ?? [])];
         const changed = () => boxes().filter(box => box.checked !== (box.dataset.initial === 'true'));
         list?.addEventListener('change', () => {
             const count = changed().length;
-            save.disabled = count === 0;
+            const tooMany = count > maxChanges;
+            save.disabled = count === 0 || tooMany;
             save.textContent = count === 0 ? 'Save changes' : `Save ${count} ${count === 1 ? 'change' : 'changes'}`;
+            if (limit) {
+                limit.hidden = !tooMany;
+                limit.textContent = tooMany ? `Save at most ${maxChanges.toLocaleString()} changes at a time.` : '';
+            }
         });
         form?.addEventListener('submit', event => {
             const rows = changed();
-            if (rows.length === 0) { event.preventDefault(); return; }
+            if (rows.length === 0 || rows.length > maxChanges) { event.preventDefault(); return; }
             form.querySelectorAll('input[data-anki-change]').forEach(input => input.remove());
             rows.forEach(box => {
                 const input = document.createElement('input');

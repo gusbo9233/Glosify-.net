@@ -40,6 +40,26 @@ public class ChangeApplierTests
         Assert.Empty(await db.Quizzes.ToListAsync());
     }
 
+    [Theory]
+    [InlineData("create")]
+    [InlineData("rename")]
+    [InlineData("delete")]
+    public async Task Removed_anki_collection_actions_are_not_applied_or_journaled(string action)
+    {
+        await using var db = CreateContext();
+        var change = new PendingChange("anki_" + action, JsonSerializer.SerializeToElement(new
+        {
+            args = new { action, name = "Polish" }, entity_type = "anki", id = (Guid?)null,
+            expected = LearningChanges.Hash([]), title = "Anki " + action,
+        }));
+
+        var result = await CreateApplier(db).ApplyAsync(null, "user-1", [change], CancellationToken.None);
+
+        Assert.Equal(0, result.Applied);
+        Assert.Empty(result.Journal);
+        Assert.Empty(await db.AnkiCollections.ToListAsync());
+    }
+
     [Fact]
     public async Task Workflow_rolls_back_quiz_and_keeps_proposal_active_when_a_later_change_fails()
     {

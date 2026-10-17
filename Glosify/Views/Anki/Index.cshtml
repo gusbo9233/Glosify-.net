@@ -126,7 +126,7 @@
                 </ul>
             }
 
-            <form method="post" asp-action="Items" class="anki-items" data-anki-items-form>
+            <form method="post" asp-action="Items" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="TimeZoneId" data-browser-timezone />
                 <h3 class="anki-settings-subheading">Words</h3>
@@ -150,6 +150,7 @@
                         }
                     }
                 </div>
+                <p class="anki-help" role="status" hidden data-anki-items-limit></p>
                 <button class="btn-submit" type="submit" disabled data-anki-items-save>Save changes</button>
             </form>
         </aside>

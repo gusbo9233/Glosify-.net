@@ -129,6 +129,18 @@ public sealed class AnkiPageTests : IDisposable
         Assert.Empty(await scope.ServiceProvider.GetRequiredService<GlosifyContext>().AnkiCards.ToListAsync());
     }
 
+    [Fact]
+    public async Task Items_form_tells_the_browser_the_server_change_limit()
+    {
+        await SeedAsync();
+
+        var page = await ReadPageAsync();
+
+        var form = page.QuerySelector("form[data-anki-items-form]")!;
+        Assert.Equal(AnkiCollectionService.MaximumMembershipChanges.ToString(), form.GetAttribute("data-anki-max-changes"));
+        Assert.NotNull(form.QuerySelector("[data-anki-items-limit][hidden]"));
+    }
+
     [Theory]
     [InlineData(PracticeDirection.SourceToTarget)]
     [InlineData(PracticeDirection.TargetToSource)]

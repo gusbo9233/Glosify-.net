@@ -36,7 +36,6 @@ for (const [label, resources, regularAffected, ankiAffected] of [
     ['folder rename', [change('collection', 'folder', 'rename_collection')], false, false],
     ['another Anki direction', [change('anki', 'anki-2', 'anki_direction')], false, false],
     ['current Anki direction', [change('anki', 'anki-1', 'anki_direction')], false, true],
-    ['current Anki deletion', [change('anki', 'anki-1', 'anki_delete')], false, true],
     ['another Anki settings change', [change('anki', 'anki-2', 'anki_settings')], false, false],
     ['another card removal', [change('anki_card', 'card-2', 'remove_anki_cards')], false, false],
     ['current card removal', [change('anki_card', 'card-1', 'remove_anki_cards')], false, true],

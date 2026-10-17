@@ -52,7 +52,7 @@ internal sealed class GetLearningProgressTool(ILearningInsightsService insights,
             {
                 var collection = await AnkiTools.OwnedAsync(db, id.ToString(), context.UserId, ct);
                 if (collection is null) return ToolResult.Fail("Could not read progress", "Anki collection not found.");
-                var stats = await statistics.ReadSnapshotAsync(id, context.UserId, ct);
+                var stats = await statistics.ReadSnapshotAsync(id, context.UserId, cancellationToken: ct);
                 if (stats is not null) collectionProgress = new { collection_id = id, collection.Name, collection.TimeZoneId,
                     stats.Counts, stats.ReviewsLast30Days, retention_percent = stats.ReviewsLast30Days == 0 ? (double?)null : stats.RetentionPercent,
                     stats.ReviewActivity, stats.DueForecast };

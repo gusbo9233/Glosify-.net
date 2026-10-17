@@ -79,6 +79,30 @@ public sealed class AnkiLanguageMutationTests
             Assert.Equal(2, await db.AnkiCards.CountAsync(card => card.IsActive && card.Note.AnkiCollectionId == competitorId));
         });
 
+    [SqlServerFact]
+    public Task SqlServer_get_or_create_in_a_caller_transaction_reuses_a_concurrently_created_collection() =>
+        SqlServerTestDatabase.RunAsync("anki-get-or-create-tx", async db =>
+        {
+            await SeedAsync(db);
+            var plainOptions = new DbContextOptionsBuilder<GlosifyContext>().UseSqlServer(db.Database.GetConnectionString()).Options;
+            var competitorId = Guid.NewGuid();
+            var race = new CreateCompetingCollection(plainOptions, competitorId);
+            await using var racingDb = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
+                .UseSqlServer(db.Database.GetConnectionString()).AddInterceptors(race).Options);
+            // As in an assistant apply: the caller owns the transaction around the first add.
+            await using var transaction = await racingDb.Database.BeginTransactionAsync();
+
+            var collection = await new AnkiCollectionService(racingDb, TimeProvider.System)
+                .GetOrCreateAsync(UserId, "Polish", "Europe/Stockholm");
+            await transaction.CommitAsync();
+
+            Assert.True(race.Fired);
+            Assert.Equal(competitorId, collection.Id);
+            var stored = Assert.Single(await db.AnkiCollections.AsNoTracking().ToListAsync());
+            Assert.Equal(competitorId, stored.Id);
+            Assert.Equal("Europe/Stockholm", stored.TimeZoneId);
+        });
+
     [Fact]
     public async Task Removing_stale_items_does_not_create_a_collection()
     {
