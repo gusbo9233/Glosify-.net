@@ -18,7 +18,7 @@ import { createRenderLoop, portraitFraming } from './render-loop.js';
 export async function createAvatar(canvas, character = 'rain', { quality: qualityMode = 'auto' } = {}) {
     const model = {
         rain: '/models/avatar/rain-realistic.glb?v=natural-brown-eyes-1',
-        rowan: '/models/avatar/rowan-realistic.glb?v=brown-hair-1',
+        rowan: '/models/avatar/rowan-realistic.glb?v=likeness-collar-1',
         kwame: '/models/avatar/kwame-realistic.glb?v=tweed-1',
         mei: '/models/avatar/mei-realistic.glb?v=low-bun-1'
     }[character];
@@ -58,7 +58,7 @@ export async function createAvatar(canvas, character = 'rain', { quality: qualit
         mesh.isPickable = false;
     }
     const applyWeights = bindMorphTargets(loaded.meshes);
-    const rain = createPerformance();
+    const rain = createPerformance(Math.random, { character });
     let analyser = null, spectrum = null, wave = null;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
     const loop = createRenderLoop(elapsed => {

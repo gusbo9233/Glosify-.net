@@ -564,7 +564,7 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         Assert.Contains("name=\"rating\"\r\n\r\nagain\r\n", againRequest.PostData);
         await Expect(Page.Locator(".results.visible")).ToBeVisibleAsync();
         // Regular quizzes finish the stack; retrying Again cards remains explicit.
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Practice Again", Exact = true }).ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Retry missed answers only", Exact = true }).ClickAsync();
         await Page.WaitForLoadStateAsync(LoadState.Load);
         await Page.Locator(".card-reveal-button").ClickAsync();
         await Expect(Page.Locator(".study-rating-shortcut")).ToHaveTextAsync(new[] { "1", "4" });

@@ -211,10 +211,10 @@
     <value>تم التخطي</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>إعادة تشغيل الجلسة</value>
+    <value>إعادة الاختبار بالكامل</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>الممارسة مرة أخرى</value>
+    <value>إعادة محاولة الإجابات الخاطئة فقط</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>تشغيل نطق {0}</value>
@@ -241,7 +241,7 @@
     <value>إظهار الإجابة</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>إعادة ضبط الجلسة</value>
+    <value>إعادة الاختبار بالكامل</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>لا يوجد {0} بعد</value>
@@ -280,7 +280,7 @@
     <value>غير صحيح</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>الكلمات غير الصحيحة للتدريب</value>
+    <value>إعادة محاولة الإجابات الخاطئة فقط</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>تغيير الإعدادات</value>

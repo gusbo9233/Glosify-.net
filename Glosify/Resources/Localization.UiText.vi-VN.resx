@@ -211,10 +211,10 @@
     <value>Đã bỏ qua</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Bắt đầu lại phiên</value>
+    <value>Làm lại toàn bộ bài kiểm tra</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>Luyện tập lại</value>
+    <value>Chỉ làm lại các câu trả lời sai</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>Phát âm của {0}</value>
@@ -241,7 +241,7 @@
     <value>Hiện đáp án</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Đặt lại phiên</value>
+    <value>Làm lại toàn bộ bài kiểm tra</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Chưa có {0} nào</value>
@@ -280,7 +280,7 @@
     <value>Sai</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>Luyện các từ làm sai</value>
+    <value>Chỉ làm lại các câu trả lời sai</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Đổi cài đặt</value>

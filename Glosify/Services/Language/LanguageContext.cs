@@ -14,6 +14,7 @@ public interface ILanguageContext
 public class CookieLanguageContext : ILanguageContext
 {
     private const string CookieName = "glosify.language";
+    private const string GuestCookieName = "glosify.guest-language";
 
     private readonly IHttpContextAccessor _accessor;
     private string? _resolvedLanguage;
@@ -34,6 +35,8 @@ public class CookieLanguageContext : ILanguageContext
             if (_initialized) return _resolvedLanguage;
             var ctx = _accessor.HttpContext;
             if (ctx == null) return null;
+            if (ctx.User.Identity?.IsAuthenticated != true && ctx.Request.Cookies.TryGetValue(GuestCookieName, out var guestValue))
+                return QuizLanguageCatalog.Find(guestValue)?.Name;
             if (!ctx.Request.Cookies.TryGetValue(CookieName, out var value)) return null;
             return QuizLanguageCatalog.Find(value)?.Name;
         }
@@ -59,7 +62,8 @@ public class CookieLanguageContext : ILanguageContext
 
         _resolvedLanguage = canonical.Name;
         _initialized = true;
-        ctx.Response.Cookies.Append(CookieName, canonical.Name, new CookieOptions
+        var cookieName = ctx.User.Identity?.IsAuthenticated == true ? CookieName : GuestCookieName;
+        ctx.Response.Cookies.Append(cookieName, canonical.Name, new CookieOptions
         {
             Expires = DateTimeOffset.UtcNow.AddYears(1),
             HttpOnly = true,
@@ -76,7 +80,13 @@ public class CookieLanguageContext : ILanguageContext
         _resolvedLanguage = null;
         _initialized = true;
         var ctx = _accessor.HttpContext;
-        ctx?.Response.Cookies.Delete(CookieName);
+        if (ctx?.User.Identity?.IsAuthenticated == true) ctx.Response.Cookies.Delete(CookieName);
+        else if (ctx is not null)
+            ctx.Response.Cookies.Append(GuestCookieName, "", new CookieOptions
+            {
+                HttpOnly = true, IsEssential = true, SameSite = SameSiteMode.Lax,
+                Secure = ctx.Request.IsHttps, Expires = DateTimeOffset.UtcNow.AddYears(1)
+            });
     }
 }
 

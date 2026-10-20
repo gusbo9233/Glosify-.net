@@ -51,11 +51,12 @@ public class AccountController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Login(string? returnUrl = null, string? externalLoginError = null)
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> Login(string? returnUrl = null, string? externalLoginError = null, bool dialog = false)
     {
         if (User.Identity?.IsAuthenticated == true && string.IsNullOrWhiteSpace(externalLoginError))
         {
-            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
+            return dialog ? DialogRedirect(SafeLocalReturnUrl(returnUrl)) : LocalRedirect(SafeLocalReturnUrl(returnUrl));
         }
 
         if (!string.IsNullOrWhiteSpace(externalLoginError))
@@ -67,24 +68,28 @@ public class AccountController : Controller
                 externalLoginMessage);
         }
 
+        ViewData["LoginDialog"] = dialog;
         await SetLoginViewDataAsync(returnUrl);
-        return View();
+        return dialog ? PartialView("_LoginForm", new LoginViewModel()) : View();
     }
 
     [HttpPost]
-    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+    public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null, bool dialog = false)
     {
+        ViewData["LoginDialog"] = dialog;
         await SetLoginViewDataAsync(returnUrl);
         if (!ModelState.IsValid)
-            return View(model);
+            return dialog ? PartialView("_LoginForm", model) : View(model);
 
         var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
 
         if (result.Succeeded)
-            return LocalRedirect(SafeLocalReturnUrl(returnUrl));
+            return dialog ? DialogRedirect(SafeLocalReturnUrl(returnUrl)) : LocalRedirect(SafeLocalReturnUrl(returnUrl));
 
         if (result.RequiresTwoFactor)
         {
+            if (dialog)
+                return DialogRedirect(Url.Page("/Account/LoginWith2fa", new { area = "Identity", returnUrl = SafeLocalReturnUrl(returnUrl), rememberMe = model.RememberMe })!);
             return RedirectToPage("/Account/LoginWith2fa", new
             {
                 area = "Identity",
@@ -96,11 +101,11 @@ public class AccountController : Controller
         if (result.IsLockedOut)
         {
             ModelState.AddModelError(string.Empty, _text["Auth.AccountLocked"]);
-            return View(model);
+            return dialog ? PartialView("_LoginForm", model) : View(model);
         }
 
         ModelState.AddModelError(string.Empty, _text["Auth.InvalidCredentials"]);
-        return View(model);
+        return dialog ? PartialView("_LoginForm", model) : View(model);
     }
 
     [HttpGet]
@@ -213,6 +218,14 @@ public class AccountController : Controller
     public IActionResult ForgotPassword()
     {
         return View();
+    }
+
+    private JsonResult DialogRedirect(string returnUrl)
+    {
+        // The cookie handler can set a 302 when signing in on LoginPath with a
+        // returnUrl query. Dialog clients must receive JSON rather than follow it.
+        Response.Headers.Remove("Location");
+        return new JsonResult(new { redirectUrl = returnUrl }) { StatusCode = StatusCodes.Status200OK };
     }
 
     private async Task SetLoginViewDataAsync(string? returnUrl)

@@ -211,10 +211,10 @@
     <value>Passé</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Redémarrer la session</value>
+    <value>Recommencer tout le quiz</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>S’entraîner à nouveau</value>
+    <value>Réessayer uniquement les réponses manquées</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>Écouter la prononciation de {0}</value>
@@ -241,7 +241,7 @@
     <value>Afficher la réponse</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Réinitialiser la session</value>
+    <value>Recommencer tout le quiz</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Aucun {0} pour le moment</value>
@@ -280,7 +280,7 @@
     <value>Incorrect</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>S’entraîner sur les mots incorrects</value>
+    <value>Réessayer uniquement les réponses manquées</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Modifier les paramètres</value>

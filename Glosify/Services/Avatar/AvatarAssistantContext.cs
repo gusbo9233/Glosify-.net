@@ -1,13 +1,12 @@
-using Glosify.Services.Auth;
 using Microsoft.Extensions.Options;
 
 namespace Glosify.Services.Avatar;
 
-public sealed class AvatarAssistantContext(AvatarSessions sessions, AdministratorAccess administrators, IOptions<AvatarOptions> options)
+public sealed class AvatarAssistantContext(AvatarSessions sessions, IOptions<AvatarOptions> options)
 {
     public void EnsureAvailable(string userId)
     {
-        if (!options.Value.Enabled || !administrators.IsAdminUser(userId))
+        if (!options.Value.Enabled || string.IsNullOrWhiteSpace(userId))
             throw new AvatarException(404, "Speaking conversation not available.");
     }
 

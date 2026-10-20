@@ -42,6 +42,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Services/Guest/starter-content.json" LogicalName="Glosify.Guest.StarterContent.json" />
     <!-- Assistant prompts are versioned text, reviewed like code and loaded at runtime. -->
     <EmbeddedResource Include="Services/Ai/Assistant/Prompts/*.md"
                       LogicalName="Glosify.Assistant.Prompts.%(Filename)%(Extension)" />

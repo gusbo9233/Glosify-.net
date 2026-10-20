@@ -18,6 +18,7 @@
         Placeholder = Text["Reader.AssistantPlaceholder"]
     });
 
+    var guestSample = ViewData["GuestSample"] is string ? Glosify.Services.Guest.GuestSamples.For(LangContext.CurrentLanguage) : null;
     var preferredTranslationLanguage = Model.Book.PreferredTranslationLanguage ?? "English";
 }
 
@@ -28,9 +29,10 @@
         <div class="speech-error" data-reader-speech-error role="alert" hidden><span data-speech-error-text></span><button type="button" data-speech-settings>@Text["Speech.Settings"]</button></div>
         <div class="reader-speech-info" data-reader-speech-info aria-live="polite">@Text["Speech.Browser"]</div>
     <section class="pdf-reader-shell"
+             data-pdf-url="@guestSample?.PdfUrl"
              data-document-id="@Model.Book.Id"
              data-page-count="@Model.Book.PageCount"
-             data-reading-language="@(LangContext.CurrentLanguage ?? string.Empty)"
+             data-reading-language="@(guestSample?.TargetLanguage ?? LangContext.CurrentLanguage ?? string.Empty)"
              data-preferred-translation-language="@preferredTranslationLanguage">
         <div class="reader-workspace" data-reader-workspace>
             <div class="pdf-canvas-wrap" data-reader-original-pane>

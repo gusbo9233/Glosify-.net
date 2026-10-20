@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your avatar · GlobeGlotter</title>
+  <link rel="icon" href="/favicon.png">
+  <style>
+    :root{color-scheme:dark;font:15px/1.5 system-ui,sans-serif;color:#f3eee2;background:#171c18}
+    *{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}
+    header{max-width:1440px;margin:auto;padding:24px 32px 16px;display:flex;align-items:baseline;gap:20px}
+    header p{color:#b9beaf;font-size:13px;margin:0}h1{font:32px/1.15 Georgia,serif;font-weight:400;margin:0}
+    main{max-width:1440px;margin:auto;padding:0 32px 28px;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px}
+    .stage{position:relative;height:min(80vh,950px);min-height:540px;border:1px solid #5a6041;border-radius:18px;overflow:hidden;background:#28291f url('/images/library.jpg') center/cover}
+    canvas{display:block;width:100%;height:100%;touch-action:none}
+    .badge{position:absolute;top:20px;left:22px;font-size:12px;letter-spacing:.08em;color:#eee7d0;pointer-events:none}
+    #status{position:absolute;bottom:20px;left:22px;right:22px;text-align:center;font-size:13px;color:#fff;background:#19251cdd;padding:10px;border-radius:8px}
+    #status:empty{display:none}
+    aside{align-self:start;padding:8px 0;display:flex;flex-direction:column;gap:26px}
+    h2{margin:0 0 12px;font-size:12px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:#c6ad70}
+    .row{display:flex;flex-wrap:wrap;gap:8px}
+    button,.file-label,select{display:inline-block;border:1px solid #515b4d;background:#252f26;color:#f1eedf;border-radius:8px;padding:10px 13px;cursor:pointer;min-height:44px}
+    button:hover,.file-label:hover{background:#344336}button[aria-pressed=true]{background:#d1b875;color:#172218;border-color:#d1b875}
+    button:disabled,select:disabled{opacity:.45;cursor:wait}select{width:100%}
+    :focus-visible{outline:3px solid #d1b875;outline-offset:3px}
+    .hint{font-size:12px;line-height:1.6;color:#aeb6a6;margin:10px 0 0}
+    .file-label{width:100%;text-align:center}input[type=file]{position:absolute;width:1px;height:1px;opacity:0}
+    .file-label:focus-within{outline:3px solid #d1b875;outline-offset:3px}
+    audio{width:100%;margin-top:10px;height:36px}.note{border-top:1px solid #3d493b;padding-top:20px}
+    a{color:#d1b875}
+    @media(max-width:800px){header{padding:20px 18px 14px;display:block}header p{margin-top:8px}main{padding:0 18px 24px;grid-template-columns:1fr;gap:18px}.stage{height:70vh;min-height:450px}aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.note{grid-column:1/-1}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <header><h1>Your avatar</h1><p>GlobeGlotter · 3D character preview</p></header>
+  <main>
+    <div class="stage">
+      <canvas id="portrait" aria-label="Animated avatar wearing a dark suit and gold GG patch in the library"></canvas>
+      <span class="badge">GG / CHARACTER STUDY</span>
+      <div id="status" role="status" aria-live="polite">Loading your avatar…</div>
+    </div>
+    <aside>
+      <section>
+        <h2>Character</h2>
+        <div class="row" id="states">
+          <button type="button" data-state="idle" aria-pressed="true" disabled>Idle</button>
+          <button type="button" data-state="listening" aria-pressed="false" disabled>Listening</button>
+          <button type="button" data-state="thinking" aria-pressed="false" disabled>Thinking</button>
+        </div>
+      </section>
+      <section>
+        <h2>Expressions</h2>
+        <div class="row">
+          <button type="button" data-expression="smile" aria-pressed="true" disabled>Smile</button>
+          <button type="button" data-expression="neutral" aria-pressed="false" disabled>Neutral</button>
+          <button type="button" data-expression="blink" disabled>Blink</button>
+          <button type="button" data-expression="speech" disabled>Speaking motion</button>
+        </div>
+        <p class="hint">Choose Smile or Neutral for the resting face.<br>Speaking motion is a silent animation demo.</p>
+      </section>
+      <section>
+        <h2><label for="angle">View</label></h2>
+        <select id="angle" disabled>
+          <option value="0">Front</option>
+          <option value="0.55">Three-quarter left</option>
+          <option value="-0.55">Three-quarter right</option>
+        </select>
+      </section>
+      <section>
+        <h2>Try lip sync</h2>
+        <label class="file-label">Choose an audio clip<input id="clip" type="file" accept="audio/*" disabled></label>
+        <audio id="audio" controls hidden></audio>
+        <p class="hint">Play a voice clip to see the mouth follow its sound. The file stays on this device.</p>
+      </section>
+      <p class="hint note">Authoring preview of Rowan’s updated avatar.<br><a href="/avatar.glb" download="globeglotter-avatar.glb">Download the 3D model</a></p>
+    </aside>
+  </main>
+  <script type="module" src="/preview.js"></script>
+</body>
+</html>

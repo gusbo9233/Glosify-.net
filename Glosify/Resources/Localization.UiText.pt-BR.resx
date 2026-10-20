@@ -211,10 +211,10 @@
     <value>Ignorado</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Reiniciar sessão</value>
+    <value>Reiniciar o quiz completo</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>Praticar novamente</value>
+    <value>Tentar novamente apenas as respostas erradas</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>Reproduzir a pronúncia de {0}</value>
@@ -241,7 +241,7 @@
     <value>Mostrar resposta</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Redefinir sessão</value>
+    <value>Reiniciar o quiz completo</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Ainda não há {0}</value>
@@ -280,7 +280,7 @@
     <value>Incorreto</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>Praticar palavras incorretas</value>
+    <value>Tentar novamente apenas as respostas erradas</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Alterar configurações</value>

@@ -211,10 +211,10 @@
     <value>スキップ済み</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>セッションを再開</value>
+    <value>クイズ全体をやり直す</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>もう一度練習</value>
+    <value>間違えた問題だけやり直す</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>{0} の発音を再生</value>
@@ -241,7 +241,7 @@
     <value>答えを表示</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>セッションをリセット</value>
+    <value>クイズ全体をやり直す</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>まだ{0}はありません</value>
@@ -280,7 +280,7 @@
     <value>不正解</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>不正解の単語を練習</value>
+    <value>間違えた問題だけやり直す</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>設定を変更</value>

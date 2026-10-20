@@ -39,8 +39,15 @@ public class QuizController : Controller
         _languageContext = languageContext;
     }
 
+    [AllowAnonymous]
     public async Task<IActionResult> Index(CancellationToken cancellationToken = default)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewData["GuestSample"] = "quiz";
+            return View(Glosify.Services.Guest.GuestSamples.For(HttpContext).Index("quiz"));
+        }
+
         var userId = User.GetUserId();
         if (_languageContext.CurrentLanguage == null)
             return RedirectToAction("Index", "Languages");

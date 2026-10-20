@@ -211,10 +211,10 @@
     <value>Пропущено</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Перезапустити сесію</value>
+    <value>Почати всю вікторину заново</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>Потренуватися ще раз</value>
+    <value>Повторити лише помилкові відповіді</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>Прослухати вимову {0}</value>
@@ -241,7 +241,7 @@
     <value>Показати відповідь</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Скинути сесію</value>
+    <value>Почати всю вікторину заново</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Ще немає {0}</value>
@@ -280,7 +280,7 @@
     <value>Неправильно</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>Потренувати неправильні слова</value>
+    <value>Повторити лише помилкові відповіді</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Змінити налаштування</value>

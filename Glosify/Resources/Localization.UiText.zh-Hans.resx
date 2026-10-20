@@ -211,10 +211,10 @@
     <value>已跳过</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>重新开始本轮</value>
+    <value>重新开始整个测验</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>再练一次</value>
+    <value>只重做答错的题目</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>播放 {0} 的发音</value>
@@ -241,7 +241,7 @@
     <value>显示答案</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>重置本轮</value>
+    <value>重新开始整个测验</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>尚无{0}</value>
@@ -280,7 +280,7 @@
     <value>错误</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>练习错误单词</value>
+    <value>只重做答错的题目</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>更改设置</value>

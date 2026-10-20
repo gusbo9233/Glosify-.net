@@ -22,7 +22,7 @@
     </header>
 
     <div id="flashcardSession" data-flashcard-session data-study-quiz-id="@Model.QuizId">
-        @await Html.PartialAsync("_FlashcardSession", Model)
+        @await Html.PartialAsync("~/Views/FlashcardQuiz/_FlashcardSession.cshtml", Model)
     </div>
 </section>
 

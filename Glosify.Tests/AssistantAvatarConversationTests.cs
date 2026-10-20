@@ -1,9 +1,7 @@
 using Glosify.Services.Ai.Assistant.Runtime;
-using Glosify.Services.Auth;
 using Glosify.Services.Avatar;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -18,8 +16,7 @@ public sealed class AssistantAvatarConversationTests
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
         var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart();
         sessions.RecordTurn(session, "1", "user", "Chcę kawę.");
         sessions.RecordTurn(session, "1", "assistant", "Z mlekiem?");
@@ -47,8 +44,7 @@ public sealed class AssistantAvatarConversationTests
     {
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart();
         foreach (var session in new[] { sessions.Create("other", QuizLanguageCatalog.Find("pl")!, "free"), sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("sv")!, "free") })
         {
@@ -64,8 +60,7 @@ public sealed class AssistantAvatarConversationTests
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
         var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart();
         sessions.RecordTurn(session, "1", "user", "kawa");
         sessions.RecordTurn(session, "1", "assistant", "Kawa means coffee.");
@@ -90,8 +85,7 @@ public sealed class AssistantAvatarConversationTests
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
         var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart();
         for (var i = 0; i < 45; i++) sessions.RecordTurn(session, i.ToString(), "user", $"Turn {i}: " + new string('x', 1100));
         await h.StartAsync("Read our conversation", input: new("Read our conversation", AvatarConversationId: session.MemoryId));
@@ -125,8 +119,7 @@ public sealed class AssistantAvatarConversationTests
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
         var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart();
         sessions.RecordTurn(session, "1", "user", "Retained source text");
         var input = new AssistantRunInput("Help", AvatarConversationId: session.MemoryId);
@@ -151,8 +144,7 @@ public sealed class AssistantAvatarConversationTests
         await using var h = await AssistantHarness.CreateAsync();
         var sessions = new AvatarSessions(h.Clock);
         var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-        var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
-        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(config), Options.Create(new AvatarOptions { Enabled = true })));
+        h.Configure = services => services.AddSingleton(new AvatarAssistantContext(sessions, Options.Create(new AvatarOptions { Enabled = true })));
         h.Restart(); sessions.RecordTurn(session, "1", "user", "Original");
         for (var i = 0; i < 3; i++)
         {

@@ -31,11 +31,18 @@ public sealed class AnkiController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Index(
         bool reveal = false,
         Guid? cardId = null,
         CancellationToken cancellationToken = default)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewData["GuestSample"] = "anki";
+            return View(Glosify.Services.Guest.GuestSamples.For(HttpContext).Index("anki"));
+        }
+
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");

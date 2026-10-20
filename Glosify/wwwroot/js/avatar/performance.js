@@ -60,7 +60,7 @@ function spring(frequency, damping) {
     };
 }
 
-export function createPerformance(random = Math.random) {
+export function createPerformance(random = Math.random, { character } = {}) {
     const between = (from, to) => from + (to - from) * random();
     const side = () => random() < .5 ? -1 : 1;
     const drift = Object.fromEntries(['nod', 'turn', 'tilt', 'smile', 'brow', 'sway', 'yaw'].map((name, i) => [name, wander(i + 1)]));
@@ -185,6 +185,16 @@ export function createPerformance(random = Math.random) {
             lookUp: Math.max(0, eyeY) * open, lookDown: Math.max(0, -eyeY) * open,
             nod, turn, tilt, shrug: clamp(shrug, -.2, 1.2), breathe: breathing
         };
+        // Rowan's neutral sculpt uses the approved full smile at rest. Avoid layering
+        // procedural emotion on that pose; active states retain gaze and speech.
+        if (character === 'rowan') {
+            const resting = state === 'off' || state === 'idle';
+            weights.smileLeft = weights.smileRight = resting ? 1 : 0;
+            if (resting) {
+                for (const name of ['browRaiseLeft', 'browRaiseRight', 'browInner', 'browDown',
+                    'squint', 'eyeWide', 'mouthPress', 'jawOpen', 'mouthWide', 'mouthRound', 'lipsPart']) weights[name] = 0;
+            }
+        }
         let posture = { lean: lean * .012, sway: drift.sway(time * .09) * .005, yaw: drift.yaw(time * .06) * .012, rise: breathing * .0012 };
         if (reduced) {
             for (const name of ['lookLeft', 'lookRight', 'lookUp', 'lookDown', 'nod', 'turn', 'tilt', 'shrug', 'breathe']) weights[name] = 0;

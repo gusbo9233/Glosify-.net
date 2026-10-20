@@ -3,11 +3,9 @@ using Glosify.Models.Entities;
 using Glosify.Services.Abuse;
 using Glosify.Services.Ai.Assistant;
 using Glosify.Services.Ai.Assistant.Runtime;
-using Glosify.Services.Auth;
 using Glosify.Services.Avatar;
 using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -33,13 +31,11 @@ public sealed class AssistantAvatarSnapshotAccountingTests
             }
             var sessions = new AvatarSessions(h.Clock);
             var session = sessions.Create(AssistantHarness.UserId, QuizLanguageCatalog.Find("pl")!, "free");
-            var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-            { ["Admin:UserIds:0"] = AssistantHarness.UserId }).Build();
             h.Configure = services =>
             {
                 services.RemoveAll<GlosifyContext>();
                 services.AddScoped(_ => AccountedDb());
-                services.AddSingleton(new AvatarAssistantContext(sessions, new AdministratorAccess(configuration),
+                services.AddSingleton(new AvatarAssistantContext(sessions,
                     Options.Create(new AvatarOptions { Enabled = true })));
             };
             h.Restart();

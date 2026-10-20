@@ -230,6 +230,44 @@ public sealed class ExternalSignInSecurityTests
         Assert.Equal(Email, profile.GetProperty("email").GetString());
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("twofactor")]
+    [InlineData("locked")]
+    public async Task DialogPasswordLogin_PreservesIdentityRestrictions(string? restriction)
+    {
+        using var factory = CreateFactory();
+        await CreateUserAsync(factory, linked: false, restriction);
+        using var client = CreateClient(factory);
+        var page = await client.GetStringAsync("/login?dialog=true&returnUrl=/Books");
+        var token = new HtmlParser().ParseDocument(page).QuerySelector("input[name='__RequestVerificationToken']")!.GetAttribute("value")!;
+        var response = await client.PostAsync("/login?dialog=true&returnUrl=/Books", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["Email"] = Email, ["Password"] = "ExternalSignIn1!", ["__RequestVerificationToken"] = token
+        }));
+        response.EnsureSuccessStatusCode();
+        if (restriction == "locked")
+        {
+            Assert.Contains("auth-error", await response.Content.ReadAsStringAsync());
+            AssertNoApplicationCookie(factory, response);
+        }
+        else
+        {
+            var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+            var redirect = json.GetProperty("redirectUrl").GetString();
+            if (restriction == "twofactor")
+            {
+                Assert.StartsWith("/Identity/Account/LoginWith2fa?", redirect);
+                AssertNoApplicationCookie(factory, response);
+            }
+            else
+            {
+                Assert.Equal("/Books", redirect);
+                Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(ReturnUrl)).StatusCode);
+            }
+        }
+    }
+
     private static WebApplicationFactory<Program> CreateFactory(bool requireConfirmation = false, bool signupsEnabled = true)
     {
         var databaseName = Guid.NewGuid().ToString("N");

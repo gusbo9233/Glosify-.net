@@ -405,6 +405,11 @@
       "sha256": "001d0d135d964daf4ad99ba46a0f77c5bc2378f04e53c2b5a20242ab19cbf265"
     },
     {
+      "path": "head-round.target",
+      "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/head/head-round.target",
+      "sha256": "bd96b745b19432ac838f15438aa87e9002f597e59353861721e12e6da0f2c625"
+    },
+    {
       "path": "chin-prominent-incr.target",
       "url": "https://raw.githubusercontent.com/makehumancommunity/makehuman/a8bc2d54ff0ac92e78ff71431b1023eda42bf482/makehuman/data/targets/chin/chin-prominent-incr.target",
       "sha256": "d2493ca5f69aabeb8557d77a56c49cfcf2062ff90c0cad03073d87990d11448b"

@@ -4,7 +4,6 @@ using Glosify.Data;
 using Glosify.Infrastructure.Api;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
-using Glosify.Services.Auth;
 using Glosify.Services.Avatar;
 using Glosify.Services.Language;
 using Microsoft.AspNetCore.Authorization;
@@ -15,7 +14,7 @@ using Microsoft.Extensions.Options;
 
 namespace Glosify.Controllers;
 
-[Authorize(AuthenticationSchemes = "Identity.Application", Policy = AuthorizationPolicyNames.AiCreditAdmin)]
+[Authorize(AuthenticationSchemes = "Identity.Application")]
 [ApiController]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPricing pricing, AvatarSessions sessions,

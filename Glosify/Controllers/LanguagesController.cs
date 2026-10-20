@@ -20,6 +20,7 @@ public class LanguagesController : Controller
         _preferences = preferences;
     }
 
+    [AllowAnonymous]
     public IActionResult Index(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = Url.IsLocalUrl(returnUrl) ? returnUrl : null;
@@ -28,11 +29,18 @@ public class LanguagesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> Select(
         string language,
         string? returnUrl = null,
         CancellationToken cancellationToken = default)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            if (!_languageContext.TrySetLanguage(language))
+                return RedirectToAction(nameof(Index), new { returnUrl });
+            return Url.IsLocalUrl(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction("Index", "Home");
+        }
         try
         {
             var selected = await _preferences.SetSelectedAsync(
@@ -56,9 +64,11 @@ public class LanguagesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [AllowAnonymous]
     public async Task<IActionResult> Clear(CancellationToken cancellationToken = default)
     {
-        await _preferences.ClearAsync(User.GetUserId(), cancellationToken);
+        if (User.Identity?.IsAuthenticated == true)
+            await _preferences.ClearAsync(User.GetUserId(), cancellationToken);
         _languageContext.Clear();
         return RedirectToAction(nameof(Index));
     }

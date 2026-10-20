@@ -13,6 +13,34 @@ Chrome extension, and a separate extension for live translated subtitles.
 Explore and public library sharing were retired on October 17, 2026. See
 [the decision and recovery branch](docs/adr/0003-retire-explore.md).
 
+## Guest browsing
+
+Visitors can browse Books, Quizzes, Anki, Transcripts, and Translations without
+signing in. Each section offers a bundled starter sample matching the selected
+learning language, rendered in the same library cards, readers, quiz workspace,
+and Anki study UI as personal content. `/preview/{section}/sample` pages use
+bundled view models and one-page PDFs, never a shared account or public library
+records. Old `/spanish` links remain compatible and follow the current selection.
+Sample typing and flashcard practice runs only in browser memory and resets on
+refresh.
+
+Creating content, using the assistant, and paid speech require sign-in through
+a dismissible dialog. The standalone `/login` page remains available. Signing
+in returns to the corresponding personal library without copying samples or
+transferring guest results. Samples follow the language preference across
+libraries, detail pages, practice, speech labels, and PDF readers. The guest
+cookie takes precedence over the older account cookie. All 69 learning languages
+are covered, with English meanings; English samples use Spanish meanings.
+Freestyle has a solar-system starter. With no selection, samples default to Spanish.
+
+Starter phrases live in `Glosify/Services/Guest/starter-content.json` and are
+embedded in the application. Each language has five practice phrases and a short
+greeting dialogue. After editing the content, regenerate the one-page PDFs with
+`node scripts/build-guest-books.mjs` (uses the existing LiveSubtitles extension
+Playwright dependency and locally installed Chrome). Generated PDFs are bundled
+under `Glosify/wwwroot/samples/starter-*.pdf`; no translation provider or database
+is needed to browse them.
+
 ## AI services
 
 All generative, text-agent, and vision work goes directly from the GlobeGlotter server

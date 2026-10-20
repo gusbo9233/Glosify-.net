@@ -30,9 +30,9 @@ public sealed class AvatarTests
 {
     [Theory]
     [InlineData(null, 401)]
-    [InlineData("learner", 403)]
+    [InlineData("learner", 200)]
     [InlineData("admin", 200)]
-    public async Task ConfigRequiresAdmin(string? user, int expected)
+    public async Task ConfigRequiresSignedInUser(string? user, int expected)
     {
         using var app = new AvatarFixture(); using var client = await app.Client(user);
         var response = await client.GetAsync("/api/avatar/config");
@@ -40,6 +40,24 @@ public sealed class AvatarTests
         var text = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("secret-for-tests", text);
         if (expected != 200) Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task LearnerStillNeedsCreditsAndCannotReadAdministrativeUsage()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("learner");
+        var denied = await client.GetAsync("/Admin/AvatarUsage");
+        Assert.Equal(HttpStatusCode.Redirect, denied.StatusCode);
+        Assert.Equal("/Home/Error", denied.Headers.Location!.AbsolutePath);
+        await app.Antiforgery(client);
+        await app.Seed(async db =>
+        {
+            (await db.AiCreditAccounts.SingleAsync(x => x.UserId == "learner")).BalanceCredits = 0;
+            await db.SaveChangesAsync();
+        });
+        var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { characterId = "rowan" });
+        Assert.Equal(HttpStatusCode.PaymentRequired, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
     }
 
     [Fact]
@@ -60,10 +78,12 @@ public sealed class AvatarTests
         Assert.True(original.Lifetime.IsCancellationRequested);
     }
 
-    [Fact]
-    public async Task DisabledFeatureDoesNotExposePageOrConfig()
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("learner")]
+    public async Task DisabledFeatureDoesNotExposePageOrConfig(string user)
     {
-        using var app = new AvatarFixture(false); using var client = await app.Client("admin");
+        using var app = new AvatarFixture(false); using var client = await app.Client(user);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/Avatar")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/avatar/config")).StatusCode);
     }
@@ -128,12 +148,12 @@ public sealed class AvatarTests
     [Fact]
     public async Task StartRequiresAntiforgeryAndProtectsQuizOwnership()
     {
-        using var app = new AvatarFixture(); using var client = await app.Client("admin");
+        using var app = new AvatarFixture(); using var client = await app.Client("learner");
         var foreign = Guid.NewGuid(); var empty = Guid.NewGuid();
         await app.Seed(async db =>
         {
-            db.Quizzes.Add(new Quiz { Id = foreign, UserId = "learner", Name = "Private", TargetLanguage = "Swedish" });
-            db.Quizzes.Add(new Quiz { Id = empty, UserId = "admin", Name = "Empty", TargetLanguage = "Swedish" });
+            db.Quizzes.Add(new Quiz { Id = foreign, UserId = "other", Name = "Private", TargetLanguage = "Swedish" });
+            db.Quizzes.Add(new Quiz { Id = empty, UserId = "learner", Name = "Empty", TargetLanguage = "Swedish" });
             await db.SaveChangesAsync();
         });
         Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "en" })).StatusCode);
@@ -145,7 +165,7 @@ public sealed class AvatarTests
         var session = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
         // A newer start, for example from another tab, replaces the account's previous session.
         Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "sv" })).StatusCode);
-        Assert.Equal(404, Assert.Throws<AvatarException>(() => app.Services.GetRequiredService<AvatarSessions>().Get(session, "admin")).Status);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => app.Services.GetRequiredService<AvatarSessions>().Get(session, "learner")).Status);
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{session}/end", new { })).StatusCode);
         // The browser may finish closing the socket before its cleanup POST arrives.
         Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync($"/api/avatar/sessions/{session}/end", new { })).StatusCode);
@@ -272,7 +292,7 @@ public sealed class AvatarTests
     }
 
     [Fact]
-    public async Task NavigationOnlyOffersAvatarToAdmins()
+    public async Task NavigationOffersAvatarToSignedInUsers()
     {
         using var app = new AvatarFixture();
         using var admin = await app.Client("admin"); using var learner = await app.Client("learner");
@@ -283,9 +303,9 @@ public sealed class AvatarTests
         var doc = new HtmlParser().ParseDocument(html);
         Assert.Null(doc.QuerySelector("select#avatar-language"));
         Assert.NotNull(doc.QuerySelector("p#avatar-language"));
-        Assert.Equal(HttpStatusCode.Forbidden, (await learner.GetAsync("/Avatar")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await learner.GetAsync("/Avatar")).StatusCode);
         var response = await learner.GetAsync("/Quiz");
-        Assert.DoesNotContain("href=\"/Avatar\"", await response.Content.ReadAsStringAsync());
+        Assert.Contains("href=\"/Avatar\"", await response.Content.ReadAsStringAsync());
     }
 
     [Theory]
@@ -294,14 +314,14 @@ public sealed class AvatarTests
     [InlineData("rowan", "rowan", "male")]
     [InlineData("kwame", "kwame", "male")]
     [InlineData("mei", "mei", "female")]
-    public async Task SelectedPartnerPinsCharacterAndMatchingVoice(string? requested, string expected, string gender)
+    public async Task LearnerCanSelectPartnerWithMatchingVoice(string? requested, string expected, string gender)
     {
-        using var app = new AvatarFixture(); using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var app = new AvatarFixture(); using var client = await app.Client("learner"); await app.Antiforgery(client);
         var response = await client.PostAsJsonAsync("/api/avatar/sessions", new { characterId = requested });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.Equal(expected, payload.RootElement.GetProperty("characterId").GetString());
-        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        var session = app.Services.GetRequiredService<AvatarSessions>().Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "learner");
         Assert.Equal(expected, session.Character.Id);
         Assert.Equal(gender, session.Character.VoiceGender);
         Assert.Equal("test-" + gender + "-sv", session.Voice!.Id);

@@ -48,7 +48,7 @@
             @if (Model.Study is not null && hasCardsInDirection)
             {
                 <div data-flashcard-session>
-                    @await Html.PartialAsync("_StudySession", Model.Study)
+                    @await Html.PartialAsync("~/Views/Anki/_StudySession.cshtml", Model.Study)
                 </div>
             }
             else if (hasCards)

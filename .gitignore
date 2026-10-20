@@ -383,6 +383,8 @@ FodyWeavers.xsd
 **/appsettings.Development.json
 *.docx
 *.pdf
+!Glosify/wwwroot/samples/una-manana-en-madrid.pdf
+!Glosify/wwwroot/samples/starter-*.pdf
 
 # LaTeX build artifacts
 docs/*.aux

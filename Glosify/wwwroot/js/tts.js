@@ -199,7 +199,14 @@
         });
     }
 
+    function requireSpeechAccount() {
+        if (document.body.dataset.speechUser) return;
+        document.dispatchEvent(new CustomEvent('glosify:login-required'));
+        throw new Error('Sign in to use ElevenLabs speech.');
+    }
+
     async function playElevenLabs(item, session) {
+        requireSpeechAccount();
         var controller = new AbortController();
         session.abortController = controller;
         var response;
@@ -220,6 +227,7 @@
         }
         ensureCurrent(session);
 
+        if (response.status === 401) document.dispatchEvent(new CustomEvent('glosify:login-required'));
         if (!response.ok) {
             var detail = '';
             try { var problem = await response.json(); detail = problem.detail || problem.error || ''; } catch { /* Non-JSON response. */ }
@@ -358,7 +366,7 @@
     var errorText = errorNotice?.querySelector('[data-speech-error-text]');
     var catalogCache = new Map();
 
-    function getProvider() { return preferences.provider === 'elevenlabs' ? 'elevenlabs' : 'browser'; }
+    function getProvider() { return document.body.dataset.speechUser && preferences.provider === 'elevenlabs' ? 'elevenlabs' : 'browser'; }
     function getBookLanguage(bookId) { return preferences.bookLanguages?.[bookId] || ''; }
     function message(key) { return dialog?.dataset[key] || key; }
     function reportError(error) {
@@ -372,9 +380,11 @@
                 .filter(function (voice) { return sameSpeechLanguage(voice.lang, lang); })
                 .map(function (voice) { return { value: voice.voiceURI, label: voice.name + ' (' + voice.lang + ')' }; }) };
         }
+        requireSpeechAccount();
         if (!fresh && catalogCache.has(lang)) return catalogCache.get(lang);
         var request = (async function () {
             var response = await fetch('/api/tts/voices?lang=' + encodeURIComponent(lang), { credentials: 'same-origin' });
+            if (response.status === 401) document.dispatchEvent(new CustomEvent('glosify:login-required'));
             if (!response.ok) throw new Error(message('elevenlabsUnavailable'));
             var result = await response.json();
             if (!Number.isSafeInteger(result.creditsPerRequest) || result.creditsPerRequest < 1)

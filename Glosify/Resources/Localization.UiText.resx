@@ -76,8 +76,8 @@
   <data name="Quiz.Remembered" xml:space="preserve"><value>Remembered</value></data>
   <data name="Quiz.ReviewAgain" xml:space="preserve"><value>Review Again</value></data>
   <data name="Quiz.Skipped" xml:space="preserve"><value>Skipped</value></data>
-  <data name="Quiz.Restart" xml:space="preserve"><value>Restart Session</value></data>
-  <data name="Quiz.PracticeAgain" xml:space="preserve"><value>Practice Again</value></data>
+  <data name="Quiz.Restart" xml:space="preserve"><value>Restart full quiz</value></data>
+  <data name="Quiz.PracticeAgain" xml:space="preserve"><value>Retry missed answers only</value></data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve"><value>Play pronunciation of {0}</value></data>
   <data name="Quiz.RevealAnswer" xml:space="preserve"><value>Reveal answer for {0}</value></data>
   <data name="Quiz.Again" xml:space="preserve"><value>Again</value></data>
@@ -86,7 +86,7 @@
   <data name="Quiz.SwipeHint" xml:space="preserve"><value>Swipe right for Good, left for Again</value></data>
   <data name="Quiz.Skip" xml:space="preserve"><value>Skip</value></data>
   <data name="Quiz.ShowAnswer" xml:space="preserve"><value>Show Answer</value></data>
-  <data name="Quiz.Reset" xml:space="preserve"><value>Reset Session</value></data>
+  <data name="Quiz.Reset" xml:space="preserve"><value>Restart full quiz</value></data>
   <data name="Quiz.NoneYet" xml:space="preserve"><value>No {0} yet</value></data>
   <data name="Quiz.AddThenStart" xml:space="preserve"><value>Add {0} to a quiz, then start a {1} session from that quiz.</value></data>
   <data name="Quiz.TypeInstruction" xml:space="preserve"><value>Type the full {0} {1} from the {2} prompt.</value></data>
@@ -99,7 +99,7 @@
   <data name="Quiz.TypingComplete" xml:space="preserve"><value>Typing Complete</value></data>
   <data name="Quiz.Correct" xml:space="preserve"><value>Correct</value></data>
   <data name="Quiz.Incorrect" xml:space="preserve"><value>Incorrect</value></data>
-  <data name="Quiz.PracticeIncorrect" xml:space="preserve"><value>Practice Incorrect Words</value></data>
+  <data name="Quiz.PracticeIncorrect" xml:space="preserve"><value>Retry missed answers only</value></data>
   <data name="Quiz.ChangeSettings" xml:space="preserve"><value>Change settings</value></data>
   <data name="Transcripts.Title" xml:space="preserve"><value>Transcripts</value></data>
   <data name="Transcripts.Eyebrow" xml:space="preserve"><value>Live subtitle history</value></data>
