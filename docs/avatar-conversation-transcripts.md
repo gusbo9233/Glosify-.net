@@ -30,11 +30,20 @@ replies. Partial speech, interrupted avatar replies, translations, suggestions,
 and audio are excluded. This archive is independent of the avatar's rolling
 24-turn model memory and the browser's 48-message display. Unsaved archives
 expire after eight hours of inactivity and are bounded by the existing
-128-memory cap and an aggregate 8,000,000-character cap. Only fully saved idle
-archives may be reclaimed for capacity; new work is refused rather than evicting
-unsaved turns. New voice turns stop before the 2,000-turn / 500,000-character
+128-memory cap and an aggregate 8,000,000-character cap. Capacity reclamation
+prefers fully saved idle archives, then unsaved idle archives from the account
+retaining the most. Archives involved in a save or status operation are protected
+until it finishes, including on failure or cancellation. If eligible archives
+cannot free enough space, new work is refused without partial reclamation.
+New voice turns stop before the 2,000-turn / 500,000-character
 archive limits, leaving capacity for bounded utterances and replies. Server
 restarts still discard unsaved archives; the settings explain this retention limit.
+
+At most 16 sessions are admitted at once. Idle sessions may yield to new calls,
+with a separate ceiling of 32 connected or closing transports to allow cleanup
+to overlap admission. Replacement, forgetting, and expiry do not release a
+transport slot until its handler finishes cleanup. While all 32 slots are held,
+new admissions and connection attempts return 429 and can be retried after cleanup.
 
 Assistant run input accepts an optional `avatarConversationId`. At acceptance,
 the app validates access, ownership and language, then stores an immutable

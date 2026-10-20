@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -86,6 +87,64 @@ public sealed class AvatarTests
         using var app = new AvatarFixture(false); using var client = await app.Client(user);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/Avatar")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/avatar/config")).StatusCode);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreferenceReadFailureDoesNotReplaceOrPreemptSessions(bool replaceOwn)
+    {
+        var failure = new RejectPreferenceRead();
+        using var app = new AvatarFixture { Overrides = services =>
+            services.AddDbContext<GlosifyContext>(o => o.AddInterceptors(failure)) };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        await app.Seed(async db =>
+        {
+            (await db.Users.SingleAsync(u => u.Id == "admin")).AutoSaveAvatarConversations = true;
+            await db.SaveChangesAsync();
+        });
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        var language = Glosify.Services.Language.QuizLanguageCatalog.Find("sv")!;
+        var live = Enumerable.Range(0, AvatarSessions.MaximumLiveSessions)
+            .Select(i => sessions.Create(replaceOwn && i == 0 ? "admin" : $"owner-{i}", language, "free")).ToArray();
+        foreach (var session in live) sessions.Connect(session.Id, session.UserId);
+        foreach (var session in live.Skip(1)) session.KeepActiveUntil(DateTimeOffset.UtcNow.AddMinutes(5));
+        sessions.RecordTurn(live[0], "1", "user", "Preserve the existing call");
+        using var failed = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
+        Assert.Equal("application/problem+json", failed.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(1, failure.Failures);
+        Assert.All(live, session =>
+        {
+            Assert.False(session.Lifetime.IsCancellationRequested);
+            Assert.False(session.Preemption.IsCancellationRequested);
+            Assert.Same(session, sessions.Get(session.Id, session.UserId));
+        });
+        Assert.Equal("Preserve the existing call", Assert.Single(sessions.Snapshot(live[0].MemoryId, live[0].UserId, "sv").Turns).Text);
+
+        failure.Enabled = false;
+        using var retry = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        retry.EnsureSuccessStatusCode();
+        using var payload = JsonDocument.Parse(await retry.Content.ReadAsStringAsync());
+        var next = sessions.Get(payload.RootElement.GetProperty("sessionId").GetGuid(), "admin");
+        Assert.True(sessions.AutoSavePreference(next.MemoryId, "admin", "sv"));
+        Assert.True(replaceOwn ? live[0].Lifetime.IsCancellationRequested : live[0].Preemption.IsCancellationRequested);
+    }
+
+    private sealed class RejectPreferenceRead : IQueryExpressionInterceptor
+    {
+        public bool Enabled = true;
+        public int Failures;
+        public System.Linq.Expressions.Expression QueryCompilationStarting(
+            System.Linq.Expressions.Expression queryExpression, QueryExpressionEventData eventData)
+        {
+            if (Enabled && queryExpression.ToString().Contains(nameof(ApplicationUser.AutoSaveAvatarConversations), StringComparison.Ordinal))
+            {
+                Failures++;
+                throw new InvalidOperationException("Preference storage unavailable for this test");
+            }
+            return queryExpression;
+        }
     }
 
     [Theory]

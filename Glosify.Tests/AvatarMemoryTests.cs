@@ -109,6 +109,74 @@ public sealed class AvatarMemoryTests
             Assert.Equal(40, sessions.Snapshot(learners[i], $"learner-{i}", "en").Turns.Length);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FullConversationRejectionPreservesArchivesUnderBytePressure(bool turnLimit)
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var caller = sessions.Create("caller", English, "free");
+        sessions.Connect(caller.Id, caller.UserId);
+        var retained = new List<AvatarSession> { caller };
+        var turns = turnLimit ? AvatarSessions.MaximumTranscriptTurns : 40;
+        for (var i = 0; i < turns; i++)
+            sessions.RecordTurn(caller, i.ToString(), "user", turnLimit ? "x" : new string('x', 12_000));
+        for (var i = 0; i < (turnLimit ? 16 : 15); i++)
+        {
+            var archived = sessions.Create($"owner-{i}", English, "free");
+            for (var turn = 0; turn < 40; turn++)
+                sessions.RecordTurn(archived, turn.ToString(), "user", new string('x', 12_000));
+            sessions.Remove(archived); retained.Add(archived);
+        }
+        var before = retained.Select(s => sessions.Snapshot(s.MemoryId, s.UserId, "en")).ToArray();
+        Assert.Equal(422, Assert.Throws<AvatarException>(() => sessions.CheckTranscriptCapacity(caller)).Status);
+        for (var i = 0; i < retained.Count; i++)
+            Assert.Equal(before[i].Turns, sessions.Snapshot(retained[i].MemoryId, retained[i].UserId, "en").Turns);
+    }
+
+    [Fact]
+    public void InsufficientReclaimableBytesPreserveArchivesOnRejection()
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var archived = sessions.Create("archived", English, "free");
+        sessions.RecordTurn(archived, "1", "user", new string('a', 1000)); sessions.Remove(archived);
+        var live = new List<AvatarSession>();
+        for (var i = 0; i < AvatarSessions.MaximumLiveSessions; i++)
+        {
+            var session = sessions.Create($"owner-{i}", English, "free");
+            sessions.Connect(session.Id, session.UserId); live.Add(session);
+            for (var turn = 0; turn < 40; turn++)
+                sessions.RecordTurn(session, turn.ToString(), "user", new string('x', i == 0 && turn == 39 ? 2000 : 12_000));
+        }
+        // The caller can accept a turn, but the small idle archive cannot free
+        // enough room for the shared reservation while every other archive is live.
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.CheckTranscriptCapacity(live[0])).Status);
+        Assert.Equal(new string('a', 1000), Assert.Single(sessions.Snapshot(archived.MemoryId, "archived", "en").Turns).Text);
+        Assert.All(live, s => Assert.Equal(40, sessions.Snapshot(s.MemoryId, s.UserId, "en").Turns.Length));
+        sessions.Remove(live[1]);
+        sessions.CheckTranscriptCapacity(live[0]);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(live[1].MemoryId, live[1].UserId, "en")).Status);
+        Assert.Equal(new string('a', 1000), Assert.Single(sessions.Snapshot(archived.MemoryId, "archived", "en").Turns).Text);
+    }
+
+    [Fact]
+    public void PreemptionBeforeDisconnectCannotRetainAnUnusableReconnect()
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var live = Enumerable.Range(0, AvatarSessions.MaximumLiveSessions)
+            .Select(i => sessions.Create($"owner-{i}", English, "free")).ToArray();
+        foreach (var session in live) sessions.Connect(session.Id, session.UserId);
+        foreach (var session in live.Skip(1)) session.KeepActiveUntil(clock.GetUtcNow().AddMinutes(1));
+        sessions.RecordTurn(live[0], "1", "user", "Keep my conversation");
+        sessions.Create("newcomer", English, "free");
+        Assert.True(live[0].Preemption.IsCancellationRequested);
+        // A transport can have decided to reconnect just before admission preempts it.
+        sessions.Disconnect(live[0]);
+        Assert.True(live[0].Lifetime.IsCancellationRequested);
+        Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(live[0].Id, live[0].UserId)).Status);
+        Assert.Equal("Keep my conversation", Assert.Single(sessions.Snapshot(live[0].MemoryId, live[0].UserId, "en").Turns).Text);
+    }
+
     [Fact]
     public void FullSharedPoolReclaimsAnIdleConversationInsteadOfLockingEveryoneOut()
     {
@@ -238,6 +306,72 @@ public sealed class AvatarMemoryTests
         Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(prepared.MemoryId, "owner", "en")).Status);
         for (var i = 0; i < ids.Count; i++)
             Assert.Equal($"Unsaved {i}", Assert.Single(sessions.Snapshot(ids[i], "owner", "en").Turns).Text);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReplacingAnUnusedPreparationAtTheSharedCapKeepsEveryConversation(bool used)
+    {
+        var sessions = new AvatarSessions(new FakeTimeProvider());
+        var ids = new List<Guid>();
+        for (var i = 0; i < AvatarSessions.MaximumConversations - 1; i++)
+        {
+            var archived = sessions.Create($"owner-{i}", English, "free");
+            sessions.RecordTurn(archived, "1", "user", $"Unsaved {i}");
+            ids.Add(archived.MemoryId); sessions.Remove(archived);
+        }
+        var prepared = sessions.Create("owner", English, "free", preconnect: true);
+        if (used) sessions.RecordTurn(prepared, "1", "user", "Keep preparation too");
+        var replacement = sessions.Create("owner", English, "free");
+
+        Assert.True(prepared.Lifetime.IsCancellationRequested);
+        Assert.Empty(sessions.Snapshot(replacement.MemoryId, "owner", "en").Turns);
+        if (used)
+        {
+            Assert.Equal("Keep preparation too", Assert.Single(sessions.Snapshot(prepared.MemoryId, "owner", "en").Turns).Text);
+            Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(ids[0], "owner-0", "en")).Status);
+        }
+        else
+            Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(prepared.MemoryId, "owner", "en")).Status);
+        for (var i = used ? 1 : 0; i < ids.Count; i++)
+            Assert.Equal($"Unsaved {i}", Assert.Single(sessions.Snapshot(ids[i], $"owner-{i}", "en").Turns).Text);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DisplacingAnUnusedPreparationDiscountsOnlyImmediatelyReleasedMemory(bool connected)
+    {
+        var clock = new FakeTimeProvider(); var sessions = new AvatarSessions(clock);
+        var retained = new List<AvatarSession>();
+        for (var i = 0; i < AvatarSessions.MaximumConversations - 1; i++)
+        {
+            var session = sessions.Create($"owner-{i}", English, "free");
+            sessions.RecordTurn(session, "1", "user", $"Unsaved {i}");
+            retained.Add(session);
+            if (i < AvatarSessions.MaximumLiveSessions - 1)
+            {
+                sessions.Connect(session.Id, session.UserId);
+                session.KeepActiveUntil(clock.GetUtcNow().AddMinutes(1));
+            }
+            else sessions.Remove(session);
+        }
+        var prepared = sessions.Create("prepared", English, "free", preconnect: true);
+        if (connected) sessions.Connect(prepared.Id, prepared.UserId);
+        sessions.Create("newcomer", English, "free");
+        // Connected preparations first receive a terminal notice and retain memory
+        // until their socket finishes. Only disconnected ones free capacity now.
+        if (connected) Assert.True(prepared.Preemption.IsCancellationRequested);
+        else Assert.True(prepared.Lifetime.IsCancellationRequested);
+        for (var i = 0; i < retained.Count; i++)
+        {
+            var session = retained[i];
+            if (connected && i == AvatarSessions.MaximumLiveSessions - 1)
+                Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Snapshot(session.MemoryId, session.UserId, "en")).Status);
+            else
+                Assert.Equal($"Unsaved {i}", Assert.Single(sessions.Snapshot(session.MemoryId, session.UserId, "en").Turns).Text);
+        }
     }
 
     [Theory]

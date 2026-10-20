@@ -84,8 +84,13 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
         try
         {
             var voice = await voices.ResolveAsync(language, ct, character);
+            // Finish fallible initialization before admission can replace or preempt
+            // a session. Keep preference changes serialized through cache initialization.
+            using var lease = await sessions.LockTranscriptWritesAsync(UserId, ct);
+            var autoSave = await db.Users.Where(u => u.Id == UserId).Select(u => u.AutoSaveAvatarConversations).SingleAsync(ct);
+            ct.ThrowIfCancellationRequested();
             var session = sessions.Create(UserId, language, practice, voice, character, request.MemoryId, request.Preconnect);
-            await transcripts.InitializePreferenceAsync(UserId, ct);
+            sessions.SetAutoSavePreference(UserId, autoSave);
             return Json(new { sessionId = session.Id, memoryId = session.MemoryId, rememberedTurns = session.History.Count, characterId = character.Id, language = language.Code, voiceName = voice.Name,
                 nativeVoice = voice.Native, connectUrl = $"/api/avatar/sessions/{session.Id}/voice" });
         }
@@ -162,7 +167,7 @@ public sealed class AvatarController(IOptions<AvatarOptions> options, AvatarPric
             });
             reconnect = await conversation.RunAsync(socket, session, User, ct);
         }
-        finally { if (reconnect) sessions.Disconnect(session); else sessions.Remove(session); }
+        finally { sessions.CompleteConnection(session, reconnect); }
         return new EmptyResult();
     }
 

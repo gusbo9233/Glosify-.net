@@ -2,6 +2,26 @@ namespace Glosify.Services.Avatar;
 
 public sealed partial class AvatarSessions
 {
+    private readonly Dictionary<Guid, int> _retainedTranscripts = [];
+
+    // Capacity reclamation must not remove an archive between its database write
+    // and the status returned to the caller. The lease also releases on failure.
+    public IDisposable RetainTranscript(Guid id, string userId, string language)
+    {
+        lock (_gate)
+        {
+            OwnedMemory(id, userId, language);
+            _retainedTranscripts[id] = _retainedTranscripts.GetValueOrDefault(id) + 1;
+        }
+        return new TranscriptWriteLease(() =>
+        {
+            lock (_gate)
+            {
+                if (--_retainedTranscripts[id] == 0) _retainedTranscripts.Remove(id);
+            }
+        });
+    }
+
     private readonly object _transcriptGate = new();
     private readonly Dictionary<string, TranscriptWriteLock> _transcriptWrites = [];
     private sealed class TranscriptWriteLock

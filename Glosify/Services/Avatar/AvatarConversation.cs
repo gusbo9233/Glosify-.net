@@ -35,6 +35,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
         string? pendingReply = null;
         var listening = false;
         var startingTurn = false;
+        var receivedAudio = false;
         var reconnect = true;
         var transcriptSaves = Channel.CreateBounded<bool>(new BoundedChannelOptions(1)
         { SingleReader = true, FullMode = BoundedChannelFullMode.DropWrite });
@@ -54,9 +55,13 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 if (messageType == WebSocketMessageType.Binary)
                 {
                     if (!listening || input is null) continue; // Late microphone frames after a completed utterance.
-                    if (buffer.Length == 0 || buffer.Length % 2 != 0 || !input.Writer.TryWrite(buffer))
+                    if (buffer.Length == 0 || buffer.Length % 2 != 0)
                         throw new AvatarException(429, "Microphone audio arrived too quickly. Please reconnect.");
                     session.KeepActiveUntil(clock.GetUtcNow().AddSeconds(15)); // Streamed audio is billed recognition.
+                    receivedAudio = true;
+                    session.MarkTurnActivity();
+                    if (!input.Writer.TryWrite(buffer))
+                        throw new AvatarException(429, "Microphone audio arrived too quickly. Please reconnect.");
                     continue;
                 }
                 using var message = JsonDocument.Parse(buffer);
@@ -100,11 +105,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 if (type == "commit" && input is not null && listening)
                 { listening = false; input.Writer.TryComplete(); continue; }
                 if (type != "listen") throw new AvatarException(400, "Unknown voice command.");
-                sessions.CheckTranscriptCapacity(session);
                 var mode = root.GetProperty("mode").GetString();
                 if (mode is not ("push-to-talk" or "hands-free")) throw new AvatarException(400, "Choose a speaking mode.");
                 var translate = ReadOption(root, "translateReplies");
                 var suggest = ReadOption(root, "suggestAnswers");
+                sessions.CheckTranscriptCapacity(session);
                 startingTurn = true;
                 inactivity.CancelAfter(Timeout.InfiniteTimeSpan);
                 if (inactivity.IsCancellationRequested) { await idleMonitor; break; }
@@ -116,6 +121,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 turnId = Guid.NewGuid().ToString("N");
                 input = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(32) { SingleReader = true, SingleWriter = true });
                 turnCancellation = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
+                receivedAudio = false;
                 turn = Respond(input, turnId, mode, translate, suggest, turnCancellation.Token);
             }
         }
@@ -137,7 +143,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
             transcriptSaves.Writer.TryComplete();
             await transcriptWriter; // Drain accepted turns before disposing this connection.
             try { await monitor; } catch (OperationCanceledException) { }
-            reconnect = reconnect && !inactivity.IsCancellationRequested && !session.Lifetime.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
+            reconnect = reconnect && !inactivity.IsCancellationRequested && !session.Lifetime.IsCancellationRequested
+                && !session.Preemption.IsCancellationRequested && session.ExpiresAt > clock.GetUtcNow();
             sessions.Remember(session);
             if (!reconnect) session.History.Clear();
             if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
@@ -200,10 +207,12 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
 
         async Task Respond(Channel<byte[]> channel, string id, string mode, bool translate, bool suggest, CancellationToken stopToken)
         {
+            session.BeginTurn(clock.GetUtcNow().AddSeconds(120));
             using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(120), clock);
             using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(stopToken, deadline.Token);
             var ct = cancellation.Token;
             long playbackBytes = 0;
+            var recognized = false;
             await using var scope = scopes.CreateAsyncScope();
             var billing = scope.ServiceProvider.GetRequiredService<AvatarBilling>();
             try
@@ -218,7 +227,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 listening = false; channel.Writer.TryComplete();
                 if (string.IsNullOrWhiteSpace(text)) { await Send(new { type = "idle" }); return; }
                 sessions.RecordTurn(session, id, "user", text);
-                session.KeepActiveUntil(clock.GetUtcNow().AddSeconds(60));
+                recognized = true;
+                session.MarkTurnActivity();
                 session.History.Add(TextTurn("user", text));
                 while (session.History.Count > 24 || session.History.Sum(x => x.ContentJson.Length) > 24000)
                     session.History.RemoveAt(0);
@@ -278,7 +288,13 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                     inactivity.CancelAfter(lease);
                     session.KeepActiveUntil(clock.GetUtcNow().Add(lease));
                 }
-                else ArmIdle();
+                else
+                {
+                    ArmIdle();
+                    if ((recognized || receivedAudio) && !lifetime.IsCancellationRequested)
+                        session.KeepActiveUntil(clock.GetUtcNow().AddSeconds(60));
+                }
+                session.ReleaseTurnProtection();
                 listening = false; channel.Writer.TryComplete();
                 await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
                     .ReleaseAsync(scope.ServiceProvider.GetRequiredService<ResourceQuotaService>());
