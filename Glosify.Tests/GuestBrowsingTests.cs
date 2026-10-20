@@ -2,6 +2,7 @@ using System.Net;
 using AngleSharp.Html.Parser;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 
@@ -114,6 +115,40 @@ public sealed class GuestBrowsingTests : IClassFixture<GuestWebApplicationFactor
         var restart = page.QuerySelector(".typing-result-actions form[data-sample-restart-form]");
         Assert.NotNull(restart);
         Assert.False(restart.HasAttribute("data-sample-account-form"));
+    }
+
+    [Fact]
+    public async Task SampleDisplayLanguageSelector_PostsToRealEndpointAndReturnsToSample()
+    {
+        var page = new HtmlParser().ParseDocument(await _client.GetStringAsync("/preview/books/sample"));
+        var form = page.QuerySelector("form.display-language-selector")!;
+        Assert.Equal("/display-language", form.GetAttribute("action"));
+        Assert.Equal("post", form.GetAttribute("method"));
+        Assert.False(form.HasAttribute("data-sample-account-form"));
+        var returnUrl = Assert.Single(form.QuerySelectorAll("input[name='returnUrl']")).GetAttribute("value")!;
+        var response = await _client.PostAsync(form.GetAttribute("action"), new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = form.QuerySelector("input[name='__RequestVerificationToken']")!.GetAttribute("value")!,
+            ["culture"] = "sv-SE", ["returnUrl"] = returnUrl
+        }));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal("/preview/books/sample", response.Headers.Location!.OriginalString);
+        Assert.Contains(response.Headers.GetValues("Set-Cookie"), cookie => cookie.StartsWith(CookieRequestCultureProvider.DefaultCookieName + "=", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task SignedInSample_KeepsSignOutAndDisplayLanguageForms()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("learner");
+        var page = new HtmlParser().ParseDocument(await client.GetStringAsync("/preview/quiz/sample"));
+        Assert.NotNull(page.QuerySelector("[data-guest-return]"));
+        var logout = page.QuerySelector(".app-navigation-account form[action='/Account/Logout']")!;
+        Assert.Equal("post", logout.GetAttribute("method"));
+        Assert.False(logout.HasAttribute("data-sample-account-form"));
+        Assert.Null(logout.QuerySelector("input[name='returnUrl']"));
+        var language = page.QuerySelector("form.display-language-selector")!;
+        Assert.Equal("/display-language", language.GetAttribute("action"));
+        Assert.False(language.HasAttribute("data-sample-account-form"));
     }
 
     [Theory]

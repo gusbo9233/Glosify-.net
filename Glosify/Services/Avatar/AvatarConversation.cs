@@ -7,7 +7,6 @@ using Glosify.Models.Entities;
 using Glosify.Services.Abuse;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
-using Glosify.Services.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 
@@ -57,6 +56,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                     if (!listening || input is null) continue; // Late microphone frames after a completed utterance.
                     if (buffer.Length == 0 || buffer.Length % 2 != 0 || !input.Writer.TryWrite(buffer))
                         throw new AvatarException(429, "Microphone audio arrived too quickly. Please reconnect.");
+                    session.KeepActiveUntil(clock.GetUtcNow().AddSeconds(15)); // Streamed audio is billed recognition.
                     continue;
                 }
                 using var message = JsonDocument.Parse(buffer);
@@ -153,19 +153,21 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
 
         async Task MonitorInactivity()
         {
-            using var stop = CancellationTokenSource.CreateLinkedTokenSource(inactivity.Token, lifetime.Token);
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(inactivity.Token, lifetime.Token, session.Preemption.Token);
             try { await Task.Delay(Timeout.InfiniteTimeSpan, stop.Token); }
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
             if (lifetime.IsCancellationRequested) return;
             reconnect = false;
+            // A full pool gave this idle slot to another learner; the conversation stays resumable.
+            var busy = session.Preemption.IsCancellationRequested;
             try
             {
                 // Canceling a pending receive can abort the socket. Deliver the
                 // terminal signal first so the client releases capture, not retries.
-                await Send(new { type = "ended", reason = "idle" });
+                await Send(new { type = "ended", reason = busy ? "busy" : "idle" });
                 using var close = new CancellationTokenSource(TimeSpan.FromSeconds(2));
                 await sendLock.WaitAsync(close.Token);
-                try { await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "Conversation idle", close.Token); }
+                try { await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, busy ? "Conversation paused" : "Conversation idle", close.Token); }
                 finally { sendLock.Release(); }
             }
             catch (Exception ex) when (ex is WebSocketException or OperationCanceledException) { }
@@ -216,6 +218,7 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 listening = false; channel.Writer.TryComplete();
                 if (string.IsNullOrWhiteSpace(text)) { await Send(new { type = "idle" }); return; }
                 sessions.RecordTurn(session, id, "user", text);
+                session.KeepActiveUntil(clock.GetUtcNow().AddSeconds(60));
                 session.History.Add(TextTurn("user", text));
                 while (session.History.Count > 24 || session.History.Sum(x => x.ContentJson.Length) > 24000)
                     session.History.RemoveAt(0);
@@ -270,7 +273,11 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                 // PCM is mono 24 kHz, 16-bit. Playback is activity, but a missing
                 // acknowledgement must still have a bounded cleanup deadline.
                 if (pendingReply is not null && !startingTurn && !lifetime.IsCancellationRequested)
-                    inactivity.CancelAfter(TimeSpan.FromSeconds(60 + playbackBytes / 48000d));
+                {
+                    var lease = TimeSpan.FromSeconds(60 + playbackBytes / 48000d);
+                    inactivity.CancelAfter(lease);
+                    session.KeepActiveUntil(clock.GetUtcNow().Add(lease));
+                }
                 else ArmIdle();
                 listening = false; channel.Writer.TryComplete();
                 await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
@@ -359,8 +366,8 @@ public sealed class AvatarConversation(IServiceScopeFactory scopes, TimeProvider
                     var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
                     var signIn = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
                     var user = await signIn.ValidateSecurityStampAsync(principal);
-                    if (user is null || !await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user)
-                        || !scope.ServiceProvider.GetRequiredService<AdministratorAccess>().IsAdminUser(user.Id))
+                    // Mirrors AvatarController.Access: Speaking is open to every signed-in user.
+                    if (user is null || !await signIn.CanSignInAsync(user) || await users.IsLockedOutAsync(user))
                     { reconnect = false; lifetime.Cancel(); return; }
                 }
             }

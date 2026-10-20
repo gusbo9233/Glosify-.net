@@ -364,7 +364,8 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
     [Trait("Category", "Browser")]
     public async Task SocialOnlyRegistrationPreservesExistingPasswordLoginAndProtectedRedirect()
     {
-        await Page.GotoAsync("/Quizzes");
+        // Libraries are guest-browsable; quiz settings still require an account.
+        await Page.GotoAsync("/Quizzes/Settings");
         await Expect(Page).ToHaveURLAsync(new Regex("/login", RegexOptions.IgnoreCase));
 
         await Page.GotoAsync("/Account/Register");

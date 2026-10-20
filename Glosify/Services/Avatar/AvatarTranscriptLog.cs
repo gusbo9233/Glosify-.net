@@ -17,9 +17,9 @@ public sealed partial class AvatarSessions
             var memory = OwnedMemory(session.MemoryId, session.UserId, session.Language.Code);
             if (memory.WriterId != session.Id) throw new AvatarException(409, "This conversation continued in another session.");
             // Leave room for the next bounded utterance and its reply.
-            // Reserve room for an utterance/reply on all sixteen possible live sessions.
-            ReclaimSavedTranscriptMemory(16 * 24_000, session.MemoryId);
-            if (_memories.Values.Sum(m => m.Characters) > MaximumRetainedTranscriptCharacters - 16 * 24_000)
+            // Reserve room for an utterance/reply on every possible live session.
+            ReclaimTranscriptMemory(MaximumLiveSessions * 24_000, session.MemoryId);
+            if (_memories.Values.Sum(m => m.Characters) > MaximumRetainedTranscriptCharacters - MaximumLiveSessions * 24_000)
                 throw new AvatarException(429, "Conversation storage is full. Save and start a new conversation to free space.");
             if (memory.Turns.Count > MaximumTranscriptTurns - 2 || memory.Characters > MaximumTranscriptCharacters - 24_000)
                 throw new AvatarException(422, "This conversation is full. Save it, then start a new conversation.");
@@ -37,7 +37,7 @@ public sealed partial class AvatarSessions
                 throw new AvatarException(422, "The spoken turn could not be recorded. Please use a shorter utterance.");
             if (memory.Turns.Count >= MaximumTranscriptTurns || memory.Characters + text.Length > MaximumTranscriptCharacters)
                 throw new AvatarException(422, "This conversation is full. Save it, then start a new conversation.");
-            ReclaimSavedTranscriptMemory(text.Length, session.MemoryId);
+            ReclaimTranscriptMemory(text.Length, session.MemoryId);
             if (_memories.Values.Sum(m => m.Characters) + text.Length > MaximumRetainedTranscriptCharacters)
                 throw new AvatarException(429, "Conversation storage is full. Save and start a new conversation to free space.");
             memory.Turns.Add(new(turnId, memory.Turns.Count + 1, role, role == "user" ? "You" : session.Character.Name, text, clock.GetUtcNow()));
@@ -47,18 +47,17 @@ public sealed partial class AvatarSessions
         }
     }
 
-    // Called under _gate. Fully saved idle archives can be reclaimed without
-    // losing transcript text; dirty archives and connected conversations stay.
-    private void ReclaimSavedTranscriptMemory(int reserveCharacters, Guid protectedMemory)
+    // Called under _gate. Fully saved idle archives go first without losing transcript text.
+    // Then the account retaining the most text loses its oldest idle conversation, so other
+    // accounts cannot fill the budget against anyone. Connected conversations always stay.
+    private void ReclaimTranscriptMemory(int reserveCharacters, Guid protectedMemory)
     {
         var excess = _memories.Values.Sum(m => m.Characters) + reserveCharacters - MaximumRetainedTranscriptCharacters;
-        if (excess <= 0) return;
-        var active = _sessions.Values.Select(s => s.MemoryId).ToHashSet();
-        foreach (var candidate in _memories.Where(m => m.Key != protectedMemory && !active.Contains(m.Key)
-            && m.Value.Turns.Count <= m.Value.SavedTurns).OrderBy(m => m.Value.ExpiresAt).ToArray())
+        while (excess > 0)
         {
+            var candidate = ReclaimOrder(m => m.Characters, protectedMemory: protectedMemory).FirstOrDefault(m => m.Value.Characters > 0);
+            if (candidate.Value is null) return;
             _memories.Remove(candidate.Key); excess -= candidate.Value.Characters;
-            if (excess <= 0) break;
         }
     }
 

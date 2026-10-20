@@ -573,6 +573,64 @@ public sealed class AvatarVoiceTests
     }
 
     [Fact]
+    public async Task LearnerConnectionPassesIdentityChecksUntilLockedOut()
+    {
+        var clock = new IdentityCheckClock(DateTimeOffset.UtcNow);
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services => { configure(services); services.AddSingleton<TimeProvider>(clock); };
+        using var client = await app.Client("learner"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await clock.IdentityChecks.Reader.ReadAsync(timeout.Token);
+        clock.Advance(TimeSpan.FromSeconds(30));
+        // The monitor only waits for another check after this one accepted the learner.
+        await clock.IdentityChecks.Reader.ReadAsync(timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token);
+        await Until(socket, "pong", timeout.Token);
+
+        await app.Seed(async db =>
+        {
+            var learner = await db.Users.SingleAsync(x => x.Id == "learner");
+            learner.LockoutEnabled = true; learner.LockoutEnd = DateTimeOffset.MaxValue;
+            await db.SaveChangesAsync();
+        });
+        clock.Advance(TimeSpan.FromSeconds(30));
+        try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
+        catch (WebSocketException) { } // Cancelling the pending server receive may abort rather than close.
+    }
+
+    [Fact]
+    public async Task FullLivePoolPausesAnIdleConversationWithANoticeForAnotherLearner()
+    {
+        using var app = App(new Reply());
+        using var idle = await app.Client("learner"); await app.Antiforgery(idle);
+        using var start = await idle.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = idle.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        // Every other slot belongs to a learner who is speaking.
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        for (var i = 1; i < AvatarSessions.MaximumLiveSessions; i++)
+            sessions.Create($"speaker-{i}", Glosify.Services.Language.QuizLanguageCatalog.Find("sv")!, "free")
+                .KeepActiveUntil(DateTimeOffset.UtcNow.AddMinutes(5));
+
+        using var newcomer = await app.Client("admin"); await app.Antiforgery(newcomer);
+        using var admitted = await newcomer.PostAsJsonAsync("/api/avatar/sessions", new { });
+        admitted.EnsureSuccessStatusCode();
+        Assert.Equal("busy", (await Until(socket, "ended", timeout.Token)).GetProperty("reason").GetString());
+        try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
+        catch (WebSocketException) { /* Cancellation can abort the receive side. */ }
+    }
+
+    [Fact]
     public async Task ProviderFailureReleasesTurnStorageReservation()
     {
         var ai = new Reply { Fail = true }; using var app = App(ai);
@@ -855,6 +913,17 @@ public sealed class AvatarVoiceTests
                 System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(bytes.AsSpan(i * 2, 2),
                     (short)(Math.Sin(i / 24000d * Math.PI * 2 * 170) * 6500 * (.5 + .5 * Math.Sin(i / 24000d * 18))));
             for (var chunk = 0; chunk < PlaybackChunks; chunk++) await audio(bytes);
+        }
+    }
+    private sealed class IdentityCheckClock(DateTimeOffset start) : FakeTimeProvider(start)
+    {
+        public Channel<bool> IdentityChecks { get; } = Channel.CreateUnbounded<bool>();
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = base.CreateTimer(callback, state, dueTime, period);
+            // The identity monitor is the connection's only 30-second one-shot delay.
+            if (dueTime == TimeSpan.FromSeconds(30) && period == Timeout.InfiniteTimeSpan) IdentityChecks.Writer.TryWrite(true);
+            return timer;
         }
     }
     private static Task AssertNoReservations(AvatarFixture app) => app.Seed(async db =>

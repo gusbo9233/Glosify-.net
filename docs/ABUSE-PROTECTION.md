@@ -85,6 +85,26 @@ to a worker cannot bypass that front end. Outside App Service, only default
 loopback and explicitly configured `ForwardedHeaders__KnownProxies__0`, etc.
 are trusted. Do not configure arbitrary client addresses as trusted proxies.
 
+## Speaking capacity
+
+Speaking keeps its live sessions and unsaved conversations in process memory, so
+its shared limits are designed so that no account, or group of accounts, can lock
+other learners out. Each account has one live session and keeps up to four
+conversations. Past that cap, a new conversation reclaims the account's own least
+recently used idle conversation, fully saved ones first.
+
+When all 16 live slots are taken, a new conversation displaces the session that has
+gone longest without billed conversation. Streaming microphone audio protects a slot
+for 15 seconds, and a recognized utterance or a finished reply protects it for 60
+seconds. Heartbeats, reconnects, preparations and empty listens never protect a slot,
+and a background preparation never displaces anyone. A displaced learner receives an
+`ended` message with reason `busy`; their conversation stays resumable.
+
+When the shared pool of 128 conversations or the 8,000,000-character transcript
+budget is full, fully saved idle conversations are reclaimed first. After that, the
+account holding the most conversations (or the most text) loses its oldest idle
+conversation, including any unsaved turns. Live conversations are never reclaimed.
+
 ## ElevenLabs
 
 TTS defaults to disabled. Before enabling:

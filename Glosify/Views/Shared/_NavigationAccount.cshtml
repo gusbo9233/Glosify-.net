@@ -7,7 +7,7 @@
             <span>@Text["Layout.SignedInAs"]</span>
             <strong dir="auto" title="@account">@account</strong>
         </div>
-        <form asp-controller="Account" asp-action="Logout" method="post">
+        <form asp-controller="Account" asp-action="Logout" method="post" data-sample-passthrough>
             @Html.AntiForgeryToken()
             <button type="submit" class="app-navigation-auth">@Text["Common.LogOut"]</button>
         </form>

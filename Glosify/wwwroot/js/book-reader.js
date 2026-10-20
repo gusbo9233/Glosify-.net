@@ -1244,7 +1244,8 @@ const setTranslationEnabled = (enabled) => {
 };
 
 const persistTranslationLanguage = async () => {
-    if (!documentId || !translationLanguage) return;
+    // Bundled samples have no saved preference; choosing a language there stays local.
+    if (!documentId || !translationLanguage || document.body.dataset.guestSection) return;
     try {
         const result = await requestJson(`/Books/${documentId}/TranslationPreference`, {
             method: 'PUT',

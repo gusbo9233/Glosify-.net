@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPractice } from '../Glosify/wwwroot/js/guest-practice-state.js';
+import { createPractice, isReversePractice } from '../Glosify/wwwroot/js/guest-practice-state.js';
 const cards = [{ Target: 'buenos días', Source: 'good morning' }, { Target: 'hola', Source: 'hello' }];
 test('typing scores once, normalizes case and Unicode, and completes', () => {
     const state = createPractice(cards);
@@ -43,4 +43,22 @@ test('Turkish answers use the answer language casing rules', () => {
 test('English learning accepts Spanish answers in reverse practice', () => {
     const state = createPractice([{ Source: 'good morning', Target: 'buenos días' }], 'es');
     assert.equal(state.answer('BUENOS DÍAS'), true);
+});
+test('typographic and ASCII apostrophes are the same answer', () => {
+    assert.equal(createPractice([{ Source: 'please', Target: 's’il vous plaît' }], 'fr').answer("S'il vous plaît"), true);
+    assert.equal(createPractice([{ Source: 'please', Target: "s'il vous plaît" }], 'fr').answer('s’il vous plaît'), true);
+});
+test('a repeated reverse prompt accepts each of its answers but nothing else', () => {
+    const reverse = [{ Source: 'bonjour', Target: 'hello' }, { Source: 'merci', Target: 'thank you' }, { Source: 'bonjour', Target: 'good morning' }];
+    const state = createPractice(reverse);
+    assert.equal(state.answer('good morning'), true); state.next();
+    assert.equal(state.answer('hello'), false); state.next();
+    assert.equal(state.answer('hello'), true);
+});
+test('practice direction is read like the server binds it', () => {
+    assert.equal(isReversePractice('?PracticeDirection=target-to-source'), true);
+    assert.equal(isReversePractice('?practicedirection=Target-To-Source'), true);
+    assert.equal(isReversePractice('?PracticeDirection=source-to-target&practiceDirection=target-to-source'), false);
+    assert.equal(isReversePractice('?WordCount=5'), false);
+    assert.equal(isReversePractice(''), false);
 });

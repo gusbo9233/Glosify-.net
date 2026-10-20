@@ -43,7 +43,10 @@ public sealed class GuestSampleTagHelper : TagHelper
             if (href is not null && (string.IsNullOrEmpty(controller) || GuestSamples.Find(controller) is not null))
                 output.Attributes.SetAttribute("href", href);
         }
-        if (output.TagName == "form" && string.Equals(Attribute("method"), "post", StringComparison.OrdinalIgnoreCase))
+        // Shared chrome (display language, sign-out) opts out with data-sample-passthrough and
+        // keeps posting to its real endpoint. Every other form still defaults to the login prompt.
+        if (output.TagName == "form" && string.Equals(Attribute("method"), "post", StringComparison.OrdinalIgnoreCase)
+            && !context.AllAttributes.ContainsName("data-sample-passthrough"))
         {
             var classes = Attribute("class");
             var restart = Attribute("asp-controller") == "TypingQuiz" && Attribute("asp-action") == "Restart";

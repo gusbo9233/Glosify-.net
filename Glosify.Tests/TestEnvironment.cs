@@ -35,4 +35,22 @@ internal static class TestEnvironment
                 "Server=localhost,1433;Initial Catalog=glosify-tests;Encrypt=False;Integrated Security=true;");
         }
     }
+
+    /// <summary>
+    /// Keeps a developer's demo account out of every test host.
+    /// </summary>
+    /// <remarks>
+    /// Development hosts also load the web project's user secrets, where a local demo
+    /// account is usually enabled. Its startup seeding then writes users and credit grants
+    /// into each test's database, collides across parallel hosts and calls stubbed credit
+    /// services. Environment variables outrank user secrets; tests configure the demo
+    /// account explicitly when they need it, and an existing value is left alone.
+    /// </remarks>
+    [ModuleInitializer]
+    internal static void DisableDeveloperDemoAccount()
+    {
+        const string key = "Demo__Enabled";
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(key)))
+            Environment.SetEnvironmentVariable(key, "false");
+    }
 }

@@ -1,4 +1,4 @@
-import { createPractice } from './guest-practice-state.js';
+import { createPractice, isReversePractice } from './guest-practice-state.js';
 
 const section = document.body.dataset.guestSection;
 if (section) {
@@ -46,7 +46,7 @@ function initializePractice(typing, flash) {
     }
     const limit = Number(query.get('WordCount'));
     if (Number.isInteger(limit) && limit > 0) cards = cards.slice(0, limit);
-    const reverse = query.get('PracticeDirection') === 'target-to-source';
+    const reverse = isReversePractice(location.search);
     if (reverse) cards = cards.map(card => ({ Source: card.Target, Target: card.Source }));
     const sourceLanguage = document.body.dataset.guestSourceLanguage;
     const targetLanguage = document.body.dataset.guestTargetLanguage;
@@ -69,8 +69,9 @@ function initializePractice(typing, flash) {
     reveal.type = 'button'; reveal.className = 'btn-main'; reveal.textContent = 'Show answer'; reveal.dataset.sampleReveal = '';
     if (flash) controls.before(reveal);
     const restart = document.createElement('button');
-    restart.type = 'button'; restart.className = 'btn-linkish'; restart.textContent = root.querySelector('.session-reset button, [data-sample-restart-form] button')?.textContent.trim() || 'Restart all cards'; restart.dataset.sampleRestart = '';
-    root.append(restart);
+    restart.type = 'button'; restart.className = 'btn-linkish'; restart.textContent = 'Restart all cards'; restart.dataset.sampleRestart = '';
+    // Typing and flashcard views render their own restart forms; only the Anki study view lacks one.
+    if (!root.querySelector('.session-reset, [data-sample-restart-form]')) root.append(restart);
     let waiting = false;
     let revealed = false;
     function render() {

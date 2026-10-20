@@ -1,8 +1,17 @@
+// Matches PracticeDirection.IsTargetToSource and MVC's case-insensitive query binding,
+// so the script and the server-rendered page always agree on the direction.
+export function isReversePractice(search) {
+    for (const [key, value] of new URLSearchParams(search))
+        if (key.toLowerCase() === 'practicedirection') return value.toLowerCase() === 'target-to-source';
+    return false;
+}
+
 export function createPractice(cards, locale = 'en') {
     let index = 0;
     let correct = 0;
     let answered = false;
-    const normalize = value => value.trim().normalize('NFC').toLocaleLowerCase(locale);
+    // Typographic apostrophes (bundled French and Welsh, iOS smart punctuation) match the ASCII one.
+    const normalize = value => value.trim().normalize('NFC').replace(/[‘’ʼ]/g, "'").toLocaleLowerCase(locale);
     return {
         get current() { return cards[index]; },
         get index() { return index; },
@@ -11,7 +20,9 @@ export function createPractice(cards, locale = 'en') {
         answer(value) {
             if (answered || index >= cards.length) return null;
             answered = true;
-            const matches = normalize(value) === normalize(cards[index].Target);
+            // A repeated prompt (French "bonjour" is hello and good morning) accepts each of its answers.
+            const given = normalize(value), prompt = cards[index].Source;
+            const matches = cards.some(card => card.Source === prompt && normalize(card.Target) === given);
             if (matches) correct++;
             return matches;
         },
