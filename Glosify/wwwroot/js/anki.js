@@ -67,6 +67,12 @@
         const maxChanges = Number(form?.dataset.ankiMaxChanges) || Infinity;
         const boxes = () => [...(list?.querySelectorAll('[data-anki-item-key]') ?? [])];
         const changed = () => boxes().filter(box => box.checked !== (box.dataset.initial === 'true'));
+        let submitting = false;
+        window.addEventListener('beforeunload', event => {
+            if (!workspace.isConnected || submitting || changed().length === 0) return;
+            event.preventDefault();
+            event.returnValue = '';
+        });
         list?.addEventListener('change', () => {
             const count = changed().length;
             const tooMany = count > maxChanges;
@@ -89,6 +95,7 @@
                 input.dataset.ankiChange = 'true';
                 form.append(input);
             });
+            submitting = true;
             save.disabled = true;
         });
     };

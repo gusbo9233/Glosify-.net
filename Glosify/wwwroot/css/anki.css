@@ -64,9 +64,10 @@
 .anki-linked .btn-icon:hover{background:var(--surface-container-high);color:var(--on-surface)}
 .anki-linked .material-symbols-outlined{font-size:18px}
 
-.anki-search{position:relative;display:block}
+.anki-search{position:relative;display:flex;align-items:center;gap:8px}
 .anki-search>.material-symbols-outlined{position:absolute;top:50%;left:12px;color:var(--on-surface-variant);font-size:18px;pointer-events:none;transform:translateY(-50%)}
-.anki-search input{padding-left:38px}
+.anki-search input{min-width:0;padding-left:12px}
+.anki-search button{min-height:44px;padding:0 12px;border:1px solid var(--outline-variant);border-radius:9px;background:var(--surface-low);color:var(--on-surface);font:inherit;cursor:pointer}
 .anki-item-list{height:200px;min-height:200px;flex:none;overflow-y:auto;overflow-x:hidden;scrollbar-gutter:stable;overscroll-behavior:contain;border:1px solid rgba(214,227,255,.08);border-radius:10px;background:var(--surface-low)}
 .anki-item{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:10px;padding:9px 12px;border-bottom:1px solid rgba(214,227,255,.06);cursor:pointer;font-weight:400!important}
 .anki-item:hover{background:rgba(214,227,255,.03)}
@@ -98,3 +99,5 @@
 @media(prefers-reduced-motion:no-preference){.anki-settings:not([hidden]){animation:anki-settings-enter .2s ease-out}}
 @keyframes anki-settings-enter{from{opacity:0}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.anki-settings-toggle svg{transition:none}}
+
+.anki-item-pages { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 1rem; }

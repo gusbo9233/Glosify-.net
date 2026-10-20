@@ -201,6 +201,53 @@ public sealed class AnkiPageTests : IDisposable
         Assert.Null(page.QuerySelector("form[action='/Anki/Settings']"));
     }
 
+    [Fact]
+    public async Task Picker_limits_markup_and_searches_beyond_the_visible_page()
+    {
+        var quizId = await SeedAsync();
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            for (var i = 1; i <= 105; i++)
+                db.Words.Add(new Word { Id = $"paged-{i:D3}", QuizId = quizId, Lemma = $"target-{i:D3}", Translation = $"source-{i:D3}", CreatedAt = DateTimeOffset.UtcNow });
+            await db.SaveChangesAsync();
+        }
+        var first = await ReadPageAsync();
+        Assert.Equal(100, first.QuerySelectorAll("[data-anki-item-key]").Length);
+        var next = Assert.Single(first.QuerySelectorAll(".anki-item-pages a"));
+        var response = await _client.GetAsync(next.GetAttribute("href"));
+        response.EnsureSuccessStatusCode();
+        var second = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        Assert.Equal(6, second.QuerySelectorAll("[data-anki-item-key]").Length);
+        Assert.Contains("paged-105", second.QuerySelectorAll("[data-anki-item-key]").Last().GetAttribute("data-anki-item-key"));
+        var savedPage = await SaveLastItemAsync(second);
+        Assert.Equal(HttpStatusCode.Redirect, savedPage.StatusCode);
+        Assert.Contains("itemOffset=100", savedPage.Headers.Location!.OriginalString);
+        response = await _client.GetAsync("/Anki?search=target-105");
+        response.EnsureSuccessStatusCode();
+        var searched = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        Assert.EndsWith(":paged-105", Assert.Single(searched.QuerySelectorAll("[data-anki-item-key]")).GetAttribute("data-anki-item-key"));
+        Assert.Equal("target-105", searched.QuerySelector("input[name='search']")?.GetAttribute("value"));
+        var savedSearch = await SaveLastItemAsync(searched);
+        Assert.Equal(HttpStatusCode.Redirect, savedSearch.StatusCode);
+        Assert.Contains("search=target-105", savedSearch.Headers.Location!.OriginalString);
+        var returned = await _client.GetAsync(savedSearch.Headers.Location);
+        returned.EnsureSuccessStatusCode();
+        var returnedPage = await new HtmlParser().ParseDocumentAsync(await returned.Content.ReadAsStringAsync());
+        Assert.Single(returnedPage.QuerySelectorAll("[data-anki-item-key][checked]"));
+
+        Task<HttpResponseMessage> SaveLastItemAsync(IDocument page)
+        {
+            var form = page.QuerySelector("[data-anki-items-form]")!;
+            return _client.PostAsync(form.GetAttribute("action"), new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["Add"] = form.QuerySelectorAll("[data-anki-item-key]").Last().GetAttribute("data-anki-item-key")!,
+                ["TimeZoneId"] = "UTC",
+                ["__RequestVerificationToken"] = Token(form),
+            }));
+        }
+    }
+
     private async Task<Guid> SeedAsync()
     {
         await using var scope = _factory.Services.CreateAsyncScope();

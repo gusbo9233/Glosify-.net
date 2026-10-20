@@ -11,12 +11,12 @@
     }
     var forward = Model.Direction == PracticeDirection.SourceToTarget;
     // Sources can mix in one collection; name the source only when there is just one.
-    var sources = workspace.AvailableItems.Where(item => item.InAnki).Select(item => item.SourceLanguage)
+    var sources = workspace.SourceLanguages.Concat(workspace.AvailableItems.Where(item => item.InAnki).Select(item => item.SourceLanguage))
         .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     var sourceLabel = sources.Count == 1 ? sources[0] : "Translation";
     var hasCardsInDirection = Model.Study?.Statistics?.Counts.Total > 0;
     // Membership includes active cards in either direction.
-    var hasCards = workspace.AvailableItems.Any(item => item.InAnki);
+    var hasCards = workspace.HasCards || workspace.AvailableItems.Any(item => item.InAnki);
     var linkedQuizIds = workspace.QuizLinks.Select(link => link.QuizId).ToHashSet();
     var words = workspace.AvailableItems.Where(item => item.ItemType == PracticeItemType.Words).ToList();
     var sentences = workspace.AvailableItems.Where(item => item.ItemType == PracticeItemType.Sentences).ToList();
@@ -126,16 +126,30 @@
                 </ul>
             }
 
-            <form method="post" asp-action="Items" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
+            @if (ViewData["GuestSample"] is string)
+            {
+                <label class="anki-search"><span class="visually-hidden">Search sample items</span><input type="search" placeholder="Search" autocomplete="off" data-anki-item-search /></label>
+            }
+            else
+            {
+            <form method="get" asp-action="Index" class="anki-search" data-anki-search-form>
+                <label class="visually-hidden" for="anki-search">Search all words and sentences</label>
+                <input id="anki-search" type="search" name="search" value="@workspace.Search" maxlength="200" placeholder="Search all items" />
+                <button type="submit">Search</button>
+            </form>
+
+            }
+
+            <form method="post" asp-action="Items" asp-route-itemOffset="@workspace.ItemOffset" asp-route-search="@workspace.Search" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="TimeZoneId" data-browser-timezone />
                 <h3 class="anki-settings-subheading">Words</h3>
                 <p class="anki-help">Tick items to study them and untick to remove them.</p>
-                <label class="anki-search"><span class="visually-hidden">Search words</span><span class="material-symbols-outlined" aria-hidden="true">search</span><input type="search" placeholder="Search" autocomplete="off" data-anki-item-search /></label>
+
                 <div class="anki-item-list" data-anki-item-list tabindex="-1">
                     @if (workspace.AvailableItems.Count == 0)
                     {
-                        <p class="anki-help">No words to pick from yet.</p>
+                        <p class="anki-help">No matching items.</p>
                     }
                     @foreach (var item in words)
                     {
@@ -153,6 +167,21 @@
                 <p class="anki-help" role="status" hidden data-anki-items-limit></p>
                 <button class="btn-submit" type="submit" disabled data-anki-items-save>Save changes</button>
             </form>
+            @if (workspace.ItemOffset > 0 || workspace.HasMoreItems)
+            {
+                <nav aria-label="Anki item pages" class="anki-item-pages">
+                    @if (workspace.ItemOffset > 0)
+                    {
+                        <a asp-action="Index" asp-route-itemOffset="@Math.Max(0, workspace.ItemOffset - Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize)" asp-route-search="@workspace.Search">Previous</a>
+                    }
+                    <span>Page @(workspace.ItemOffset / Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize + 1)</span>
+                    @if (workspace.HasMoreItems)
+                    {
+                        <a asp-action="Index" asp-route-itemOffset="@(workspace.ItemOffset + Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize)" asp-route-search="@workspace.Search">Next</a>
+                    }
+                </nav>
+                <p class="anki-help">Save your changes before searching or changing pages.</p>
+            }
         </aside>
     </div>
 </main>
