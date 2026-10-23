@@ -12,50 +12,71 @@ namespace Glosify.Services.Ai.Assistant.Runtime;
 internal sealed class AssistantRunWorker(
     IServiceScopeFactory scopes,
     IOptions<AssistantRuntimeOptions> options,
-    ILogger<AssistantRunWorker> logger) : BackgroundService
+    ILogger<AssistantRunWorker> logger,
+    AssistantRunSignals signals,
+    TimeProvider clock) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) =>
         Task.WhenAll(Enumerable.Range(0, options.Value.Workers).Select(_ => WorkAsync(stoppingToken)));
 
     private async Task WorkAsync(CancellationToken cancellationToken)
     {
+        var idleDelay = TimeSpan.FromSeconds(1);
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                await using var scope = scopes.CreateAsyncScope();
-                var store = scope.ServiceProvider.GetRequiredService<AssistantRunStore>();
-                var claim = await store.ClaimAsync(cancellationToken);
-                if (claim is null)
+                var workAvailable = signals.WorkAvailable;
+                bool idle;
+                await using (var scope = scopes.CreateAsyncScope())
                 {
-                    await scope.ServiceProvider.GetRequiredService<AssistantEvaluationWorker>().EvaluateOneAsync(cancellationToken);
-                    await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
-                    continue;
+                    var store = scope.ServiceProvider.GetRequiredService<AssistantRunStore>();
+                    var claim = await store.ClaimAsync(cancellationToken);
+                    idle = claim is null;
+                    if (claim is null)
+                    {
+                        idle = !await scope.ServiceProvider.GetRequiredService<AssistantEvaluationWorker>().EvaluateOneAsync(cancellationToken);
+                    }
+                    else
+                    {
+                        var (id, lease) = claim.Value;
+                        using var step = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        var heartbeat = HeartbeatAsync(id, step, async token =>
+                        {
+                            await using var renewal = scopes.CreateAsyncScope();
+                            return await renewal.ServiceProvider.GetRequiredService<AssistantRunStore>().RenewAsync(id, lease, token);
+                        }, TimeSpan.FromSeconds(20), logger);
+                        try
+                        {
+                            await scope.ServiceProvider.GetRequiredService<AssistantRunExecutor>().StepAsync(id, lease, step.Token);
+                        }
+                        catch (OperationCanceledException) when (step.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                        {
+                            // The lease was lost or could not be renewed. Checkpoints are fenced by the
+                            // lease, so nothing from the abandoned step commits.
+                        }
+                        finally
+                        {
+                            await step.CancelAsync();
+                            await heartbeat;
+                            // Worker scopes have no HTTP middleware to release storage reservations.
+                            await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
+                                .ReleaseAsync(scope.ServiceProvider.GetRequiredService<ResourceQuotaService>());
+                        }
+                    }
                 }
 
-                var (id, lease) = claim.Value;
-                using var step = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                var heartbeat = HeartbeatAsync(id, step, async token =>
+                if (idle)
                 {
-                    await using var renewal = scopes.CreateAsyncScope();
-                    return await renewal.ServiceProvider.GetRequiredService<AssistantRunStore>().RenewAsync(id, lease, token);
-                }, TimeSpan.FromSeconds(20), logger);
-                try
-                {
-                    await scope.ServiceProvider.GetRequiredService<AssistantRunExecutor>().StepAsync(id, lease, step.Token);
+                    try { await workAvailable.WaitAsync(idleDelay, clock, cancellationToken); }
+                    catch (TimeoutException) { }
+                    idleDelay = workAvailable.IsCompleted
+                        ? TimeSpan.FromSeconds(1)
+                        : TimeSpan.FromSeconds(Math.Min(idleDelay.TotalSeconds * 2, 30));
                 }
-                catch (OperationCanceledException) when (step.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                else
                 {
-                    // The lease was lost or could not be renewed. Checkpoints are fenced by the
-                    // lease, so nothing from the abandoned step commits.
-                }
-                finally
-                {
-                    await step.CancelAsync();
-                    await heartbeat;
-                    // Worker scopes have no HTTP middleware to release storage reservations.
-                    await scope.ServiceProvider.GetRequiredService<RequestResourceReservations>()
-                        .ReleaseAsync(scope.ServiceProvider.GetRequiredService<ResourceQuotaService>());
+                    idleDelay = TimeSpan.FromSeconds(1);
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -134,7 +155,8 @@ internal sealed class AssistantEvaluationWorker(
     internal static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(5);
     internal static readonly TimeSpan EvaluationTimeout = TimeSpan.FromMinutes(2);
     internal static readonly TimeSpan SettlementTimeout = TimeSpan.FromSeconds(30);
-    public async Task EvaluateOneAsync(CancellationToken cancellationToken)
+    /// <returns>Whether an evaluation was claimed, so active queues do not back off.</returns>
+    public async Task<bool> EvaluateOneAsync(CancellationToken cancellationToken)
     {
         var allowEvaluation = jev.Value.Enabled;
         var now = clock.GetUtcNow().UtcDateTime;
@@ -149,7 +171,7 @@ internal sealed class AssistantEvaluationWorker(
             .FirstOrDefaultAsync(cancellationToken);
         if (evaluation is null)
         {
-            return;
+            return false;
         }
 
         // Claim/reclaim atomically. A unique lease fences a delayed old worker's result.
@@ -160,7 +182,7 @@ internal sealed class AssistantEvaluationWorker(
                     .SetProperty(candidate => candidate.LeaseId, lease)
                     .SetProperty(candidate => candidate.LeaseUntil, now + LeaseDuration), cancellationToken) == 0)
         {
-            return;
+            return false;
         }
 
         if (resumingSettlement)
@@ -171,7 +193,7 @@ internal sealed class AssistantEvaluationWorker(
             var retained = RunJson.Read<ToolUseEvaluation>(evaluation.EvaluationJson!);
             var outstanding = await OutstandingReservations().Select(r => r.ReservationId).SingleOrDefaultAsync(recovery.Token);
             await CompleteAsync(retained, outstanding, recovery.Token);
-            return;
+            return true;
         }
 
         using var deadline = new CancellationTokenSource(EvaluationTimeout, clock);
@@ -188,7 +210,7 @@ internal sealed class AssistantEvaluationWorker(
         {
             var abandoned = await OutstandingReservations().Select(r => r.ReservationId!.Value).ToListAsync(token);
             foreach (var id in abandoned) await credits.ReleaseAsync(id, token);
-        }, token)) return;
+        }, token)) return true;
 
         try
         {
@@ -214,7 +236,7 @@ internal sealed class AssistantEvaluationWorker(
                             "typesafe", jev.Value.Model, estimate, token);
                         reservationId = reservation.ReservationId;
                     }
-                }, token)) return;
+                }, token)) return true;
                 result = await evaluator.EvaluateAsync(snapshot, token);
                 if (result.Status == "evaluated" && result.Tokens <= 0) result = Unavailable();
             }
@@ -248,7 +270,7 @@ internal sealed class AssistantEvaluationWorker(
                     .SetProperty(e => e.LeaseUntil, clock.GetUtcNow().UtcDateTime + LeaseDuration), settlement.Token) == 0)
             {
                 if (reservationId is Guid stale) await credits.ReleaseAsync(stale, settlement.Token);
-                return;
+                return true;
             }
             // Exceptions deliberately leave the durable result and reservation for recovery.
             await CompleteAsync(result, reservationId, settlement.Token);
@@ -265,6 +287,8 @@ internal sealed class AssistantEvaluationWorker(
                 if (reservationId is Guid unused) await credits.ReleaseAsync(unused, settlement.Token);
             }
         }
+
+        return true;
 
         IQueryable<AiCreditTransaction> OutstandingReservations() => db.AiCreditTransactions.AsNoTracking()
             .Where(r => r.OperationId == evaluation.Id && r.Feature == AiUsageFeatures.Assistant
