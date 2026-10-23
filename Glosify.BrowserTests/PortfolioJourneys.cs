@@ -541,17 +541,13 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         await Expect(pronunciationButton).ToHaveAttributeAsync("aria-pressed", "false");
         await pronunciationButton.FocusAsync();
         await Expect(pronunciationButton).ToBeFocusedAsync();
-        var speakerBounds = (await pronunciationButton.BoundingBoxAsync())!;
-        var wordBounds = (await revealForm.Locator(".card-text").BoundingBoxAsync())!;
-        Assert.True(wordBounds.X + wordBounds.Width <= speakerBounds.X);
+        await AssertPronunciationFollowsWordAsync(revealForm.Locator(".card-word"));
         await revealButton.ClickAsync();
         // Only the target language is playable, in the same row to the word's right.
         await Expect(Page.Locator(".flashcard.is-revealed .card-word button[data-tts]")).ToBeVisibleAsync();
         await Expect(Page.Locator(".flashcard.is-revealed .translation button[data-tts]")).ToHaveCountAsync(0);
         await Page.SetViewportSizeAsync(390, 844);
-        speakerBounds = (await Page.Locator(".flashcard.is-revealed button[data-tts]").BoundingBoxAsync())!;
-        wordBounds = (await Page.Locator(".flashcard.is-revealed .card-word .card-text").BoundingBoxAsync())!;
-        Assert.True(wordBounds.X + wordBounds.Width <= speakerBounds.X);
+        await AssertPronunciationFollowsWordAsync(Page.Locator(".flashcard.is-revealed .card-word"));
         await Expect(Page.Locator(".study-rating-shortcut")).ToHaveTextAsync(new[] { "1", "4" });
         if (_settings.TraceDirectory is { } directory)
         {
@@ -575,6 +571,23 @@ public sealed partial class PortfolioJourneys : IAsyncLifetime
         Assert.Contains("name=\"rating\"\r\n\r\ngood\r\n", goodRequest.PostData);
         await Expect(Page.Locator(".results.visible .result-score")).ToHaveTextAsync("100%");
         await AssertNoPageErrorsAsync();
+    }
+
+    private static async Task AssertPronunciationFollowsWordAsync(ILocator row)
+    {
+        // Focus and reveal animate the card. Separate protocol calls can measure
+        // different layout frames, especially while fonts finish loading.
+        var edges = await row.EvaluateAsync<double[]>("""
+            async row => {
+                await document.fonts.ready;
+                await Promise.all(row.closest('.flashcard').getAnimations().map(animation => animation.finished));
+                const word = row.querySelector('.card-text').getBoundingClientRect();
+                const speaker = row.querySelector('button[data-tts]').getBoundingClientRect();
+                return [word.right, speaker.left];
+            }
+            """).WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(edges[0] <= edges[1],
+            $"The pronunciation button must follow the word without overlap: word right={edges[0]}, button left={edges[1]}.");
     }
 
     [BrowserFact]
