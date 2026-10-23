@@ -38,17 +38,17 @@ jobs:
       RUN_SQLSERVER_TESTS: "true"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       - name: Set up .NET 10
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: 10.0.x
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24.x
           cache: npm
@@ -241,19 +241,19 @@ jobs:
 
     steps:
       - name: Download web artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: glosify-web
           path: app
 
       - name: Download migration artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: glosify-migration
           path: migration
 
       - name: Login to Azure
-        uses: azure/login@v3
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_059CC241545944E3BB4D754796025F63 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_210765179BDB40158ADE7F23514669FF }}
@@ -313,7 +313,7 @@ jobs:
           fi
 
       - name: Set up .NET for read-only ledger verification
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: 10.0.x
 
@@ -383,7 +383,7 @@ jobs:
           cmp "$RUNNER_TEMP/ledger-before.txt" "$RUNNER_TEMP/ledger-after.txt"
 
       - name: Deploy Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         with:
           app-name: glosify-app
           slot-name: Production

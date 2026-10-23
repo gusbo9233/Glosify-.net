@@ -17,7 +17,7 @@
                 <button class="btn-icon-tts" aria-pressed="false" type="button" data-tts="@Model.Prompt" data-tts-lang="@Model.PromptLanguage" aria-label="@Text["Quiz.PlayPronunciation", Model.Prompt]"><span class="material-symbols-outlined" aria-hidden="true">volume_up</span></button>
             }
         </h2>
-        <div class="card-answer revealed">
+        <div class="card-answer revealed" hidden="@(ViewData["GuestSample"] is string)">
             <div class="translation card-text-row">
                 <span class="card-text" dir="auto">@Model.Answer</span>
                 @if (pronounceAnswer)

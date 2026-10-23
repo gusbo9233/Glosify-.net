@@ -211,10 +211,10 @@
     <value>Dilewati</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Mulai Ulang Sesi</value>
+    <value>Mulai ulang seluruh kuis</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>Latihan Lagi</value>
+    <value>Ulangi hanya jawaban yang salah</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>Putar pelafalan {0}</value>
@@ -241,7 +241,7 @@
     <value>Tampilkan Jawaban</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Setel Ulang Sesi</value>
+    <value>Mulai ulang seluruh kuis</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Belum ada {0}</value>
@@ -280,7 +280,7 @@
     <value>Salah</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>Latih Kata yang Salah</value>
+    <value>Ulangi hanya jawaban yang salah</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Ubah pengaturan</value>

@@ -573,6 +573,154 @@ public sealed class AvatarVoiceTests
     }
 
     [Fact]
+    public async Task LearnerConnectionPassesIdentityChecksUntilLockedOut()
+    {
+        var clock = new IdentityCheckClock(DateTimeOffset.UtcNow);
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services => { configure(services); services.AddSingleton<TimeProvider>(clock); };
+        using var client = await app.Client("learner"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await clock.IdentityChecks.Reader.ReadAsync(timeout.Token);
+        clock.Advance(TimeSpan.FromSeconds(30));
+        // The monitor only waits for another check after this one accepted the learner.
+        await clock.IdentityChecks.Reader.ReadAsync(timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token);
+        await Until(socket, "pong", timeout.Token);
+
+        await app.Seed(async db =>
+        {
+            var learner = await db.Users.SingleAsync(x => x.Id == "learner");
+            learner.LockoutEnabled = true; learner.LockoutEnd = DateTimeOffset.MaxValue;
+            await db.SaveChangesAsync();
+        });
+        clock.Advance(TimeSpan.FromSeconds(30));
+        try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
+        catch (WebSocketException) { } // Cancelling the pending server receive may abort rather than close.
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FullLivePoolPausesAnIdleConversationWithANoticeForAnotherLearner(bool emptyListen)
+    {
+        using var app = App(new Reply());
+        using var idle = await app.Client("learner"); await app.Antiforgery(idle);
+        using var start = await idle.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = idle.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        if (emptyListen)
+        {
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+            await Until(socket, "listening", timeout.Token);
+        }
+        // Every other slot belongs to a learner who is speaking.
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        for (var i = 1; i < AvatarSessions.MaximumLiveSessions; i++)
+            sessions.Create($"speaker-{i}", Glosify.Services.Language.QuizLanguageCatalog.Find("sv")!, "free")
+                .KeepActiveUntil(DateTimeOffset.UtcNow.AddMinutes(5));
+
+        using var newcomer = await app.Client("admin"); await app.Antiforgery(newcomer);
+        using var admitted = await newcomer.PostAsJsonAsync("/api/avatar/sessions", new { });
+        admitted.EnsureSuccessStatusCode();
+        Assert.Equal("busy", (await Until(socket, "ended", timeout.Token)).GetProperty("reason").GetString());
+        try { while ((await socket.ReceiveAsync(new byte[65536], timeout.Token)).MessageType != WebSocketMessageType.Close) { } }
+        catch (WebSocketException) { /* Cancellation can abort the receive side. */ }
+    }
+
+    [Theory]
+    [InlineData("generation", 0, false)]
+    [InlineData("synthesis", 0, false)]
+    [InlineData("recognition", 0, false)]
+    [InlineData("generation", 63, false)]
+    [InlineData("synthesis", 63, false)]
+    [InlineData("recognition", 21, false)]
+    [InlineData("generation", 63, true)]
+    [InlineData("synthesis", 63, true)]
+    [InlineData("recognition", 21, true)]
+    public async Task FullLivePoolProtectsPendingProviderWorkThenUsesTheCompletionLease(string stage, int delay, bool expire)
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var ai = new Reply { Gate = stage == "generation" ? gate : null };
+        var speech = new Speech { SynthesisGate = stage == "synthesis" ? gate : null,
+            RecognitionGate = stage == "recognition" ? gate : null };
+        var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        using var app = App(ai); var configure = app.Overrides!;
+        app.Overrides = services =>
+        {
+            configure(services); services.AddSingleton<TimeProvider>(clock);
+            services.RemoveAll<IAvatarSpeech>(); services.AddSingleton<IAvatarSpeech>(speech);
+        };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        var sessions = app.Services.GetRequiredService<AvatarSessions>();
+        var active = sessions.Get(id, "admin");
+        for (var i = 1; i < AvatarSessions.MaximumLiveSessions; i++)
+        {
+            var other = sessions.Create($"speaker-{i}", active.Language, "free");
+            sessions.Connect(other.Id, other.UserId);
+            other.KeepActiveUntil(clock.GetUtcNow().AddMinutes(5));
+        }
+        await AvatarWire.SendAsync(socket, new { type = "listen", mode = "push-to-talk" }, timeout.Token);
+        await Until(socket, "listening", timeout.Token);
+        await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "commit" }, timeout.Token);
+        await (stage == "recognition" ? speech.RecognitionCommitted.Task :
+            stage == "synthesis" ? speech.SynthesisStarted.Task : ai.Started.Task).WaitAsync(timeout.Token);
+        if (stage != "recognition") await Until(socket, "transcript-status", timeout.Token);
+        for (var elapsed = 0; elapsed < delay; elapsed += 21)
+        {
+            clock.Advance(TimeSpan.FromSeconds(21));
+            await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token);
+            await Until(socket, "pong", timeout.Token);
+        }
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("newcomer", active.Language, "free")).Status);
+        Assert.False(active.Preemption.IsCancellationRequested);
+        Assert.False(ai.LastCancellation.IsCancellationRequested);
+
+        if (expire)
+        {
+            // Keep the transport alive while crossing the original 120-second turn deadline.
+            var elapsed = delay;
+            while (elapsed + 20 < 120)
+            {
+                clock.Advance(TimeSpan.FromSeconds(20));
+                elapsed += 20;
+                await AvatarWire.SendAsync(socket, new { type = "ping" }, timeout.Token);
+                await Until(socket, "pong", timeout.Token);
+            }
+            clock.Advance(TimeSpan.FromSeconds(121 - elapsed));
+            Assert.Equal(504, (await Until(socket, "error", timeout.Token)).GetProperty("status").GetInt32());
+        }
+        else
+        {
+            gate.SetResult();
+            await Until(socket, "audio-end", timeout.Token);
+        }
+        await Until(socket, "usage", timeout.Token);
+        // Early completion releases the unused portion of the provider deadline;
+        // slow completion starts a fresh idle/playback lease.
+        Assert.Equal(clock.GetUtcNow().AddSeconds(expire ? 60 : 62), active.KeptUntil);
+        Assert.Equal(429, Assert.Throws<AvatarException>(() => sessions.Create("newcomer", active.Language, "free")).Status);
+        await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+    }
+
+    [Fact]
     public async Task ProviderFailureReleasesTurnStorageReservation()
     {
         var ai = new Reply { Fail = true }; using var app = App(ai);
@@ -600,6 +748,94 @@ public sealed class AvatarVoiceTests
         await Until(socket, "audio-end", timeout.Token);
         Assert.Equal(2, ai.Calls);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task InvalidListenCannotReclaimOtherLearnersTranscripts(bool invalidMode)
+    {
+        using var app = App(new Reply());
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var sessions = app.Services.GetRequiredService<AvatarSessions>(); var session = sessions.Get(id, "admin");
+        var retained = new List<AvatarSession>();
+        for (var i = 0; i < 16; i++)
+        {
+            var archive = sessions.Create($"owner-{i}", session.Language, "free");
+            for (var turn = 0; turn < 40; turn++)
+                sessions.RecordTurn(archive, turn.ToString(), "user", new string('x', 12_000));
+            sessions.Remove(archive); retained.Add(archive);
+        }
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        await Until(socket, "connected", timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "listen", mode = invalidMode ? "invalid" : "hands-free",
+            translateReplies = invalidMode ? (object)false : "invalid" }, timeout.Token);
+        Assert.Equal(400, (await Until(socket, "error", timeout.Token)).GetProperty("status").GetInt32());
+        Assert.All(retained, s => Assert.Equal(40, sessions.Snapshot(s.MemoryId, s.UserId, s.Language.Code).Turns.Length));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task PreemptionDuringDisconnectCleanupDoesNotOfferADeadReconnect(bool preempt)
+    {
+        var disposing = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var app = App(new Reply()); var configure = app.Overrides!;
+        app.Overrides = services =>
+        {
+            configure(services);
+            services.RemoveAll<IAvatarSpeech>();
+            services.AddScoped<IAvatarSpeech>(_ => new SlowCleanupSpeech(new Speech(), disposing, release.Task));
+        };
+        using var client = await app.Client("admin"); await app.Antiforgery(client);
+        using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { });
+        var id = JsonDocument.Parse(await start.Content.ReadAsStringAsync()).RootElement.GetProperty("sessionId").GetGuid();
+        var sessions = app.Services.GetRequiredService<AvatarSessions>(); var session = sessions.Get(id, "admin");
+        var ws = app.Server.CreateWebSocketClient();
+        ws.ConfigureRequest = request => { request.Headers["Cookie"] = client.DefaultRequestHeaders.GetValues("Cookie").Single(); request.Headers["Origin"] = "https://localhost"; };
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
+        try
+        {
+            await Until(socket, "connected", timeout.Token);
+            sessions.RecordTurn(session, "1", "user", "Keep this conversation");
+            await socket.CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, "Network lost", timeout.Token);
+            await disposing.Task.WaitAsync(timeout.Token); // Lifetime and idle monitor have already stopped.
+            if (preempt)
+            {
+                for (var i = 1; i < AvatarSessions.MaximumLiveSessions; i++)
+                {
+                    var other = sessions.Create($"speaker-{i}", session.Language, "free");
+                    sessions.Connect(other.Id, other.UserId);
+                    other.KeepActiveUntil(DateTimeOffset.UtcNow.AddMinutes(5));
+                }
+                sessions.Create("newcomer", session.Language, "free");
+                Assert.True(session.Preemption.IsCancellationRequested);
+            }
+            release.TrySetResult();
+            WebSocketReceiveResult closed;
+            do { closed = await socket.ReceiveAsync(new byte[65536], timeout.Token); }
+            while (closed.MessageType != WebSocketMessageType.Close);
+            Assert.Equal(preempt ? WebSocketCloseStatus.NormalClosure : WebSocketCloseStatus.EndpointUnavailable, closed.CloseStatus);
+            if (preempt)
+            {
+                while (!session.Lifetime.IsCancellationRequested) await Task.Delay(5, timeout.Token);
+                Assert.Equal(404, Assert.Throws<AvatarException>(() => sessions.Get(id, "admin")).Status);
+            }
+            else
+            {
+                while (Volatile.Read(ref session.Connected) != 0) await Task.Delay(5, timeout.Token);
+                Assert.Same(session, sessions.Get(id, "admin"));
+            }
+            Assert.Equal("Keep this conversation", Assert.Single(sessions.Snapshot(session.MemoryId, "admin", session.Language.Code).Turns).Text);
+        }
+        finally { release.TrySetResult(); }
     }
 
     [Theory]
@@ -828,6 +1064,10 @@ public sealed class AvatarVoiceTests
         public int PlaybackChunks = 1;
         public bool Disposed;
         public TaskCompletionSource? PrepareGate, AdmissionGate;
+        public TaskCompletionSource? SynthesisGate;
+        public TaskCompletionSource SynthesisStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource? RecognitionGate;
+        public TaskCompletionSource RecognitionCommitted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public void Dispose() => Disposed = true;
         public async Task PrepareAsync(AvatarSession session, string mode, CancellationToken ct)
         {
@@ -843,18 +1083,33 @@ public sealed class AvatarVoiceTests
             if (FailRecognition) throw new WebSocketException("Recognition connection lost");
             await ready();
             await foreach (var chunk in audio.ReadAllAsync(ct))
-                if (chunk.Length == 0 || mode == "hands-free") return "Hej!";
+                if (chunk.Length == 0 || mode == "hands-free") break;
+            RecognitionCommitted.TrySetResult();
+            if (RecognitionGate is not null) await RecognitionGate.Task.WaitAsync(ct);
             return "Hej!";
         }
         public async Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct)
         {
             SpokenText = text;
+            SynthesisStarted.TrySetResult();
+            if (SynthesisGate is not null) await SynthesisGate.Task.WaitAsync(ct);
             if (FailSynthesis) throw new WebSocketException("Synthesis connection lost");
             var bytes = new byte[96000];
             for (var i = 0; i < bytes.Length / 2; i++)
                 System.Buffers.Binary.BinaryPrimitives.WriteInt16LittleEndian(bytes.AsSpan(i * 2, 2),
                     (short)(Math.Sin(i / 24000d * Math.PI * 2 * 170) * 6500 * (.5 + .5 * Math.Sin(i / 24000d * 18))));
             for (var chunk = 0; chunk < PlaybackChunks; chunk++) await audio(bytes);
+        }
+    }
+    private sealed class IdentityCheckClock(DateTimeOffset start) : FakeTimeProvider(start)
+    {
+        public Channel<bool> IdentityChecks { get; } = Channel.CreateUnbounded<bool>();
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = base.CreateTimer(callback, state, dueTime, period);
+            // The identity monitor is the connection's only 30-second one-shot delay.
+            if (dueTime == TimeSpan.FromSeconds(30) && period == Timeout.InfiniteTimeSpan) IdentityChecks.Writer.TryWrite(true);
+            return timer;
         }
     }
     private static Task AssertNoReservations(AvatarFixture app) => app.Seed(async db =>
@@ -870,6 +1125,16 @@ public sealed class AvatarVoiceTests
         }
         public Task<T> GenerateStructuredAsync<T>(string prompt, AiUsageContext context, string? model = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<string> ExtractTextFromImageAsync(byte[] image, string contentType, string prompt, AiUsageContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class SlowCleanupSpeech(IAvatarSpeech inner, TaskCompletionSource disposing, Task release) : IAvatarSpeech, IAsyncDisposable
+    {
+        public Task PrepareAsync(AvatarSession session, string mode, CancellationToken ct) => inner.PrepareAsync(session, mode, ct);
+        public Task<string> ListenAsync(AvatarSession session, string mode, ChannelReader<byte[]> audio,
+            Func<string, Task> partial, Func<Task> ready, CancellationToken ct) => inner.ListenAsync(session, mode, audio, partial, ready, ct);
+        public Task SpeakAsync(AvatarSession session, string text, Func<byte[], Task> audio, CancellationToken ct) =>
+            inner.SpeakAsync(session, text, audio, ct);
+        public async ValueTask DisposeAsync() { disposing.TrySetResult(); await release; }
     }
 
     private sealed class SlowCleanupReply(IGenerativeAiClient inner, TaskCompletionSource disposing, Task release) : IGenerativeAiClient, IAsyncDisposable
@@ -888,6 +1153,7 @@ public sealed class AvatarVoiceTests
         public AiUsageContext? LastUsage;
         public CancellationToken LastCancellation;
         public bool Wait;
+        public TaskCompletionSource? Gate;
         public bool Fail;
         public bool Cancelled;
         public int Calls;
@@ -895,7 +1161,11 @@ public sealed class AvatarVoiceTests
         {
             Calls++; LastRequest = request; LastUsage = context; LastCancellation = cancellationToken; Started.TrySetResult();
             if (Fail) throw new InvalidOperationException("Provider unavailable");
-            try { if (Wait) await Task.Delay(Timeout.Infinite, cancellationToken); }
+            try
+            {
+                if (Wait) await Task.Delay(Timeout.Infinite, cancellationToken);
+                if (Gate is not null) await Gate.Task.WaitAsync(cancellationToken);
+            }
             catch (OperationCanceledException) { Cancelled = true; throw; }
             if (request.ResponseSchema is not null)
             {

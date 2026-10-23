@@ -151,10 +151,74 @@ public sealed class CloudflareSubtitleTranslatorTests
         Assert.Contains("temporarily unavailable", result.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TranslateAsync_BoundsBodyReadAndPreservesCallerCancellation(bool cancelCaller)
+    {
+        using var body = new BlockedStream();
+        using var handler = new HeaderOnlyHandler(body);
+        var translator = CreateTranslator(handler, timeoutSeconds: 1);
+        using var caller = new CancellationTokenSource();
+        var translation = translator.TranslateAsync(
+            new RecognizedSpeechSegment(1, "Hello.", "en", "en-US", DateTimeOffset.UtcNow),
+            "sv", caller.Token);
+        try
+        {
+            await body.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            if (cancelCaller)
+            {
+                await caller.CancelAsync();
+                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => translation.WaitAsync(TimeSpan.FromSeconds(5)));
+            }
+            else
+            {
+                var error = await Assert.ThrowsAsync<RealtimeTranslationUpstreamException>(
+                    () => translation.WaitAsync(TimeSpan.FromSeconds(5)));
+                Assert.Contains("timed out", error.Message, StringComparison.Ordinal);
+                Assert.False(caller.IsCancellationRequested);
+            }
+        }
+        finally
+        {
+            await caller.CancelAsync();
+            try { await translation; }
+            catch (OperationCanceledException) { }
+            catch (RealtimeTranslationUpstreamException) { }
+        }
+    }
+
+    private sealed class HeaderOnlyHandler(Stream body) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(body) });
+    }
+    private sealed class BlockedStream : Stream
+    {
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() => throw new NotSupportedException();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
     private static CloudflareSubtitleTranslator CreateTranslator(
         HttpMessageHandler handler,
         int preferredChunkCharacters = 240,
-        int maxParallelRequests = 4) =>
+        int maxParallelRequests = 4,
+        int timeoutSeconds = 20) =>
         new(
             new StubHttpClientFactory(handler),
             Options.Create(new RealtimeTranslationOptions
@@ -167,6 +231,7 @@ public sealed class CloudflareSubtitleTranslatorTests
                     MaxInputCharacters = 2_000,
                     PreferredChunkCharacters = preferredChunkCharacters,
                     MaxParallelRequests = maxParallelRequests,
+                    TimeoutSeconds = timeoutSeconds,
                 },
             }));
 

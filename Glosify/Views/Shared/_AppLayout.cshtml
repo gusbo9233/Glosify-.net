@@ -1,10 +1,10 @@
-@inject Glosify.Services.Auth.AdministratorAccess AvatarAdminAccess
 @inject Microsoft.Extensions.Options.IOptions<Glosify.Services.Avatar.AvatarOptions> AvatarSettings
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Html
 @inject IStripePaymentService StripePayments
 @inject Glosify.Services.Language.ILanguageContext LanguageContext
 @{
+    var guestSamples = ViewData["GuestSample"] is string ? Glosify.Services.Guest.GuestSamples.For(LanguageContext.CurrentLanguage) : null;
     var isFreestyle = Glosify.Services.Language.QuizLanguageCatalog.IsFreestyle(LanguageContext.CurrentLanguage);
     var assistantPageContext = ViewData.GetAssistantPageContext();
     var assistantPanel = new AssistantPanelViewModel
@@ -144,12 +144,19 @@
     <link href="@WebFonts.TextStylesheetUrl" rel="stylesheet" />
     <link href="@WebFonts.IconStylesheetUrl" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/guest-preview.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app-settings.css" asp-append-version="true" />
     @await RenderSectionAsync("Styles", required: false)
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="app-body"
       data-i18n="@System.Text.Json.JsonSerializer.Serialize(UiClientText.Create(Text))"
+      data-guest-section="@(ViewData["GuestSample"] as string)"
+      data-guest-source-language="@guestSamples?.SourceLanguage"
+      data-guest-target-language="@guestSamples?.TargetLanguage"
+      data-guest-source-code="@guestSamples?.SourceCode"
+      data-guest-language-code="@guestSamples?.ContentCode"
+      data-guest-cards="@(ViewData["GuestSample"] is string ? System.Text.Json.JsonSerializer.Serialize(guestSamples!.Cards) : null)"
       data-speech-user="@User.FindFirstValue(ClaimTypes.NameIdentifier)"
       data-tts-locales="@System.Text.Json.JsonSerializer.Serialize(Glosify.Services.Speech.VoiceMap.ClientLocaleAliases)">
     <partial name="_SpeechDialog" />
@@ -169,7 +176,7 @@
             </div>
 
             <nav class="app-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
-                @if (AvatarSettings.Value.Enabled && AvatarAdminAccess.IsAdmin(User))
+                @if (AvatarSettings.Value.Enabled && User.Identity?.IsAuthenticated == true)
                 {
                     <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Speaking <small>Preview</small></a>
                 }
@@ -222,6 +229,13 @@
 
         <main class="app-main">
             <div class="app-canvas">
+                @if (ViewData["GuestSample"] is string sampleSection)
+                {
+                    <div class="transcripts-notice guest-sample-notice" data-guest-return="@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl">
+                        @(guestSamples!.Language.Name) sample · Explore the real app. Practice is temporary.
+                        <a href="/login?returnUrl=@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl" data-login-required>Sign in to create your own</a>
+                    </div>
+                }
                 <div class="speech-error" data-speech-error role="alert" hidden>
                     <span data-speech-error-text></span>
                     <button type="button" data-speech-settings>@Text["Speech.Settings"]</button>
@@ -245,7 +259,7 @@
             <partial name="_AppSettings" />
         </main>
     </div>
-    @if (User.Identity?.IsAuthenticated == true && assistantPageContext?.IsHidden is not true)
+    @if (User.Identity?.IsAuthenticated == true && ViewData["GuestSample"] is null && assistantPageContext?.IsHidden is not true)
     {
         @await Component.InvokeAsync("AssistantPanel", new
         {
@@ -253,6 +267,16 @@
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
+    @if (User.Identity?.IsAuthenticated != true || ViewData["GuestSample"] is string)
+    {
+        <a class="guest-assistant-entry btn-primary-pill" href="/login" data-login-required>Ask the assistant</a>
+    }
+    <partial name="_GuestLoginDialog" />
+    @if (ViewData["GuestSample"] is string)
+    {
+        <script type="module" src="~/js/guest-real-ui.js" asp-append-version="true"></script>
+    }
+    <script type="module" src="~/js/guest-login.js" asp-append-version="true"></script>
     <script type="module" src="~/js/learning-updates.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/app-sidebar.js" asp-append-version="true"></script>

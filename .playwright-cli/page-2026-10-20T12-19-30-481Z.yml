@@ -1,0 +1,14 @@
+- generic [active] [ref=f22e1]:
+  - main [ref=f22e2]
+  - navigation [ref=f22e4]:
+    - generic [ref=f22e5]:
+      - text: Partner
+      - combobox "Partner" [ref=f22e6]:
+        - option "Rowan" [selected]
+        - option "Rain"
+    - button "off" [ref=f22e7]
+    - button "idle" [ref=f22e8]
+    - button "listening" [ref=f22e9]
+    - button "thinking" [ref=f22e10]
+    - button "speaking" [ref=f22e11]
+    - generic [ref=f22e12]: Loading

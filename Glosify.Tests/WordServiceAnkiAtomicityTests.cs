@@ -127,7 +127,7 @@ public sealed class WordServiceAnkiAtomicityTests
         public Task<bool> IsOwnedByLanguageAsync(Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection?> FindForLanguageAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<AnkiCollection> GetOrCreateAsync(string userId, string targetLanguage, string? timeZoneId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<AnkiWorkspace> GetWorkspaceAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<AnkiWorkspace> GetWorkspaceAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default, int itemOffset = 0, string? search = null) => throw new NotSupportedException();
         public Task<bool> SetPracticeDirectionAsync(Guid collectionId, string direction, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> SetMembershipAsync(Guid collectionId, IReadOnlyList<AnkiItemKey> add, IReadOnlyList<AnkiItemKey> remove, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> UpdateTimeZoneAsync(Guid collectionId, string timeZoneId, string userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

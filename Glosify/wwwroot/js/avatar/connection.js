@@ -26,7 +26,9 @@ export class VoiceConnection {
             if (message.type === 'ended') {
                 this.finish(message.reason === 'idle'
                     ? 'Conversation ended after inactivity. Start again whenever you like.'
-                    : 'Conversation ended. Start again whenever you like.'); return;
+                    : message.reason === 'busy'
+                        ? 'Speaking is busy, so this paused conversation made room for another learner. Start again to continue it.'
+                        : 'Conversation ended. Start again whenever you like.'); return;
             }
             if (message.type === 'connected') {
                 message.resumed = this.lostAt !== null;

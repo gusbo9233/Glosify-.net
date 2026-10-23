@@ -112,3 +112,28 @@ test('weights stay finite and bounded through long, irregular frames and every s
         }
     }
 });
+
+test('Rowan keeps the approved resting smile and releases it for speech', () => {
+    const rowan = createPerformance(seeded(), { character: 'rowan' });
+    for (const state of ['off', 'idle']) {
+        rowan.setState(state);
+        const { weights } = run(rowan, 2);
+        assert.equal(weights.smileLeft, 1);
+        assert.equal(weights.smileRight, 1);
+        assert.equal(weights.squint, 0);
+        assert.equal(weights.browRaiseLeft, 0);
+        assert.equal(weights.jawOpen, 0);
+        assert.ok(weights.breathe > 0);
+    }
+    rowan.setState('speaking');
+    const speaking = run(rowan, .3, vowels.aa).weights;
+    assert.equal(speaking.smileLeft, 0);
+    assert.ok(speaking.jawOpen > .8);
+    rowan.setState('idle');
+    const resting = rowan.update(.025).weights;
+    assert.equal(resting.smileLeft, 1);
+    assert.equal(resting.jawOpen, 0, 'speech remnants must not distort the resting pose');
+    const rain = createPerformance(seeded(), { character: 'rain' });
+    rain.setState('idle');
+    assert.ok(run(rain, 2).weights.smileLeft < .5);
+});

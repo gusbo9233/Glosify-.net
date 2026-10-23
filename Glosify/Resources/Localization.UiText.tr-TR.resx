@@ -211,10 +211,10 @@
     <value>Atlandı</value>
   </data>
   <data name="Quiz.Restart" xml:space="preserve">
-    <value>Oturumu yeniden başlat</value>
+    <value>Testin tamamını yeniden başlat</value>
   </data>
   <data name="Quiz.PracticeAgain" xml:space="preserve">
-    <value>Tekrar pratik yap</value>
+    <value>Yalnızca yanlış cevapları tekrar dene</value>
   </data>
   <data name="Quiz.PlayPronunciation" xml:space="preserve">
     <value>{0} telaffuzunu oynat</value>
@@ -241,7 +241,7 @@
     <value>Cevabı Göster</value>
   </data>
   <data name="Quiz.Reset" xml:space="preserve">
-    <value>Oturumu Sıfırla</value>
+    <value>Testin tamamını yeniden başlat</value>
   </data>
   <data name="Quiz.NoneYet" xml:space="preserve">
     <value>Henüz {0} yok</value>
@@ -280,7 +280,7 @@
     <value>Yanlış</value>
   </data>
   <data name="Quiz.PracticeIncorrect" xml:space="preserve">
-    <value>Yanlış Kelimeleri Çalış</value>
+    <value>Yalnızca yanlış cevapları tekrar dene</value>
   </data>
   <data name="Quiz.ChangeSettings" xml:space="preserve">
     <value>Ayarları değiştir</value>

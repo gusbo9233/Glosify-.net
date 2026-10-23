@@ -14,7 +14,7 @@ class Control {
     add(option) { this.options.push(option); if (this.options.length === 1) this.value = option.value; }
 }
 function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }), initial = {}, options = {}) {
-    const storageKey = 'glosify.speech.preferences.user:' + (options.userId || 'speaker');
+    const storageKey = 'glosify.speech.preferences.user:' + (options.userId ?? 'speaker');
     const requests = [], requestOptions = [], spoken = [], audio = [], stored = options.stored || new Map([[storageKey, JSON.stringify(initial)]]);
     const controls = Object.fromEntries(['provider', 'language', 'voice', 'status', 'save', 'credits', 'price', 'cancel'].map(key => [key, new Control()]));
     controls.language.options = ['en-GB', 'sv-SE', 'pl-PL'].map(value => ({ value }));
@@ -29,7 +29,7 @@ function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }
     const browserVoices = [{ name: 'English', voiceURI: 'en-local', lang: 'en-US' }, { name: 'Swedish', voiceURI: 'sv-local', lang: 'sv-SE' }];
     const speechSynthesis = { getVoices: () => browserVoices, addEventListener() {}, removeEventListener() {}, cancel() {}, speak(utterance) { spoken.push(utterance); queueMicrotask(() => utterance.onend?.()); } };
     class Audio { constructor(url) { this.url = url; audio.push(this); } play() { queueMicrotask(() => this.onended?.()); return Promise.resolve(); } pause() {} removeAttribute() {} }
-    const context = { document: { body: { dataset: { speechUser: options.userId || 'speaker', ttsLocales: JSON.stringify({ zh: 'zh-CN', english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
+    const context = { document: { body: { dataset: { speechUser: options.userId ?? 'speaker', ttsLocales: JSON.stringify({ zh: 'zh-CN', english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
     context.window.SpeechSynthesisUtterance = context.SpeechSynthesisUtterance;
     vm.runInNewContext(script, context);
     return { api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices, storageKey };
@@ -300,4 +300,16 @@ test('fractional character billing requires accepting the whole maximum quote', 
     assert.equal((await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'completed');
     assert.equal(JSON.parse(paidRequests(h)[0].body).maxCredits, 4);
     assert.equal(JSON.parse(paidRequests(h)[0].body).text, 'Hej');
+});
+
+ test('guests ignore a legacy paid provider and use browser speech', async () => {
+    const stored = new Map([['glosify.speech.preferences', JSON.stringify({ provider: 'elevenlabs' })]]);
+    const h = setup(undefined, {}, { userId: '', stored });
+    assert.equal(h.api.getProvider(), 'browser');
+    assert.equal((await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }])).state, 'completed');
+    assert.equal(h.requests.length, 0);
+    assert.equal(h.spoken[0].text, 'Hej');
+    h.api.openSettings({ lang: 'Swedish' });
+    await tick();
+    assert.equal(h.controls.provider.value, 'browser');
 });

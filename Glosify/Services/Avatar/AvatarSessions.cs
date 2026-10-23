@@ -20,11 +20,43 @@ public sealed class AvatarSession(string userId, QuizLanguage language, string p
     public int Connected;
     public bool HasStartedTurn { get; internal set; }
     internal bool OwnsPreparationMemory { get; set; }
+    // Cancelled when a full pool gives this idle session's slot to another learner.
+    internal CancellationTokenSource Preemption { get; } = new();
+    // Starts at creation, so it orders preemption without protecting the new session.
+    private long _keptUntilTicks = now.UtcTicks;
+    private long _turnUntilTicks;
+    private int _turnHasActivity;
+    // Only billed conversation keeps a live slot from being preempted; heartbeats,
+    // reconnects and empty listens do not.
+    internal DateTimeOffset KeptUntil => new(Math.Max(Volatile.Read(ref _turnHasActivity) == 1 ? Interlocked.Read(ref _turnUntilTicks) : 0,
+        Interlocked.Read(ref _keptUntilTicks)), TimeSpan.Zero);
+    // Separate from the idle/playback lease so early completion releases the unused
+    // part of the turn deadline. A stalled provider cannot keep a slot indefinitely.
+    internal void BeginTurn(DateTimeOffset until)
+    {
+        Volatile.Write(ref _turnHasActivity, 0);
+        Interlocked.Exchange(ref _turnUntilTicks, until.UtcTicks);
+    }
+    internal void MarkTurnActivity() => Volatile.Write(ref _turnHasActivity, 1);
+    internal void ReleaseTurnProtection() => Interlocked.Exchange(ref _turnUntilTicks, 0);
+    internal void KeepActiveUntil(DateTimeOffset until)
+    {
+        var ticks = until.UtcTicks;
+        for (var current = Interlocked.Read(ref _keptUntilTicks); current < ticks;)
+        {
+            var seen = Interlocked.CompareExchange(ref _keptUntilTicks, ticks, current);
+            if (seen == current) return;
+            current = seen;
+        }
+    }
 }
 
 public sealed partial class AvatarSessions(TimeProvider clock)
 {
     private readonly ConcurrentDictionary<Guid, AvatarSession> _sessions = new();
+    // Separate from logical sessions: replacement, forgetting and expiry can remove
+    // a session while its transport still owns scopes and is awaiting cleanup.
+    private readonly HashSet<Guid> _connections = [];
     private readonly object _gate = new();
     private sealed record Memory(string UserId, string Language, string Character, string Practice,
         Guid WriterId, DateTimeOffset ExpiresAt, AgentTurn[] History)
@@ -39,6 +71,11 @@ public sealed partial class AvatarSessions(TimeProvider clock)
     }
     private readonly Dictionary<Guid, Memory> _memories = [];
     private static readonly TimeSpan MemoryLifetime = TimeSpan.FromHours(8);
+    public const int MaximumLiveSessions = 16;
+    public const int MaximumConnections = MaximumLiveSessions * 2;
+    public const int MaximumConversations = 128;
+    // One live session per account, plus a few kept conversations from other tabs or partners.
+    public const int MaximumConversationsPerUser = 4;
     private int _preparations;
     // Bounds idle provider connections held for a faster first turn.
     public bool TryReservePreparation(int limit)
@@ -58,9 +95,18 @@ public sealed partial class AvatarSessions(TimeProvider clock)
             var previous = _sessions.Values.Where(x => x.UserId == userId).ToArray();
             if (preconnect && previous.Length > 0)
                 throw new AvatarException(409, "A conversation is already open. Start speaking to replace it.");
-            // Replacing this account's connection does not consume another live slot.
-            if (_sessions.Count - previous.Length >= 16)
-                throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");
+            CheckConnectionCapacity();
+            // Replacing this account's connection does not consume another live slot. When
+            // every slot is taken, the session longest without billed conversation yields;
+            // a speculative preparation never displaces anyone.
+            var others = _sessions.Values.Where(x => x.UserId != userId && !x.Preemption.IsCancellationRequested).ToArray();
+            AvatarSession? displaced = null;
+            if (others.Length >= MaximumLiveSessions)
+            {
+                var now = clock.GetUtcNow();
+                displaced = preconnect ? null : others.Where(x => x.KeptUntil <= now).MinBy(x => x.KeptUntil);
+                if (displaced is null) throw new AvatarException(429, "All avatar sessions are busy. Try again shortly.");
+            }
             var session = new AvatarSession(userId, language, practice, clock.GetUtcNow(), voice, character);
             Memory? remembered = null;
             if (memoryId is { } id && _memories.TryGetValue(id, out var memory)
@@ -69,22 +115,33 @@ public sealed partial class AvatarSessions(TimeProvider clock)
                 remembered = memory;
 
             Guid? reclaim = null;
-            if (remembered is null && _memories.Count >= 128)
+            // Replacing an unused preparation below already releases its empty conversation.
+            var released = previous.Where(p => _memories.TryGetValue(p.MemoryId, out var value) && IsUnusedPreparation(p, value))
+                .Select(p => p.MemoryId).ToHashSet();
+            // Disconnected preparations are removed synchronously on displacement.
+            // Connected ones retain their memory until the socket finishes closing.
+            if (displaced is { Connected: 0 } && _memories.TryGetValue(displaced.MemoryId, out var displacedMemory)
+                && IsUnusedPreparation(displaced, displacedMemory))
+                released.Add(displaced.MemoryId);
+            var owned = remembered is null
+                ? _memories.Where(x => x.Value.UserId == userId && !released.Contains(x.Key)).ToArray()
+                : [];
+            // One account cannot fill the shared pool: past its cap it reclaims its own
+            // conversations. A full shared pool never locks learners out either. Unsaved
+            // turns in a reclaimed idle conversation are dropped; a live one never qualifies.
+            if (owned.Length >= MaximumConversationsPerUser || remembered is null && _memories.Count - released.Count >= MaximumConversations)
             {
                 if (preconnect) throw new AvatarException(429, "Conversation storage is full. Start speaking to create a conversation.");
-                // The caller's old session becomes idle only after admission succeeds.
-                // Select a safe candidate now, but preserve every session on rejection.
-                var active = _sessions.Values.Where(x => x.UserId != userId).Select(x => x.MemoryId).ToHashSet();
-                var oldest = _memories.Where(x => !active.Contains(x.Key)
-                    && x.Value.Turns.Count <= x.Value.SavedTurns).OrderBy(x => x.Value.ExpiresAt).FirstOrDefault();
-                if (oldest.Value is null)
+                var candidates = ReclaimOrder(_ => 1, owned.Length >= MaximumConversationsPerUser ? userId : null);
+                if (candidates.Length == 0)
                     throw new AvatarException(429, "Conversation storage is full. Save or discard an existing conversation before starting another.");
-                reclaim = oldest.Key;
+                reclaim = candidates[0].Key;
             }
 
             // All capacity and context checks succeeded. Only an accepted replacement
-            // cancels the old call or claims its archive's writer.
+            // cancels the old call, claims its archive's writer, or displaces another session.
             foreach (var old in previous) Remove(old);
+            if (displaced is not null) Preempt(displaced);
             if (remembered is not null)
             {
                 session.MemoryId = memoryId!.Value;
@@ -107,6 +164,7 @@ public sealed partial class AvatarSessions(TimeProvider clock)
         lock (_gate)
         {
             if (!_sessions.TryGetValue(id, out var session) || session.UserId != userId) throw new AvatarException(404, "Conversation not found.");
+            if (session.Preemption.IsCancellationRequested) throw new AvatarException(410, "Conversation ended. Start a new conversation.");
             if (session.ExpiresAt <= clock.GetUtcNow() || session.Connected == 0 && session.ConnectBy <= clock.GetUtcNow())
             { Remove(session); throw new AvatarException(410, "Conversation expired. Start a new conversation."); }
             return session;
@@ -118,6 +176,8 @@ public sealed partial class AvatarSessions(TimeProvider clock)
         {
             var session = Get(id, userId);
             if (session.Connected != 0) throw new AvatarException(409, "This conversation is already connected.");
+            CheckConnectionCapacity();
+            _connections.Add(session.Id);
             session.Connected = 1;
             return session;
         }
@@ -126,10 +186,29 @@ public sealed partial class AvatarSessions(TimeProvider clock)
     {
         lock (_gate)
         {
+            _connections.Remove(session.Id);
             if (!_sessions.ContainsKey(session.Id)) return;
+            // Admission can preempt after the transport decides to reconnect.
+            if (session.Preemption.IsCancellationRequested) { Remove(session); return; }
             session.ConnectBy = clock.GetUtcNow().AddSeconds(45);
             session.Connected = 0;
         }
+    }
+    // Only the transport's finally block releases this slot, after RunAsync has
+    // drained its work. Cancellation or removal alone does not free resources.
+    public void CompleteConnection(AvatarSession session, bool reconnect)
+    {
+        lock (_gate)
+        {
+            _connections.Remove(session.Id);
+            if (reconnect) Disconnect(session);
+            else Remove(session);
+        }
+    }
+    private void CheckConnectionCapacity()
+    {
+        if (_connections.Count >= MaximumConnections)
+            throw new AvatarException(429, "Avatar connections are still closing. Try again shortly.");
     }
     public void Remove(AvatarSession session)
     {
@@ -137,12 +216,34 @@ public sealed partial class AvatarSessions(TimeProvider clock)
         {
             if (!_sessions.TryRemove(session.Id, out _)) return;
             session.Lifetime.Cancel();
-            if (session.OwnsPreparationMemory && !session.HasStartedTurn
-                && _memories.TryGetValue(session.MemoryId, out var memory) && memory.WriterId == session.Id
-                && memory.Turns.Count == 0 && memory.History.Length == 0 && session.History.Count == 0
-                && memory.TranscriptId is null && memory.SavedTurns == 0)
+            if (_memories.TryGetValue(session.MemoryId, out var memory) && IsUnusedPreparation(session, memory))
                 _memories.Remove(session.MemoryId);
         }
+    }
+    // An unused preparation's empty conversation is released when its session ends.
+    private static bool IsUnusedPreparation(AvatarSession session, Memory memory) =>
+        session.OwnsPreparationMemory && !session.HasStartedTurn && memory.WriterId == session.Id
+        && memory.Turns.Count == 0 && memory.History.Length == 0 && session.History.Count == 0
+        && memory.TranscriptId is null && memory.SavedTurns == 0;
+    // Called under _gate. A connected session first tells its learner why it ends; its
+    // conversation stays resumable. A disconnected one is removed at once.
+    private void Preempt(AvatarSession session)
+    {
+        if (Volatile.Read(ref session.Connected) == 0) Remove(session);
+        else session.Preemption.Cancel();
+    }
+    // Called under _gate. Idle conversations in reclaim order: fully saved ones first, as no
+    // text is lost, then unsaved ones from the account holding the most, so neither one account
+    // nor a group of accounts can crowd others out. Live conversations never qualify.
+    private KeyValuePair<Guid, Memory>[] ReclaimOrder(Func<Memory, long> weight, string? owner = null, Guid? protectedMemory = null)
+    {
+        var live = _sessions.Values.Select(x => x.MemoryId).ToHashSet();
+        var held = _memories.Values.GroupBy(x => x.UserId).ToDictionary(x => x.Key, x => x.Sum(weight));
+        return _memories.Where(x => !live.Contains(x.Key) && !_retainedTranscripts.ContainsKey(x.Key)
+                && x.Key != protectedMemory && (owner is null || x.Value.UserId == owner))
+            .OrderBy(x => x.Value.Turns.Count > x.Value.SavedTurns)
+            .ThenByDescending(x => x.Value.Turns.Count > x.Value.SavedTurns ? held[x.Value.UserId] : 0)
+            .ThenBy(x => x.Value.ExpiresAt).ToArray();
     }
     // Called by the conversation's single history writer. Snapshots never share
     // a mutable list with a new connection, and only acknowledged replies are saved.
@@ -173,7 +274,7 @@ public sealed partial class AvatarSessions(TimeProvider clock)
             var now = clock.GetUtcNow();
             foreach (var session in _sessions.Values)
                 if (session.ExpiresAt <= now || session.Connected == 0 && session.ConnectBy <= now) Remove(session);
-            foreach (var id in _memories.Where(x => x.Value.ExpiresAt <= now).Select(x => x.Key).ToArray())
+            foreach (var id in _memories.Where(x => x.Value.ExpiresAt <= now && !_retainedTranscripts.ContainsKey(x.Key)).Select(x => x.Key).ToArray())
                 _memories.Remove(id);
         }
     }

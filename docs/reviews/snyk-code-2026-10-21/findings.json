@@ -1,0 +1,2662 @@
+[
+  {
+    "id": "20acf4b4-1ad2-45e0-88db-504c8bcb42a1",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/ApiControllerBase.cs",
+    "line": 15,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Bearer-only authentication; credentials are not ambient cookies."
+  },
+  {
+    "id": "e16883c0-c82d-480b-b284-f647ff5ab2f4",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/ExtensionAuthApiController.cs",
+    "line": 14,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Anonymous token exchange requires a one-time authorization code bound to redirect URI and PKCE verifier."
+  },
+  {
+    "id": "7f75a671-1fd6-4ec9-90c4-0d5f8d1bf43d",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/GameUsageController.cs",
+    "line": 16,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Internal ingest requires the server-only X-Game-Service-Key with length enforcement and fixed-time comparison."
+  },
+  {
+    "id": "d52dd9da-7210-4a09-97e2-73cd4380f2d7",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/PaymentsController.cs",
+    "line": 14,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Only the anonymous webhook bypasses antiforgery; Stripe signature is validated before mutation. Checkout POST retains antiforgery."
+  },
+  {
+    "id": "285b71a6-0780-4c68-a20e-a2b553255805",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/PaymentsController.cs",
+    "line": 104,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Only the anonymous webhook bypasses antiforgery; Stripe signature is validated before mutation. Checkout POST retains antiforgery."
+  },
+  {
+    "id": "98656f5f-0db7-4e0b-9959-9a5af4f2934f",
+    "rule": "csharp/AntiforgeryTokenDisabled/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApiProblemDetailsContractTests.cs",
+    "line": 157,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Test-only / fixture",
+    "evidence": "ContractProbeController belongs to the test application factory, not the deployed web application."
+  },
+  {
+    "id": "4b8d210b-ab5f-49a3-a5f7-1dfc871bdbbc",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/BooksApiController.cs",
+    "line": 75,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "BookDocumentService logs a parsed Guid document ID; deletion also checks ownership."
+  },
+  {
+    "id": "74a1e771-c43d-4d7f-8871-fd0db7b9914f",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/BooksController.cs",
+    "line": 122,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "BookDocumentService logs a parsed Guid document ID; deletion also checks ownership."
+  },
+  {
+    "id": "6335e272-83f5-4a95-988f-41950f3da0ec",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/RealtimeTranslationRelayController.cs",
+    "line": 60,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Logged session identifier is a Guid."
+  },
+  {
+    "id": "a7b4a0a3-de4c-4904-80c0-e83609bcd14e",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/TtsApiController.cs",
+    "line": 92,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Logged blob name uses validated voice identifier and SHA256 text digest, not raw user text."
+  },
+  {
+    "id": "f4f6535f-dff3-4db0-80fe-4ea846e627c6",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/PaymentsController.cs",
+    "line": 86,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Currency is obtained from an authenticated Stripe API response, not reflected raw session_id input."
+  },
+  {
+    "id": "59bd7267-39c9-4f1a-82e2-cc42b70635b4",
+    "rule": "csharp/LogForging",
+    "severity": "low",
+    "path": "Glosify/Controllers/PaymentsController.cs",
+    "line": 149,
+    "group": "LogForging",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Logged event type is a fixed handled dispute type from a signature-validated Stripe event; signature input is not the logged value."
+  },
+  {
+    "id": "63a5d664-e809-47b4-9d47-4c6a9d09937a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.BrowserTests/PortfolioJourneys.GuestBrowsing.cs",
+    "line": 43,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f43fada7-d717-4f8b-9035-e24b926c768f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.BrowserTests/PortfolioJourneys.cs",
+    "line": 1023,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c31c1d05-1787-4685-acd1-54bdef4dd836",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.BrowserTests/PortfolioJourneys.cs",
+    "line": 1102,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0d87310e-5705-4fa5-9043-46751a97ba8e",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/DemoAccountOptionsTests.cs",
+    "line": 56,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d5a5546a-7103-4745-bf16-08a52b55e8a5",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 50,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8daa5922-79fa-45ea-8de7-91860adb902d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 66,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4354aab2-c49e-4ff5-b6dc-46456a630ed3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/PasswordSignInSecurityTests.cs",
+    "line": 23,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3da5d0dc-46d5-48c6-b4f0-8361b9ab532d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/PasswordSignInSecurityTests.cs",
+    "line": 98,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2b1e95e3-7626-4184-9a98-bbb5ea314ffb",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/ExternalAuthApiController.cs",
+    "line": 25,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "External login binds protected authentication properties and PKCE; exchange verifies one-time code, verifier, and account eligibility."
+  },
+  {
+    "id": "db4a68d8-db83-4037-a58b-bed10e16ac1d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AccountedQuizDeletionTests.cs",
+    "line": 54,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c34230ad-d347-4ab6-9cc4-5383e39c0f8e",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AccountedQuizDeletionTests.cs",
+    "line": 55,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e3ea417e-bfe5-42f3-8589-3bd0522fb213",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AdminAuthorizationTests.cs",
+    "line": 174,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "872f70f5-f6c8-4ac1-bd49-9a54addc9434",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AdminAuthorizationTests.cs",
+    "line": 175,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7159c872-940f-4b7c-802f-89991dd0ca3f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AdminAuthorizationTests.cs",
+    "line": 189,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9b3b18f8-90e9-4547-afc0-122a99affbe6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 20,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "64b7c1c9-945a-4b5e-ab77-10464bbff963",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 36,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "078a5433-f3ba-43ec-a4c2-7d3a5d641489",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 59,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "430ffe92-c59e-4e5a-a9aa-d78bf353bb5a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 76,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5778adff-856c-406f-9694-23e7c4de3f97",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 96,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d8d52d45-8319-465f-ace8-7f2a280b1089",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 125,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "23e34b1c-2260-4e31-8c02-547aa2b96093",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 140,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "572800b8-c4f0-4507-a750-0bed35190cef",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 158,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "34a7572f-9514-42d9-9f0f-790eb6aba8b9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 186,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "29be87fa-b706-4b88-a43e-1b750910f8d1",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 204,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2e66e2db-81a8-4aef-be10-b70a1e873318",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 228,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "28288ef5-4f4e-4959-8909-9e949001093e",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 264,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "750413aa-bad9-419e-a2f3-e825787c0eca",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 296,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "bfc6eef2-dd02-42c0-b412-8c23dc17eee8",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 331,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9c263ffe-df7f-4612-8f62-902eebb139bc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 355,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c755a7c5-00dc-4512-a2bf-c35ce7dbd7df",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 356,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5e7411e0-4425-422d-9998-c2565e2cb8b8",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 369,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8d15f619-ec8d-44ab-ab23-c5cd9d16c3e9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 412,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f5bcaa6c-4b60-48b5-9734-62e6da3b9ebe",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 446,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "fe34165b-51b6-4ad4-b7b1-bda73a1b1f86",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 479,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7a4b245f-b783-4f24-b072-659befc84f68",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 509,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7f40dfda-b35e-4ea4-a6da-28fbc279b3be",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 539,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "980d75d0-ee83-4626-b9dc-15c3042d5db8",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 564,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7bf69caa-51d7-4c5d-bb95-a108c11425a3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 602,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d866ce7a-2b0a-43e3-b2e1-d8425a6f08f0",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 615,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9a42d34d-1807-4622-97f7-6f9c6c55b001",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AiCreditServiceTests.cs",
+    "line": 862,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9fb0a697-af71-4936-96e0-0985aa4f1732",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 17,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3dd8aee5-75ea-4259-8e86-e1532953a76f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 60,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "24130205-2f64-414c-986f-b0c7872d3f77",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 330,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c655fbd2-06bd-4588-9741-5f0843f5cc52",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 597,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "10d64c42-5514-4c53-b257-0984364af8f0",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 771,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c0975103-2bf3-4d63-9da7-c0ce478bae59",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiCollectionServiceTests.cs",
+    "line": 860,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6f46e2b2-edeb-4ac7-bb95-2e0461b3c0e2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiControllerLanguageTests.cs",
+    "line": 21,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "18866ba7-7ae5-495f-b948-1ee6c96383bb",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiControllerLanguageTests.cs",
+    "line": 403,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a4737964-b9c6-4ba1-b2a8-47bb15419582",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiLanguageMutationTests.cs",
+    "line": 18,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "99112a57-7c84-4136-8828-ea1818876a63",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiLanguageMutationTests.cs",
+    "line": 254,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2d854e8b-b383-4b4a-94f4-6c292bf52209",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiMembershipBatchTests.cs",
+    "line": 17,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2f548a24-98c6-401b-bbd7-7d5a17590f2d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiMembershipBatchTests.cs",
+    "line": 45,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "293eb310-f07c-4934-b794-91f87be2b877",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiMembershipConcurrencyTests.cs",
+    "line": 31,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0798972f-45db-456f-8984-5aa23373a57f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiMembershipConcurrencyTests.cs",
+    "line": 34,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d4751102-e3ff-46ed-9235-acb7cc57afe5",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiPageTests.cs",
+    "line": 33,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "31dccd35-3294-4ae8-ad35-f7479d7284fc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiPageTests.cs",
+    "line": 257,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2904d470-cc50-45f4-9832-de4849d6a531",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiWorkspaceTests.cs",
+    "line": 26,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b7bd3df7-772d-425e-baac-a1a3e4331383",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AnkiWorkspaceTests.cs",
+    "line": 27,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b88ed754-cf20-4c91-8caf-dd38e62bd6a6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApiCreateErrorTests.cs",
+    "line": 27,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3ce603ee-a82b-4eba-ad65-b4e2228072f7",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApiCreateErrorTests.cs",
+    "line": 70,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4a071790-1381-4452-9795-c8093ff4bf3d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantAnalyticsControllerTests.cs",
+    "line": 27,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "55a29201-9a2a-4a16-9bef-74690f4a576f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantAnalyticsModelTests.cs",
+    "line": 23,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "abaddae9-aa5a-4a20-a494-050075693bab",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantAnkiValidationTests.cs",
+    "line": 101,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "50fde45b-2b1e-4f3f-a542-bde60d062462",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantAnkiValidationTests.cs",
+    "line": 107,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7609bbfa-7001-4499-9678-23c3d5fe4469",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantChatTests.cs",
+    "line": 24,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6f5a757d-ec21-4292-b795-c183060fd498",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantCollaboratorTests.cs",
+    "line": 174,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "92838ccf-1eb8-407f-9ec5-777c6c669037",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantCollaboratorTests.cs",
+    "line": 257,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5ef9ff40-bafa-458d-a700-b99b1cb2ca0c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantHarness.cs",
+    "line": 78,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "41f8fa87-a948-41f7-9086-469017c64a0a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantLearningManagementTests.cs",
+    "line": 287,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c6b9a8c2-a114-41ac-994c-39b6ec81b825",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantLearningTests.cs",
+    "line": 274,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8dac3e68-6db6-4699-a1dc-a7647d720624",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantLearningTests.cs",
+    "line": 598,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "222d9fea-6eb8-426b-9ac6-66da2f2c915b",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantPracticeLinkTests.cs",
+    "line": 82,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "224bf2c5-b2c1-4799-b4c9-98b7411083a2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantPracticeLinkTests.cs",
+    "line": 86,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e0dcab9f-b9db-4202-b096-c697a91107ad",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantRunApiTests.cs",
+    "line": 187,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0b7918eb-8f1f-438c-819d-4c81092af1bc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantRunApiTests.cs",
+    "line": 188,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c4fd28e9-e188-43d0-a22e-43adb9867923",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantRunRegressionTests.cs",
+    "line": 176,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6c788803-93e6-4692-b395-c3f44a91cc4c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantSourceRecoveryTests.cs",
+    "line": 78,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "240227ef-2c4a-4108-b8d8-967e68b56dec",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AssistantToolsTests.cs",
+    "line": 115,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "348f163f-ad9a-4ca7-9de0-9b4b92aaddfd",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarCapacityConcurrencyTests.cs",
+    "line": 49,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3cf0c637-a49e-4781-92aa-cc0165275812",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarCapacityConcurrencyTests.cs",
+    "line": 227,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "fc019d6a-aaa1-44bb-86ac-70a18cb340cc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 214,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "96f7bab9-3725-40eb-82d2-fad5b4616498",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 215,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "dba77dbd-905f-41f6-9e16-7ddd3b8854ef",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 304,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7dc713ff-95ce-485d-a6d9-ed5b61339633",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 534,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d1f40c18-f57f-4d56-b50e-702fac3afcdb",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptConcurrencyTests.cs",
+    "line": 18,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0eef1b29-b59f-43d2-9e65-2368d82c38c2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptConcurrencyTests.cs",
+    "line": 41,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "421e5d42-328e-4e26-b19a-1d3f0ee07c45",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptConcurrencyTests.cs",
+    "line": 41,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c77d126e-eba1-4f83-a1f2-1b0c90972b0c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptConcurrencyTests.cs",
+    "line": 63,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3e12d0d0-cbe7-4f11-8909-4483a2fdd7ee",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptSqlTests.cs",
+    "line": 17,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6a03da3f-0f16-4bfe-bce4-42a1ac3ee3bd",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTranscriptSqlTests.cs",
+    "line": 41,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f2063164-7c8e-42b5-bc4c-57fa9d32c0cb",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarUsageTests.cs",
+    "line": 36,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7ea3ba30-bb10-45a1-86d3-0571cf46a0db",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarUsageTests.cs",
+    "line": 149,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6bdd643a-ff79-4669-b864-cb60d8c64d31",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/BookDeletionTests.cs",
+    "line": 143,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "dec887fc-0764-456e-9c95-fb779fd9004a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/BookDeletionTests.cs",
+    "line": 184,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "549973e1-e6a5-4f35-a0d9-bd5d74314780",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/BookPageTranslationServiceTests.cs",
+    "line": 323,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "cea85461-f343-4c1d-8433-a7228f02f3cd",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/BookPageTranslationServiceTests.cs",
+    "line": 367,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "76f16ca0-43cb-48b5-850e-6cbce5e186f7",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/BookUploadRateLimitTests.cs",
+    "line": 249,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b46b8c9c-fd45-4c57-9931-9205c7a6b602",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 365,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5c082467-99f8-4181-8c97-3cecc8d7f6b9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 372,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "576d65cb-c458-468f-b7a5-ddfbd05603a4",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 469,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a5361070-542b-4122-b9f1-6281db566422",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 1144,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7045c9e4-b835-443b-a43c-09a1dd8a2c9d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 1150,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8882c0d4-e753-4cea-91be-6dcfe5dbcaa9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ChangeApplierTests.cs",
+    "line": 1183,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6035d29a-6b84-4179-8a61-baac8f813304",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/CleanupRetiredAnkiJournalsMigrationTests.cs",
+    "line": 50,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "596eca6b-3722-4491-8927-4132767685ac",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/CleanupRetiredAnkiJournalsMigrationTests.cs",
+    "line": 52,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4fe0bac0-4e8b-44f2-a1c5-d2f31dd13da9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/CollectionServiceDeleteTests.cs",
+    "line": 103,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0b1d533a-e5ec-488d-af23-3d870ba8fe1c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 49,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "1632da77-8661-41a7-8924-7d2219c5607c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 50,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "cba5672b-744f-4232-90ee-0c46b8c6062a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 86,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a2781c78-f5d9-4ffe-b0a0-3ac30e022e19",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 87,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b95c1739-df73-4046-aec1-883194d2c508",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 112,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8ec0fc6a-0920-4915-ab6a-854169a9d919",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 113,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "bf19b732-ffd6-42b3-8f12-7bf88e627d3d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 140,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f604aadf-9566-43e1-a829-9a7ee3125d5f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/FractionalCreditTests.cs",
+    "line": 141,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "572c54c7-251e-453d-a966-1b8968c97b0d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameAccessTests.cs",
+    "line": 36,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "003df71c-5ea4-4c9a-b255-fa10137542f2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameAccessTests.cs",
+    "line": 37,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7cce4bb8-a63e-4b64-ad18-661aa9c2e44d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameAccessTests.cs",
+    "line": 65,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0ff5698e-4f7c-480b-a55d-9e3673b83236",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameAccessTests.cs",
+    "line": 78,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6d5fce26-b0d5-45f3-9ba8-24142a03c720",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameIntegrationTests.cs",
+    "line": 19,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e0e9167a-a783-4383-9da0-d547753552ab",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameIntegrationTests.cs",
+    "line": 20,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9f084f4a-0cd5-402d-b970-ca0b0049c165",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/GameIntegrationTests.cs",
+    "line": 22,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9b0a672d-b21c-4478-9c61-2df635c6dbf3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizAttemptServiceTests.cs",
+    "line": 12,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c7c923ba-642d-426e-a485-379d53074239",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizJsonImportEndpointTests.cs",
+    "line": 30,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e423c687-b7d1-4b36-b77b-dbb87201a71b",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizJsonImportServiceTests.cs",
+    "line": 393,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4f027796-6ecf-4a1d-a115-b9b8efe1d742",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizJsonImportServiceTests.cs",
+    "line": 448,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d6ccbffe-eb9e-44ab-8217-d928e745d40d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizLanguagePreferenceTests.cs",
+    "line": 156,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d138036f-bc86-4af7-b465-cb02e266c9f3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizLanguagePreferenceTests.cs",
+    "line": 201,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "94e83c71-7d7a-46fd-a029-e08b6d52d3dc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizServiceDeleteTests.cs",
+    "line": 19,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "df483991-0194-4ec6-ba2c-b72688e63db9",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizServiceDeleteTests.cs",
+    "line": 137,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5e36cf72-657f-4e16-b21d-3eee8128276a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/QuizSessionRegistryTests.cs",
+    "line": 117,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5101ff53-73ca-4e4d-a810-51d0eeb4657c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationCaptureServiceTests.cs",
+    "line": 95,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d0387e67-39f8-43bb-b73a-3e3c762b3120",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationServiceTests.cs",
+    "line": 490,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8e251741-3dda-4398-8512-6d17593aff12",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationServiceTests.cs",
+    "line": 514,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "16ade0f5-d785-413b-a285-7c45172a6c4c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationServiceTests.cs",
+    "line": 665,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e579993d-40d7-4c46-a32d-a4f57172d9f1",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 20,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b1fbce8f-8d78-4349-a495-2aa2b303ac25",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 40,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3e009d64-7ce5-4c52-9a2c-b2461e81abfa",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 74,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7db6ab37-0293-4c23-8f47-8553ea4f2469",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 103,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8df62917-7a17-4df0-8dd0-10425df5d1ff",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 156,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "84fe0666-9d39-4bcd-9014-ef929380df2d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 522,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "dc5dcb39-56b5-4235-83a8-97660795d6c1",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 552,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0e512fc1-e286-4848-89f3-9ebe5431a547",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 589,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7529f0c2-0e3b-493c-b3cf-cf3250178f27",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationTranscriptTests.cs",
+    "line": 608,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "1421d999-a10a-4c67-a0e4-545b726ae65e",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 20,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "01e735e5-5333-419f-a736-22f8c493e69c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 21,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "71dcd1df-7936-40af-8162-27117cfe2cb8",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 22,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "5b574ff8-6f27-4f9b-9a13-5aef77e59341",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 23,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "90320ed6-7ed6-4723-91d8-4de1901c5477",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 24,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "dc41dc37-4cf4-4174-a94b-fb9eb270f1ba",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 41,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "ae9de290-4799-4886-ab5b-aa75ed7dcb5d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 47,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f3c95e0f-f26c-40b9-90f2-09627581d39d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 141,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d2e1fc81-9e0a-40e5-b9e4-599bbb080c65",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 233,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "7da4335f-96a7-4f8c-8fd8-bd42de2b2e56",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 259,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "1811abad-9646-4475-8d71-255b979b3b4f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 272,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "dcf94739-c05c-4d47-8cf3-9c74be221b0b",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 309,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e9eec481-2a0e-42d9-a942-9eb2c04400c2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 313,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "76436c92-9c0f-47e6-9d22-7fbb9d1b4fb3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 314,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f7da498b-4a01-4ff0-8473-ee6da8e4d848",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 315,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "1608c193-6432-43a4-bbdc-a04bb40e5025",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 316,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f78ad568-8857-4198-a9a3-698409d7df06",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 317,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "45b41250-4f10-47d1-adad-4c88731cfac6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 318,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6e135425-ed6b-41cf-9608-399b1fa8c7cb",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 333,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "35eaf8d2-5dc8-4c37-a33d-412d2b2f8542",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 337,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "071cdb1b-5811-4b70-977f-a6861f9b1ec3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 357,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f2fb7899-d35e-4bab-9246-8b12e1b9c207",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ResourceAccountingTests.cs",
+    "line": 363,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "11f1f3da-29a2-4476-9016-ad76538af90a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RetiredFeatureRoutesTests.cs",
+    "line": 134,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "81b809aa-f98d-4c81-8682-12bec28bbe2a",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/SimplifyAnkiMigrationTests.cs",
+    "line": 50,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3f7a37c2-6948-49f6-b3a4-b6212c0c01cf",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/SimplifyAnkiMigrationTests.cs",
+    "line": 52,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "06e6d666-a2c1-4d87-885f-d97540a7b010",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripePaymentServiceTests.cs",
+    "line": 217,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "e7d34206-28e8-4e3f-a915-8d1d023cd616",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TextTranslationServiceTests.cs",
+    "line": 350,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f3d82490-08b5-429a-a305-5d0bec611427",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TextTranslationServiceTests.cs",
+    "line": 356,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "cf407d17-6c48-4f71-bbd7-4e43624fa461",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TextTranslationServiceTests.cs",
+    "line": 365,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3d0c440c-cc63-4bbd-bffa-2b699df1fbb6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TextTranslationServiceTests.cs",
+    "line": 405,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "79352624-1375-46ab-8cc5-4eebce119be1",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TranslatorApiAuthenticationTests.cs",
+    "line": 146,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "cf363d53-188e-4c22-8ec6-26320fd5db36",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TrialEligibilityServiceTests.cs",
+    "line": 22,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b01c8f68-25ed-4bca-896a-d09f0ff04647",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TrialEligibilityServiceTests.cs",
+    "line": 25,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "327441d1-8747-41b8-a0d6-b1e682aa5264",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TypingQuizServiceTests.cs",
+    "line": 133,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0e65f0f5-27c0-45f1-b677-7a92484b67bc",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/WordServiceAnkiAtomicityTests.cs",
+    "line": 13,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c99028b1-74c1-465e-952e-1e3b96c293e3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/WordServiceAnkiAtomicityTests.cs",
+    "line": 84,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3a3cf0ab-9d39-4a80-8526-226019ebbd6b",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/WordServiceSentencePracticeTests.cs",
+    "line": 101,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4c5c773c-4981-4c0d-85c3-be22e954d7ec",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/WordServiceSentencePracticeTests.cs",
+    "line": 130,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "122cb9eb-5503-4d4c-8919-1abce8b2ee1e",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 15,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "3a0bdbd3-6f66-425b-9cbe-bb9f758ff36d",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 16,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "918667a5-5e83-4917-a707-7dfa1ab53201",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 20,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8eb444de-6f62-4144-a4fd-6672f4cb27fd",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 21,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2eade7cb-3965-4d3b-9bcd-1d4ddab6ef37",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 35,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "0818b585-01f8-4ef9-a093-6108efae9e20",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 37,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "49f95939-3ba7-4dc3-be43-f2bd7e4dd072",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 51,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a33f5404-6a2b-4578-b385-ccaf913ff285",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ApplicationServiceExtensionsTests.cs",
+    "line": 64,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "2458036c-9039-4c47-8f32-5a8d79427205",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 510,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "58965ca0-abe7-4b81-b071-1168f24858b1",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarTests.cs",
+    "line": 510,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c9856c86-cd1d-44d1-959c-ecf3ac4f8dd2",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationOptionsTests.cs",
+    "line": 304,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "837bc579-47f0-4101-97f2-879350e050e6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AvatarVoicesTests.cs",
+    "line": 196,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "6a9d3e17-2b59-4130-99bb-2c25de9bff9c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/AzureTextToSpeechServiceTests.cs",
+    "line": 195,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "59c9ba78-24ce-4f14-86f1-f992e5be2147",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ElevenLabsRealtimeSpeechTranscriberTests.cs",
+    "line": 229,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c6c33a3d-2d31-4475-88dd-b5b29fe1f26c",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ElevenLabsTextToSpeechServiceTests.cs",
+    "line": 90,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a458a0eb-286a-4b3b-bb22-cece56635153",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/JevToolUseEvaluatorTests.cs",
+    "line": 98,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "794cceda-2414-4ef4-8763-8f243f0abed6",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/OpenAiGenerativeAiTests.cs",
+    "line": 465,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "15afadc9-6718-48c2-9172-646e859ce1a3",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationOptionsTests.cs",
+    "line": 598,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "d5c3787d-a493-4d15-a731-8b32a06ef09b",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/RealtimeTranslationServiceTests.cs",
+    "line": 707,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "b562f19a-6d2d-4242-93c1-a532c1141883",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ShippedConfigurationTests.cs",
+    "line": 178,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "49ead3f4-909f-4165-814d-569279f70107",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripeOptionsTests.cs",
+    "line": 30,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c98de47a-7d2e-4fb0-8fea-db221719f504",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripeOptionsTests.cs",
+    "line": 31,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "9f10c438-0b46-415b-8434-792d1ef9cc24",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripeOptionsTests.cs",
+    "line": 56,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "f69fefea-0354-421d-88e3-603dd96ea997",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripeOptionsTests.cs",
+    "line": 57,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "4ac1cd25-90fc-4cb8-8525-f84ac31eea6f",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripePaymentServiceTests.cs",
+    "line": 247,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "8daad458-eb29-4249-8c3f-aabe20132b56",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/StripePaymentServiceTests.cs",
+    "line": 248,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "bae9e82e-c584-45e7-8203-6d5d12350377",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TestEnvironment.cs",
+    "line": 25,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "c5cdb7dd-21af-46c5-a880-35f0ae7ef3fb",
+    "rule": "csharp/NoHardcodedCredentials/test",
+    "severity": "low",
+    "path": "Glosify.Tests/TestEnvironment.cs",
+    "line": 52,
+    "group": "NoHardcodedCredentials",
+    "disposition": "Test-only / fixture",
+    "evidence": "Inspected fixture identifier, configuration key, or dummy test credential. Browser fixtures are gated to a verified loopback test host/database; not a production credential disclosure."
+  },
+  {
+    "id": "a18b4c22-2cc4-4200-a9da-cf87c2b00eeb",
+    "rule": "csharp/PrivateInformationExposure",
+    "severity": "low",
+    "path": "Glosify/Controllers/DemoController.cs",
+    "line": 59,
+    "group": "PrivateInformationExposure",
+    "disposition": "Confirmed logging concern",
+    "evidence": "Configured demo email is logged; error text can also contain identity data. Log access/retention and whether the shared demo address is sensitive were not established."
+  },
+  {
+    "id": "733b5bfa-0a81-4ae3-8762-99b860dd0c0c",
+    "rule": "csharp/PrivateInformationExposure",
+    "severity": "low",
+    "path": "Glosify/Services/Auth/DemoAccountSeeder.cs",
+    "line": 105,
+    "group": "PrivateInformationExposure",
+    "disposition": "Confirmed logging concern",
+    "evidence": "Configured demo email is logged; error text can also contain identity data. Log access/retention and whether the shared demo address is sensitive were not established."
+  },
+  {
+    "id": "7276e73e-f348-43a2-a500-dd3d4bb5bafb",
+    "rule": "csharp/PrivateInformationExposure",
+    "severity": "low",
+    "path": "Glosify/Services/Auth/DemoAccountSeeder.cs",
+    "line": 91,
+    "group": "PrivateInformationExposure",
+    "disposition": "Confirmed logging concern",
+    "evidence": "Configured demo email is logged; error text can also contain identity data. Log access/retention and whether the shared demo address is sensitive were not established."
+  },
+  {
+    "id": "da1c0d09-0a07-4656-9372-c5571794d160",
+    "rule": "csharp/PrivateInformationExposure",
+    "severity": "low",
+    "path": "Glosify/Services/Auth/ExternalAccountService.cs",
+    "line": 144,
+    "group": "PrivateInformationExposure",
+    "disposition": "Confirmed logging concern",
+    "evidence": "Describe concatenates Identity error descriptions, which can contain email addresses. Runtime probe confirmed DuplicateEmail retains the address in the logging argument. No public log disclosure demonstrated."
+  },
+  {
+    "id": "8bd771de-4c82-4f36-8e36-996fb2167a78",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 25,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "2d0a4584-c23f-4ffc-a07b-db2e74c43165",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 38,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "ba445c1d-f5e5-4fee-b304-e2237fbea727",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 55,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "9fa719bd-4377-44df-919e-ba5e6170f20a",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 71,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "5715b428-7ae8-47ab-aade-a2a5afcdd8ca",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/ExternalAccountServiceTests.cs",
+    "line": 85,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "6b0a7e84-0f56-4fd9-951e-a78a499d7831",
+    "rule": "csharp/PrivateInformationExposure/test",
+    "severity": "low",
+    "path": "Glosify.Tests/SignupAdmissionDurabilityTests.cs",
+    "line": 65,
+    "group": "PrivateInformationExposure",
+    "disposition": "Test-only / fixture",
+    "evidence": "Fixture call path uses fake identity data and NullLogger; duplicates the production ExternalAccountService formatting concern discussed in the report."
+  },
+  {
+    "id": "c421ff2c-f434-4d74-9d0c-d1140a5a69ef",
+    "rule": "javascript/DOMXSS",
+    "severity": "medium",
+    "path": "Glosify/wwwroot/js/flashcard-quiz.js",
+    "line": 76,
+    "group": "DOMXSS",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Same-origin study partials render prompt/answer/examples with Razor encoding; ownership and fixed controller routes reviewed."
+  },
+  {
+    "id": "981a4554-8ec1-44bf-b349-174a7203577a",
+    "rule": "javascript/DOMXSS",
+    "severity": "medium",
+    "path": "Glosify/wwwroot/js/guest-login.js",
+    "line": 21,
+    "group": "DOMXSS",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Same-origin login partial is generated by MVC/Razor with encoded fields and errors; no raw untrusted HTML path found."
+  },
+  {
+    "id": "be1c1f10-0b76-488c-a941-fdbb9555da04",
+    "rule": "javascript/DOMXSS",
+    "severity": "medium",
+    "path": "Glosify/wwwroot/js/quiz-json-import.js",
+    "line": 339,
+    "group": "DOMXSS",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Appends a textarea DOM node whose value is assigned as text; no HTML parsing of the input."
+  },
+  {
+    "id": "f52359fd-00d9-44a1-a8d7-04d20a137eb8",
+    "rule": "javascript/HardcodedNonCryptoSecret",
+    "severity": "high",
+    "path": "Glosify.LiveSubtitles.Extension/lib/tab-auth.js",
+    "line": 3,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "KEY is the browser storage lookup name glosifyPendingTabAuth, not a secret. Actual state uses session storage and PKCE checks."
+  },
+  {
+    "id": "e73289fa-db6b-44f1-a5b6-2efe200c0390",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/PaidServiceStatusApiController.cs",
+    "line": 17,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Read-only GET status endpoint; no state-changing operation at the cited bypass."
+  },
+  {
+    "id": "c295b1f1-eeb4-45e2-8fde-75b5748df339",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "Glosify.LiveSubtitles.Extension/test-browser/lifecycle.spec.js",
+    "line": 484,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "f2ab6cab-354f-404d-ab1e-1ad4d67250a0",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "Glosify.LiveSubtitles.Extension/test-browser/lifecycle.spec.js",
+    "line": 508,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "9779dd1f-ed0c-45ec-ab30-9f882e5544c3",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "Glosify.LiveSubtitles.Extension/test/auth-refresh.test.js",
+    "line": 32,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "1066e005-5a76-455c-9187-b40ba166a1ea",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/test/worker-behavior.test.js",
+    "line": 145,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "e6e31a85-816d-40b1-a080-9d014b2c7b83",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "scripts/upload-chrome-web-store.test.mjs",
+    "line": 80,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "acfc2865-d29a-4d06-9c44-24273ea0492f",
+    "rule": "javascript/HardcodedNonCryptoSecret/test",
+    "severity": "low",
+    "path": "scripts/upload-chrome-web-store.test.mjs",
+    "line": 105,
+    "group": "HardcodedNonCryptoSecret",
+    "disposition": "Test-only / fixture",
+    "evidence": "Mock access/refresh token or API credential in test fixture; not a live credential."
+  },
+  {
+    "id": "417e7c91-9536-4d72-b98b-30d015a61b6e",
+    "rule": "javascript/HttpToHttps",
+    "severity": "medium",
+    "path": "scripts/avatar/preview/serve.mjs",
+    "line": 24,
+    "group": "HttpToHttps",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Developer preview server binds loopback and checks Host; intentional local HTTP. Not the public application transport."
+  },
+  {
+    "id": "30c1aab4-409f-4a2c-98c0-b7f3468356ff",
+    "rule": "javascript/HttpToHttps/test",
+    "severity": "low",
+    "path": "Glosify.LiveSubtitles.Extension/test-browser/lifecycle.spec.js",
+    "line": 572,
+    "group": "HttpToHttps",
+    "disposition": "Test-only / fixture",
+    "evidence": "Test HTTP server binds loopback."
+  },
+  {
+    "id": "f459e854-5b55-43ad-9dd7-5ec302b73653",
+    "rule": "javascript/HttpToHttps/test",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/test-browser/translator.spec.js",
+    "line": 280,
+    "group": "HttpToHttps",
+    "disposition": "Test-only / fixture",
+    "evidence": "Test HTTP server binds loopback."
+  },
+  {
+    "id": "d9740f95-2e6d-471b-bf01-1930b6685608",
+    "rule": "javascript/InsufficientPostmessageValidation",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/overlay/translator.js",
+    "line": 68,
+    "group": "InsufficientPostmessageValidation",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Checks event.source === parent and permits only host:focus to expand/focus UI. Parent page is intentionally untrusted; no token, translation text, or paid operation crosses this message path."
+  },
+  {
+    "id": "138fc7e0-13e6-4f98-bb56-0c3bffde0d73",
+    "rule": "javascript/InsufficientPostmessageValidation/test",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/test-browser/translator.spec.js",
+    "line": 73,
+    "group": "InsufficientPostmessageValidation",
+    "disposition": "Test-only / fixture",
+    "evidence": "Test observation listener, not a privileged production message handler."
+  },
+  {
+    "id": "2ac03845-b8e8-4e31-bfbe-9b8889a41f88",
+    "rule": "javascript/OR",
+    "severity": "medium",
+    "path": "Glosify/wwwroot/js/flashcard-quiz.js",
+    "line": 71,
+    "group": "OR",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "response.url comes from same-origin study requests and fixed controller redirects; no attacker-selected redirect destination found."
+  },
+  {
+    "id": "01c3a26f-1b9c-4d67-a24d-cd02d4729522",
+    "rule": "javascript/OR",
+    "severity": "medium",
+    "path": "Glosify/wwwroot/js/quiz-json-import.js",
+    "line": 319,
+    "group": "OR",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "redirectUrl is generated server-side with Url.Action for fixed Quiz routes."
+  },
+  {
+    "id": "67bf3b24-2229-4acf-a977-31cb1dc5df1c",
+    "rule": "javascript/TooPermissiveCorsPostMessage/test",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/test-browser/translator.spec.js",
+    "line": 85,
+    "group": "TooPermissiveCorsPostMessage",
+    "disposition": "Test-only / fixture",
+    "evidence": "Hostile-message test deliberately posts to wildcard target to verify rejection; not production messaging."
+  },
+  {
+    "id": "01ade209-02e5-4fc1-ab87-dc8608de64aa",
+    "rule": "javascript/TooPermissiveCorsPostMessage/test",
+    "severity": "low",
+    "path": "Glosify.Translator.Extension/test-browser/translator.spec.js",
+    "line": 86,
+    "group": "TooPermissiveCorsPostMessage",
+    "disposition": "Test-only / fixture",
+    "evidence": "Hostile-message test deliberately posts to wildcard target to verify rejection; not production messaging."
+  },
+  {
+    "id": "4fb26a5e-e52d-4c9f-a371-7be34ced36e5",
+    "rule": "javascript/XSS",
+    "severity": "high",
+    "path": "scripts/avatar/preview/serve.mjs",
+    "line": 43,
+    "group": "XSS",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Fixed allowlist maps request paths to local files; response contains file bytes, not reflected path. Runtime probes rejected script path, traversal, and foreign Host."
+  },
+  {
+    "id": "5251456e-2003-49fd-9c89-44801afedfbf",
+    "rule": "python/InsecureXmlParser",
+    "severity": "medium",
+    "path": "tools/localization/translate_ui.py",
+    "line": 90,
+    "group": "InsecureXmlParser",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "ElementTree parses a fixed tracked .resx, not remote XML. Actual Python 3.14.7/Expat 2.7.4 inspected; external-entity probe raises undefined-entity ParseError. Reassess for untrusted input or other runtimes."
+  },
+  {
+    "id": "0eb5f714-0859-439d-89b8-b2912e39a9aa",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/Api/RealtimeTranslationRelayController.cs",
+    "line": 12,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "WebSocket requires a one-time session-bound relay token, not ambient cookie authentication."
+  },
+  {
+    "id": "8c5d8d53-e184-481e-b954-ec98ffe711a3",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "scripts/avatar/build-library.py",
+    "line": 11,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Operator-selected CLI paths and repository-controlled pinned manifest entries; no remote request boundary. Inspected manifest entries contain no absolute or parent traversal paths."
+  },
+  {
+    "id": "4880f1ac-3488-4a89-96b9-cefd6226a24d",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "scripts/avatar/prepare-human.py",
+    "line": 6,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Operator-selected CLI paths and repository-controlled pinned manifest entries; no remote request boundary. Inspected manifest entries contain no absolute or parent traversal paths."
+  },
+  {
+    "id": "56527ddc-d2e3-48d1-9876-8e6131da3bd8",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "scripts/avatar/build-library.py",
+    "line": 19,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Operator-selected CLI paths and repository-controlled pinned manifest entries; no remote request boundary. Inspected manifest entries contain no absolute or parent traversal paths."
+  },
+  {
+    "id": "4ee0255d-882f-4e98-95e6-a3e02b641acb",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "scripts/avatar/prepare-human.py",
+    "line": 21,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Operator-selected CLI paths and repository-controlled pinned manifest entries; no remote request boundary. Inspected manifest entries contain no absolute or parent traversal paths."
+  },
+  {
+    "id": "5d0968bf-17ab-49e9-af4a-0bf9d2f4a061",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "scripts/generate-globe-land.py",
+    "line": 22,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Explicit local CLI source path, not remotely supplied input."
+  },
+  {
+    "id": "6908710d-f63a-4dc9-b7df-dbd2ba736464",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "tools/localization/translate_ui.py",
+    "line": 22,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Cache directory comes from operator environment; locale and batch suffixes are controlled by the script. No remote caller-selected filesystem path."
+  },
+  {
+    "id": "6c803cb3-b41f-4af7-867c-e8bc9637b63e",
+    "rule": "python/PT",
+    "severity": "low",
+    "path": "tools/localization/translate_ui.py",
+    "line": 111,
+    "group": "PT",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Cache directory comes from operator environment; locale and batch suffixes are controlled by the script. No remote caller-selected filesystem path."
+  },
+  {
+    "id": "ebe5f85d-8902-4d59-83bc-656d32003973",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/AvatarController.cs",
+    "line": 20,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Voice WebSocket validates exact Origin authority and session ownership; ordinary mutation POSTs retain antiforgery."
+  },
+  {
+    "id": "6d95f692-6be0-4eb4-998b-1715fe04a1e4",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/AvatarController.cs",
+    "line": 151,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Voice WebSocket validates exact Origin authority and session ownership; ordinary mutation POSTs retain antiforgery."
+  },
+  {
+    "id": "20fc8743-6780-493e-b041-b0d6c7525253",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/GameDataController.cs",
+    "line": 15,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "SaveProfile requires trusted server credential; ordinary browser mutation proxy retains antiforgery. Class-level location is not a blanket bypass."
+  },
+  {
+    "id": "b92e2bcc-924a-4b64-9166-2c55f014699c",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/GameDataController.cs",
+    "line": 62,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "SaveProfile requires trusted server credential; ordinary browser mutation proxy retains antiforgery. Class-level location is not a blanket bypass."
+  },
+  {
+    "id": "246d2b06-a272-42ef-a7c7-3a5916c33858",
+    "rule": "csharp/AntiforgeryTokenDisabled",
+    "severity": "low",
+    "path": "Glosify/Controllers/GameUsageController.cs",
+    "line": 13,
+    "group": "AntiforgeryTokenDisabled",
+    "disposition": "Not substantiated at current boundary",
+    "evidence": "Internal ingest requires the server-only X-Game-Service-Key with length enforcement and fixed-time comparison."
+  }
+]

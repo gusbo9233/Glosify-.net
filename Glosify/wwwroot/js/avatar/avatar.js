@@ -855,7 +855,7 @@ async function initialize() {
         el('quiz').value = config.quizzes.some(quiz => quiz.id === selectedQuiz) ? selectedQuiz : '';
         selectMemory();
         if (!config.language) notice('Choose a learning language in the sidebar to start a conversation.');
-        else if (!config.available) notice('The admin preview needs voice provider configuration before conversations can start.');
+        else if (!config.available) notice('Voice provider configuration is needed before conversations can start.');
         refreshStart(); schedulePreparation();
     } catch (error) { if (!pageLeaving && generation === configEpoch) notice(error.message); }
 }

@@ -54,11 +54,24 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
         Assert.NotNull(document.QuerySelector("[data-speech-settings]"));
         Assert.NotNull(dialog.QuerySelector("[data-speech-save]"));
         Assert.Null(dialog.QuerySelector("[data-speech-play]"));
-        Assert.Equal(new[] { "browser", "elevenlabs" }, dialog.QuerySelectorAll("[data-speech-provider] option")
+        // Paid ElevenLabs speech is offered only to signed-in learners; guests get a sign-in link.
+        Assert.Equal(new[] { "browser" }, dialog.QuerySelectorAll("[data-speech-provider] option")
             .Select(option => option.GetAttribute("value")));
+        Assert.NotNull(dialog.QuerySelector("a[href='/login'][data-login-required]"));
         Assert.False(string.IsNullOrWhiteSpace(dialog.QuerySelector("[data-speech-token] input")?.GetAttribute("value")));
         Assert.Contains("AI credits", dialog.QuerySelector("[data-speech-credits]")!.TextContent, StringComparison.Ordinal);
         Assert.NotNull(dialog.QuerySelector("[data-speech-language] option[value='zh-HK']"));
+    }
+
+    [Fact]
+    public async Task Signed_in_speech_settings_offer_ElevenLabs()
+    {
+        using var app = new AvatarFixture(); using var client = await app.Client("learner");
+        var document = await new HtmlParser().ParseDocumentAsync(await client.GetStringAsync("/Books"));
+        var dialog = document.QuerySelector("[data-speech-dialog]")!;
+        Assert.Equal(new[] { "browser", "elevenlabs" }, dialog.QuerySelectorAll("[data-speech-provider] option")
+            .Select(option => option.GetAttribute("value")));
+        Assert.Null(dialog.QuerySelector("a[href='/login'][data-login-required]"));
     }
 
     [Fact]

@@ -1,5 +1,5 @@
 @model Glosify.Models.ViewModels.StudyCardViewModel
-    <form class="controls" method="post" action="@Model.RateUrl" data-flashcard-form data-right-rating="@Model.RightRating">
+    <form hidden="@(ViewData["GuestSample"] is string)" class="controls" method="post" action="@Model.RateUrl" data-flashcard-form data-right-rating="@Model.RightRating">
         @Html.AntiForgeryToken()
         @foreach (var field in Model.Fields) { <input type="hidden" name="@field.Key" value="@field.Value" /> }
         <input type="hidden" name="DurationMilliseconds" data-study-duration />

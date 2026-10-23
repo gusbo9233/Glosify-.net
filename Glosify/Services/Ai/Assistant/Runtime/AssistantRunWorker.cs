@@ -31,6 +31,7 @@ internal sealed class AssistantRunWorker(
                 await using (var scope = scopes.CreateAsyncScope())
                 {
                     var store = scope.ServiceProvider.GetRequiredService<AssistantRunStore>();
+                    var claimStartedAt = clock.GetUtcNow();
                     var claim = await store.ClaimAsync(cancellationToken);
                     idle = claim is null;
                     if (claim is null)
@@ -45,7 +46,7 @@ internal sealed class AssistantRunWorker(
                         {
                             await using var renewal = scopes.CreateAsyncScope();
                             return await renewal.ServiceProvider.GetRequiredService<AssistantRunStore>().RenewAsync(id, lease, token);
-                        }, TimeSpan.FromSeconds(20), logger);
+                        }, TimeSpan.FromSeconds(20), logger, clock, claimStartedAt);
                         try
                         {
                             await scope.ServiceProvider.GetRequiredService<AssistantRunExecutor>().StepAsync(id, lease, step.Token);
@@ -100,25 +101,46 @@ internal sealed class AssistantRunWorker(
         CancellationTokenSource step,
         Func<CancellationToken, Task<int>> renew,
         TimeSpan interval,
-        ILogger logger)
+        ILogger logger,
+        TimeProvider clock,
+        DateTimeOffset leaseStartedAt)
     {
-        // Two-minute leases renewed every 20 seconds: three failures in a row still leave about
-        // a minute before another worker could claim the run.
+        // SQL commands and retries can outlast the lease. Cancel the step independently
+        // of renewal completion, with headroom before another worker can claim it.
+        var safetyMargin = TimeSpan.FromSeconds(10);
+        TimeSpan Remaining(DateTimeOffset startedAt) =>
+            startedAt + AssistantRunStore.LeaseDuration - safetyMargin - clock.GetUtcNow();
+        var remaining = Remaining(leaseStartedAt);
+        if (remaining <= TimeSpan.Zero)
+        {
+            await step.CancelAsync();
+            return;
+        }
+        using var deadline = new CancellationTokenSource(remaining, clock);
+        using var expiration = deadline.Token.Register(() => step.Cancel());
         const int MaxConsecutiveFailures = 3;
         var failures = 0;
         try
         {
-            using var timer = new PeriodicTimer(interval);
+            using var timer = new PeriodicTimer(interval, clock);
             while (await timer.WaitForNextTickAsync(step.Token))
             {
                 try
                 {
+                    var renewalStartedAt = clock.GetUtcNow();
                     if (await renew(step.Token) == 0)
                     {
                         await step.CancelAsync();
                         return;
                     }
 
+                    remaining = Remaining(renewalStartedAt);
+                    if (remaining <= TimeSpan.Zero || step.IsCancellationRequested)
+                    {
+                        await step.CancelAsync();
+                        return;
+                    }
+                    deadline.CancelAfter(remaining);
                     failures = 0;
                 }
                 catch (Exception ex) when (!step.IsCancellationRequested)

@@ -30,10 +30,17 @@ public sealed class TranslationsController : Controller
     }
 
     [HttpGet("")]
+    [AllowAnonymous]
     public async Task<IActionResult> Index(
         int page = 1,
         CancellationToken cancellationToken = default)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewData["GuestSample"] = "translations";
+            return View(Glosify.Services.Guest.GuestSamples.For(HttpContext).Index("translations"));
+        }
+
         if (QuizLanguageCatalog.IsFreestyle(_languageContext.CurrentLanguage))
         {
             return RedirectToAction("Index", "Home");

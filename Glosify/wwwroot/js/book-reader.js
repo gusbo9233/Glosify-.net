@@ -1025,6 +1025,10 @@ const showCachedTranslation = () => {
 };
 
 const requestJson = async (url, options) => {
+    if (document.body.dataset.guestSection) {
+        document.dispatchEvent(new CustomEvent('glosify:login-required'));
+        throw new Error('Sign in to translate your own books.');
+    }
     const headers = new Headers(options?.headers || {});
     headers.set('Accept', 'application/json');
     headers.set('Content-Type', 'application/json');
@@ -1240,7 +1244,8 @@ const setTranslationEnabled = (enabled) => {
 };
 
 const persistTranslationLanguage = async () => {
-    if (!documentId || !translationLanguage) return;
+    // Bundled samples have no saved preference; choosing a language there stays local.
+    if (!documentId || !translationLanguage || document.body.dataset.guestSection) return;
     try {
         const result = await requestJson(`/Books/${documentId}/TranslationPreference`, {
             method: 'PUT',
@@ -1543,7 +1548,7 @@ window.addEventListener('beforeunload', () => window.GlosifyTts?.stop());
 try {
     pdfjs = await import('/lib/pdfjs/pdf.min.mjs');
     pdfjs.GlobalWorkerOptions.workerSrc = '/lib/pdfjs/pdf.worker.min.mjs';
-    pdf = await pdfjs.getDocument(`/Books/File/${documentId}`).promise;
+    pdf = await pdfjs.getDocument(document.querySelector("[data-pdf-url]")?.dataset.pdfUrl || `/Books/File/${documentId}`).promise;
     await renderPage(1);
 } catch {
     setStatus(t('Reader.PdfLoadFailed', 'The PDF could not be loaded.'));

@@ -17,7 +17,14 @@ public sealed record AnkiWorkspace(
     AnkiCollection? Collection,
     IReadOnlyList<AnkiQuizLink> QuizLinks,
     IReadOnlyList<Quiz> CompatibleQuizzes,
-    IReadOnlyList<AnkiAvailableItem> AvailableItems);
+    IReadOnlyList<AnkiAvailableItem> AvailableItems)
+{
+    public IReadOnlyList<string> SourceLanguages { get; init; } = [];
+    public bool HasCards { get; init; }
+    public int ItemOffset { get; init; }
+    public bool HasMoreItems { get; init; }
+    public string? Search { get; init; }
+}
 
 public sealed record AnkiAvailableItem(
     Guid QuizId,
@@ -77,7 +84,7 @@ public interface IAnkiCollectionService
     Task<AnkiCollection?> FindForLanguageAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default);
     Task<AnkiCollection> GetOrCreateAsync(string userId, string targetLanguage, string? timeZoneId, CancellationToken cancellationToken = default);
     Task<bool> IsOwnedByLanguageAsync(Guid collectionId, string targetLanguage, string userId, CancellationToken cancellationToken = default);
-    Task<AnkiWorkspace> GetWorkspaceAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default);
+    Task<AnkiWorkspace> GetWorkspaceAsync(string userId, string targetLanguage, CancellationToken cancellationToken = default, int itemOffset = 0, string? search = null);
     Task<bool> SetPracticeDirectionAsync(Guid collectionId, string direction, string userId, CancellationToken cancellationToken = default);
     Task<bool> UpdateTimeZoneAsync(Guid collectionId, string timeZoneId, string userId, CancellationToken cancellationToken = default);
     Task<bool> AddQuizForLanguageAsync(string targetLanguage, string? timeZoneId, Guid quizId, bool includeSentences, string userId, CancellationToken cancellationToken = default);

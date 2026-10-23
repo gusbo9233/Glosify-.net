@@ -125,3 +125,13 @@ test('terminal idle expiry stops transport retries even if the following close i
     assert.deepEqual(h.lost, []);
     assert.equal(h.timers.size, 0);
 });
+
+test('a conversation paused for another learner explains itself and stops retrying', () => {
+    const h = setup(), socket = h.sockets[0]; socket.connected();
+    socket.message({ type: 'ended', reason: 'busy' }); socket.drop(1006);
+    h.advance(60000);
+    assert.equal(h.ended.length, 1);
+    assert.match(h.ended[0], /made room for another learner/);
+    assert.equal(h.sockets.length, 1);
+    assert.deepEqual(h.lost, []);
+});

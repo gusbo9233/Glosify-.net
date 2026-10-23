@@ -127,7 +127,7 @@
                     @if (!presentation.IsFreestyle)
                     {
                     <label class="choice">
-                        <input type="radio" name="PracticeItemType" value="sentences" data-item-label="@Text["Settings.Sentences"]" data-count="@Model.AvailableSentenceCount" />
+                        <input type="radio" name="PracticeItemType" value="sentences" disabled="@(ViewData["GuestSample"] is string && Model.AvailableSentenceCount == 0)" data-item-label="@Text["Settings.Sentences"]" data-count="@Model.AvailableSentenceCount" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">notes</span>
                             <span class="mode-name">@Text["Settings.Sentences"]</span>
@@ -161,7 +161,7 @@
                         </span>
                     </label>
                     <label class="choice">
-                        <input type="radio" name="Mode" value="multiple-choice" />
+                        <input type="radio" name="Mode" value="multiple-choice" disabled="@(ViewData["GuestSample"] is string)" />
                         <span class="choice-card">
                             <span class="material-symbols-outlined">checklist</span>
                             <span class="mode-name">@Text["Settings.Choices"]</span>

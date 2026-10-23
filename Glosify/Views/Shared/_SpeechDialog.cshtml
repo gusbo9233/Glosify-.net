@@ -13,8 +13,15 @@
     <label for="speech-provider">@Text["Speech.Provider"]</label>
     <select id="speech-provider" data-speech-provider>
         <option value="browser">@Text["Speech.Browser"]</option>
-        <option value="elevenlabs">@Text["Speech.ElevenLabs"]</option>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <option value="elevenlabs">@Text["Speech.ElevenLabs"]</option>
+        }
     </select>
+    @if (User.Identity?.IsAuthenticated != true)
+    {
+        <a href="/login" data-login-required>Sign in to use ElevenLabs speech</a>
+    }
     <div data-speech-token hidden>@Html.AntiForgeryToken()</div>
     <div class="speech-credit-notice" data-speech-credits hidden>
         <p>@Text["Speech.Credits"]</p>

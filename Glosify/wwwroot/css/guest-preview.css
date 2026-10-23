@@ -1,0 +1,9 @@
+.guest-login-dialog { width: min(480px, calc(100vw - 32px)); max-height: 90dvh; padding: 24px; border: 1px solid var(--outline-variant); border-radius: 20px; background: var(--background, white); color: var(--on-surface); }
+.guest-login-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.guest-dialog-close { display: block; margin-left: auto; font-size: 1.5rem; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.guest-login-dialog .glass-card { padding: 12px; }
+.guest-assistant-entry { width: auto; max-width: calc(100vw - 48px); position: fixed; right: 24px; bottom: 24px; z-index: 20; }
+
+[data-guest-section]:not([data-guest-section=""]) [hidden] { display: none !important; }
+.guest-sample-notice { margin: 16px 24px; padding: 12px 16px; border: 1px solid var(--outline-variant); border-radius: 10px; font-size: .85rem; }
+.guest-sample-notice a { margin-inline-start: 12px; }

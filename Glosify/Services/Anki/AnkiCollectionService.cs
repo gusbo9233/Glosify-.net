@@ -9,6 +9,7 @@ namespace Glosify.Services.Anki;
 public sealed partial class AnkiCollectionService : IAnkiCollectionService
 {
     public const int MaximumMembershipChanges = 2_000;
+    public const int WorkspacePageSize = 100;
 
     private readonly GlosifyContext _context;
     private readonly TimeProvider _timeProvider;
@@ -154,58 +155,87 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         return storedTarget is not null && SameLanguage(storedTarget, canonicalTarget);
     }
 
+    // Read-only picker. The page loads study first, which synchronizes the collection.
     public async Task<AnkiWorkspace> GetWorkspaceAsync(
         string userId,
         string targetLanguage,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int itemOffset = 0,
+        string? search = null)
     {
         var canonical = CanonicalLanguageName(targetLanguage);
         var collection = await FindForLanguageAsync(userId, canonical, cancellationToken);
         IReadOnlyList<AnkiQuizLink> links = [];
-        var included = new HashSet<string>(StringComparer.Ordinal);
+        IReadOnlyList<string> sources = [];
         if (collection is not null)
         {
-            await SyncCollectionAsync(collection.Id, cancellationToken);
-            links = await _context.AnkiQuizLinks
-                .AsNoTracking()
-                .Include(link => link.Quiz)
+            links = await _context.AnkiQuizLinks.AsNoTracking().Include(link => link.Quiz)
                 .Where(link => link.AnkiCollectionId == collection.Id)
-                .OrderBy(link => link.Quiz.Name)
-                .ToListAsync(cancellationToken);
-            var activeNotes = await _context.AnkiNotes.AsNoTracking()
+                .OrderBy(link => link.Quiz.Name).ToListAsync(cancellationToken);
+            sources = await _context.AnkiNotes.AsNoTracking()
                 .Where(note => note.AnkiCollectionId == collection.Id && note.Cards.Any(card => card.IsActive))
-                .Select(note => new { note.WordId, note.SentenceId })
-                .ToListAsync(cancellationToken);
-            foreach (var note in activeNotes)
-                included.Add(note.WordId is not null ? ItemKey(PracticeItemType.Words, note.WordId) : ItemKey(PracticeItemType.Sentences, note.SentenceId!.Value.ToString()));
+                .Select(note => note.SourceLanguage).Distinct().ToListAsync(cancellationToken);
         }
 
-        var quizzes = (await _context.Quizzes
-            .AsNoTracking()
-            .Where(quiz => quiz.UserId == userId)
-            .OrderBy(quiz => quiz.Name)
-            .ToListAsync(cancellationToken))
+        var quizzes = (await _context.Quizzes.AsNoTracking().Where(quiz => quiz.UserId == userId)
+            .OrderBy(quiz => quiz.Name).ToListAsync(cancellationToken))
             .Where(quiz => SameLanguage(QuizLanguageCatalog.TargetName(quiz.TargetLanguage, quiz.Language), canonical))
             .ToList();
         var quizIds = quizzes.Select(quiz => quiz.Id).ToList();
         var quizzesById = quizzes.ToDictionary(quiz => quiz.Id);
-        var words = (await _context.Words.AsNoTracking()
-                .Where(word => quizIds.Contains(word.QuizId))
-                .OrderBy(word => word.CreatedAt)
-                .Select(word => new { word.QuizId, word.Id, word.Lemma, word.Translation })
-                .ToListAsync(cancellationToken))
-            .Select(word => Item(quizzesById[word.QuizId], PracticeItemType.Words, word.Id, word.Lemma, word.Translation));
-        var sentences = (await _context.QuizSentences.AsNoTracking()
-                .Where(sentence => quizIds.Contains(sentence.QuizId))
-                .OrderBy(sentence => sentence.CreatedAt)
+        search = string.IsNullOrWhiteSpace(search) ? null : search.Trim()[..Math.Min(search.Trim().Length, 200)];
+        var matchingQuizIds = search is null ? [] : quizzes
+            .Where(quiz => quiz.Name.Contains(search, StringComparison.OrdinalIgnoreCase)).Select(quiz => quiz.Id).ToList();
+        var words = _context.Words.AsNoTracking().Where(word => quizIds.Contains(word.QuizId));
+        var sentences = _context.QuizSentences.AsNoTracking().Where(sentence => quizIds.Contains(sentence.QuizId));
+        if (search is not null)
+        {
+            words = words.Where(word => word.Lemma.Contains(search) || word.Translation.Contains(search)
+                || matchingQuizIds.Contains(word.QuizId));
+            sentences = sentences.Where(sentence => sentence.Text.Contains(search) || sentence.Translation.Contains(search)
+                || matchingQuizIds.Contains(sentence.QuizId));
+        }
+        var wordCount = await words.CountAsync(cancellationToken);
+        itemOffset = Math.Clamp(itemOffset, 0, int.MaxValue - WorkspacePageSize);
+        var wordPage = await words.OrderBy(word => word.CreatedAt).ThenBy(word => word.Id)
+            .Skip(itemOffset).Take(WorkspacePageSize + 1)
+            .Select(word => new { word.QuizId, word.Id, word.Lemma, word.Translation }).ToListAsync(cancellationToken);
+        var items = wordPage.Select(word => Item(quizzesById[word.QuizId], PracticeItemType.Words,
+            word.Id, word.Lemma, word.Translation)).ToList();
+        if (items.Count <= WorkspacePageSize)
+        {
+            var sentencePage = await sentences.OrderBy(sentence => sentence.CreatedAt).ThenBy(sentence => sentence.Id)
+                .Skip(Math.Max(0, itemOffset - wordCount)).Take(WorkspacePageSize + 1 - items.Count)
                 .Select(sentence => new { sentence.QuizId, sentence.Id, sentence.Text, sentence.Translation })
-                .ToListAsync(cancellationToken))
-            .Select(sentence => Item(quizzesById[sentence.QuizId], PracticeItemType.Sentences, sentence.Id.ToString(), sentence.Text, sentence.Translation));
+                .ToListAsync(cancellationToken);
+            items.AddRange(sentencePage.Select(sentence => Item(quizzesById[sentence.QuizId], PracticeItemType.Sentences,
+                sentence.Id.ToString(), sentence.Text, sentence.Translation)));
+        }
+        var hasMore = items.Count > WorkspacePageSize;
+        items = items.Take(WorkspacePageSize).ToList();
+        if (collection is not null)
+        {
+            var wordIds = items.Where(item => item.ItemType == PracticeItemType.Words).Select(item => item.ItemId).ToList();
+            var sentenceIds = items.Where(item => item.ItemType == PracticeItemType.Sentences).Select(item => Guid.Parse(item.ItemId)).ToList();
+            var included = await _context.AnkiNotes.AsNoTracking()
+                .Where(note => note.AnkiCollectionId == collection.Id && note.Cards.Any(card => card.IsActive)
+                    && (wordIds.Contains(note.WordId!) || note.SentenceId.HasValue && sentenceIds.Contains(note.SentenceId.Value)))
+                .Select(note => new { note.WordId, note.SentenceId }).ToListAsync(cancellationToken);
+            var keys = included.Select(note => note.WordId is not null ? ItemKey(PracticeItemType.Words, note.WordId)
+                : ItemKey(PracticeItemType.Sentences, note.SentenceId!.Value.ToString())).ToHashSet(StringComparer.Ordinal);
+            items = items.Select(item => item with { InAnki = keys.Contains(ItemKey(item.ItemType, item.ItemId)) }).ToList();
+        }
+        return new AnkiWorkspace(collection, links, quizzes, items)
+        {
+            SourceLanguages = sources,
+            HasCards = sources.Count > 0,
+            ItemOffset = itemOffset,
+            HasMoreItems = hasMore,
+            Search = search,
+        };
 
-        return new AnkiWorkspace(collection, links, quizzes, words.Concat(sentences).ToList());
-
-        AnkiAvailableItem Item(Quiz quiz, string itemType, string id, string target, string source) =>
-            new(quiz.Id, quiz.Name, quiz.SourceLanguage, itemType, id, target, source, included.Contains(ItemKey(itemType, id)));
+        static AnkiAvailableItem Item(Quiz quiz, string itemType, string id, string target, string source) =>
+            new(quiz.Id, quiz.Name, quiz.SourceLanguage, itemType, id, target, source, false);
     }
 
     private static string ItemKey(string itemType, string id) => itemType + ":" + id;

@@ -572,9 +572,13 @@ public sealed class RealtimeTranslationService : IRealtimeTranslationService
                     var session = await _context.RealtimeTranslationSessions
                         .Include(item => item.Minutes)
                         .SingleOrDefaultAsync(item => item.Id == sessionId, cancellationToken);
+                    // A heartbeat or activation can finish while cleanup waits for the lock.
+                    // Candidate selection alone is not permission to end the session.
                     if (session is not null
-                        && (session.Status == RealtimeTranslationSessionStatuses.Pending
-                            || session.Status == RealtimeTranslationSessionStatuses.Active))
+                        && ((session.Status == RealtimeTranslationSessionStatuses.Pending
+                                && session.CreatedAt < staleReservation)
+                            || (session.Status == RealtimeTranslationSessionStatuses.Active
+                                && (session.LastHeartbeatAt < staleHeartbeat || session.ExpiresAt <= now))))
                     {
                         await EndSessionCoreAsync(
                             session,

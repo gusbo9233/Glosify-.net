@@ -11,6 +11,20 @@ namespace Glosify.Tests;
 
 public sealed class SelectedLanguageFilterTests
 {
+    [Fact]
+    public async Task GuestSelection_DoesNotOverrideAccountPreferenceAfterSignIn()
+    {
+        var http = new DefaultHttpContext();
+        http.Request.Headers.Cookie = "glosify.guest-language=Spanish";
+        var languages = new CookieLanguageContext(new HttpContextAccessor { HttpContext = http });
+        Assert.Equal("Spanish", languages.CurrentLanguage);
+        http.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "learner")], "test"));
+        var preferences = new StubChromeServices("sv");
+        await languages.InitializeAsync(preferences, "learner", CancellationToken.None);
+        Assert.Equal("Swedish", languages.CurrentLanguage);
+        Assert.Equal(1, preferences.LanguagePreferenceCalls);
+    }
+
     [Theory]
     [InlineData(null, "Swedish", 1)]
     [InlineData("German", "German", 0)]

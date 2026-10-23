@@ -31,25 +31,35 @@ public sealed class AnkiController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Index(
         bool reveal = false,
         Guid? cardId = null,
+        int itemOffset = 0,
+        string? search = null,
         CancellationToken cancellationToken = default)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewData["GuestSample"] = "anki";
+            return View(Glosify.Services.Guest.GuestSamples.For(HttpContext).Index("anki"));
+        }
+
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
 
         var userId = User.GetUserId();
-        var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken);
-        var direction = workspace.Collection?.DefaultDirection ?? PracticeDirection.SourceToTarget;
+        var current = await _collections.FindForLanguageAsync(userId, targetLanguage, cancellationToken);
+        var direction = current?.DefaultDirection ?? PracticeDirection.SourceToTarget;
         AnkiStudyViewModel? study = null;
-        if (workspace.Collection is { } collection)
+        if (current is { } collection)
         {
             study = await StudyModelAsync(collection.Id, userId, targetLanguage, direction, reveal, cardId, cancellationToken);
             if (study is null)
                 return NotFound();
         }
+        var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken, itemOffset, search);
         return View(new AnkiIndexViewModel
         {
             TargetLanguage = targetLanguage,
@@ -125,19 +135,20 @@ public sealed class AnkiController : Controller
     [ValidateAntiForgeryToken]
     // Changed item keys plus the antiforgery token and browser timezone.
     [RequestFormLimits(ValueCountLimit = AnkiCollectionService.MaximumMembershipChanges + 2)]
-    public async Task<IActionResult> Items(SaveAnkiItemsForm form, CancellationToken cancellationToken)
+    public async Task<IActionResult> Items(SaveAnkiItemsForm form, CancellationToken cancellationToken,
+        [FromQuery] int itemOffset = 0, [FromQuery] string? search = null)
     {
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
         if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { itemOffset, search });
         var add = ParseKeys(form.Add);
         var remove = ParseKeys(form.Remove);
         if (add is null || remove is null)
             return BadRequest();
         if (add.Count + remove.Count == 0)
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { itemOffset, search });
 
         var userId = User.GetUserId();
         try
@@ -156,7 +167,7 @@ public sealed class AnkiController : Controller
         {
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { itemOffset, search });
     }
 
     // Used by the quiz page's "Add to Anki" dialog.

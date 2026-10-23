@@ -158,14 +158,24 @@ public class NavigationTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Null(document.QuerySelector("header.app-topbar"));
     }
 
+    // Libraries and the language picker are guest-browsable; the selectors prove a guest
+    // sees bundled samples or the picker rather than personal content.
     [Theory]
-    [InlineData("/Quizzes")]
-    [InlineData("/Quizzes/Index")]
+    [InlineData("/Quizzes", "[data-guest-return]")]
+    [InlineData("/Quizzes/Index", "[data-guest-return]")]
+    [InlineData("/Anki", "[data-guest-return]")]
+    [InlineData("/Languages", "form.language-form[action='/Languages/Select']")]
+    public async Task Get_GuestRoute_RendersWithoutLoginWhenAnonymous(string url, string selector)
+    {
+        var document = await GetDocumentAsync(CreateClient(), url);
+        Assert.NotNull(document.QuerySelector(selector));
+        Assert.Null(document.QuerySelector(".app-navigation-identity"));
+    }
+
+    [Theory]
     [InlineData("/Quizzes/Settings")]
-    [InlineData("/Languages")]
     [InlineData("/FlashcardQuiz")]
     [InlineData("/TypingQuiz")]
-    [InlineData("/Anki")]
     [InlineData("/Admin/AiCredits")]
     public async Task Get_AuthorizedRoute_RedirectsToLoginWhenAnonymous(string url)
     {

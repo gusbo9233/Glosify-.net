@@ -64,7 +64,7 @@ public sealed partial class AnkiCollectionService
 
     public Task<bool> AddItemForLanguageAsync(string targetLanguage, string? timeZoneId, AnkiItemKey item,
         string userId, CancellationToken cancellationToken = default) =>
-        ExecuteAtomicallyAsync(async () =>
+        ExecuteMembershipAsync(async () =>
         {
             var canonical = CanonicalLanguageName(targetLanguage);
             IReadOnlyList<MembershipItem> items;
@@ -87,7 +87,7 @@ public sealed partial class AnkiCollectionService
         CancellationToken cancellationToken = default)
     {
         ValidateMembershipSize(add, remove);
-        return ExecuteAtomicallyAsync(async () =>
+        return ExecuteMembershipAsync(async () =>
         {
             var canonical = CanonicalLanguageName(targetLanguage);
             var items = await ReadMembershipAdditionsAsync(add, canonical, userId, cancellationToken);
@@ -104,7 +104,7 @@ public sealed partial class AnkiCollectionService
         IReadOnlyList<AnkiItemKey> remove, string userId, CancellationToken cancellationToken = default)
     {
         ValidateMembershipSize(add, remove);
-        return ExecuteAtomicallyAsync(async () =>
+        return ExecuteMembershipAsync(async () =>
         {
             var collection = await OwnedCollectionAsync(collectionId, userId, cancellationToken);
             if (collection is null) return false;
@@ -113,6 +113,36 @@ public sealed partial class AnkiCollectionService
             return true;
         }, cancellationToken);
     }
+
+    private async Task<bool> ExecuteMembershipAsync(Func<Task<bool>> operation, CancellationToken cancellationToken)
+    {
+        // Only replay our own transaction, starting from a clean unit of work. An
+        // assistant/caller transaction must decide how to recover its entire batch.
+        var canRetry = _context.Database.IsSqlServer() && _context.Database.CurrentTransaction is null
+            && !_context.ChangeTracker.HasChanges() && _context.ClaimedResourceReservation is null;
+        var consumed = _context.RequestReservations?.Consumed.ToArray();
+        try
+        {
+            return await ExecuteAtomicallyAsync(operation, cancellationToken);
+        }
+        catch (DbUpdateException exception) when (canRetry && IsDuplicateMembership(exception))
+        {
+            // ExecuteAtomicallyAsync has rolled back and cleared tracked/accounting
+            // entities. Restore reservation bookkeeping too, then reread the winner.
+            if (consumed is not null)
+            {
+                _context.RequestReservations!.Consumed.Clear();
+                _context.RequestReservations.Consumed.UnionWith(consumed);
+            }
+            return await ExecuteAtomicallyAsync(operation, cancellationToken);
+        }
+    }
+
+    private static bool IsDuplicateMembership(DbUpdateException exception) =>
+        exception.InnerException is Microsoft.Data.SqlClient.SqlException { Number: 2601 or 2627 } sql
+        && (sql.Message.Contains("IX_AnkiNotes_AnkiCollectionId_WordId", StringComparison.Ordinal)
+            || sql.Message.Contains("IX_AnkiNotes_AnkiCollectionId_SentenceId", StringComparison.Ordinal)
+            || sql.Message.Contains("IX_AnkiCards_AnkiNoteId_Direction", StringComparison.Ordinal));
 
     private static void ValidateMembershipSize(IReadOnlyList<AnkiItemKey> add, IReadOnlyList<AnkiItemKey> remove)
     {

@@ -34,8 +34,15 @@ public sealed class BooksController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
+        if (User.Identity?.IsAuthenticated != true)
+        {
+            ViewData["GuestSample"] = "books";
+            return View(Glosify.Services.Guest.GuestSamples.For(HttpContext).Index("books"));
+        }
+
         var userId = User.GetUserId();
         return View(new BookLibraryViewModel
         {

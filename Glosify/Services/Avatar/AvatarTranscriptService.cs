@@ -34,6 +34,7 @@ public sealed class AvatarTranscriptService(GlosifyContext db, AvatarSessions se
     {
         sessions.CachedTranscriptStatus(id, userId, language); // Validate ownership before accessing storage.
         using var lease = await sessions.LockTranscriptWritesAsync(userId, ct);
+        using var retained = sessions.RetainTranscript(id, userId, language);
         var transcript = await db.RealtimeTranslationTranscripts.AsNoTracking()
             .Where(t => t.AvatarConversationId == id && t.UserId == userId && t.TargetLanguage == language)
             .Select(t => new { t.Id, Count = t.Segments.Count }).SingleOrDefaultAsync(ct);
@@ -52,6 +53,7 @@ public sealed class AvatarTranscriptService(GlosifyContext db, AvatarSessions se
         if (automatic && (cached.Suppressed || sessions.AutoSavePreference(id, userId, language) == false))
             return cached;
         using var lease = await sessions.LockTranscriptWritesAsync(userId, ct);
+        using var retained = sessions.RetainTranscript(id, userId, language);
         var auto = await ReadPreferenceAsync(userId, ct);
         cached = sessions.CachedTranscriptStatus(id, userId, language);
         if (automatic && (!auto || cached.Suppressed) || cached.TurnCount == 0) return cached;
