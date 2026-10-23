@@ -23,7 +23,7 @@ internal sealed class AssistantRunStore(
     TimeProvider clock,
     Glosify.Services.Avatar.AvatarAssistantContext? avatarContext = null)
 {
-    private static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(2);
+    internal static readonly TimeSpan LeaseDuration = TimeSpan.FromMinutes(2);
 
     internal DateTime Now => clock.GetUtcNow().UtcDateTime;
 

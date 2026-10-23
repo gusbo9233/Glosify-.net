@@ -109,6 +109,8 @@ public sealed class CloudflareSubtitleTranslator : ICloudflareSubtitleTranslator
         string targetLanguage,
         CancellationToken cancellationToken)
     {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(Math.Clamp(_options.Cloudflare.TimeoutSeconds, 1, 60)));
         using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue(
             "Bearer",
@@ -121,13 +123,38 @@ public sealed class CloudflareSubtitleTranslator : ICloudflareSubtitleTranslator
             "application/json");
 
         using var client = _httpClientFactory.CreateClient(HttpClientName);
-        HttpResponseMessage response;
         try
         {
-            response = await client.SendAsync(
+            using var response = await client.SendAsync(
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
-                cancellationToken);
+                timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new RealtimeTranslationUpstreamException(
+                    $"Cloudflare could not translate the current subtitle (HTTP {(int)response.StatusCode}).");
+            }
+
+            await using var body = await response.Content.ReadAsStreamAsync(timeout.Token);
+            CloudflareTranslationResponse? result;
+            try
+            {
+                result = await JsonSerializer.DeserializeAsync<CloudflareTranslationResponse>(
+                    body,
+                    SerializerOptions,
+                    timeout.Token);
+            }
+            catch (JsonException)
+            {
+                throw new RealtimeTranslationUpstreamException(
+                    "Cloudflare returned an invalid translation response.");
+            }
+            if (string.IsNullOrWhiteSpace(result?.Translated))
+            {
+                throw new RealtimeTranslationUpstreamException(
+                    "Cloudflare returned an empty translation response.");
+            }
+            return result.Translated.Trim();
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -148,35 +175,6 @@ public sealed class CloudflareSubtitleTranslator : ICloudflareSubtitleTranslator
         {
             throw new RealtimeTranslationUpstreamException(
                 "Cloudflare subtitle translation is temporarily unavailable.");
-        }
-        using (response)
-        {
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new RealtimeTranslationUpstreamException(
-                    $"Cloudflare could not translate the current subtitle (HTTP {(int)response.StatusCode}).");
-            }
-
-            await using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
-            CloudflareTranslationResponse? result;
-            try
-            {
-                result = await JsonSerializer.DeserializeAsync<CloudflareTranslationResponse>(
-                    body,
-                    SerializerOptions,
-                    cancellationToken);
-            }
-            catch (JsonException)
-            {
-                throw new RealtimeTranslationUpstreamException(
-                    "Cloudflare returned an invalid translation response.");
-            }
-            if (string.IsNullOrWhiteSpace(result?.Translated))
-            {
-                throw new RealtimeTranslationUpstreamException(
-                    "Cloudflare returned an empty translation response.");
-            }
-            return result.Translated.Trim();
         }
     }
 

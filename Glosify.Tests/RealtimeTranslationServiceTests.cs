@@ -648,6 +648,35 @@ public sealed class RealtimeTranslationServiceTests
             (await context.RealtimeTranslationSessions.SingleAsync()).Status);
     }
 
+    [Fact]
+    public async Task Cleanup_PreservesSessionRefreshedAfterCandidateSelection()
+    {
+        await using var context = CreateContext();
+        await SeedUserAsync(context);
+        var clock = new ManualTimeProvider(TestNow);
+        using var keyedLock = new ReferenceCountedKeyedAsyncLock();
+        var service = CreateService(context, clock, new FakeRelayTokenStore(), keyedLock: keyedLock);
+        var created = await service.CreateSessionAsync("user-1", "es");
+        await service.BeginMinuteAsync("user-1", created.SessionId, 1);
+        clock.Advance(TimeSpan.FromSeconds(61));
+        var held = await keyedLock.AcquireAsync("session:" + created.SessionId.ToString("N"));
+        Task cleanup;
+        try
+        {
+            cleanup = service.CleanupStaleSessionsAsync();
+            Assert.False(cleanup.IsCompleted);
+            // Simulate the heartbeat write that owns this lock while cleanup waits.
+            var session = await context.RealtimeTranslationSessions.SingleAsync();
+            session.LastHeartbeatAt = clock.GetUtcNow();
+            await context.SaveChangesAsync();
+        }
+        finally { await held.DisposeAsync(); }
+        await cleanup;
+        var refreshed = await context.RealtimeTranslationSessions.SingleAsync();
+        Assert.Equal(clock.GetUtcNow(), refreshed.LastHeartbeatAt);
+        Assert.Equal(RealtimeTranslationSessionStatuses.Active, refreshed.Status);
+    }
+
     private static GlosifyContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GlosifyContext>()
@@ -675,7 +704,8 @@ public sealed class RealtimeTranslationServiceTests
         Action<RealtimeTranslationOptions>? configure = null,
         CreditPricingOptions? pricingOptions = null,
         ResourceQuotaService? quotas = null,
-        Func<IAiCreditService, IAiCreditService>? creditDecorator = null)
+        Func<IAiCreditService, IAiCreditService>? creditDecorator = null,
+        IKeyedAsyncLock? keyedLock = null)
     {
         var usageOptions = new AiUsageOptions
         {
@@ -731,7 +761,7 @@ public sealed class RealtimeTranslationServiceTests
             realtimePricing,
             timeProvider,
             NullLogger<RealtimeTranslationService>.Instance,
-            new ReferenceCountedKeyedAsyncLock(), quotas);
+            keyedLock ?? new ReferenceCountedKeyedAsyncLock(), quotas);
     }
 
     private sealed class FailingSetupCredits(IAiCreditService inner, string failure) : IAiCreditService
