@@ -78,6 +78,9 @@ jobs:
           dotnet ef migrations has-pending-model-changes --project Glosify/Glosify.csproj --configuration Release --no-build
 
       - name: Test
+        env:
+          # Many test hosts otherwise exhaust the Linux runner's inotify instances.
+          DOTNET_USE_POLLING_FILE_WATCHER: "1"
         run: >-
           dotnet test Glosify.Tests/Glosify.Tests.csproj
           --configuration Release

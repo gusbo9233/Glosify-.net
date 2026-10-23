@@ -30,7 +30,7 @@ public sealed class AssistantEvaluationRecoveryTests
             await db.SaveChangesAsync();
         }
         var credits = new Credits();
-        await using (var db = h.Db()) await Worker(h, db, new Evaluator(_ => Task.FromResult(Result("recovered"))), credits).EvaluateOneAsync(default);
+        await using (var db = h.Db()) Assert.True(await Worker(h, db, new Evaluator(_ => Task.FromResult(Result("recovered"))), credits).EvaluateOneAsync(default));
         await using var after = h.Db();
         var evaluation = await after.AssistantToolEvaluations.SingleAsync();
         Assert.Equal("evaluated", evaluation.Status);
@@ -49,7 +49,7 @@ public sealed class AssistantEvaluationRecoveryTests
         row.Status = "evaluating"; row.LeaseId = Guid.NewGuid(); row.LeaseUntil = h.Clock.GetUtcNow().UtcDateTime.AddMinutes(2);
         await db.SaveChangesAsync();
         var credits = new Credits();
-        await Worker(h, db, new Evaluator(_ => throw new InvalidOperationException("Should not evaluate")), credits).EvaluateOneAsync(default);
+        Assert.False(await Worker(h, db, new Evaluator(_ => throw new InvalidOperationException("Should not evaluate")), credits).EvaluateOneAsync(default));
         Assert.Empty(credits.Reserved);
         Assert.Equal("evaluating", (await db.AssistantToolEvaluations.AsNoTracking().SingleAsync()).Status);
     }
