@@ -1,0 +1,18 @@
+// Run in ws-b08575d2-swedencent after deployment. Usage is delayed; evaluate complete UTC days.
+// Target: <100 MB/day, providing headroom within the shared 5 GB/month allowance.
+Usage
+| where TimeGenerated > ago(8d)
+| where StartTime >= startofday(ago(7d)) and StartTime < startofday(now())
+| where IsBillable == true
+| summarize IngestedMB = sum(Quantity) by Day = bin(StartTime, 1d)
+| extend AboveTarget = IngestedMB >= 100,
+    Projected31DayGB = IngestedMB * 31 / 1000
+| order by Day asc
+
+// Run separately to identify remaining volume by table.
+Usage
+| where TimeGenerated > ago(3d)
+| where StartTime >= startofday(ago(1d)) and StartTime < startofday(now())
+| where IsBillable == true
+| summarize IngestedMB = sum(Quantity) by DataType
+| order by IngestedMB desc

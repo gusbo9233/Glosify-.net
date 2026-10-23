@@ -3,6 +3,7 @@ using Glosify.Data;
 using Glosify.Extensions;
 using Glosify.Infrastructure.Api;
 using Glosify.Infrastructure.Health;
+using Glosify.Infrastructure.Telemetry;
 using Glosify.Localization;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Generation;
@@ -161,13 +162,15 @@ if (!string.IsNullOrWhiteSpace(builder.Configuration["APPLICATIONINSIGHTS_CONNEC
         .AddOpenTelemetry()
         .WithTracing(tracing => tracing
             .AddSource(GenerativeAiTelemetry.ActivitySourceName)
-            .AddSource(RealtimeTranslationTelemetry.ActivitySourceName))
+            .AddSource(RealtimeTranslationTelemetry.ActivitySourceName)
+            .AddGlosifyCostControls())
         .WithMetrics(metrics => metrics
             .AddMeter(GenerativeAiTelemetry.MeterName)
             .AddMeter("Glosify.Abuse")
             .AddMeter("Glosify.Assistant.Runtime")
             .AddMeter(RealtimeTranslationTelemetry.MeterName)
-            .AddMeter(DisplayLanguageTelemetry.MeterName))
+            .AddMeter(DisplayLanguageTelemetry.MeterName)
+            .AddGlosifyCostControls())
         .UseAzureMonitor(options =>
         {
             options.SamplingRatio = 1.0F;

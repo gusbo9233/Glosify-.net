@@ -11,7 +11,11 @@ internal sealed class AssistantRunSignals
 {
     private readonly object _gate = new();
     private readonly Dictionary<Guid, Waiter> _waiters = [];
+    private TaskCompletionSource _workAvailable = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal int WaitingRunCount { get { lock (_gate) return _waiters.Count; } }
+
+    // Capture before querying SQL so a commit between the query and wait cannot be missed.
+    internal Task WorkAvailable { get { lock (_gate) return _workAvailable.Task; } }
 
     private sealed class Waiter
     {
@@ -22,8 +26,15 @@ internal sealed class AssistantRunSignals
     public void Notify(Guid runId)
     {
         Waiter? waiter;
-        lock (_gate) _waiters.Remove(runId, out waiter);
+        TaskCompletionSource work;
+        lock (_gate)
+        {
+            _waiters.Remove(runId, out waiter);
+            work = _workAvailable;
+            _workAvailable = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
         waiter?.Signal.TrySetResult();
+        work.TrySetResult();
     }
 
     public async Task WaitAsync(Guid runId, TimeSpan timeout, CancellationToken cancellationToken)
