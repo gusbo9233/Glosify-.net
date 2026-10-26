@@ -27,6 +27,23 @@ public sealed class AssistantRunApiTests
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     [Fact]
+    public async Task Stale_displayed_language_uses_problem_details_and_does_not_queue_work()
+    {
+        using var factory = new RunFactory();
+        using var client = factory.CreateClient(new() { BaseAddress = new Uri("https://localhost") });
+        var response = await client.PostAsJsonAsync($"/api/assistant/runs/chats/{factory.ThreadId}",
+            new AssistantRunStartInput("stale-language", new AssistantRunInput("Hello", ExpectedLanguageCode: "uk")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains("learning language changed", problem.RootElement.GetProperty("detail").GetString());
+        Assert.Equal(problem.RootElement.GetProperty("detail").GetString(), problem.RootElement.GetProperty("error").GetString());
+        using var scope = factory.Services.CreateScope();
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<GlosifyContext>().AssistantRuns.ToListAsync());
+    }
+
+    [Fact]
     public async Task Bearer_start_returns_202_with_a_status_url_and_replays_the_same_submission()
     {
         using var factory = new RunFactory();

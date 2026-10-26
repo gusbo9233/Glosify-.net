@@ -34,6 +34,7 @@ const harness = (handlers = {}, options = {}) => {
         openEvents: options.noEvents ? () => null : url => new FakeEvents(url),
         schedule: callback => scheduled.push(callback),
         newKey: (() => { let next = 0; return () => `key-${++next}`; })(),
+        learningLanguageCode: options.learningLanguageCode,
     });
     return { runs, calls, updates, scheduled };
 };
@@ -43,6 +44,21 @@ test('status helpers separate working, waiting, and finished runs', () => {
     assert.ok(isWaiting('awaiting_input') && isWaiting('awaiting_approval') && isWaiting('paused'));
     assert.ok(isTerminal('completed') && isTerminal('cancelled') && isTerminal('failed'));
     assert.equal(isWorking('completed'), false);
+});
+
+test('starts and follow-ups carry the learning language rendered on the page', async () => {
+    const h = harness({
+        'POST /Assistant/Runs/chats/chat-1': () => run({ status: 'queued' }),
+        'POST /Assistant/Runs/run-1/steer': () => run({ revision: 2 }),
+        'POST /Assistant/Runs/run-1/approve': () => run({ revision: 3 }),
+    }, { learningLanguageCode: 'uk' });
+    await h.runs.send('chat-1', { message: 'Help me practice' });
+    await h.runs.send('chat-1', { message: 'Use shorter sentences' });
+    await h.runs.approve('chat-1');
+
+    assert.equal(h.calls[0].body.request.expectedLanguageCode, 'uk');
+    assert.equal(h.calls[1].body.expectedLanguageCode, 'uk');
+    assert.equal(h.calls[2].body.expectedLanguageCode, 'uk');
 });
 
 test('rapid answers share one pending command, with retry after failure', async () => {

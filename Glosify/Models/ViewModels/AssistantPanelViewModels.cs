@@ -56,6 +56,7 @@ public sealed class AssistantPanelContentViewModel
 {
     public required AssistantPanelViewModel Panel { get; init; }
     public required string ContextOptionsUrl { get; init; }
+    public string? LearningLanguageCode { get; init; }
 }
 
 public sealed record AssistantContextOptions(

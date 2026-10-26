@@ -1217,6 +1217,7 @@ import {
     };
 
     const runs = createAssistantRuns({
+        learningLanguageCode: panel.dataset.learningLanguageCode,
         onChanges: run => {
             for (const change of run.resourceChanges || []) {
                 if (change.kind === 'delete_quiz' && change.entityId === quizId) void setQuizContext(null, 'GlobeGlotter');

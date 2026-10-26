@@ -3,11 +3,15 @@ using Glosify.Infrastructure.Api;
 using Glosify.Models;
 using Glosify.Models.Entities;
 using Glosify.Localization;
+using Glosify.Services.Auth;
+using Glosify.Services.Language;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Policy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Options;
 
 namespace Glosify.Extensions;
 
@@ -78,6 +82,28 @@ public static class AuthenticationExtensions
             }
             var defaultLoginRedirect = options.Events.OnRedirectToLogin;
             var defaultAccessDeniedRedirect = options.Events.OnRedirectToAccessDenied;
+            var defaultSigningIn = options.Events.OnSigningIn;
+            options.Events.OnSigningIn = async context =>
+            {
+                await defaultSigningIn(context);
+                // All successful application-cookie sign-ins pass here, including
+                // external providers and Identity's two-factor flow.
+                if (context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier) is { Length: > 0 } userId
+                    && context.HttpContext.RequestServices.GetRequiredService<ILanguageContext>() is CookieLanguageContext languages)
+                {
+                    var demo = context.HttpContext.RequestServices.GetRequiredService<IOptions<DemoAccountOptions>>().Value;
+                    var sharedDemo = demo.Enabled && !string.IsNullOrWhiteSpace(demo.Email)
+                        && string.Equals(context.Principal.FindFirstValue(ClaimTypes.Email), demo.Email, StringComparison.OrdinalIgnoreCase);
+                    // RefreshSignInAsync also raises this event. Only a guest entering
+                    // a personal account should replace its saved learning language.
+                    var importGuestSelection = context.HttpContext.User.Identity?.IsAuthenticated != true && !sharedDemo;
+                    await languages.ApplySignInAsync(
+                        context.HttpContext.RequestServices.GetRequiredService<IQuizLanguagePreferenceService>(),
+                        userId,
+                        importGuestSelection,
+                        context.HttpContext.RequestAborted);
+                }
+            };
             options.Events.OnRedirectToLogin = context =>
             {
                 if (context.Request.Path.StartsWithSegments("/api/game"))

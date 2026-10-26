@@ -29,9 +29,22 @@ a dismissible dialog. The standalone `/login` page remains available. Signing
 in returns to the corresponding personal library without copying samples or
 transferring guest results. Samples follow the language preference across
 libraries, detail pages, practice, speech labels, and PDF readers. The guest
-cookie takes precedence over the older account cookie. All 69 learning languages
+cookie takes precedence over the older account cookie. A guest's explicit choice
+becomes the saved account language after successful sign-in to a personal account;
+otherwise the saved account language is restored. Signed-in pages and the assistant
+use that saved preference, so an older browser cookie cannot override it. All 69 learning languages
 are covered, with English meanings; English samples use Spanish meanings.
 Freestyle has a solar-system starter. With no selection, samples default to Spanish.
+
+Each accepted assistant message captures the selected learning language for its
+prompt, tools, and transcript context, including queued work and worker restarts.
+The web panel sends the language displayed on its page; stale pages and follow-ups
+after a language change are rejected with a reload/switch-back message. Explicit
+quiz or Anki context must match that selection; an older implicit Anki context
+cannot override it. Changing language starts a separate chat, while already
+accepted work retains the language it was sent with.
+Clearing the selection opens a chat with no learning language; earlier chats
+become available again when their language is selected.
 
 Starter phrases live in `Glosify/Services/Guest/starter-content.json` and are
 embedded in the application. Each language has five practice phrases and a short

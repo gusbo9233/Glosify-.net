@@ -127,6 +127,7 @@ public sealed class RetiredFeatureRoutesTests : IDisposable
         {
             var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
             db.Add(new Glosify.Services.Abuse.ResourceAccountingState { Id = 1, Ready = true });
+            db.Users.Add(new ApplicationUser { Id = "admin-1", UserName = "admin-1", SelectedQuizLanguageCode = "pl" });
             await db.SaveChangesAsync();
             db.Quizzes.Add(new Quiz
             {

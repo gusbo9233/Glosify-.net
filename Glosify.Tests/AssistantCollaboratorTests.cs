@@ -187,8 +187,7 @@ public sealed class AssistantCollaboratorTests
             new FixedLanguagePreference());
 
         Assert.Equal("German", await resolver.ResolveLanguageAsync("owner", CancellationToken.None));
-        // Saved transcript libraries remain scoped to the account preference.
-        Assert.Equal("pl", await resolver.ResolveLanguageCodeAsync("owner", CancellationToken.None));
+        Assert.Equal("de", await resolver.ResolveLanguageCodeAsync("owner", CancellationToken.None));
         Assert.Equal(ownedQuiz.Id, (await resolver.ResolveQuizAsync(ownedQuiz.Id, "owner", CancellationToken.None))?.Id);
         await Assert.ThrowsAsync<QuizNotFoundException>(() =>
             resolver.ResolveQuizAsync(ownedQuiz.Id, "another-user", CancellationToken.None));

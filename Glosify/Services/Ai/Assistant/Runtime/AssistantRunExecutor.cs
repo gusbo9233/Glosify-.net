@@ -76,7 +76,7 @@ internal sealed class AssistantRunExecutor(
         {
             if (!state.Initialized)
             {
-                await InitializeAsync(run, lease, cancellationToken);
+                await InitializeAsync(run, state, lease, cancellationToken);
             }
             else if (state.PendingSteering.Count > 0)
             {
@@ -115,14 +115,14 @@ internal sealed class AssistantRunExecutor(
         }
     }
 
-    private async Task InitializeAsync(AssistantRun run, Guid lease, CancellationToken cancellationToken)
+    private async Task InitializeAsync(AssistantRun run, AssistantRunState initialState, Guid lease, CancellationToken cancellationToken)
     {
         var input = RunJson.Read<AssistantRunInput>(run.RequestJson);
         var thread = await db.AssistantThreads.AsNoTracking().SingleAsync(candidate => candidate.Id == run.ThreadId, cancellationToken);
         AssistantRunContext.Resolved resolved;
         try
         {
-            resolved = await contexts.ResolveAsync(run, input, thread, cancellationToken);
+            resolved = await contexts.ResolveAsync(run, input, thread, cancellationToken, initialState.LanguageSelection);
         }
         catch (Exception ex) when (ex is QuizNotFoundException or InvalidOperationException)
         {
@@ -984,7 +984,9 @@ internal sealed class AssistantRunExecutor(
 
         if (run.CurrentMessageId is Guid messageId)
         {
-            var message = await db.AssistantMessages.SingleAsync(candidate => candidate.Id == messageId, cancellationToken);
+            // Context validation can fail before the first reply has been saved.
+            var message = db.AssistantMessages.Local.SingleOrDefault(candidate => candidate.Id == messageId)
+                ?? await db.AssistantMessages.SingleAsync(candidate => candidate.Id == messageId, cancellationToken);
             var text = keepReply ? await LatestTextAsync(messageId, cancellationToken) : null;
             if (text is null)
             {

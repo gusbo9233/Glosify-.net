@@ -17,18 +17,15 @@ internal sealed class AssistantContextResolver(
     ILanguageContext languageContext,
     IQuizLanguagePreferenceService languagePreferences)
 {
-    public async Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(languageContext.CurrentLanguage))
-        {
-            return languageContext.CurrentLanguage;
-        }
+    public async Task<QuizLanguage?> ResolveSelectedLanguageAsync(string userId, CancellationToken cancellationToken) =>
+        QuizLanguageCatalog.Find(languageContext.CurrentLanguage)
+        ?? await languagePreferences.GetSelectedAsync(userId, cancellationToken);
 
-        return (await languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Name;
-    }
+    public async Task<string?> ResolveLanguageAsync(string userId, CancellationToken cancellationToken) =>
+        (await ResolveSelectedLanguageAsync(userId, cancellationToken))?.Name;
 
     public async Task<string?> ResolveLanguageCodeAsync(string userId, CancellationToken cancellationToken) =>
-        (await languagePreferences.GetSelectedAsync(userId, cancellationToken))?.Code;
+        (await ResolveSelectedLanguageAsync(userId, cancellationToken))?.Code;
 
     /// <summary>
     /// Existing quiz translations stay consistent. For a new quiz the model infers the
@@ -109,6 +106,16 @@ internal sealed class AssistantContextResolver(
         Guid? transcriptId,
         AssistantTranscriptPageContext? viewedPage,
         string userId,
+        CancellationToken cancellationToken) =>
+        transcriptId is null ? null : await ResolveTranscriptAsync(
+            transcriptId, viewedPage, userId,
+            await ResolveSelectedLanguageAsync(userId, cancellationToken), cancellationToken);
+
+    public async Task<TranscriptAssistantContext?> ResolveTranscriptAsync(
+        Guid? transcriptId,
+        AssistantTranscriptPageContext? viewedPage,
+        string userId,
+        QuizLanguage? selectedLanguage,
         CancellationToken cancellationToken)
     {
         if (!transcriptId.HasValue)
@@ -116,7 +123,6 @@ internal sealed class AssistantContextResolver(
             return null;
         }
 
-        var selectedLanguage = await languagePreferences.GetSelectedAsync(userId, cancellationToken);
         if (selectedLanguage is { IsLanguageLearning: false })
         {
             return null;

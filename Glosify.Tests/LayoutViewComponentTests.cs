@@ -41,6 +41,7 @@ public sealed class LayoutViewComponentTests
 
         var panel = Assert.IsAssignableFrom<IElement>(document.QuerySelector("[data-assistant-panel]"));
         Assert.Equal("/Assistant/ContextOptions", panel.GetAttribute("data-context-options-url"));
+        Assert.Equal("pl", panel.GetAttribute("data-learning-language-code"));
         Assert.Equal(0, services.QuizLibraryCalls);
         Assert.Equal(0, services.BookLibraryCalls);
         Assert.Equal(0, services.LanguagePreferenceCalls);
