@@ -230,7 +230,6 @@ public sealed class AnkiControllerLanguageTests
             SourceLanguage = "English",
             TargetLanguage = "Polish",
             Language = "Polish",
-            ProcessingStatus = "Ready",
             CreatedAt = Now,
         };
         var word = new Word
@@ -361,7 +360,6 @@ public sealed class AnkiControllerLanguageTests
             SourceLanguage = "English",
             TargetLanguage = targetLanguage,
             Language = targetLanguage,
-            ProcessingStatus = "Ready",
             CreatedAt = Now,
         };
         var word = new Word { Id = $"word-{Guid.NewGuid():N}", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };

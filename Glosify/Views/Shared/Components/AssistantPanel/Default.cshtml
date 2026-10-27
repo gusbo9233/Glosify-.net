@@ -8,6 +8,7 @@
 
 <div class="assistant-float"
      data-assistant-panel
+     data-learning-language-code="@(Model.LearningLanguageCode ?? string.Empty)"
      data-quiz-id="@panel.QuizId"
      data-anki-collection-id="@panel.AnkiCollectionId"
      data-context-label="@(string.IsNullOrWhiteSpace(panel.ContextLabel) ? "GlobeGlotter" : panel.ContextLabel)"
@@ -86,6 +87,7 @@
                         class="form-textarea"
                         data-assistant-textarea
                         dir="auto"
+                        aria-label="@panel.Placeholder"
                         placeholder="@panel.Placeholder"
                         rows="3"
                         required></textarea>

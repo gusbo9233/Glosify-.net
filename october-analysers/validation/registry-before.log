@@ -1,0 +1,27 @@
+  Glosify -> /Users/gustav/GlobeGlotter/Glosify/Glosify/bin/Debug/net10.0/Glosify.dll
+  Glosify.Tests -> /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll
+Test run for /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.30]     Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: False) [FAIL]
+[xUnit.net 00:00:00.30]     Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: True) [FAIL]
+  Failed Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: False) [11 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "0d9e43690f524239aced97c3ef943a9b"
+Actual:   null
+  Stack Trace:
+     at Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(Boolean findActive) in /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/QuizSessionRegistryTests.cs:line 57
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)
+  Failed Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: True) [1 ms]
+  Error Message:
+   Assert.Equal() Failure: Strings differ
+Expected: "a52adf91aca848589b320c020e03b2f1"
+Actual:   null
+  Stack Trace:
+     at Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(Boolean findActive) in /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/QuizSessionRegistryTests.cs:line 57
+   at InvokeStub_QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(Object, Span`1)
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+Results File: /tmp/glosify-analyser-remaining-tests/registry-before.trx
+
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 25 ms - Glosify.Tests.dll (net10.0)

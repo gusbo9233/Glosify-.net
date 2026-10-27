@@ -355,7 +355,7 @@ public sealed class ResourceAccountingTests
     }
 
     private static Quiz Quiz(string name, string language) => new() { Id = Guid.NewGuid(), UserId = "owner", Name = name,
-        SourceLanguage = "English", TargetLanguage = language, Language = language, ProcessingStatus = "Ready" };
+        SourceLanguage = "English", TargetLanguage = language, Language = language };
     private static async Task Initialize(GlosifyContext db)
     {
         await db.Database.EnsureCreatedAsync();

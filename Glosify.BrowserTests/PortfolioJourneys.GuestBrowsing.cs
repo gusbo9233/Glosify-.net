@@ -12,7 +12,11 @@ public sealed partial class PortfolioJourneys
         foreach (var section in new[] { "Books", "Quiz", "Anki", "Transcripts", "Translations" })
         {
             await Page.GotoAsync($"/{section}");
-            await Expect(Page.Locator("[data-guest-return]")).ToBeVisibleAsync();
+            await Expect(Page.Locator("[data-guest-return]")).ToHaveCountAsync(1);
+            if (section == "Anki")
+                await Expect(Page.Locator("[data-sample-reveal]")).ToBeVisibleAsync();
+            else
+                await Expect(Page.Locator("[data-guest-return]")).ToBeVisibleAsync();
             await Expect(Page.Locator(".guest-preview")).ToHaveCountAsync(0);
             // The Books sample renders its cover from a PDF fetch that leaving early would abort.
             await WaitForNetworkQuiescenceAsync();

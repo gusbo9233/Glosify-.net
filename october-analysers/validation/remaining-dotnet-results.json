@@ -1,0 +1,892 @@
+{
+  "counts": {
+    "total": "174",
+    "executed": "167",
+    "passed": "167",
+    "failed": "0",
+    "error": "0",
+    "timeout": "0",
+    "aborted": "0",
+    "inconclusive": "0",
+    "passedButRunAborted": "0",
+    "notRunnable": "0",
+    "notExecuted": "0",
+    "disconnected": "0",
+    "warning": "0",
+    "completed": "0",
+    "inProgress": "0",
+    "pending": "0"
+  },
+  "tests": [
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_RejectsOutOfRangeWordCount(wordCount: 1001)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardSessionServiceTests.RestartWithAgainCards_PreservesPracticeDirection",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Anki_direction_undo_preserves_intervening_reviews(reviewBeforeUndo: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"rename_anki_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.WordServiceSentencePracticeTests.GetAvailableSentenceCountAsync_CountsOnlyQuizSentences",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_commits_creation_and_second_apply_does_not_duplicate_it",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardControllerStalenessTests.Sentence_cards_reveal_with_loader_ids_and_reject_changed_content(changed: True, selected: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RemainingAnalyserVerificationProbes.Unknown_learning_actions_do_not_create_changes(tool: \"manage_anki\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RemainingAnalyserVerificationProbes.Word_matching_treats_regex_syntax_as_literal_and_scales_on_long_input(typing: False)",
+      "outcome": "Passed",
+      "stdout": "10000 characters: 0,007 ms\n100000 characters: 0,032 ms\n1000000 characters: 0,431 ms"
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: True, rate: False, change: \"owner\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.SettingsValidateTheSupportedSessionSize(count: 1001, expected: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Historical_sharing_journals_can_still_be_undone(kind: \"collection_visibility\", type: \"collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_rejects_an_entire_stale_custom_quiz_batch_without_partial_application",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizContentSelectionTests.TypingLoaderUsesSentencesEvenWhenCalledWithWordIds",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizAttemptServiceTests.RecordTypingAttemptAsync_MapsItemsWithCorrectness",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"copy_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_EditSentence_UpdatesOnlySentenceInCurrentQuiz",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_MultipleQuizProposal",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.CountBasedLoadersUseTheSameSupportedSize(requested: 1001, expected: 1000)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_DeleteSentence_IgnoresSentenceFromOtherQuiz",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.WordServiceSentencePracticeTests.GetSentencesAsync_ReturnsSentencesInAddedOrder",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizAttemptServiceTests.RecordFlashcardAttemptAsync_MapsSessionCounts",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"collection_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Steering_before_write_checkpoint_should_prevent_old_write",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_DeduplicatesCaseInsensitively",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.SaveSession_MakesSessionResumableWithMatchingSettings",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Explicit_quiz_edits_should_also_detect_user_changes",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Retired_public_library_actions_cannot_change_content(action: \"collection_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_SameLemmaEditStillPreventsDuplicateInsertion(editedLemma: \"dom\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.BothModesResumeAndResetTheSameCountTheyStore(requested: 1001)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Undo_edit_keeps_later_content_with_the_original_text(sentence: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(direction: \"target-to-source\", expectedPrompt: \"Skin\", expectedAnswer: \"Largest human organ\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"copy_quiz\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.SqlServer_lookup_preserves_case_sensitive_staleness_checks",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_Resume",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.Freestyle_forces_word_items_when_sentences_are_requested",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"collection_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"rename_anki_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Approval_does_not_delete_a_quiz_changed_since_preview",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.GetQuizDataAsync_TargetToSource_UsesLemmaPromptAndTranslationAnswer",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_ApprovalConflict",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: False, rating: \"skip\", expectedIndex: 0, expectedStatus: 200)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.FindResumableSession_DoesNotMatchDifferentSettingsOrUser",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.GetQuizDataAsync_SourceToTargetSentences_UsesTranslationPromptAndTextAnswer",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AvatarTranscriptTests.StorageQuotaFailureLeavesSpokenContentAvailableForRetry",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Retired_public_library_actions_cannot_change_content(action: \"quiz_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AvatarTranscriptTests.FullLogSurvivesHistoryTrimmingReconnectAndDuplicateAcknowledgements",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AvatarTranscriptTests.CapacityStopsNewTurnsWithoutDiscardingOldContent",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Resume_after_step_limit_should_call_model_again",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_AcceptsPracticeDirections(practiceDirection: \"target-to-source\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RemainingAnalyserVerificationProbes.Word_matching_treats_regex_syntax_as_literal_and_scales_on_long_input(typing: True)",
+      "outcome": "Passed",
+      "stdout": "10000 characters: 0,482 ms\n100000 characters: 0,052 ms\n1000000 characters: 0,405 ms"
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_DeletingAndReAddingASentenceInOneProposalKeepsIt",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_SameLemmaEditStillPreventsDuplicateInsertion(editedLemma: \"DOM\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AStagedSentenceStillClaimsItsTextWhenAnotherRowIsDeleted",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Assistant_cannot_customize_shared_study_defaults(field: \"new_cards_per_day\", value: 12)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AvatarTranscriptTests.WritesRequireAntiforgeryAndConversationOwnership",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.BothModesResumeAndResetTheSameCountTheyStore(requested: 1000)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Per_change_targets_cannot_bypass_ownership_or_partially_apply",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_FreesTheOldLemmaForReplacement(mutation: \"delete_word\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: True, rate: False, change: \"translation\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.SettingsValidateTheSupportedSessionSize(count: 1000, expected: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.GetQuizDataAsync_TargetToSourceSentences_UsesTextPromptAndTranslationAnswer",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"anki_create\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardSessionServiceTests.Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(direction: \"target-to-source\", expectedPrompt: \"Skin\", expectedAnswer: \"Largest human organ\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Undo_edit_keeps_later_content_with_the_original_text(sentence: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.SessionCap_IsPerUser",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"copy_quiz\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardSessionServiceTests.Unsupported_ratings_do_not_advance_or_score(rating: \"hard\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.SettingsValidateTheSupportedSessionSize(count: 0, expected: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: True, rating: \"skip\", expectedIndex: 0, expectedStatus: 200)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Approved_delete_should_keep_content_edited_since_proposal",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.GuestBrowsingTests.TypingResultsRestart_RemainsLocalPractice",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.CountBasedLoadersUseTheSameSupportedSize(requested: 150, expected: 150)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.ResetSession_RemovesSessionAndItsData",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Sync_explicit_quiz_delete_should_remain_applicable",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Removed_anki_collection_actions_are_not_applied_or_journaled(action: \"create\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_DoesNotReleaseLemmaHeldByAnUntouchedDuplicate(mutation: \"delete_word\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_SyncProposal",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Manage_anki_cannot_create_a_second_collection_for_a_language",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: False, rate: True, change: \"translation\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_LibraryOrganizationChanges_UseOwnedCollections",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.Sync_proposal_preserves_separate_targets_and_applies_once",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_DeleteSentence_RemovesSentenceFromQuiz",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_ExplicitQuizConflict",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_FreesTheOldLemmaForReplacement(mutation: \"edit_word\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_AcceptsTypicalUsage",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.AllPresentationCapsOnlyCountsBeyondTheSessionLimit",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Removed_anki_collection_actions_are_not_applied_or_journaled(action: \"delete\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Historical_sharing_journals_can_still_be_undone(kind: \"quiz_visibility\", type: \"quiz\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"copy_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: True, rating: \"invalid\", expectedIndex: 0, expectedStatus: 400)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_IsSkippedWhenTheSameProposalAddsItAsASentence",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_StagedReplacementRetainsLemmaWhenAnotherRowIsDeleted",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_RejectsOutOfRangeWordCount(wordCount: 0)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RemainingAnalyserVerificationProbes.Unknown_learning_actions_do_not_create_changes(tool: \"manage_quiz_library\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: False, rating: \"skip\", expectedIndex: 1, expectedStatus: 409)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_IsSkippedWhenTheQuizAlreadyHasItAsASentence",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_DeletingEveryDuplicateAllowsOneReplacement",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.WordServiceSentencePracticeTests.GetWordsAsync_ReturnsWordsInAddedOrder",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: False, rating: \"good\", expectedIndex: 0, expectedStatus: 409)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Rename_is_saved_and_undo_updates_resource_revision",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RealtimeTranslationRelayTokenConcurrencyTests.ConcurrentRedemption_ConsumesGrantEvenWhenFirstRequestHasWrongSession(wrongSessionFirst: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"anki_delete\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingSessionServiceTests.FindSession_DoesNotReturnOtherUsersSession",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_AcceptsPracticeDirections(practiceDirection: \"source-to-target\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.BothModesResumeAndResetTheSameCountTheyStore(requested: 201)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.BothModesResumeAndResetTheSameCountTheyStore(requested: 150)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Anki_timezone_undo_keeps_intervening_timezone_edits",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.SettingsValidateTheSupportedSessionSize(count: 201, expected: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(direction: \"source-to-target\", expectedPrompt: \"Largest human organ\", expectedAnswer: \"Skin\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_IsSkippedWhenAnEditProducesThatSentence",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Lookup_is_one_bounded_owner_scoped_query_and_preserves_exact_card_content(sentence: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RealtimeTranslationRelayTokenConcurrencyTests.ConcurrentRedemption_ConsumesGrantEvenWhenFirstRequestHasWrongSession(wrongSessionFirst: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyCreateQuiz_DeduplicatesStarterSentenceText",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: True, rate: True, change: \"text\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_RejectsOutOfRangeWordCount(wordCount: -1)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_StillAddsAPhraseThatIsNotAStoredSentence",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Historical_sharing_journals_can_still_be_undone(kind: \"copy_collection\", type: \"collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_RejectsInvalidPracticeItemType",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardResponseConcurrencyTests.Reveal_response_remains_consistent_when_another_request_rates_the_card",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(findActive: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Lookup_is_one_bounded_owner_scoped_query_and_preserves_exact_card_content(sentence: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Delete_quiz_waits_for_approval_then_reports_permanent_committed_change",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: False, rate: True, change: \"owner\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Previously_queued_study_limit_changes_are_rejected_without_changing_timezone",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_RepeatedRenamesReleaseEachPreviousLemma",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyCreateQuiz_PersistsStarterWordsAndSentencesInOneTransaction",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.WordMutation_DoesNotReleaseLemmaHeldByAnUntouchedDuplicate(mutation: \"edit_word\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantRunRegressionTests.SqlServer_Steering",
+      "outcome": "NotExecuted",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"anki_rename\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardSessionServiceTests.Unsupported_ratings_do_not_advance_or_score(rating: \"unknown\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionLimitTests.CountBasedLoadersUseTheSameSupportedSize(requested: 201, expected: 201)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_EditingASentenceFreesTheTextItNoLongerHolds",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: False, rate: False, change: \"text\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"create_anki_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardSessionServiceTests.Freestyle_uses_prompt_to_answer_by_default_and_reverses_it(direction: \"source-to-target\", expectedPrompt: \"Largest human organ\", expectedAnswer: \"Skin\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_PropagatesAStaleCollectionAndCreatesNothing",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardControllerStalenessTests.Sentence_cards_reveal_with_loader_ids_and_reject_changed_content(changed: True, selected: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Legacy_skip_can_advance_unrevealed_cards_but_stale_requests_cannot(revealed: True, rating: \"good\", expectedIndex: 0, expectedStatus: 200)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Assistant_cannot_customize_shared_study_defaults(field: \"maximum_reviews_per_day\", value: 100)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Removed_anki_collection_actions_are_not_applied_or_journaled(action: \"rename\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: False, rate: False, change: \"deleted\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"create_anki_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Historical_sharing_journals_can_still_be_undone(kind: \"copy_quiz\", type: \"quiz\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Retired_public_library_actions_cannot_change_content(action: \"copy_quiz\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizAttemptServiceTests.Flashcard_ratings_record_identity_and_distinguish_again_from_skip",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AvatarTranscriptTests.SaveUpdateAutoSaveAndDeleteUseOneOwnedTranscript",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"anki_rename\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.WordServiceSentencePracticeTests.LoadSentenceCardsAsync_ReturnsStandaloneSentencesAsCards",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingQuizServiceTests.GetQuizDataAsync_SourceToTarget_UsesTranslationPromptAndLemmaAnswer",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_terminally_rejects_retired_proposals(kind: \"quiz_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Workflow_rolls_back_quiz_and_keeps_proposal_active_when_a_later_change_fails",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AnkiPageTests.Freestyle_flashcards_have_no_pronunciation_after_reveal",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardCardLookupTests.Reveal_and_rate_reject_stale_or_inaccessible_cards_without_advancing(sentence: True, rate: True, change: \"deleted\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Apply_journals_every_saved_row_with_its_before_and_after_state",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Retired_public_library_actions_cannot_change_content(action: \"copy_collection\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"quiz_visibility\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"anki_create\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_AcceptsPracticeItemTypes(practiceItemType: \"sentences\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.FlashcardControllerStalenessTests.Sentence_cards_reveal_with_loader_ids_and_reject_changed_content(changed: False, selected: False)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.Register_EvictsOldestSessionBeyondCap",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyCreateQuiz_KeepsAWordWhoseMatchingSentenceIsNotPersistable",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.TypingSessionServiceTests.SubmitAnswer_UsesStoredSessionAnswerAndTracksProgress",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyCreateQuiz_RollsBackQuizWordsAndSentencesTogether",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.Retired_proposals_reject_the_whole_batch(kind: \"anki_delete\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RemainingAnalyserVerificationProbes.Empty_avatar_preference_body_disables_autosave_for_the_authenticated_owner",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Anki_direction_undo_preserves_intervening_reviews(reviewBeforeUndo: True)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_AcceptsPracticeItemTypes(practiceItemType: \"words\")",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyCreateQuiz_DoesNotPersistASentenceAsAWordToo",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.AssistantLearningManagementTests.Assistant_cannot_customize_shared_study_defaults(field: \"desired_retention\", value: 0,80000000000000004)",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.QuizSessionRegistryTests.CompletedSession_IsNoLongerResumable",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.ChangeApplierTests.ApplyAsync_AddWord_IsAllowedWhenTheSameProposalDeletesThatSentence",
+      "outcome": "Passed",
+      "stdout": null
+    },
+    {
+      "name": "Glosify.Tests.RequestValidationTests.QuizSessionSettings_RejectsInvalidPracticeDirection",
+      "outcome": "Passed",
+      "stdout": null
+    }
+  ]
+}

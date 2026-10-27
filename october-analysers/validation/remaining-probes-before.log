@@ -1,0 +1,17 @@
+  Glosify -> /Users/gustav/GlobeGlotter/Glosify/Glosify/bin/Debug/net10.0/Glosify.dll
+  Glosify.Tests -> /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll
+Test run for /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.93]     Glosify.Tests.FlashcardResponseConcurrencyTests.Reveal_response_remains_consistent_when_another_request_rates_the_card [FAIL]
+  Failed Glosify.Tests.FlashcardResponseConcurrencyTests.Reveal_response_remains_consistent_when_another_request_rates_the_card [621 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   1
+  Stack Trace:
+     at Glosify.Tests.FlashcardResponseConcurrencyTests.Reveal_response_remains_consistent_when_another_request_rates_the_card() in /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/FlashcardResponseConcurrencyTests.cs:line 77
+   at Glosify.Tests.FlashcardResponseConcurrencyTests.Reveal_response_remains_consistent_when_another_request_rates_the_card() in /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/FlashcardResponseConcurrencyTests.cs:line 81
+--- End of stack trace from previous location ---
+Results File: /tmp/glosify-analyser-remaining-tests/remaining-probes-before.trx
+
+Failed!  - Failed:     1, Passed:     5, Skipped:     0, Total:     6, Duration: 2 s - Glosify.Tests.dll (net10.0)

@@ -618,7 +618,6 @@ public sealed class QuizJsonImportService : IQuizJsonImportService
             UserId = userId,
             CollectionId = collectionId,
             CreatedAt = now,
-            ProcessingStatus = "Ready",
             SourceLanguage = source.SourceLanguage ?? defaultSourceLanguage,
             TargetLanguage = targetLanguage,
             Language = targetLanguage,

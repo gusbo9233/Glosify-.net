@@ -6,6 +6,7 @@ using Glosify.Models.Requests;
 using Glosify.Models.ViewModels;
 using Glosify.Services;
 using Glosify.Services.Ai;
+using Glosify.Services.Anki;
 using Glosify.Services.Language;
 using Glosify.Services.Quizzes;
 using Glosify.Services.Words;
@@ -119,11 +120,18 @@ public class QuizController : Controller
         if (quiz == null)
             return RedirectToAction(nameof(Index));
 
-        await _wordService.AddWordAsync(
-            input.QuizId,
-            input.Word,
-            input.Translation,
-            cancellationToken);
+        try
+        {
+            await _wordService.AddWordAsync(
+                input.QuizId,
+                input.Word,
+                input.Translation,
+                cancellationToken);
+        }
+        catch (AnkiValidationException exception)
+        {
+            TempData[NotificationKeys.Quiz] = exception.Message;
+        }
 
         return RedirectToAction(nameof(Details), new { id = input.QuizId });
     }

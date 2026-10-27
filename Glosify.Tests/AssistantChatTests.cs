@@ -18,9 +18,11 @@ public sealed class AssistantChatTests
     [Fact]
     public async Task Chats_are_listed_per_user_and_per_selected_language()
     {
+        var unselectedChat = Guid.NewGuid();
         await using var h = await AssistantHarness.CreateAsync(db =>
         {
             db.AssistantThreads.Add(new AssistantThread { Id = Guid.NewGuid(), UserId = AssistantHarness.UserId, Language = "German", Title = "German chat" });
+            db.AssistantThreads.Add(new AssistantThread { Id = unselectedChat, UserId = AssistantHarness.UserId, Language = null, Title = "No learning language" });
             db.AssistantThreads.Add(new AssistantThread { Id = Guid.NewGuid(), UserId = "other", Language = "Polish", Title = "Theirs" });
             db.AssistantThreads.Add(new AssistantThread { Id = Guid.NewGuid(), UserId = AssistantHarness.UserId, Language = "Polish", Title = "Legacy quiz thread", QuizId = Guid.Empty });
         });
@@ -33,12 +35,12 @@ public sealed class AssistantChatTests
             await db.SaveChangesAsync();
         }
 
-        // With no language chosen anywhere there is nothing to scope to, and hiding every chat
-        // would look like lost history.
-        var all = await h.OrchestrateAsync(chats => chats.ListChatsAsync(AssistantHarness.UserId));
+        // An empty selection also has its own chats; a previous learning language
+        // must not be silently resumed when the picker shows no selection.
+        var unselected = await h.OrchestrateAsync(chats => chats.ListChatsAsync(AssistantHarness.UserId));
 
         Assert.Equal([h.ThreadId], polish.Select(chat => chat.Id));
-        Assert.Equal(2, all.Count);
+        Assert.Equal([unselectedChat], unselected.Select(chat => chat.Id));
     }
 
     [Fact]

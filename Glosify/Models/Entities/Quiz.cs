@@ -10,8 +10,6 @@ public class Quiz
     public Collection? Collection { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public bool IsSongQuiz { get; set; }
-    public string ProcessingStatus { get; set; } = string.Empty;
-    public string? ProcessingMessage { get; set; }
     public string SourceLanguage { get; set; } = string.Empty;
     public string TargetLanguage { get; set; } = string.Empty;
     public string Language { get; set; } = string.Empty;

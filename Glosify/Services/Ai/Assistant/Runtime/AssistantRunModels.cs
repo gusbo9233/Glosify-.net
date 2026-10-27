@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Glosify.Services.Ai.Assistant.Tools;
 using Glosify.Services.Ai.Generation;
 
@@ -50,7 +51,9 @@ public sealed record AssistantRunInput(
     Guid? BookDocumentId = null,
     AssistantTranscriptPageContext? TranscriptContext = null,
     Guid? ContextAnkiCollectionId = null,
-    Guid? AvatarConversationId = null);
+    Guid? AvatarConversationId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [param: StringLength(16)] string? ExpectedLanguageCode = null);
 
 public sealed record AssistantRunStartInput(
     [param: Required, StringLength(100, MinimumLength = 1)] string IdempotencyKey,
@@ -61,7 +64,9 @@ public sealed record AssistantRunCommand(
     long Revision,
     [param: StringLength(50_000)] string? Message = null,
     bool Always = false,
-    IReadOnlyList<string>? Answers = null);
+    IReadOnlyList<string>? Answers = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [param: StringLength(16)] string? ExpectedLanguageCode = null);
 
 public sealed record AssistantRunView(
     Guid Id,
@@ -104,7 +109,7 @@ public sealed record AssistantQuestionView(Guid PartId, string Question, IReadOn
 
 public sealed record AssistantApprovalView(Guid PartId, IReadOnlyList<AssistantPendingChangeView> Changes, IReadOnlyList<string> Kinds);
 
-public sealed record AssistantRunArtifact(Guid Id, string Name, string Status);
+public sealed record AssistantRunArtifact(Guid Id, string Name);
 
 public sealed record AssistantUndoResult(int Undone, int Kept);
 
@@ -121,6 +126,9 @@ internal static class RunPhases
 internal sealed class AssistantRunState
 {
     public bool Initialized { get; set; }
+    // The wrapper distinguishes a captured empty selection from runs queued before
+    // language snapshots existed. It stays fixed through retries and worker restarts.
+    public RunLanguageSelection? LanguageSelection { get; set; }
     public string Phase { get; set; } = RunPhases.Model;
 
     /// <summary>The number of the last model call, counted across the whole run.</summary>
@@ -166,6 +174,9 @@ internal sealed class AssistantRunState
     public int ToolSequence { get; set; }
     public Dictionary<int, Guid> Invocations { get; set; } = [];
 }
+
+/// <summary>The selection accepted with a message, which may explicitly be empty.</summary>
+internal sealed record RunLanguageSelection(string? Code);
 
 /// <summary>What the run knows about its context, fixed when it starts.</summary>
 internal sealed record RunFacts(

@@ -1,0 +1,164 @@
+@model AnkiIndexViewModel
+@using Glosify.Models
+@{
+    var workspace = Model.Workspace;
+    var message = TempData["AnkiMessage"] as string;
+    var forward = Model.Direction == PracticeDirection.SourceToTarget;
+    // Sources can mix in one collection; name the source only when there is just one.
+    var sources = workspace.SourceLanguages.Concat(workspace.AvailableItems.Where(item => item.InAnki).Select(item => item.SourceLanguage))
+        .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    var sourceLabel = sources.Count == 1 ? sources[0] : "Translation";
+    var hasCardsInDirection = Model.Study?.Statistics?.Counts.Total > 0;
+    // Membership includes active cards in either direction.
+    var hasCards = workspace.HasCards || workspace.AvailableItems.Any(item => item.InAnki);
+    var linkedQuizIds = workspace.QuizLinks.Select(link => link.QuizId).ToHashSet();
+    var words = workspace.AvailableItems.Where(item => item.ItemType == PracticeItemType.Words).ToList();
+    var sentences = workspace.AvailableItems.Where(item => item.ItemType == PracticeItemType.Sentences).ToList();
+
+    void AnkiItem(Glosify.Services.Anki.AnkiAvailableItem item)
+    {
+        <label class="anki-item" data-anki-search-item="@item.TargetText @item.SourceText @item.QuizName">
+            <input type="checkbox" data-anki-item-key="@item.ItemType:@item.QuizId:@item.ItemId" data-initial="@(item.InAnki ? "true" : "false")" checked="@item.InAnki" />
+            <span class="anki-item-text"><strong>@item.TargetText</strong><span>@item.SourceText</span><small>@item.QuizName · @item.SourceLanguage</small></span>
+        </label>
+    }
+}
+    <div class="anki-workspace" id="anki-workspace" data-anki-workspace data-anki-url="@Url.Action("Index", new { quizId = workspace.SelectedQuizId, search = workspace.Search })">
+        <section class="anki-main" aria-labelledby="anki-title">
+            <header class="anki-topbar">
+                <h1 id="anki-title">Anki</h1>
+                <form method="post" asp-action="Direction" class="anki-direction" aria-label="Practice direction">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" name="direction" value="@PracticeDirection.SourceToTarget" aria-pressed="@(forward ? "true" : "false")" disabled="@(workspace.Collection is null)">@sourceLabel <span aria-hidden="true">&rarr;</span><span class="visually-hidden">to</span> @Model.TargetLanguage</button>
+                    <button type="submit" name="direction" value="@PracticeDirection.TargetToSource" aria-pressed="@(forward ? "false" : "true")" disabled="@(workspace.Collection is null)">@Model.TargetLanguage <span aria-hidden="true">&rarr;</span><span class="visually-hidden">to</span> @sourceLabel</button>
+                </form>
+            </header>
+
+            @if (message is not null) { <p class="anki-message" role="status">@message</p> }
+
+            @if (Model.Study is not null && hasCardsInDirection)
+            {
+                <div data-flashcard-session>
+                    @await Html.PartialAsync("~/Views/Anki/_StudySession.cshtml", Model.Study)
+                </div>
+            }
+            else if (hasCards)
+            {
+                <section class="anki-empty">
+                    <span class="material-symbols-outlined" aria-hidden="true">style</span>
+                    <h2>No cards in this direction</h2>
+                    <p>Your cards are in the other practice direction. Switch direction to study them.</p>
+                    <form method="post" asp-action="Direction">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-submit" name="direction" value="@(forward ? PracticeDirection.TargetToSource : PracticeDirection.SourceToTarget)">Switch direction</button>
+                    </form>
+                </section>
+            }
+            else
+            {
+                <section class="anki-empty">
+                    <span class="material-symbols-outlined" aria-hidden="true">style</span>
+                    <h2>Your Anki collection is empty</h2>
+                    <p>Add a whole quiz or pick individual words in settings. Cards show up here as soon as they are due.</p>
+                    <button type="button" class="btn-submit" data-anki-open-settings>Open settings</button>
+                </section>
+            }
+        </section>
+
+        <button class="anki-settings-toggle" id="anki-settings-toggle" type="button" aria-controls="anki-settings" aria-expanded="true" aria-label="Close Anki settings" title="Close settings" data-anki-settings-toggle>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>
+            <span class="anki-settings-toggle-label">Settings</span>
+        </button>
+        <aside class="anki-settings" id="anki-settings" aria-label="Anki settings" data-anki-settings>
+            <div class="anki-settings-heading"><span class="anki-step">ADD TO ANKI</span><h2>Settings</h2></div>
+            <p class="anki-help" role="status" tabindex="-1" hidden="@(message is null)" data-anki-request-status>@message</p>
+
+            <form method="post" asp-action="AddQuiz" class="anki-add-quiz">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TimeZoneId" data-browser-timezone />
+                <label for="anki-quiz">Quiz</label>
+                @if (workspace.CompatibleQuizzes.Count == 0)
+                {
+                    <p class="anki-help">You have no @Model.TargetLanguage quizzes yet. <a asp-controller="Quiz" asp-action="Index">Create one</a> to add it here.</p>
+                }
+                else
+                {
+                    <select id="anki-quiz" name="QuizId" required data-anki-quiz-picker data-anki-workspace-url="@(ViewData["GuestSample"] is string ? null : Url.Action("Index"))">
+                        @foreach (var group in workspace.CompatibleQuizzes.GroupBy(quiz => quiz.SourceLanguage, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <optgroup label="From @group.Key">
+                                @foreach (var quiz in group)
+                                {
+                                    <option value="@quiz.Id" selected="@(quiz.Id == workspace.SelectedQuizId)">@quiz.Name@(linkedQuizIds.Contains(quiz.Id) ? " (added)" : "")</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                    <label class="anki-check"><input type="checkbox" name="IncludeSentences" value="true" /> Include sentences</label>
+                    <p class="anki-help">New words added to the quiz later are added to Anki too.</p>
+                    <button class="btn-submit" type="submit">Add to Anki</button>
+                }
+            </form>
+
+            @if (workspace.QuizLinks.Count > 0)
+            {
+                <h3 class="anki-settings-subheading">Added quizzes</h3>
+                <ul class="anki-linked">
+                    @foreach (var link in workspace.QuizLinks)
+                    {
+                        <li>
+                            <span>@link.Quiz.Name@(link.SentencesSourceToTarget || link.SentencesTargetToSource ? " · with sentences" : "")</span>
+                            <form method="post" asp-action="RemoveQuiz">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="quizId" value="@link.QuizId" />
+                                <button type="submit" class="btn-icon" aria-label="Remove @link.Quiz.Name from Anki" title="Remove"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            }
+
+            @if (ViewData["GuestSample"] is string)
+            {
+                <label class="anki-search"><span class="visually-hidden">Search sample items</span><input type="search" placeholder="Search" autocomplete="off" data-anki-item-search /></label>
+            }
+            else
+            {
+            <form method="get" asp-action="Index" class="anki-search" data-anki-search-form>
+                <input type="hidden" name="quizId" value="@workspace.SelectedQuizId" />
+                <label class="visually-hidden" for="anki-search">Search words and sentences</label>
+                <input id="anki-search" type="search" name="search" value="@workspace.Search" maxlength="200" placeholder="Search all items" />
+                <button type="submit">Search</button>
+            </form>
+
+            }
+
+            <form method="post" asp-action="Items" asp-route-quizId="@workspace.SelectedQuizId" asp-route-search="@workspace.Search" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="TimeZoneId" data-browser-timezone />
+                <h3 class="anki-settings-subheading">Words</h3>
+                <p class="anki-help">Tick items to study them and untick to remove them. Up to 10,000 cards per language; each direction counts separately.</p>
+
+                <div class="anki-item-list" data-anki-item-list tabindex="-1">
+                    @if (workspace.AvailableItems.Count == 0)
+                    {
+                        <p class="anki-help">No matching items.</p>
+                    }
+                    @foreach (var item in words)
+                    {
+                        AnkiItem(item);
+                    }
+                    @if (sentences.Count > 0)
+                    {
+                        <p class="anki-item-group" data-anki-item-group>Sentences</p>
+                        @foreach (var item in sentences)
+                        {
+                            AnkiItem(item);
+                        }
+                    }
+                </div>
+                <p class="anki-help" role="status" hidden data-anki-items-limit></p>
+                <button class="btn-submit" type="submit" disabled data-anki-items-save>Save changes</button>
+            </form>
+        </aside>
+    </div>

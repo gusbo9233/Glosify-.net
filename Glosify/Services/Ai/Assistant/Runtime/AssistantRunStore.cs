@@ -2,6 +2,7 @@ using System.Text.Json;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai.Assistant.Tools;
+using Glosify.Services.Language;
 using Microsoft.EntityFrameworkCore;
 
 namespace Glosify.Services.Ai.Assistant.Runtime;
@@ -54,10 +55,11 @@ internal sealed class AssistantRunStore(
         var thread = await db.AssistantThreads
             .SingleOrDefaultAsync(candidate => candidate.Id == threadId && candidate.UserId == userId && candidate.QuizId == null, cancellationToken)
             ?? throw new KeyNotFoundException("Chat not found.");
-        var language = await resolver.ResolveLanguageAsync(userId, cancellationToken);
-        if (language is not null && thread.Language is not null && thread.Language != language)
+        var selectedLanguage = await resolver.ResolveSelectedLanguageAsync(userId, cancellationToken);
+        ValidateExpectedLanguage(input.Request.ExpectedLanguageCode, selectedLanguage);
+        if (QuizLanguageCatalog.Find(thread.Language)?.Code != selectedLanguage?.Code)
         {
-            throw new ArgumentException($"That chat belongs to another language. Reload the page to start a {language} chat.");
+            throw new ArgumentException("That chat belongs to another language. Reload the page to start a chat with your current selection.");
         }
 
         Guid? avatarSnapshotId = null;
@@ -66,7 +68,7 @@ internal sealed class AssistantRunStore(
         {
             if (input.Request.TranscriptId is not null || input.Request.BookDocumentId is not null || input.Request.DocumentContext is not null)
                 throw new ArgumentException("Select one reading material for this request.");
-            var code = await resolver.ResolveLanguageCodeAsync(userId, cancellationToken);
+            var code = selectedLanguage?.Code;
             if (avatarContext is null) throw new ArgumentException("Speaking conversations are not available.");
             avatarContext.EnsureAvailable(userId);
             Glosify.Services.Avatar.AvatarTranscriptSnapshot? live;
@@ -128,7 +130,7 @@ internal sealed class AssistantRunStore(
             RequestJson = requestJson,
             AvatarSnapshotId = avatarSnapshotId,
             AvatarConversationTurnCount = avatarTurnCount,
-            StateJson = RunJson.Write(new AssistantRunState()),
+            StateJson = RunJson.Write(new AssistantRunState { LanguageSelection = new(selectedLanguage?.Code) }),
             TurnId = Guid.NewGuid(),
             UserMessageId = userMessage.Id,
             CreatedAt = now,
@@ -249,7 +251,7 @@ internal sealed class AssistantRunStore(
         var approval = parts.LastOrDefault(part => part.State == AssistantToolStates.AwaitingApproval);
         var artifacts = await db.Quizzes.AsNoTracking()
             .Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == userId)
-            .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name, quiz.ProcessingStatus))
+            .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name))
             .ToListAsync(cancellationToken);
         var changes = await db.AssistantChanges.AsNoTracking().Where(c => c.RunId == run.Id)
             .OrderBy(c => c.Sequence).Select(c => new AssistantResourceChange(c.EntityType, c.EntityId, c.QuizId, c.Kind, c.Status)).ToListAsync(cancellationToken);
@@ -384,6 +386,16 @@ internal sealed class AssistantRunStore(
         }
     }
 
+    private static void ValidateExpectedLanguage(string? expectedCode, QuizLanguage? selectedLanguage)
+    {
+        // Older clients omit this field. Web clients send the selection rendered beside
+        // the assistant, including an empty string when no language was selected.
+        if (expectedCode is null) return;
+        var expected = QuizLanguageCatalog.Find(expectedCode);
+        if ((expected is null && expectedCode.Length > 0) || expected?.Code != selectedLanguage?.Code)
+            throw new ArgumentException("The learning language changed. Reload the page before sending another message.");
+    }
+
     private async Task<AssistantRunView> TryCommandAsync(
         Guid id,
         string userId,
@@ -398,6 +410,17 @@ internal sealed class AssistantRunStore(
         if (state.AppliedCommands.Contains(key) || command == "cancel" && AssistantRunStatus.IsTerminal(run.Status))
         {
             return await ViewAsync(id, userId, cancellationToken);
+        }
+
+        if (command is not ("cancel" or "reject"))
+        {
+            var selectedLanguage = await resolver.ResolveSelectedLanguageAsync(userId, cancellationToken);
+            ValidateExpectedLanguage(input.ExpectedLanguageCode, selectedLanguage);
+            var capturedCode = state.LanguageSelection is not null
+                ? state.LanguageSelection.Code
+                : QuizLanguageCatalog.Find(state.Facts?.TargetLanguage)?.Code;
+            if ((state.LanguageSelection is not null || state.Facts is not null) && capturedCode != selectedLanguage?.Code)
+                throw new ArgumentException("The learning language changed. Switch back to this chat's language before continuing it.");
         }
 
         if (!latest && run.Revision != input.Revision)
@@ -594,12 +617,6 @@ internal sealed class AssistantRunStore(
                 });
                 message.ContentJson = RunJson.Text(AssistantMessageRole.Model, stopped).ContentJson;
             }
-        }
-
-        foreach (var quiz in await db.Quizzes.Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == run.UserId).ToListAsync(cancellationToken))
-        {
-            quiz.ProcessingStatus = "Incomplete";
-            quiz.ProcessingMessage = reason;
         }
 
         await DropProviderItemsAsync(run, cancellationToken);

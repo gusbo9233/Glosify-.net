@@ -1,0 +1,38 @@
+✖ PDFFetchStreamReader aborts errored responses without an unhandled cancellation rejection (4.241208ms)
+✔ PDFFetchStreamReader aborts open responses without an unhandled cancellation rejection (2.458ms)
+✔ PDFFetchStreamReader aborts closed responses without an unhandled cancellation rejection (0.318833ms)
+✔ PDFFetchStreamReader aborts not-started responses without an unhandled cancellation rejection (0.4375ms)
+✖ PDFFetchStreamRangeReader aborts errored responses without an unhandled cancellation rejection (0.38475ms)
+✔ PDFFetchStreamRangeReader aborts open responses without an unhandled cancellation rejection (0.406875ms)
+✔ PDFFetchStreamRangeReader aborts closed responses without an unhandled cancellation rejection (0.231916ms)
+✔ PDFFetchStreamRangeReader aborts not-started responses without an unhandled cancellation rejection (0.263625ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 6
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 81.993292
+
+✖ failing tests:
+
+test at Glosify.ClientTests/pdfjs-cancellation.test.js:18:9
+✖ PDFFetchStreamReader aborts errored responses without an unhandled cancellation rejection (4.241208ms)
+  Error: response body interrupted
+      at TestContext.<anonymous> (file:///Users/gustav/GlobeGlotter/Glosify/Glosify.ClientTests/pdfjs-cancellation.test.js:20:29)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at Glosify.ClientTests/pdfjs-cancellation.test.js:18:9
+✖ PDFFetchStreamRangeReader aborts errored responses without an unhandled cancellation rejection (0.38475ms)
+  Error: response body interrupted
+      at TestContext.<anonymous> (file:///Users/gustav/GlobeGlotter/Glosify/Glosify.ClientTests/pdfjs-cancellation.test.js:20:29)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7)

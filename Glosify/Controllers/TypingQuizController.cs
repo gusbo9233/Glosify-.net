@@ -207,7 +207,6 @@ public class TypingQuizController : Controller
                 session.QuizName,
                 session.SourceLanguage,
                 session.TargetLanguage,
-                ProcessingStatus: "Ready",
                 CreatedAt: default,
                 CollectionId: null,
                 IsPublic: false),

@@ -1708,4 +1708,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking konuşması · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} konuşma sırası</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} konuşma sırası</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>Aralık başlangıcı (%)</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>Aralık sonu (%)</value></data>
 </root>

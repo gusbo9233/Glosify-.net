@@ -28,6 +28,7 @@ public sealed class GuestBrowsingTests : IClassFixture<GuestWebApplicationFactor
         var selector = section switch { "books" => ".book-card", "quiz" => ".quiz-card", "anki" => "[data-anki-study]", "transcripts" => ".transcript-card", _ => ".saved-translation-card" };
         Assert.NotNull(document.QuerySelector(selector));
         if (section != "anki") Assert.NotNull(document.QuerySelector($"a[href='/preview/{section}/sample']"));
+        if (section == "quiz") Assert.Null(document.QuerySelector(".quiz-card .status-pill"));
         Assert.Null(document.QuerySelector(".guest-preview"));
         Assert.NotNull(document.QuerySelector("[data-login-required]"));
         Assert.NotNull(document.QuerySelector("[data-login-dialog]"));
@@ -106,6 +107,29 @@ public sealed class GuestBrowsingTests : IClassFixture<GuestWebApplicationFactor
         Assert.Contains("guest-real-ui.js", html);
         Assert.DoesNotContain("/js/flashcard-quiz.js", html);
         Assert.DoesNotContain("/js/typing-quiz.js", html);
+    }
+
+    [Fact]
+    public async Task Quiz_controls_have_explicit_names_and_range_descriptions()
+    {
+        var library = new HtmlParser().ParseDocument(await _client.GetStringAsync("/Quiz"));
+        var prompt = library.QuerySelector("[data-json-import-generation-prompt]");
+        Assert.NotNull(prompt);
+        var promptLabel = library.GetElementById(prompt.GetAttribute("aria-labelledby")!);
+        Assert.NotNull(promptLabel);
+        Assert.Contains("instructions", promptLabel.TextContent, StringComparison.OrdinalIgnoreCase);
+
+        var settings = new HtmlParser().ParseDocument(await _client.GetStringAsync("/preview/quiz/sample/settings"));
+        foreach (var (name, label) in new[] { ("WordRangeStart", "Range start (%)"), ("WordRangeEnd", "Range end (%)") })
+        {
+            var input = settings.QuerySelector($"input[name='{name}']");
+            Assert.NotNull(input);
+            Assert.Equal(label, input.GetAttribute("aria-label"));
+            var description = settings.GetElementById(input.GetAttribute("aria-describedby")!);
+            Assert.NotNull(description);
+            Assert.Contains("oldest to newest", description.TextContent, StringComparison.OrdinalIgnoreCase);
+        }
+        Assert.Equal("Filter words…", settings.QuerySelector("[data-word-picker-search]")?.GetAttribute("aria-label"));
     }
 
     [Fact]

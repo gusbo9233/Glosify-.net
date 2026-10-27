@@ -548,4 +548,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking conversation · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} spoken turn</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} spoken turns</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>Range start (%)</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>Range end (%)</value></data>
 </root>

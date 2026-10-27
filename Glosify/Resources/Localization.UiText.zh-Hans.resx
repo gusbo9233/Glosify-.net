@@ -1708,4 +1708,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking 对话 · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} 次发言</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} 次发言</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>范围起点（%）</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>范围终点（%）</value></data>
 </root>

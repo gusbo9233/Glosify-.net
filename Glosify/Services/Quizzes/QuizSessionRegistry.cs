@@ -126,12 +126,12 @@ public class QuizSessionRegistry : IQuizSessionRegistry
         sessions.RemoveAll(s => !_cache.TryGetValue(s.CacheKey, out _));
     }
 
-    // Must be called while holding the lock on the user's session list; Register
-    // re-checks entry identity after locking, so a racing Register retries instead
-    // of adding to the removed list.
+    // Must be called while holding the lock on the user's session list. A request
+    // waiting on an old list must not remove a newer entry for the same user.
+    // Register re-checks entry identity before adding to a list.
     private void RemoveUserEntryIfEmpty(string userId, List<ActiveQuizSession> sessions)
     {
         if (sessions.Count == 0)
-            _sessionsByUser.TryRemove(userId, out _);
+            _sessionsByUser.TryRemove(new KeyValuePair<string, List<ActiveQuizSession>>(userId, sessions));
     }
 }

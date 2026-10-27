@@ -22,11 +22,7 @@ internal sealed class AssistantThreadStore(
     {
         var language = await contextResolver.ResolveLanguageAsync(userId, cancellationToken);
         var query = context.AssistantThreads
-            .Where(thread => thread.UserId == userId && thread.QuizId == null);
-        if (language is not null)
-        {
-            query = query.Where(thread => thread.Language == language);
-        }
+            .Where(thread => thread.UserId == userId && thread.QuizId == null && thread.Language == language);
 
         var threads = await query
             .OrderByDescending(thread => thread.UpdatedAt)
@@ -148,13 +144,10 @@ internal sealed class AssistantThreadStore(
 
         // Only chats in the selected language can be resumed. A language change starts
         // a fresh thread rather than mixing contexts from two learning languages.
+        // Clearing the selection also needs its own chat, with no learning language.
         var language = await contextResolver.ResolveLanguageAsync(userId, cancellationToken);
         var query = context.AssistantThreads
-            .Where(thread => thread.UserId == userId && thread.QuizId == null);
-        if (language is not null)
-        {
-            query = query.Where(thread => thread.Language == language);
-        }
+            .Where(thread => thread.UserId == userId && thread.QuizId == null && thread.Language == language);
 
         var thread = await query
             .OrderByDescending(candidate => candidate.UpdatedAt)
@@ -203,10 +196,10 @@ internal sealed class AssistantThreadStore(
         // The chat list has already omitted this thread, so this request came from a
         // page that remained open while the selected language changed.
         var language = await contextResolver.ResolveLanguageAsync(userId, cancellationToken);
-        if (language is not null && thread.Language != language)
+        if (thread.Language != language)
         {
             throw new InvalidOperationException(
-                $"That chat belongs to another language. Reload the page to start a {language} chat.");
+                "That chat belongs to another language. Reload the page to start a chat with your current selection.");
         }
 
         return thread;

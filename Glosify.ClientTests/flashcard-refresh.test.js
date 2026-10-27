@@ -30,7 +30,8 @@ function harness(initiallyPresent = false) {
     const requests = [];
     const submissions = [];
     const makeSession = () => {
-        const container = { ...eventTarget(), setAttribute() {}, innerHTML: '' };
+        const container = { ...eventTarget(), setAttribute() {}, innerHTML: '', workspaceBusy: false };
+        container.closest = selector => selector === '[data-anki-workspace][aria-busy="true"]' && container.workspaceBusy ? {} : null;
         const classes = new Set();
         const card = {
             style: {},
@@ -51,6 +52,8 @@ function harness(initiallyPresent = false) {
         const good = { name: 'rating', value: 'good', dataset: { ratingKey: '3' }, closest: () => form };
         container.querySelectorAll = selector => selector === '[data-rating-key]' ? [good] : [];
         container.querySelector = selector => {
+            if (selector === '.flashcard.is-swipe-out-left, .flashcard.is-swipe-out-right')
+                return classes.has('is-swipe-out-left') || classes.has('is-swipe-out-right') ? card : null;
             if (selector === '[data-card-reveal-form]' || selector === '[data-flashcard-form]') return form;
             if (selector.includes('value="good"')) return good;
             return null;
@@ -76,14 +79,35 @@ function harness(initiallyPresent = false) {
             await document.dispatch('keydown', { key, target: { tagName: 'BODY', closest: () => null } });
             await Promise.all(submissions.splice(0));
         },
-        async swipe({ container, card }) {
+        async swipe({ container, card }, beforeRelease = () => {}) {
             const event = { target: card, pointerId: 1, pointerType: 'touch', clientX: 0, clientY: 0 };
             await container.dispatch('pointerdown', event);
             await container.dispatch('pointermove', { ...event, clientX: 100 });
+            beforeRelease();
             await container.dispatch('pointerup', event);
             await Promise.all(submissions.splice(0));
         },
     };
+}
+
+for (const busyAt of ['start', 'release']) {
+    test(`a settings request at swipe ${busyAt} keeps the current card visible and usable`, async () => {
+        const h = harness(true);
+        const session = h.initial;
+        session.card.classList.add('is-revealed');
+        session.container.workspaceBusy = busyAt === 'start';
+        await h.swipe(session, () => { session.container.workspaceBusy = true; });
+
+        assert.equal(h.requests.length, 0);
+        for (const name of ['is-swipe-out-left', 'is-swipe-out-right', 'is-dragging', 'drag-left', 'drag-right'])
+            assert.equal(session.card.classList.contains(name), false, name);
+        assert.ok(!session.card.style.transform);
+        session.container.workspaceBusy = false;
+        await h.swipe(session);
+        assert.equal(h.requests.length, 1);
+        assert.equal(h.requests[0].body.get('rating'), 'good');
+        assert.equal(session.card.classList.contains('is-swipe-out-right'), false);
+    });
 }
 
 test('an initially empty page gains keyboard, swipe and AJAX controls after a learning refresh', async () => {

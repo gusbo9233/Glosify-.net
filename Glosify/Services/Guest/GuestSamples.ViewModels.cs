@@ -11,7 +11,7 @@ public sealed partial class GuestSamples
 {
     public static readonly Guid SampleId = Guid.Parse("d528b31d-dfb9-4d51-90e9-18cb316575ea");
     private static readonly DateTimeOffset Created = new(2026, 10, 19, 9, 0, 0, TimeSpan.Zero);
-    public QuizCard Quiz => new(SampleId, Language.IsLanguageLearning ? $"{Language.Name} essentials" : Title, SourceLanguage, Language.Name, "Ready", Created, null, false);
+    public QuizCard Quiz => new(SampleId, Language.IsLanguageLearning ? $"{Language.Name} essentials" : Title, SourceLanguage, Language.Name, Created, null, false);
     public BookCard Book => new(SampleId, Title, 1, SourceLanguage, "Ready", null, Created);
     private IReadOnlyList<WordRow> Words => Cards.Select((card, index) => new WordRow($"sample-{index}", card.Target, card.Source)).ToArray();
     private string OriginalTranslation => Language.IsLanguageLearning ? $"{_phrases[0]}! {_phrases[5]} {_phrases[6]}" : "Mercury is closest to the Sun. Jupiter is the largest planet.";

@@ -548,4 +548,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking-samtal · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} replik</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} repliker</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>Intervallets början (%)</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>Intervallets slut (%)</value></data>
 </root>

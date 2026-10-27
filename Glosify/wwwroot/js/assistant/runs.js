@@ -28,6 +28,7 @@ export function createAssistantRuns({
     schedule = (callback, delay) => setTimeout(callback, delay),
     newKey = () => crypto.randomUUID(),
     base = '/Assistant/Runs',
+    learningLanguageCode,
 }) {
     const runs = new Map();
     const streams = new Map();
@@ -110,7 +111,7 @@ export function createAssistantRuns({
             try {
                 const run = await request(`${base}/${current.id}/${name}`, {
                     method: 'POST',
-                    body: JSON.stringify({ revision, ...body }),
+                    body: JSON.stringify({ revision, ...body, expectedLanguageCode: learningLanguageCode }),
                 });
                 publish(run);
                 watch(run);
@@ -159,7 +160,8 @@ export function createAssistantRuns({
             try {
                 run = await request(`${base}/chats/${threadId}`, {
                     method: 'POST',
-                    body: JSON.stringify({ idempotencyKey: key, request: input }),
+                    body: JSON.stringify({ idempotencyKey: key, request: learningLanguageCode === undefined
+                        ? input : { ...input, expectedLanguageCode: learningLanguageCode } }),
                 });
             } catch (error) {
                 // Client rejection means this start was not accepted. Keep the key only when

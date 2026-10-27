@@ -84,7 +84,6 @@ public class QuizService : IQuizService
             TargetLanguage = targetLanguage,
             Language = targetLanguage,
             CreatedAt = DateTimeOffset.UtcNow,
-            ProcessingStatus = "Ready"
         };
 
         _context.Quizzes.Add(quiz);

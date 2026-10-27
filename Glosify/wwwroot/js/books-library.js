@@ -51,7 +51,11 @@ if (previews.length > 0) {
         } catch {
             canvas.classList.add('is-preview-error');
         } finally {
-            await document?.destroy();
+            try {
+                await document?.destroy();
+            } catch {
+                // Worker teardown is best effort; keep the rendered preview and release its queue slot.
+            }
         }
     };
 

@@ -1,0 +1,1 @@
+{"blender": "5.2.1 LTS", "compactorDefaultsAndGuards": "passed", "materialNodeInvariants": "passed", "numpy": "2.3.4", "numpyPositionalArrayAndReshape": "passed", "pythonOptimized": 0, "smoothDefinitions": [112, 286], "synchronousClosure": [40, 80]}

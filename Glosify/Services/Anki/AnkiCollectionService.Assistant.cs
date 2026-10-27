@@ -45,15 +45,12 @@ public sealed partial class AnkiCollectionService
             .SingleOrDefaultAsync(c => c.Id == collectionId && c.UserId == userId, cancellationToken);
         if (collection is null) return null;
         var now = _timeProvider.GetUtcNow();
-        // /Anki studies only the collection's practice direction, and each direction has
-        // its own daily limits, so suggestions count that track alone.
+        // Suggestions count the selected practice direction, with no daily quota.
         var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, collection.DefaultDirection, cancellationToken);
         var cards = availability.Cards;
         var learning = cards.Count(c => c.State is AnkiCardStates.Learning or AnkiCardStates.Relearning && c.DueAt <= now);
-        var reviews = Math.Min(Math.Max(0, AnkiStudyDefaults.MaximumReviewsPerDay - availability.ReviewsStudied),
-            cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now));
-        var newCards = Math.Min(Math.Max(0, AnkiStudyDefaults.NewCardsPerDay - availability.NewStudied),
-            cards.Count(c => c.State == AnkiCardStates.New));
+        var reviews = cards.Count(c => c.State == AnkiCardStates.Review && c.DueAt <= now);
+        var newCards = cards.Count(c => c.State == AnkiCardStates.New);
         return new(learning + reviews, newCards, learning, cards.Count, availability.StudiedToday);
     }
 
@@ -98,6 +95,11 @@ public sealed partial class AnkiCollectionService
             var added = 0;
             foreach (var item in items)
             {
+                if (HasDuplicatePair(input.CollectionId, item.WordId, item.SentenceId, item.Target, item.Source))
+                {
+                    already += Directions(input.SourceToTarget, input.TargetToSource).Count();
+                    continue;
+                }
                 var note = await FindNoteAsync(input.CollectionId, item.WordId, item.SentenceId, cancellationToken);
                 if (note is null)
                 {
@@ -123,7 +125,7 @@ public sealed partial class AnkiCollectionService
                     changed.Add(card);
                 }
             }
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             return new AnkiAdditionResult(input.CollectionId, items.Count, added, already,
                 changed.Select(c => new AnkiCardChange(before[c.Id], AnkiCardState.From(c))).ToList());
         }, cancellationToken);
@@ -148,7 +150,7 @@ public sealed partial class AnkiCollectionService
             link.SentencesSourceToTarget |= input.SentencesSourceToTarget;
             link.SentencesTargetToSource |= input.SentencesTargetToSource;
             if (changed) link.UpdatedAt = _timeProvider.GetUtcNow();
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             await SyncCollectionAsync(input.CollectionId, cancellationToken);
             var after = await LinkSnapshotAsync(input.CollectionId, input.QuizId, cancellationToken);
             var activeBefore = before.Cards.Where(c => c.IsActive).Select(c => c.Id).ToHashSet();
@@ -213,7 +215,7 @@ public sealed partial class AnkiCollectionService
             }
             if (card.Note.Cards.Count == 0) _context.AnkiNotes.Remove(card.Note);
             else card.Note.IsActive = card.Note.Cards.Any(c => c.IsActive);
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             return true;
         }, cancellationToken);
 
@@ -247,14 +249,14 @@ public sealed partial class AnkiCollectionService
                 link.SentencesTargetToSource = old.SentencesTargetToSource;
                 link.UpdatedAt = old.UpdatedAt;
             }
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             await SyncCollectionAsync(current.CollectionId, cancellationToken);
             var newCards = await _context.AnkiCards.Where(c => newIds.Contains(c.Id)).ToListAsync(cancellationToken);
             _context.AnkiCards.RemoveRange(newCards);
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             var emptyNotes = await _context.AnkiNotes.Where(n => n.AnkiCollectionId == current.CollectionId && n.QuizId == current.QuizId && !n.Cards.Any()).ToListAsync(cancellationToken);
             _context.AnkiNotes.RemoveRange(emptyNotes);
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             return true;
         }, cancellationToken);
 }

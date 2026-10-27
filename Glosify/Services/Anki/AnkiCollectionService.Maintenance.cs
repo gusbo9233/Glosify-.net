@@ -42,7 +42,7 @@ public sealed partial class AnkiCollectionService
                 changes.Add(new(before, AnkiCardState.From(card)));
             }
             foreach (var note in cards.Select(c => c.Note).DistinctBy(n => n.Id)) note.IsActive = note.Cards.Any(c => c.IsActive);
-            await _context.SaveChangesAsync(cancellationToken);
+            await SaveChangesWithinCapacityAsync(cancellationToken);
             return changes;
         }, cancellationToken);
 

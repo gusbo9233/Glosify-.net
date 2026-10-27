@@ -119,7 +119,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return undefined;
   }
 
-  handleMessage(message, sender)
+  handleMessage(message)
     .then(result => sendResponse({ ok: true, result }))
     .catch(error => {
       const normalized = normalizeError(error);

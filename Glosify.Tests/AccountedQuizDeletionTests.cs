@@ -110,7 +110,7 @@ public sealed class AccountedQuizDeletionTests
     private static Quiz NewQuiz(string owner) => new()
     {
         Id = Guid.NewGuid(), UserId = owner, Name = "Test quiz", SourceLanguage = "English",
-        TargetLanguage = "Swedish", Language = "Swedish", ProcessingStatus = "Ready"
+        TargetLanguage = "Swedish", Language = "Swedish"
     };
 
     private sealed class LedgerReads : DbCommandInterceptor

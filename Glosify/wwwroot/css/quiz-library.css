@@ -394,14 +394,6 @@
     color: #a9d2ff;
 }
 
-.library-page .status-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    box-shadow: 0 0 10px currentColor;
-}
-
 .library-page .delete-form {
     margin: 0;
 }

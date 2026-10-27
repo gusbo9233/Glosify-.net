@@ -84,7 +84,6 @@ internal sealed class AssistantHarness : IAsyncDisposable
             SourceLanguage = "English",
             TargetLanguage = "Polish",
             Language = "Polish",
-            ProcessingStatus = "Ready",
             CreatedAt = harness.Clock.GetUtcNow(),
         });
         db.AssistantThreads.Add(new AssistantThread

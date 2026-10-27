@@ -20,9 +20,12 @@ public sealed class AnkiMembershipConcurrencyTests
     public Task Concurrent_sentence_adds_preserve_one_note_and_its_charges() => VerifyAsync(true, false);
 
     [SqlServerFact]
-    public Task Caller_owned_transactions_are_not_retried() => VerifyAsync(false, true);
+    public Task Caller_owned_transactions_serialize_membership() => VerifyAsync(false, true);
 
-    private static Task VerifyAsync(bool sentence, bool callerTransaction) =>
+    [SqlServerFact]
+    public Task Concurrent_adds_of_different_ids_with_identical_text_preserve_one_note() => VerifyAsync(false, false, true);
+
+    private static Task VerifyAsync(bool sentence, bool callerTransaction, bool duplicateText = false) =>
         SqlServerTestDatabase.RunAsync("anki-membership-race", async database =>
         {
             var options = new DbContextOptionsBuilder<GlosifyContext>()
@@ -37,6 +40,11 @@ public sealed class AnkiMembershipConcurrencyTests
             var sentenceId = Guid.NewGuid();
             setup.AddRange(quiz, word, new QuizSentence { Id = sentenceId, QuizId = quiz.Id, Text = "sentence", Translation = "meaning" });
             await setup.SaveChangesAsync();
+            if (duplicateText)
+            {
+                setup.Words.Add(new Word { Id = "duplicate-word", QuizId = quiz.Id, Lemma = word.Lemma, Translation = word.Translation });
+                await setup.SaveChangesAsync();
+            }
             var collection = await new AnkiCollectionService(setup, TimeProvider.System).GetOrCreateAsync(userId, "Polish", "UTC");
             setup.ChangeTracker.Clear();
 
@@ -48,7 +56,7 @@ public sealed class AnkiMembershipConcurrencyTests
                 await using var db = new GlosifyContext(competingOptions, Options.Create(new AbuseOptions()));
                 var service = new AnkiCollectionService(db, TimeProvider.System);
                 var key = new AnkiItemKey(quiz.Id, sentence ? PracticeItemType.Sentences : PracticeItemType.Words,
-                    sentence ? sentenceId.ToString() : word.Id);
+                    sentence ? sentenceId.ToString() : duplicateText && !single ? "duplicate-word" : word.Id);
                 await using var transaction = callerTransaction ? await db.Database.BeginTransactionAsync() : null;
                 var result = single
                     ? await service.AddItemForLanguageAsync("Polish", "UTC", key, userId)
@@ -57,20 +65,12 @@ public sealed class AnkiMembershipConcurrencyTests
                 if (transaction is not null) await transaction.CommitAsync();
                 return result;
             }
-            if (callerTransaction)
-            {
-                await Assert.ThrowsAsync<DbUpdateException>(() => Task.WhenAll(AddAsync(true), AddAsync(false)));
-                Assert.Equal(2, race.Reads);
-            }
-            else
-            {
-                Assert.All(await Task.WhenAll(AddAsync(true), AddAsync(false)), Assert.True);
-                Assert.True(race.Reads >= 3, "Both requests must read the missing note, then the loser must reread it.");
-            }
+            Assert.All(await Task.WhenAll(AddAsync(true), AddAsync(false)), Assert.True);
+            Assert.True(race.Reads >= 2, "Both requests must attempt the serialized collection read.");
             var note = Assert.Single(await setup.AnkiNotes.AsNoTracking().ToListAsync());
             Assert.Equal(collection.Id, note.AnkiCollectionId);
             if (sentence) Assert.Equal(sentenceId, note.SentenceId);
-            else Assert.Equal(word.Id, note.WordId);
+            else Assert.Contains(note.WordId, duplicateText ? new[] { word.Id, "duplicate-word" } : new[] { word.Id });
             var cards = await setup.AnkiCards.AsNoTracking().ToListAsync();
             Assert.Equal(2, cards.Count);
             Assert.All(cards, card => Assert.True(card.IsActive && card.DirectlyIncluded));
@@ -91,14 +91,11 @@ public sealed class AnkiMembershipConcurrencyTests
         private int _reads;
         public int Reads => _reads;
 
-        public override async ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command, CommandExecutedEventData eventData,
-            DbDataReader result, CancellationToken cancellationToken = default)
+        public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
+            InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
-            // Hold the two membership reads after SQL has observed the absent note.
-            // Synchronization reads the collection separately, without this parameter.
-            if (command.CommandText.Contains("AnkiNotes", StringComparison.Ordinal)
-                && (command.CommandText.Contains("wordIds", StringComparison.Ordinal)
-                    || command.CommandText.Contains("sentenceIds", StringComparison.Ordinal)))
+            // Start both requests before either acquires the collection membership lock.
+            if (command.CommandText.Contains("UPDLOCK, HOLDLOCK", StringComparison.Ordinal))
             {
                 var read = Interlocked.Increment(ref _reads);
                 if (read == 2) _bothRead.TrySetResult();

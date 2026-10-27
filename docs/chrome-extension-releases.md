@@ -79,8 +79,9 @@ The workflow accepts existing versioned artifact names matching
 `glosify-<extension>-*-beta` and requires exactly one ZIP. If artifacts have expired,
 produce a new successful CI run. It never falls back to a local or untested build.
 
-Before uploading, inspect Greptile and Copilot feedback for the exact source
-revision and resolve valid findings. Record an unavailable review explicitly.
+Before uploading, inspect Greptile's completed feedback for the exact source
+revision and resolve valid findings under [the review workflow](REVIEW-WORKFLOW.md).
+Record an unavailable review explicitly.
 The workflow does not treat its connection check as approval to release.
 
 Google rejects uploads while an item is in review. The workflow reports the

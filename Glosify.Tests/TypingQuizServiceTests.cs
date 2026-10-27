@@ -134,7 +134,6 @@ public class TypingQuizServiceTests
             SourceLanguage = sourceLanguage,
             TargetLanguage = targetLanguage,
             Language = targetLanguage,
-            ProcessingStatus = "Ready"
         });
         context.Words.Add(new Word
         {

@@ -445,7 +445,7 @@ public sealed class AssistantLearningTests
     [InlineData("buried")]
     [InlineData("review-limit")]
     [InlineData("new-limit")]
-    public async Task Study_suggestions_skip_anki_without_available_cards(string blockedBy)
+    public async Task Study_suggestions_respect_burial_but_ignore_former_daily_limits(string blockedBy)
     {
         await using var h = await SeedAsync();
         await AddAsync(h);
@@ -457,7 +457,7 @@ public sealed class AssistantLearningTests
             if (blockedBy == "buried") card.BuriedUntil = h.Clock.GetUtcNow().AddHours(1);
             if (blockedBy is "review-limit" or "new-limit")
             {
-                var allowance = blockedBy == "new-limit" ? AnkiStudyDefaults.NewCardsPerDay : AnkiStudyDefaults.MaximumReviewsPerDay;
+                var allowance = blockedBy == "new-limit" ? 20 : 200;
                 for (var i = 0; i < allowance; i++)
                 {
                     var review = Review(h, card.Id, "good");
@@ -469,15 +469,20 @@ public sealed class AssistantLearningTests
             await db.SaveChangesAsync();
         }
         var counts = await h.WithAsync(sp => sp.GetRequiredService<IAnkiCollectionService>().ReadCountsAsync(CollectionId, "user"));
-        Assert.NotNull(counts); Assert.Equal(0, counts.Due); Assert.Equal(0, counts.New);
+        Assert.NotNull(counts);
+        Assert.Equal(blockedBy == "review-limit" ? 1 : 0, counts.Due);
+        Assert.Equal(blockedBy == "new-limit" ? 1 : 0, counts.New);
         await using var read = h.Db();
         var tools = AssistantToolFactory.Create(read, h.Clock);
         var result = await tools.RunAsync("prepare_study_session", "{}", Context(h));
         var output = JsonSerializer.SerializeToElement(result.Output);
-        Assert.NotEqual("/Anki", output.GetProperty("url").GetString());
+        if (blockedBy == "buried") Assert.NotEqual("/Anki", output.GetProperty("url").GetString());
+        else Assert.Equal("/Anki", output.GetProperty("url").GetString());
         Assert.Empty(read.ChangeTracker.Entries());
         var blockedStudy = await h.WithAsync(sp => sp.GetRequiredService<IAnkiStudyService>().GetNextAsync(CollectionId, "user", PracticeDirection.SourceToTarget));
-        Assert.NotNull(blockedStudy); Assert.Null(blockedStudy.Card);
+        Assert.NotNull(blockedStudy);
+        if (blockedBy == "buried") Assert.Null(blockedStudy.Card);
+        else Assert.NotNull(blockedStudy.Card);
     }
 
     [Fact]
@@ -508,14 +513,14 @@ public sealed class AssistantLearningTests
     }
 
     [Fact]
-    public async Task Study_suggestions_keep_due_learning_cards_when_daily_limits_are_exhausted()
+    public async Task Study_suggestions_keep_due_learning_cards_after_many_reviews()
     {
         await using var h = await SeedAsync();
         await AddAsync(h);
         await using (var db = h.Db())
         {
             var card = await db.AnkiCards.SingleAsync();
-            foreach (var (state, allowance) in new[] { (AnkiCardStates.New, AnkiStudyDefaults.NewCardsPerDay), (AnkiCardStates.Review, AnkiStudyDefaults.MaximumReviewsPerDay) })
+            foreach (var (state, allowance) in new[] { (AnkiCardStates.New, 20), (AnkiCardStates.Review, 200) })
                 for (var i = 0; i < allowance; i++)
                 {
                     var review = Review(h, card.Id, "good");

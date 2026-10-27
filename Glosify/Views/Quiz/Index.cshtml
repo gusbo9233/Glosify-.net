@@ -156,7 +156,6 @@
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("d")</span>
                             <div class="quiz-meta-actions">
-                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
                                 <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="@Text["Quiz.DeleteConfirm"]">
                                     @Html.AntiForgeryToken()
                                     <button class="btn-delete" type="submit" aria-label="@Text["Quiz.DeleteNamed", quiz.Name]" title="@Text["Quiz.Delete"]">
@@ -226,9 +225,9 @@
         </header>
 
         <details class="json-import-instructions">
-            <summary>@Text["Quiz.JsonImportInstructionsSummary"]</summary>
+            <summary id="jsonImportInstructionsTitle">@Text["Quiz.JsonImportInstructionsSummary"]</summary>
             <p>@Text["Quiz.JsonImportInstructionsHelp"]</p>
-            <textarea class="json-import-prompt" data-json-import-generation-prompt readonly>@presentation.JsonGenerationPrompt</textarea>
+            <textarea class="json-import-prompt" aria-labelledby="jsonImportInstructionsTitle" data-json-import-generation-prompt readonly>@presentation.JsonGenerationPrompt</textarea>
             <button class="json-import-copy" type="button" data-copy-json-import-prompt>
                 <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
                 @Text["Quiz.JsonImportCopyInstructions"]
@@ -330,7 +329,7 @@
             </div>
             }
             <div class="form-group">
-                <label class="form-label">@(isFreestyle ? "Learning mode" : Text["Quiz.TargetLanguage"])</label>
+                <span class="form-label">@(isFreestyle ? "Learning mode" : Text["Quiz.TargetLanguage"])</span>
                 <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
                 <div class="form-input target-language-display">
                     <span>@displayLanguage</span>

@@ -102,7 +102,6 @@ public class WordServiceSentencePracticeTests
             SourceLanguage = "English",
             TargetLanguage = "Spanish",
             Language = "Spanish",
-            ProcessingStatus = "Ready"
         });
         context.QuizSentences.Add(new QuizSentence
         {
@@ -131,7 +130,6 @@ public class WordServiceSentencePracticeTests
             SourceLanguage = "English",
             TargetLanguage = "Spanish",
             Language = "Spanish",
-            ProcessingStatus = "Ready"
         });
         context.QuizSentences.Add(new QuizSentence
         {

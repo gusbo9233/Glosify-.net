@@ -96,7 +96,14 @@ def entries(path: Path) -> tuple[ET.ElementTree, dict[str, str]]:
 
 
 def placeholders(value: str) -> list[str]:
-    return sorted(re.findall(r"\{\d+(?:[^}]*)?\}", value))
+    # Each closing brace ends a candidate. Scan its prefix once so malformed
+    # model output cannot make overlapping digit/format matches backtrack.
+    found = []
+    for candidate in value.split("}")[:-1]:
+        start = re.search(r"\{\d", candidate)
+        if start is not None:
+            found.append(candidate[start.start():] + "}")
+    return sorted(found)
 
 
 def translate_locale(api_key: str, locale: str, draft_model: str, review_model: str) -> None:

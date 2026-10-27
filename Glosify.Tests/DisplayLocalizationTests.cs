@@ -418,25 +418,27 @@ public sealed class DisplayLocalizationTests
         Assert.DoesNotContain("Glosify", description);
     }
 
-    [Fact]
-    public async Task Authenticated_homepage_updates_globe_after_learning_language_changes()
+    [Theory]
+    [InlineData("Polish", "PL")]
+    [InlineData("Japanese", "JP")]
+    [InlineData("Freestyle", "")]
+    public async Task Authenticated_homepage_uses_saved_learning_language_instead_of_stale_cookie(string language, string region)
     {
         using var factory = AuthenticatedFactory().WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
-                services.AddSingleton<IAiCreditService>(new StubChromeServices())));
+            {
+                services.AddSingleton<IAiCreditService>(new StubChromeServices());
+                services.AddSingleton<Glosify.Services.Language.IQuizLanguagePreferenceService>(new StubChromeServices(language));
+            }));
         var client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
-        foreach (var (language, region) in new[] { ("Polish", "PL"), ("Japanese", "JP"), ("Freestyle", "") })
-        {
-            client.DefaultRequestHeaders.Remove("Cookie");
-            client.DefaultRequestHeaders.Add("Cookie", $"glosify.language={language}");
-            var response = await client.GetAsync("/");
-            response.EnsureSuccessStatusCode();
-            var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        client.DefaultRequestHeaders.Add("Cookie", "glosify.language=German");
+        var response = await client.GetAsync("/");
+        response.EnsureSuccessStatusCode();
+        var document = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
 
-            Assert.Equal(region, document.QuerySelector("[data-home-globe]")?.GetAttribute("data-region"));
-            Assert.Equal(language, document.QuerySelector(".home-globe-caption strong")?.TextContent);
-            Assert.Equal("sv-SE", document.DocumentElement.GetAttribute("lang"));
-        }
+        Assert.Equal(region, document.QuerySelector("[data-home-globe]")?.GetAttribute("data-region"));
+        Assert.Equal(language, document.QuerySelector(".home-globe-caption strong")?.TextContent);
+        Assert.Equal("sv-SE", document.DocumentElement.GetAttribute("lang"));
     }
 
     private static WebApplicationFactory<Program> CreateFactory() =>

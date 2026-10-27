@@ -2,11 +2,9 @@
 
 Glosify deploys to Azure App Service from
 `.github/workflows/master_glosify.yml`. Pull requests targeting `master` build
-and test. From October 11 through October 25, 2026, use DeepSource and Qodo
-under [the temporary review workflow](REVIEW-WORKFLOW.md). Copilot and Greptile
-credits are exhausted; do not wait for or manually request their reviews in
-this window. Reassess availability on October 25. Existing integration settings
-remain configured for later use; no branch protections are removed by this policy.
+and test. Greptile is the only external automated reviewer under
+[the review workflow](REVIEW-WORKFLOW.md). Keep the existing required checks
+and branch protections.
 
 Automated reviews are advisory: their findings do not replace
 CI or establish that a defect exists. Validate findings against the
@@ -20,11 +18,10 @@ must already be complete.
 
 1. Open a pull request targeting `master`; direct pushes are blocked by branch
    protection. Require the `build` check and inspect the other CI results.
-2. Assess the active reviewers' feedback for the latest PR commit (DeepSource
-   and Qodo during the temporary window). Fix confirmed
+2. Assess Greptile's completed feedback for the latest PR commit. Fix confirmed
    defects, explain rejected findings with evidence, and handle duplicates once.
-   Record an unavailable review explicitly rather than treating it as clean.
-   Collect Qodo's completed result; an operation ID alone is not review evidence.
+   Record an unavailable or incomplete review explicitly rather than treating it
+   as clean; perform local review without substituting another external service.
 3. After any update, wait for fresh checks and review feedback. Confirm the
    reviewed commit matches the PR head; an earlier review is not verification
    of a later revision. A reviewer's severity or confidence score is advisory.

@@ -176,10 +176,6 @@
             </div>
 
             <nav class="app-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
-                @if (AvatarSettings.Value.Enabled && User.Identity?.IsAuthenticated == true)
-                {
-                    <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Speaking <small>Preview</small></a>
-                }
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
                     @(isFreestyle ? "Learning mode" : Text["Nav.LanguageSelector"])
@@ -188,10 +184,22 @@
                     @NavIcon("home")
                     @Text["Nav.Home"]
                 </a>
+                <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
+                    @NavIcon("quiz")
+                    @Text["Nav.Quizzes"]
+                </a>
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")
                     @Text["Nav.Books"]
                 </a>
+                <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
+                    @NavIcon("anki")
+                    Anki
+                </a>
+                @if (AvatarSettings.Value.Enabled && User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Speaking</a>
+                }
                 @if (!isFreestyle)
                 {
                     <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
@@ -203,14 +211,6 @@
                         @Text["Nav.Translations"]
                     </a>
                 }
-                <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
-                    @NavIcon("quiz")
-                    @Text["Nav.Quizzes"]
-                </a>
-                <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
-                    @NavIcon("anki")
-                    Anki
-                </a>
                 @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
                 {
                     <a class="@NavClass("Payments")" asp-controller="Payments" asp-action="Index">
@@ -231,10 +231,17 @@
             <div class="app-canvas">
                 @if (ViewData["GuestSample"] is string sampleSection)
                 {
+                    @if (sampleSection == "anki")
+                    {
+                        <span hidden data-guest-return="@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl">@(guestSamples!.Language.Name)</span>
+                    }
+                    else
+                    {
                     <div class="transcripts-notice guest-sample-notice" data-guest-return="@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl">
                         @(guestSamples!.Language.Name) sample · Explore the real app. Practice is temporary.
                         <a href="/login?returnUrl=@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl" data-login-required>Sign in to create your own</a>
                     </div>
+                    }
                 }
                 <div class="speech-error" data-speech-error role="alert" hidden>
                     <span data-speech-error-text></span>
@@ -254,6 +261,10 @@
                     <a asp-controller="Home" asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
                     <a asp-controller="Home" asp-action="Terms">@Text["Legal.TermsOfService"]</a>
                     <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
+                    @if (ViewData["GuestSample"] is "anki")
+                    {
+                        <a href="/login" data-login-required>Ask the assistant</a>
+                    }
                 </nav>
             </footer>
             <partial name="_AppSettings" />
@@ -267,7 +278,7 @@
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
-    @if (User.Identity?.IsAuthenticated != true || ViewData["GuestSample"] is string)
+    @if ((User.Identity?.IsAuthenticated != true || ViewData["GuestSample"] is string) && ViewData["GuestSample"] is not "anki")
     {
         <a class="guest-assistant-entry btn-primary-pill" href="/login" data-login-required>Ask the assistant</a>
     }

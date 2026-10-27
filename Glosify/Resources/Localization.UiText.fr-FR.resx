@@ -1708,4 +1708,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Conversation Speaking · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} prise de parole</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} prises de parole</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>Début de la plage (%)</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>Fin de la plage (%)</value></data>
 </root>

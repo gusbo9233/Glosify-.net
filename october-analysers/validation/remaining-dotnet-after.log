@@ -1,0 +1,21 @@
+  Glosify -> /Users/gustav/GlobeGlotter/Glosify/Glosify/bin/Debug/net10.0/Glosify.dll
+  Glosify.Tests -> /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll
+Test run for /Users/gustav/GlobeGlotter/Glosify/Glosify.Tests/bin/Debug/net10.0/Glosify.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:03.18]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_SyncProposal [SKIP]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_SyncProposal [1 ms]
+[xUnit.net 00:00:03.63]     Glosify.Tests.FlashcardCardLookupTests.SqlServer_lookup_preserves_case_sensitive_staleness_checks [SKIP]
+  Skipped Glosify.Tests.FlashcardCardLookupTests.SqlServer_lookup_preserves_case_sensitive_staleness_checks [1 ms]
+[xUnit.net 00:00:03.68]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_ExplicitQuizConflict [SKIP]
+[xUnit.net 00:00:03.89]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_MultipleQuizProposal [SKIP]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_ExplicitQuizConflict [1 ms]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_MultipleQuizProposal [1 ms]
+[xUnit.net 00:00:04.37]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_Steering [SKIP]
+[xUnit.net 00:00:04.37]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_Resume [SKIP]
+[xUnit.net 00:00:04.37]     Glosify.Tests.AssistantRunRegressionTests.SqlServer_ApprovalConflict [SKIP]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_Steering [1 ms]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_Resume [1 ms]
+  Skipped Glosify.Tests.AssistantRunRegressionTests.SqlServer_ApprovalConflict [1 ms]
+Results File: /tmp/glosify-analyser-remaining-tests/remaining-behavioral-after.trx
+
+Passed!  - Failed:     0, Passed:   167, Skipped:     7, Total:   174, Duration: 5 s - Glosify.Tests.dll (net10.0)

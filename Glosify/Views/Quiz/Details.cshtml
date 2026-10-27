@@ -48,6 +48,10 @@
     {
         <div class="panel-message success">@quizMessage</div>
     }
+    @if (TempData["AnkiMessage"] is string ankiMessage)
+    {
+        <div class="panel-message error" role="alert">@ankiMessage</div>
+    }
 
     <form class="quick-add-bar" method="post" asp-controller="Quiz" asp-action="AddWord">
         @Html.AntiForgeryToken()

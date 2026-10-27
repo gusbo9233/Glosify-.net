@@ -27,10 +27,21 @@ internal sealed class AssistantRunContext(
         AssistantRun run,
         AssistantRunInput input,
         AssistantThread thread,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        RunLanguageSelection? languageSelection = null)
     {
         var userId = run.UserId;
+        // Use the accepted message's selection, including an explicitly empty one.
+        // Legacy queued runs can recover their language from their owning chat.
+        var selectedLanguage = languageSelection is not null
+            ? QuizLanguageCatalog.Find(languageSelection.Code)
+            : QuizLanguageCatalog.Find(thread.Language) ?? await resolver.ResolveSelectedLanguageAsync(userId, cancellationToken);
         var quiz = await resolver.ResolveQuizAsync(input.ContextQuizId, userId, cancellationToken);
+        if (quiz is not null && (selectedLanguage is null
+            || QuizLanguageCatalog.Find(string.IsNullOrWhiteSpace(quiz.TargetLanguage) ? quiz.Language : quiz.TargetLanguage)?.Code != selectedLanguage.Code))
+        {
+            throw new InvalidOperationException("That quiz does not match the selected learning language. Choose a matching quiz or change the learning language first.");
+        }
         var ankiId = input.ContextAnkiCollectionId;
         if (ankiId is null && input.ContextQuizId is null)
         {
@@ -41,7 +52,13 @@ internal sealed class AssistantRunContext(
         var anki = ankiId is null ? null : await db.AnkiCollections.AsNoTracking()
             .SingleOrDefaultAsync(c => c.Id == ankiId && c.UserId == userId, cancellationToken);
         if (input.ContextAnkiCollectionId is not null && anki is null) throw new KeyNotFoundException("Anki collection not found.");
-        var currentLanguage = anki?.TargetLanguage ?? quiz?.TargetLanguage ?? await resolver.ResolveLanguageAsync(userId, cancellationToken);
+        if (anki is not null && (selectedLanguage is null || QuizLanguageCatalog.Find(anki.TargetLanguage)?.Code != selectedLanguage.Code))
+        {
+            if (input.ContextAnkiCollectionId is not null)
+                throw new InvalidOperationException("That Anki collection does not match the selected learning language. Choose a matching collection or change the learning language first.");
+            anki = null;
+        }
+        var currentLanguage = selectedLanguage?.Name;
         var mode = QuizLanguageCatalog.IsFreestyle(currentLanguage) ? AssistantMode.Freestyle : AssistantMode.Language;
         var focused = quiz is null || string.IsNullOrWhiteSpace(input.FocusedWordId)
             ? null
@@ -52,7 +69,7 @@ internal sealed class AssistantRunContext(
             : await resolver.ResolveDocumentPageAsync(input.DocumentContext, userId, cancellationToken);
         var transcript = mode == AssistantMode.Freestyle
             ? null
-            : await resolver.ResolveTranscriptAsync(input.TranscriptId, input.TranscriptContext, userId, cancellationToken);
+            : await resolver.ResolveTranscriptAsync(input.TranscriptId, input.TranscriptContext, userId, selectedLanguage, cancellationToken);
         // The explicitly viewed page and contextual reads must refer to the same book.
         var book = await resolver.ResolveBookAsync(input.DocumentContext?.DocumentId ?? input.BookDocumentId, userId, cancellationToken);
         var sourceLanguage = mode == AssistantMode.Freestyle
@@ -81,7 +98,7 @@ internal sealed class AssistantRunContext(
             },
             quiz?.Id,
             currentLanguage,
-            await resolver.ResolveLanguageCodeAsync(userId, cancellationToken),
+            selectedLanguage?.Code,
             sourceLanguage,
             replyLanguage,
             focused?.Id,

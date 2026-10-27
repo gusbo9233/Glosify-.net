@@ -14,6 +14,7 @@ namespace Glosify.Tests;
 
 public sealed class AnkiCollectionServiceTests
 {
+    private const int FormerDailyNewLimit = 20;
     private const string UserId = "anki-user";
     private static readonly DateTimeOffset Now = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
 
@@ -97,7 +98,7 @@ public sealed class AnkiCollectionServiceTests
     public async Task Notes_from_different_source_languages_share_the_collection_with_their_own_labels()
     {
         await using var f = await Fixture.CreateAsync();
-        var swedishQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+        var swedishQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
         var swedishWord = new Word { Id = "word-sv", QuizId = swedishQuiz.Id, Lemma = "pies", Translation = "hund", CreatedAt = Now };
         f.Context.AddRange(swedishQuiz, swedishWord);
         await f.Context.SaveChangesAsync();
@@ -181,13 +182,13 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
-    public async Task Again_remains_available_after_the_daily_new_card_limit()
+    public async Task Again_remains_available_after_all_new_cards_are_studied()
     {
         await using var f = await Fixture.CreateAsync();
         var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
         await AddMoreThanADaysNewCardsAsync(f, collection.Id);
         Guid missedId = default;
-        for (var i = 0; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        for (var i = 0; i <= FormerDailyNewLimit; i++)
         {
             var card = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
             var rating = i == 0 ? AnkiRatings.Again : AnkiRatings.Easy;
@@ -200,7 +201,7 @@ public sealed class AnkiCollectionServiceTests
         Assert.Equal(0, repeated.NewRemaining);
         Assert.True(await f.Study.RateAsync(new(collection.Id, repeated.CardId, AnkiRatings.Easy, Guid.NewGuid(), repeated.RowVersion, 100), UserId));
         Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
-        Assert.Equal(1, await f.Context.AnkiCards.CountAsync(card => card.Direction == PracticeDirection.SourceToTarget && card.State == AnkiCardStates.New));
+        Assert.Equal(0, await f.Context.AnkiCards.CountAsync(card => card.Direction == PracticeDirection.SourceToTarget && card.State == AnkiCardStates.New));
     }
 
     [Theory]
@@ -236,7 +237,7 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
-    public async Task Directions_are_separate_tracks_with_their_own_queue_and_daily_limit()
+    public async Task Directions_are_separate_tracks_without_daily_limits()
     {
         await using var f = await Fixture.CreateAsync();
         var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
@@ -247,15 +248,15 @@ public sealed class AnkiCollectionServiceTests
         Assert.Contains(forward.Prompt, await f.Context.Words.Select(word => word.Translation).ToListAsync());
         Assert.True(await f.Study.RateAsync(new(collection.Id, forward.CardId, AnkiRatings.Easy, Guid.NewGuid(), forward.RowVersion, 100), UserId));
 
-        for (var i = 1; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        for (var i = 1; i <= FormerDailyNewLimit; i++)
         {
             var next = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
             Assert.True(await f.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
         }
 
-        // The shared daily allowance in this direction is used up...
+        // Every new card in this direction has been studied...
         Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
-        // ...but the reverse track has its own allowance, and the word just reviewed is not hidden.
+        // ...but the reverse track and the word just reviewed are still available.
         var noteId = (await f.Context.AnkiCards.AsNoTracking().SingleAsync(c => c.Id == forward.CardId)).AnkiNoteId;
         var siblingId = (await f.Context.AnkiCards.AsNoTracking().SingleAsync(c => c.AnkiNoteId == noteId && c.Id != forward.CardId)).Id;
         Assert.NotNull((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.TargetToSource))!.Card);
@@ -267,8 +268,8 @@ public sealed class AnkiCollectionServiceTests
 
         var stats = await new AnkiStatisticsService(f.Context, new FakeTimeProvider(Now))
             .ReadSnapshotAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, stats!.Counts.StudiedToday);
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay + 1, stats.Counts.Total);
+        Assert.Equal(FormerDailyNewLimit + 1, stats!.Counts.StudiedToday);
+        Assert.Equal(FormerDailyNewLimit + 1, stats.Counts.Total);
         var reverseStats = await new AnkiStatisticsService(f.Context, new FakeTimeProvider(Now))
             .ReadSnapshotAsync(collection.Id, UserId, PracticeDirection.TargetToSource);
         Assert.Equal(0, reverseStats!.Counts.StudiedToday);
@@ -305,6 +306,152 @@ public sealed class AnkiCollectionServiceTests
         Assert.Equal(2, await f.Context.AnkiCards.CountAsync(c => c.Note.WordId == f.Word.Id));
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Removing_a_pair_excludes_linked_duplicates_and_preserves_history(bool sentences, bool existingCopies)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        var type = sentences ? PracticeItemType.Sentences : PracticeItemType.Words;
+        var sentenceItems = await f.Context.QuizSentences.OrderBy(item => item.Text).ToListAsync();
+        var target = sentences ? sentenceItems[0].Text : f.Word.Lemma;
+        var source = sentences ? sentenceItems[0].Translation : f.Word.Translation;
+        if (existingCopies)
+            await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, !sentences, !sentences, sentences, sentences), UserId);
+        if (sentences)
+        {
+            sentenceItems[1].Text = target;
+            sentenceItems[1].Translation = source;
+        }
+        else
+        {
+            f.SecondWord.Lemma = target;
+            f.SecondWord.Translation = source;
+        }
+        await f.Context.SaveChangesAsync();
+        if (!existingCopies)
+            await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, !sentences, !sentences, sentences, sentences), UserId);
+        // Either identical source may be encountered first during synchronization.
+        var retainedNote = await f.Context.AnkiNotes.FirstAsync(note => note.ItemType == type && note.IsActive);
+        var firstId = sentences ? retainedNote.SentenceId!.Value.ToString() : retainedNote.WordId!;
+        var secondId = (sentences ? sentenceItems.Select(item => item.Id.ToString()) : new[] { f.Word.Id, f.SecondWord.Id })
+            .Single(id => id != firstId);
+        var reviewed = await f.Context.AnkiCards.FirstAsync(card => card.AnkiNoteId == retainedNote.Id);
+        reviewed.ReviewCount = 5;
+        reviewed.Stability = 12;
+        var reviewedId = reviewed.Id;
+        await f.Context.SaveChangesAsync();
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+
+        // A second linked quiz's skipped copy is represented by the same picker row.
+        var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other copies",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        f.Context.Quizzes.Add(otherQuiz);
+        if (sentences)
+            f.Context.QuizSentences.Add(new QuizSentence { Id = Guid.NewGuid(), QuizId = otherQuiz.Id, Text = target, Translation = source });
+        else
+            f.Context.Words.Add(new Word { Id = "other-copy", QuizId = otherQuiz.Id, Lemma = target, Translation = source });
+        await f.Context.SaveChangesAsync();
+        await f.Collections.AddQuizAsync(new(collection.Id, otherQuiz.Id, !sentences, !sentences, sentences, sentences), UserId);
+        Assert.True(await f.Collections.SetMembershipAsync(collection.Id, [], [new(f.Quiz.Id, type, firstId)], UserId));
+        Assert.Equal(0, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+        f.Context.ChangeTracker.Clear();
+        var fresh = new AnkiCollectionService(f.Context, TimeProvider.System);
+        for (var i = 0; i < 3; i++)
+        {
+            await fresh.SyncCollectionAsync(collection.Id);
+            Assert.Equal(0, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+        }
+        Assert.Equal(5, (await f.Context.AnkiCards.SingleAsync(card => card.Id == reviewedId)).ReviewCount);
+        Assert.Equal(12, (await f.Context.AnkiCards.SingleAsync(card => card.Id == reviewedId)).Stability);
+
+        // Either source key may be selected again after the row has been unticked.
+        Assert.True(await fresh.SetMembershipAsync(collection.Id, [new(f.Quiz.Id, type, secondId)], [], UserId));
+        await fresh.SyncCollectionAsync(collection.Id);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+        Assert.All(await f.Context.AnkiCards.Where(card => card.IsActive).Include(card => card.Note).ToListAsync(),
+            card => Assert.Equal(secondId, sentences ? card.Note.SentenceId.ToString() : card.Note.WordId));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Removing_a_pair_excludes_both_word_and_sentence_copies(bool sentenceActive)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var sentence = await f.Context.QuizSentences.FirstAsync();
+        sentence.Text = f.Word.Lemma;
+        sentence.Translation = f.Word.Translation;
+        await f.Context.SaveChangesAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id,
+            sentenceActive ? PracticeItemType.Sentences : PracticeItemType.Words,
+            sentenceActive ? sentence.Id.ToString() : f.Word.Id, true, true), UserId);
+        await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, true, UserId);
+        var active = await f.Context.AnkiNotes.SingleAsync(note => note.TargetText == f.Word.Lemma && note.IsActive);
+        Assert.Equal(sentenceActive ? PracticeItemType.Sentences : PracticeItemType.Words, active.ItemType);
+        var reviewed = active.Cards.First();
+        reviewed.ReviewCount = 5;
+        reviewed.Stability = 12;
+        await f.Context.SaveChangesAsync();
+
+        Assert.True(await f.Collections.SetMembershipAsync(collection.Id, [],
+            [new(f.Quiz.Id, active.ItemType, active.WordId ?? active.SentenceId!.Value.ToString())], UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var fresh = new AnkiCollectionService(f.Context, TimeProvider.System);
+        await fresh.SyncCollectionAsync(collection.Id);
+        var copies = await f.Context.AnkiNotes.Include(note => note.Cards)
+            .Where(note => note.TargetText == f.Word.Lemma).ToListAsync();
+        Assert.Equal(2, copies.Count);
+        Assert.All(copies, note =>
+        {
+            Assert.False(note.IsActive);
+            Assert.Equal(2, note.Cards.Count);
+            Assert.All(note.Cards, card =>
+            {
+                Assert.False(card.IsActive);
+                Assert.True(card.ExcludedFromQuizLink);
+            });
+        });
+        var stored = await f.Context.AnkiCards.SingleAsync(card => card.Id == reviewed.Id);
+        Assert.Equal(5, stored.ReviewCount);
+        Assert.Equal(12, stored.Stability);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.Note.WordId == f.SecondWord.Id && card.IsActive));
+    }
+
+    [Fact]
+    public async Task Unlinking_the_materialized_pair_activates_its_still_linked_copy_immediately()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, true, false, false), UserId);
+        var replacement = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Replacement",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        f.Context.AddRange(replacement, new Word { Id = "replacement", QuizId = replacement.Id,
+            Lemma = f.Word.Lemma, Translation = f.Word.Translation });
+        await f.Context.SaveChangesAsync();
+        await f.Collections.AddQuizAsync(new(collection.Id, replacement.Id, true, true, false, false), UserId);
+        Assert.False(await f.Context.AnkiNotes.AnyAsync(note => note.QuizId == replacement.Id));
+        f.Context.ChangeTracker.Clear();
+
+        Assert.True(await f.Collections.RemoveQuizAsync(collection.Id, f.Quiz.Id, UserId));
+
+        // These assistant reads do not synchronize, so the unlink must leave usable cards.
+        var fresh = new AnkiCollectionService(f.Context, TimeProvider.System);
+        Assert.Equal(1, (await fresh.ReadCountsAsync(collection.Id, UserId))!.New);
+        var cards = await f.Context.AnkiCards.AsNoTracking().Include(card => card.Note)
+            .Where(card => card.IsActive).ToListAsync();
+        Assert.Equal(2, cards.Count);
+        Assert.All(cards, card => Assert.Equal(replacement.Id, card.Note.QuizId));
+        Assert.All(await f.Context.AnkiNotes.Where(note => note.QuizId == f.Quiz.Id).ToListAsync(),
+            note => Assert.False(note.IsActive));
+    }
+
     [Fact]
     public async Task Membership_save_rejects_foreign_collections_and_unknown_items_atomically()
     {
@@ -325,9 +472,9 @@ public sealed class AnkiCollectionServiceTests
         // The item list orders DateTimeOffset values, which SQLite cannot translate.
         await using var f = await Fixture.CreateAsync(useInMemoryDatabase: true);
         f.Context.Quizzes.AddRange(
-            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now },
-            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Spanish", SourceLanguage = "English", TargetLanguage = "Spanish", Language = "Spanish", ProcessingStatus = "Ready", CreatedAt = Now },
-            new Quiz { Id = Guid.NewGuid(), UserId = "someone-else", Name = "Foreign", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now });
+            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now },
+            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Spanish", SourceLanguage = "English", TargetLanguage = "Spanish", Language = "Spanish", CreatedAt = Now },
+            new Quiz { Id = Guid.NewGuid(), UserId = "someone-else", Name = "Foreign", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now });
         await f.Context.SaveChangesAsync();
 
         var empty = await f.Collections.GetWorkspaceAsync(UserId, "Polish");
@@ -441,7 +588,7 @@ public sealed class AnkiCollectionServiceTests
         var quizId = fixture.Quiz.Id;
         if (mismatch == "quiz")
         {
-            var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
             fixture.Context.Quizzes.Add(otherQuiz);
             await fixture.Context.SaveChangesAsync();
             quizId = otherQuiz.Id;
@@ -505,7 +652,6 @@ public sealed class AnkiCollectionServiceTests
             SourceLanguage = "English",
             TargetLanguage = "Indonesian",
             Language = "Indonesian",
-            ProcessingStatus = "Ready",
             CreatedAt = Now,
         };
         var word = new Word
@@ -540,7 +686,7 @@ public sealed class AnkiCollectionServiceTests
     }
 
     [Fact]
-    public async Task Rating_is_idempotent_and_daily_new_limit_is_durable()
+    public async Task Rating_is_idempotent_and_new_cards_remain_available_after_twenty_reviews()
     {
         await using var fixture = await Fixture.CreateAsync();
         var collection = await fixture.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
@@ -554,15 +700,16 @@ public sealed class AnkiCollectionServiceTests
         Assert.False(await fixture.Study.RateAsync(rating, UserId));
         Assert.Single(await fixture.Context.AnkiReviews.ToListAsync());
 
-        for (var i = 1; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        for (var i = 1; i < FormerDailyNewLimit; i++)
         {
             var next = (await fixture.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
             Assert.True(await fixture.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
         }
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, await fixture.Context.AnkiReviews.CountAsync());
+        Assert.Equal(FormerDailyNewLimit, await fixture.Context.AnkiReviews.CountAsync());
         var after = await fixture.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget);
         Assert.NotNull(after);
-        Assert.Null(after!.Card);
+        Assert.NotNull(after!.Card);
+        Assert.Equal(1, after.Card.NewRemaining);
         Assert.Equal("UTC", after.TimeZoneId);
         Assert.Equal(PracticeDirection.SourceToTarget, after.Direction);
         Assert.Equal(2, await fixture.Context.AnkiCards.CountAsync(card => card.Note.WordId == fixture.Word.Id));
@@ -605,7 +752,6 @@ public sealed class AnkiCollectionServiceTests
                 SourceLanguage = "English",
                 TargetLanguage = "Polish",
                 Language = "Polish",
-                ProcessingStatus = "Ready",
                 CreatedAt = Now,
             };
             var word = new Word
@@ -672,22 +818,22 @@ public sealed class AnkiCollectionServiceTests
         await using var f = await Fixture.CreateAsync();
         var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
         await AddMoreThanADaysNewCardsAsync(f, collection.Id);
-        for (var i = 0; i < AnkiStudyDefaults.NewCardsPerDay; i++)
+        for (var i = 0; i < FormerDailyNewLimit; i++)
         {
             var next = (await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card!;
             Assert.True(await f.Study.RateAsync(new(collection.Id, next.CardId, AnkiRatings.Easy, Guid.NewGuid(), next.RowVersion, 100), UserId));
         }
 
-        // /Anki has nothing left today in the practice direction, so nothing is suggested...
-        Assert.Null((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
+        // The twenty-first new card is still available and suggested.
+        Assert.NotNull((await f.Study.GetNextAsync(collection.Id, UserId, PracticeDirection.SourceToTarget))!.Card);
         var counts = (await f.Collections.ReadCountsAsync(collection.Id, UserId))!;
-        Assert.Equal(0, counts.Due + counts.New);
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, counts.StudiedToday);
+        Assert.Equal(1, counts.New);
+        Assert.Equal(FormerDailyNewLimit, counts.StudiedToday);
 
-        // ...until the learner switches to the untouched reverse track.
+        // The reverse track still contains every new card.
         Assert.True(await f.Collections.SetPracticeDirectionAsync(collection.Id, PracticeDirection.TargetToSource, UserId));
         counts = (await f.Collections.ReadCountsAsync(collection.Id, UserId))!;
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, counts.New);
+        Assert.Equal(FormerDailyNewLimit + 1, counts.New);
         Assert.Equal(0, counts.StudiedToday);
     }
 
@@ -816,11 +962,106 @@ public sealed class AnkiCollectionServiceTests
 
     private static async Task AddMoreThanADaysNewCardsAsync(Fixture fixture, Guid collectionId)
     {
-        for (var i = 2; i <= AnkiStudyDefaults.NewCardsPerDay; i++)
+        for (var i = 2; i <= FormerDailyNewLimit; i++)
             fixture.Context.Words.Add(new Word { Id = $"extra-{i}", QuizId = fixture.Quiz.Id,
                 Lemma = $"word-{i}", Translation = $"translation-{i}", CreatedAt = Now.AddMinutes(i) });
         await fixture.Context.SaveChangesAsync();
         await fixture.Collections.AddQuizAsync(new(collectionId, fixture.Quiz.Id, true, true, false, false), UserId);
+    }
+
+    [Fact]
+    public async Task Edits_that_create_duplicate_pairs_preserve_the_reviewed_card_across_syncs()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, true, false, false), UserId);
+        var reviewed = await f.Context.AnkiCards.FirstAsync(card => card.Note.WordId == f.Word.Id);
+        reviewed.ReviewCount = 5;
+        reviewed.Stability = 12;
+        f.SecondWord.Lemma = f.Word.Lemma;
+        f.SecondWord.Translation = f.Word.Translation;
+        await f.Context.SaveChangesAsync();
+        for (var i = 0; i < 3; i++)
+        {
+            await f.Collections.SyncCollectionAsync(collection.Id);
+            Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+            Assert.True(reviewed.IsActive);
+            Assert.Equal(5, reviewed.ReviewCount);
+            Assert.Equal(12, reviewed.Stability);
+        }
+        await f.Collections.SetMembershipAsync(collection.Id,
+            [new(f.Quiz.Id, PracticeItemType.Words, f.SecondWord.Id)], [], UserId);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+    }
+
+    [Fact]
+    public async Task Identical_pairs_in_one_membership_batch_create_one_note()
+    {
+        await using var f = await Fixture.CreateAsync();
+        f.SecondWord.Lemma = f.Word.Lemma;
+        f.SecondWord.Translation = f.Word.Translation;
+        await f.Context.SaveChangesAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.SetMembershipAsync(collection.Id,
+            [new(f.Quiz.Id, PracticeItemType.Words, f.Word.Id), new(f.Quiz.Id, PracticeItemType.Words, f.SecondWord.Id)], [], UserId);
+        Assert.Single(await f.Context.AnkiNotes.ToListAsync());
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+    }
+
+    [Theory]
+    [InlineData("single")]
+    [InlineData("membership")]
+    [InlineData("assistant")]
+    [InlineData("quiz")]
+    public async Task Exact_pairs_from_different_quizzes_are_added_only_once(string path)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "word", f.Word.Id, true, true), UserId);
+        var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Duplicates",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
+        var duplicate = new Word { Id = "duplicate", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };
+        f.Context.AddRange(quiz, duplicate);
+        await f.Context.SaveChangesAsync();
+        f.Context.ChangeTracker.Clear();
+        switch (path)
+        {
+            case "single":
+                Assert.True(await f.Collections.AddItemAsync(new(collection.Id, quiz.Id, "word", duplicate.Id, true, true), UserId));
+                break;
+            case "membership":
+                Assert.True(await f.Collections.SetMembershipAsync(collection.Id,
+                    [new(quiz.Id, PracticeItemType.Words, duplicate.Id)], [], UserId));
+                break;
+            case "assistant":
+                var result = await f.Collections.AddItemsAsync(new(collection.Id, quiz.Id, PracticeItemType.Words, [duplicate.Id], true, true), UserId);
+                Assert.Equal(0, result.CardsAdded);
+                break;
+            case "quiz":
+                Assert.True(await f.Collections.AddQuizAsync(new(collection.Id, quiz.Id, true, true, false, false), UserId));
+                break;
+        }
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
+        Assert.Equal(f.Word.Id, (await f.Context.AnkiNotes.SingleAsync(note => note.IsActive)).WordId);
+    }
+
+    [Theory]
+    [InlineData("dom", "home")]
+    [InlineData("Dom", "house")]
+    [InlineData("dom ", "house")]
+    [InlineData("dom", "House")]
+    public async Task Different_pairs_are_kept(string word, string translation)
+    {
+        await using var f = await Fixture.CreateAsync();
+        f.SecondWord.Lemma = word;
+        f.SecondWord.Translation = translation;
+        await f.Context.SaveChangesAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.SetMembershipAsync(collection.Id,
+            [new(f.Quiz.Id, PracticeItemType.Words, f.Word.Id), new(f.Quiz.Id, PracticeItemType.Words, f.SecondWord.Id)], [], UserId);
+        await f.Collections.SyncCollectionAsync(collection.Id);
+        Assert.Equal(4, await f.Context.AnkiCards.CountAsync(card => card.IsActive));
     }
 
     private sealed class Fixture : IAsyncDisposable
@@ -858,7 +1099,7 @@ public sealed class AnkiCollectionServiceTests
             var context = new GlosifyContext(options);
             await context.Database.EnsureCreatedAsync();
             context.Users.Add(new ApplicationUser { Id = UserId, UserName = "anki@example.test", NormalizedUserName = "ANKI@EXAMPLE.TEST" });
-            var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Basics", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Basics", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
             var word = new Word { Id = "word-1", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };
             var secondWord = new Word { Id = "word-2", QuizId = quiz.Id, Lemma = "kot", Translation = "cat", CreatedAt = Now.AddMinutes(1) };
             context.AddRange(quiz, word, secondWord,

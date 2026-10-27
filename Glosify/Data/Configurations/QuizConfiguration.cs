@@ -15,8 +15,6 @@ internal sealed class QuizConfiguration : IEntityTypeConfiguration<Quiz>
         entity.Property(q => q.SourceLanguage).HasMaxLength(64).IsRequired();
         entity.Property(q => q.TargetLanguage).HasMaxLength(64).IsRequired();
         entity.Property(q => q.Language).HasMaxLength(64);
-        entity.Property(q => q.ProcessingStatus).HasMaxLength(64);
-        entity.Property(q => q.ProcessingMessage).HasMaxLength(512);
 
         entity.HasIndex(q => q.UserId);
         entity.HasIndex(q => q.CollectionId);

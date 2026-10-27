@@ -324,7 +324,7 @@ public sealed class AvatarTests
         using var app = new AvatarFixture(); using var client = await app.Client("admin", "Swedish"); await app.Antiforgery(client);
         using var config = JsonDocument.Parse(await client.GetStringAsync("/api/avatar/config"));
         Assert.Equal("sv", config.RootElement.GetProperty("language").GetString());
-        AvatarFixture.SetLanguage(client, "Polish");
+        await app.SetLanguageAsync(client, "admin", "Polish");
         using var start = await client.PostAsJsonAsync("/api/avatar/sessions", new { language = "en" });
         Assert.Equal(HttpStatusCode.OK, start.StatusCode);
         using var payload = JsonDocument.Parse(await start.Content.ReadAsStringAsync());
@@ -550,11 +550,17 @@ internal sealed class AvatarFixture : WebApplicationFactory<Program>
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, user), new Claim("AspNet.Identity.SecurityStamp", "stamp")], "Identity.Application"));
         var ticket = new AuthenticationTicket(principal, new AuthenticationProperties { IssuedUtc = DateTimeOffset.UtcNow, ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1) }, "Identity.Application");
         client.DefaultRequestHeaders.Add("Cookie", options.Cookie.Name + "=" + options.TicketDataFormat.Protect(ticket));
-        SetLanguage(client, language);
+        await SetLanguageAsync(client, user, language);
         return client;
     }
-    public static void SetLanguage(HttpClient client, string? language)
+    public async Task SetLanguageAsync(HttpClient client, string user, string? language)
     {
+        await Seed(async db =>
+        {
+            var account = await db.Users.SingleAsync(account => account.Id == user);
+            account.SelectedQuizLanguageCode = Glosify.Services.Language.QuizLanguageCatalog.Find(language)?.Code;
+            await db.SaveChangesAsync();
+        });
         var cookies = client.DefaultRequestHeaders.GetValues("Cookie").Single().Split("; ")
             .Where(cookie => !cookie.StartsWith("glosify.language=", StringComparison.Ordinal)).ToList();
         if (language is not null) cookies.Add("glosify.language=" + Uri.EscapeDataString(language));

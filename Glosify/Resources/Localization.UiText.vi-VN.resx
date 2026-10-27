@@ -1708,4 +1708,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Cuộc trò chuyện Speaking · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>{0} lượt nói</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>{0} lượt nói</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>Điểm bắt đầu phạm vi (%)</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>Điểm kết thúc phạm vi (%)</value></data>
 </root>

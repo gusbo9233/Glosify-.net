@@ -1,0 +1,719 @@
+[
+  {
+    "id": 1040418099,
+    "identifier": "CVE-2026-109869",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-xjj6-f33q-929c",
+        "url": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
+        "summary": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 6.23.0, < 6.29.1",
+            "first_patched_version": "6.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+            "first_patched_version": "7.30.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+            "first_patched_version": "8.12.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.18.0, < 7.30.1",
+        "first_patched_version": "7.30.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1040418098,
+    "identifier": "CVE-2026-109924",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-4qv8-2p9j-2685",
+        "url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685",
+        "summary": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 6.5.0, < 6.29.1",
+            "first_patched_version": "6.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+            "first_patched_version": "7.30.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+            "first_patched_version": "8.12.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.30.1",
+        "first_patched_version": "7.30.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1040418097,
+    "identifier": "CVE-2026-109841",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-f72v-6w45-q472",
+        "url": "https://github.com/advisories/GHSA-f72v-6w45-q472",
+        "summary": "undici vulnerable to Subresource Integrity bypass via non-lowercase algorithm tokens",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+            "first_patched_version": "7.30.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.12.2",
+            "first_patched_version": "8.12.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.15.0, < 7.30.1",
+        "first_patched_version": "7.30.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478517,
+    "identifier": "GHSA-rgj7-g3m4-5g8c",
+    "package": "sharp",
+    "version": "0.35.2",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-rgj7-g3m4-5g8c",
+        "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c",
+        "summary": "sharp: Vulnerabilities in libheif: GHSA-g89c-p67h-r497 and GHSA-2jg2-4ch7-h545",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "sharp"
+            },
+            "vulnerable_version_range": "< 0.35.4",
+            "first_patched_version": "0.35.4",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "sharp"
+        },
+        "vulnerable_version_range": "< 0.35.4",
+        "first_patched_version": "0.35.4",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478516,
+    "identifier": "CVE-2026-19534",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-rfgv-xxqx-mfg5",
+        "url": "https://github.com/advisories/GHSA-rfgv-xxqx-mfg5",
+        "summary": "undici vulnerable to Denial of Service via unrequested WebSocket subprotocol",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 6.7.0, < 6.28.1",
+            "first_patched_version": "6.28.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478515,
+    "identifier": "CVE-2026-84961",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-w293-vg96-wgc3",
+        "url": "https://github.com/advisories/GHSA-w293-vg96-wgc3",
+        "summary": "undici vulnerable to TLS certificate validation bypass via dropped connect options in BalancedPool",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.24.1, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.24.1, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478514,
+    "identifier": "GHSA-wq5f-xc86-pv6w",
+    "package": "sharp",
+    "version": "0.35.2",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-wq5f-xc86-pv6w",
+        "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w",
+        "summary": "sharp : Vulnerability in librsvg dependency CVE-2026-96889",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "sharp"
+            },
+            "vulnerable_version_range": "< 0.35.5",
+            "first_patched_version": "0.35.5",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "sharp"
+        },
+        "vulnerable_version_range": "< 0.35.5",
+        "first_patched_version": "0.35.5",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478513,
+    "identifier": "CVE-2026-84933",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-2jfj-6hjv-fm6j",
+        "url": "https://github.com/advisories/GHSA-2jfj-6hjv-fm6j",
+        "summary": "undici vulnerable to cross-user cookie disclosure via Set-Cookie caching in shared caches",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478512,
+    "identifier": "CVE-2026-85024",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-3wwx-pv8p-q78v",
+        "url": "https://github.com/advisories/GHSA-3wwx-pv8p-q78v",
+        "summary": "undici vulnerable to Denial of Service via unhandled error in WebSocket permessage-deflate decompression",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 6.25.0, < 6.28.1",
+            "first_patched_version": "6.28.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.28.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.1.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.28.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478511,
+    "identifier": "CVE-2026-84890",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-3xpg-4rpp-hhhm",
+        "url": "https://github.com/advisories/GHSA-3xpg-4rpp-hhhm",
+        "summary": "undici vulnerable to Denial of Service via unbounded decompression of compressed responses",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.15.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.15.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478510,
+    "identifier": "CVE-2026-18149",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-pmjh-fq2x-6v4x",
+        "url": "https://github.com/advisories/GHSA-pmjh-fq2x-6v4x",
+        "summary": "undici vulnerable to Denial of Service via orphaned RetryHandler response body",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.11.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.11.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478509,
+    "identifier": "CVE-2026-85014",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-rx4f-c7p8-82vq",
+        "url": "https://github.com/advisories/GHSA-rx4f-c7p8-82vq",
+        "summary": "undici vulnerable to Denial of Service via WebSocketStream unclean close",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478508,
+    "identifier": "CVE-2026-84947",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-2gqq-gqf2-x968",
+        "url": "https://github.com/advisories/GHSA-2gqq-gqf2-x968",
+        "summary": "undici vulnerable to response truncation via oversized chunked responses in the dump interceptor",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.1.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.1.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478507,
+    "identifier": "CVE-2026-85008",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-8436-99hf-9mmv",
+        "url": "https://github.com/advisories/GHSA-8436-99hf-9mmv",
+        "summary": "undici vulnerable to caching and replay of unsafe HTTP method responses",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  },
+  {
+    "id": 1030478506,
+    "identifier": "CVE-2026-18540",
+    "package": "undici",
+    "version": "7.29.0",
+    "advisories": [
+      {
+        "ghsa_id": "GHSA-r53p-7pc4-xj5r",
+        "url": "https://github.com/advisories/GHSA-r53p-7pc4-xj5r",
+        "summary": "undici vulnerable to downstream response splitting via retry interceptor",
+        "withdrawn_at": null,
+        "vulnerabilities": [
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": "< 6.28.1",
+            "first_patched_version": "6.28.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+            "first_patched_version": "7.29.1",
+            "vulnerable_functions": []
+          },
+          {
+            "package": {
+              "ecosystem": "npm",
+              "name": "undici"
+            },
+            "vulnerable_version_range": ">= 8.0.0, < 8.10.2",
+            "first_patched_version": "8.10.2",
+            "vulnerable_functions": []
+          }
+        ]
+      }
+    ],
+    "matching_ranges": [
+      {
+        "package": {
+          "ecosystem": "npm",
+          "name": "undici"
+        },
+        "vulnerable_version_range": ">= 7.0.0, < 7.29.1",
+        "first_patched_version": "7.29.1",
+        "vulnerable_functions": []
+      }
+    ],
+    "lockfile_dev": true
+  }
+]

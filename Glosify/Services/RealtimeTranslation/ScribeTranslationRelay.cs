@@ -157,7 +157,7 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
                 recognized.Reader,
                 transcripts?.Writer,
                 captureRecorder,
-                storageWarning, browserSendLock,
+                browserSendLock,
                 relayToken);
             var authorizationMonitor = _authorizationMonitor.MonitorAuthorizationAsync(
                 authorization,
@@ -327,7 +327,6 @@ public sealed class ScribeTranslationRelay : IScribeTranslationRelay
         ChannelReader<RecognizedSpeechSegment> recognized,
         ChannelWriter<CapturedTranslationSegment>? transcripts,
         AdminCaptureRecorder? captureRecorder,
-        System.Runtime.CompilerServices.StrongBox<int> storageWarning,
         SemaphoreSlim browserSendLock,
         CancellationToken cancellationToken)
     {

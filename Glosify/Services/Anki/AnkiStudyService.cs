@@ -43,8 +43,6 @@ public sealed class AnkiStudyService : IAnkiStudyService
         var now = _timeProvider.GetUtcNow();
         var availability = await AnkiStudyAvailability.ReadAsync(_context, collection, now, direction, cancellationToken);
         var cards = availability.Cards;
-        var newStudied = availability.NewStudied;
-        var reviewsStudied = availability.ReviewsStudied;
 
         AnkiCard? selected = preferredCardId.HasValue
             ? cards.SingleOrDefault(card => card.Id == preferredCardId.Value)
@@ -57,7 +55,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
                 .OrderBy(card => card.DueAt)
                 .FirstOrDefault();
         }
-        if (selected is null && !preferredCardId.HasValue && reviewsStudied < AnkiStudyDefaults.MaximumReviewsPerDay)
+        if (selected is null && !preferredCardId.HasValue)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.Review && card.DueAt <= now)
@@ -65,7 +63,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
                 .ThenBy(card => card.DueAt)
                 .FirstOrDefault();
         }
-        if (selected is null && !preferredCardId.HasValue && newStudied < AnkiStudyDefaults.NewCardsPerDay)
+        if (selected is null && !preferredCardId.HasValue)
         {
             selected = cards
                 .Where(card => card.State == AnkiCardStates.New)
@@ -76,7 +74,6 @@ public sealed class AnkiStudyService : IAnkiStudyService
         if (selected is null && !preferredCardId.HasValue)
         {
             // Again joins the back of the eligible stack, including after a reload.
-            // These learning cards remain available when the daily new/review limit is reached.
             selected = cards
                 .Where(card => IsImmediateRepeat(card) && card.DueAt <= now)
                 .OrderBy(card => card.DueAt)
@@ -95,9 +92,7 @@ public sealed class AnkiStudyService : IAnkiStudyService
         var sourceToTarget = PracticeDirection.IsSourceToTarget(selected.Direction);
         var previews = _scheduler.Preview(selected, AnkiStudyDefaults.DesiredRetention, now);
         var dueRemaining = cards.Count(card => card.State != AnkiCardStates.New && card.DueAt <= now);
-        var newRemaining = Math.Max(0, Math.Min(
-            AnkiStudyDefaults.NewCardsPerDay - newStudied,
-            cards.Count(card => card.State == AnkiCardStates.New)));
+        var newRemaining = cards.Count(card => card.State == AnkiCardStates.New);
         return new AnkiStudyState(new AnkiStudyCard(
             collection.Id,
             collection.Name,
