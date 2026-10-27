@@ -281,7 +281,6 @@ public sealed class QuizJsonImportServiceTests
         {
             Assert.Equal("Polish", quiz.TargetLanguage);
             Assert.Equal("Polish", quiz.Language);
-            Assert.Equal("Ready", quiz.ProcessingStatus);
             Assert.False(quiz.IsPublic);
             Assert.Equal("user-1", quiz.UserId);
         });

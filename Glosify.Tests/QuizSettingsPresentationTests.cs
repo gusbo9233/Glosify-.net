@@ -34,7 +34,6 @@ public sealed class QuizSettingsPresentationTests
             "Polish practice",
             "English",
             "Polish",
-            "Ready",
             DateTimeOffset.UtcNow,
             null,
             false);
@@ -63,7 +62,6 @@ public sealed class QuizSettingsPresentationTests
             "History",
             "Freestyle",
             "Freestyle",
-            "Ready",
             DateTimeOffset.UtcNow,
             null,
             false);

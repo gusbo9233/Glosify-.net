@@ -533,7 +533,7 @@ public sealed class AssistantRunTests
     }
 
     [Fact]
-    public async Task A_new_quiz_is_private_and_building_until_the_run_finishes()
+    public async Task A_new_quiz_is_private_and_linked_when_the_run_finishes()
     {
         await using var h = await AssistantHarness.CreateAsync();
         h.Model.ThenCall("create_quiz", new { name = "Travel", source_language = (string?)null, target_language = (string?)null, collection_id = (string?)null, words = new[] { new { word = "pociąg", translation = "train" } }, sentences = (object?)null })
@@ -551,17 +551,14 @@ public sealed class AssistantRunTests
 
         await using (var db = h.Db())
         {
-            var building = await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel");
+            var quiz = await db.Quizzes.SingleAsync(quiz => quiz.Name == "Travel");
             Assert.DoesNotContain((await h.ViewAsync(run.Id)).Parts, part => part.Type == AssistantPartTypes.QuizLink);
-            Assert.Equal("Building", building.ProcessingStatus);
-            Assert.False(building.IsPublic);
-            Assert.Equal("Polish", building.TargetLanguage);
-            Assert.Equal("English", building.SourceLanguage);
+            Assert.False(quiz.IsPublic);
+            Assert.Equal("Polish", quiz.TargetLanguage);
+            Assert.Equal("English", quiz.SourceLanguage);
         }
 
         await h.DrainAsync();
-        await using var after = h.Db();
-        Assert.Equal("Ready", (await after.Quizzes.SingleAsync(quiz => quiz.Name == "Travel")).ProcessingStatus);
         var finished = await h.ViewAsync(run.Id);
         var artifact = Assert.Single(finished.Artifacts);
         var link = Assert.Single(finished.Parts, part => part.Type == AssistantPartTypes.QuizLink);

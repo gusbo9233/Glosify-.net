@@ -109,7 +109,7 @@ public sealed record AssistantQuestionView(Guid PartId, string Question, IReadOn
 
 public sealed record AssistantApprovalView(Guid PartId, IReadOnlyList<AssistantPendingChangeView> Changes, IReadOnlyList<string> Kinds);
 
-public sealed record AssistantRunArtifact(Guid Id, string Name, string Status);
+public sealed record AssistantRunArtifact(Guid Id, string Name);
 
 public sealed record AssistantUndoResult(int Undone, int Kept);
 

@@ -371,7 +371,7 @@ public sealed class AnkiPageTests : IDisposable
             var otherQuizzes = Enumerable.Range(0, 5).Select(i => new Quiz
             {
                 Id = Guid.NewGuid(), UserId = UserId, Name = $"Capacity {i}", SourceLanguage = "English",
-                TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready",
+                TargetLanguage = "Polish", Language = "Polish",
             }).ToArray();
             db.Quizzes.AddRange(otherQuizzes);
             db.Words.AddRange(Enumerable.Range(1, 4999).Select(i => new Word
@@ -439,7 +439,7 @@ public sealed class AnkiPageTests : IDisposable
         db.Quizzes.Add(new Quiz
         {
             Id = quizId, UserId = UserId, Name = "Basics", SourceLanguage = "English",
-            TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready",
+            TargetLanguage = "Polish", Language = "Polish",
         });
         db.Words.Add(new Word { Id = "word-0", QuizId = quizId, Lemma = "dom", Translation = "house" });
         await db.SaveChangesAsync();

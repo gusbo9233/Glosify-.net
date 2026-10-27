@@ -28,6 +28,7 @@ public sealed class GuestBrowsingTests : IClassFixture<GuestWebApplicationFactor
         var selector = section switch { "books" => ".book-card", "quiz" => ".quiz-card", "anki" => "[data-anki-study]", "transcripts" => ".transcript-card", _ => ".saved-translation-card" };
         Assert.NotNull(document.QuerySelector(selector));
         if (section != "anki") Assert.NotNull(document.QuerySelector($"a[href='/preview/{section}/sample']"));
+        if (section == "quiz") Assert.Null(document.QuerySelector(".quiz-card .status-pill"));
         Assert.Null(document.QuerySelector(".guest-preview"));
         Assert.NotNull(document.QuerySelector("[data-login-required]"));
         Assert.NotNull(document.QuerySelector("[data-login-dialog]"));

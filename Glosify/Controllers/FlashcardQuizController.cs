@@ -191,7 +191,6 @@ public class FlashcardQuizController : Controller
             SourceLanguage = session.SourceLanguage,
             TargetLanguage = session.TargetLanguage,
             Language = session.TargetLanguage,
-            ProcessingStatus = "Ready"
         };
         var model = BuildViewModel(session, quiz);
         return Request.Headers.XRequestedWith == "XMLHttpRequest"

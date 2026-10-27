@@ -118,7 +118,7 @@ public sealed class QuizContentSelectionTests
     {
         var id = Guid.NewGuid();
         db.Quizzes.Add(new Quiz { Id = id, UserId = "user", Name = "Quiz", SourceLanguage = "English",
-            TargetLanguage = language, Language = language, ProcessingStatus = "Ready" });
+            TargetLanguage = language, Language = language });
         db.Words.Add(new Word { Id = "word-1", QuizId = id, Lemma = "casa", Translation = "house" });
         for (var i = 0; i < 2; i++) db.QuizSentences.Add(new QuizSentence
         {

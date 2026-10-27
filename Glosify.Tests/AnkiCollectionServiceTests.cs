@@ -98,7 +98,7 @@ public sealed class AnkiCollectionServiceTests
     public async Task Notes_from_different_source_languages_share_the_collection_with_their_own_labels()
     {
         await using var f = await Fixture.CreateAsync();
-        var swedishQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+        var swedishQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
         var swedishWord = new Word { Id = "word-sv", QuizId = swedishQuiz.Id, Lemma = "pies", Translation = "hund", CreatedAt = Now };
         f.Context.AddRange(swedishQuiz, swedishWord);
         await f.Context.SaveChangesAsync();
@@ -349,7 +349,7 @@ public sealed class AnkiCollectionServiceTests
 
         // A second linked quiz's skipped copy is represented by the same picker row.
         var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other copies",
-            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready" };
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
         f.Context.Quizzes.Add(otherQuiz);
         if (sentences)
             f.Context.QuizSentences.Add(new QuizSentence { Id = Guid.NewGuid(), QuizId = otherQuiz.Id, Text = target, Translation = source });
@@ -397,9 +397,9 @@ public sealed class AnkiCollectionServiceTests
         // The item list orders DateTimeOffset values, which SQLite cannot translate.
         await using var f = await Fixture.CreateAsync(useInMemoryDatabase: true);
         f.Context.Quizzes.AddRange(
-            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now },
-            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Spanish", SourceLanguage = "English", TargetLanguage = "Spanish", Language = "Spanish", ProcessingStatus = "Ready", CreatedAt = Now },
-            new Quiz { Id = Guid.NewGuid(), UserId = "someone-else", Name = "Foreign", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now });
+            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Från svenska", SourceLanguage = "Swedish", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now },
+            new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Spanish", SourceLanguage = "English", TargetLanguage = "Spanish", Language = "Spanish", CreatedAt = Now },
+            new Quiz { Id = Guid.NewGuid(), UserId = "someone-else", Name = "Foreign", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now });
         await f.Context.SaveChangesAsync();
 
         var empty = await f.Collections.GetWorkspaceAsync(UserId, "Polish");
@@ -513,7 +513,7 @@ public sealed class AnkiCollectionServiceTests
         var quizId = fixture.Quiz.Id;
         if (mismatch == "quiz")
         {
-            var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            var otherQuiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Other", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
             fixture.Context.Quizzes.Add(otherQuiz);
             await fixture.Context.SaveChangesAsync();
             quizId = otherQuiz.Id;
@@ -577,7 +577,6 @@ public sealed class AnkiCollectionServiceTests
             SourceLanguage = "English",
             TargetLanguage = "Indonesian",
             Language = "Indonesian",
-            ProcessingStatus = "Ready",
             CreatedAt = Now,
         };
         var word = new Word
@@ -678,7 +677,6 @@ public sealed class AnkiCollectionServiceTests
                 SourceLanguage = "English",
                 TargetLanguage = "Polish",
                 Language = "Polish",
-                ProcessingStatus = "Ready",
                 CreatedAt = Now,
             };
             var word = new Word
@@ -946,7 +944,7 @@ public sealed class AnkiCollectionServiceTests
         var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
         await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id, "word", f.Word.Id, true, true), UserId);
         var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Duplicates",
-            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
         var duplicate = new Word { Id = "duplicate", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };
         f.Context.AddRange(quiz, duplicate);
         await f.Context.SaveChangesAsync();
@@ -1026,7 +1024,7 @@ public sealed class AnkiCollectionServiceTests
             var context = new GlosifyContext(options);
             await context.Database.EnsureCreatedAsync();
             context.Users.Add(new ApplicationUser { Id = UserId, UserName = "anki@example.test", NormalizedUserName = "ANKI@EXAMPLE.TEST" });
-            var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Basics", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready", CreatedAt = Now };
+            var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Basics", SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish", CreatedAt = Now };
             var word = new Word { Id = "word-1", QuizId = quiz.Id, Lemma = "dom", Translation = "house", CreatedAt = Now };
             var secondWord = new Word { Id = "word-2", QuizId = quiz.Id, Lemma = "kot", Translation = "cat", CreatedAt = Now.AddMinutes(1) };
             context.AddRange(quiz, word, secondWord,

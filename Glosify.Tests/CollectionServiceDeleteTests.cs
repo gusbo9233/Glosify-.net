@@ -27,7 +27,6 @@ public class CollectionServiceDeleteTests
             SourceLanguage = "English",
             TargetLanguage = "Polish",
             Language = "Polish",
-            ProcessingStatus = "Ready",
             CreatedAt = DateTimeOffset.UtcNow
         };
         var thread = new AssistantThread

@@ -156,7 +156,6 @@
                         <div class="quiz-meta">
                             <span class="quiz-date"><span class="material-symbols-outlined" aria-hidden="true">calendar_today</span>@quiz.CreatedAt.ToString("d")</span>
                             <div class="quiz-meta-actions">
-                                <span class="status-pill"><span class="status-dot" aria-hidden="true"></span>@quiz.ProcessingStatus</span>
                                 <form class="delete-form" method="post" asp-controller="Quiz" asp-action="DeleteQuiz" asp-route-id="@quiz.Id" data-confirm="@Text["Quiz.DeleteConfirm"]">
                                     @Html.AntiForgeryToken()
                                     <button class="btn-delete" type="submit" aria-label="@Text["Quiz.DeleteNamed", quiz.Name]" title="@Text["Quiz.Delete"]">

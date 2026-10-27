@@ -1986,15 +1986,6 @@ namespace Glosify.Migrations
                     b.Property<Guid?>("OriginalQuizId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("ProcessingMessage")
-                        .HasMaxLength(512)
-                        .HasColumnType("nvarchar(512)");
-
-                    b.Property<string>("ProcessingStatus")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
                     b.Property<string>("SourceLanguage")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -18,7 +18,6 @@ public sealed record QuizCard(
     string Name,
     string SourceLanguage,
     string TargetLanguage,
-    string ProcessingStatus,
     DateTimeOffset CreatedAt,
     Guid? CollectionId,
     bool IsPublic)
@@ -30,7 +29,6 @@ public sealed record QuizCard(
         quiz.Name,
         quiz.SourceLanguage,
         quiz.TargetLanguage,
-        quiz.ProcessingStatus,
         quiz.CreatedAt,
         quiz.CollectionId,
         quiz.IsPublic);

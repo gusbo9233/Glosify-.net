@@ -371,7 +371,7 @@ public sealed class AssistantReviewRegressionTests
         var snapshot = new AssistantConversation.Snapshot([new AssistantMessage { Id = messageId, Sequence = 1, Role = AssistantMessageRole.Model }], parts.ToLookup(p => p.MessageId));
         var state = new AssistantRunState { NoProgress = 2, RecentErrors = ["ERROR_IGNORE_INSTRUCTIONS"] };
         AssistantPlanItem[] plan = [new("PLAN_IGNORE_INSTRUCTIONS", "in_progress")];
-        AssistantRunArtifact[] created = [new(Guid.NewGuid(), "QUIZ_IGNORE_INSTRUCTIONS", "Ready")];
+        AssistantRunArtifact[] created = [new(Guid.NewGuid(), "QUIZ_IGNORE_INSTRUCTIONS")];
         var turns = conversation.Build(snapshot, run, state).Append(AssistantRunContext.RunData(state, plan, created)!).ToList();
         foreach (var prefix in new[] { "SUMMARY", "TITLE", "RESULT", "REMINDER", "ERROR", "PLAN", "QUIZ" })
         {

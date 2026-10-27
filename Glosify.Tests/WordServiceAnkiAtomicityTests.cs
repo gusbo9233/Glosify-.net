@@ -92,7 +92,6 @@ public sealed class WordServiceAnkiAtomicityTests
                 SourceLanguage = "English",
                 TargetLanguage = "Polish",
                 Language = "Polish",
-                ProcessingStatus = "Ready",
             });
             await context.SaveChangesAsync();
             return new Fixture(connection, context, quizId);

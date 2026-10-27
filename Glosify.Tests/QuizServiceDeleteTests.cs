@@ -138,7 +138,6 @@ public class QuizServiceDeleteTests
         SourceLanguage = "English",
         TargetLanguage = "Polish",
         Language = "Polish",
-        ProcessingStatus = "Ready",
         CreatedAt = DateTimeOffset.UtcNow
     };
 

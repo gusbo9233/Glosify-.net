@@ -78,7 +78,7 @@ public sealed class AnkiMembershipBatchTests(ITestOutputHelper output)
             var quiz = new Quiz
             {
                 Id = Guid.NewGuid(), UserId = UserId, Name = "Batch", SourceLanguage = "English",
-                TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready",
+                TargetLanguage = "Polish", Language = "Polish",
             };
             db.Quizzes.Add(quiz);
             foreach (var i in chunk)

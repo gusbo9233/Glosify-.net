@@ -113,7 +113,7 @@ public sealed class QuizSessionLimitTests
         db.Quizzes.Add(new Quiz
         {
             Id = id, Name = "Large quiz", UserId = "user", SourceLanguage = "English", TargetLanguage = "Polish",
-            Language = "Polish", ProcessingStatus = "Ready"
+            Language = "Polish"
         });
         for (var i = 0; i < 1001; i++)
         {

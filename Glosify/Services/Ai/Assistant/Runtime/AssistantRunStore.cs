@@ -251,7 +251,7 @@ internal sealed class AssistantRunStore(
         var approval = parts.LastOrDefault(part => part.State == AssistantToolStates.AwaitingApproval);
         var artifacts = await db.Quizzes.AsNoTracking()
             .Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == userId)
-            .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name, quiz.ProcessingStatus))
+            .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name))
             .ToListAsync(cancellationToken);
         var changes = await db.AssistantChanges.AsNoTracking().Where(c => c.RunId == run.Id)
             .OrderBy(c => c.Sequence).Select(c => new AssistantResourceChange(c.EntityType, c.EntityId, c.QuizId, c.Kind, c.Status)).ToListAsync(cancellationToken);
@@ -617,12 +617,6 @@ internal sealed class AssistantRunStore(
                 });
                 message.ContentJson = RunJson.Text(AssistantMessageRole.Model, stopped).ContentJson;
             }
-        }
-
-        foreach (var quiz in await db.Quizzes.Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == run.UserId).ToListAsync(cancellationToken))
-        {
-            quiz.ProcessingStatus = "Incomplete";
-            quiz.ProcessingMessage = reason;
         }
 
         await DropProviderItemsAsync(run, cancellationToken);

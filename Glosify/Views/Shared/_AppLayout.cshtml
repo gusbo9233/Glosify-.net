@@ -176,10 +176,6 @@
             </div>
 
             <nav class="app-nav" aria-label="@Text["Layout.PrimaryNavigation"]">
-                @if (AvatarSettings.Value.Enabled && User.Identity?.IsAuthenticated == true)
-                {
-                    <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Speaking <small>Preview</small></a>
-                }
                 <a class="@NavClass("Languages")" asp-controller="Languages" asp-action="Index">
                     @NavIcon("language")
                     @(isFreestyle ? "Learning mode" : Text["Nav.LanguageSelector"])
@@ -188,10 +184,22 @@
                     @NavIcon("home")
                     @Text["Nav.Home"]
                 </a>
+                <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
+                    @NavIcon("quiz")
+                    @Text["Nav.Quizzes"]
+                </a>
                 <a class="@NavClass("Books")" asp-controller="Books" asp-action="Index">
                     @NavIcon("auto_stories")
                     @Text["Nav.Books"]
                 </a>
+                <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
+                    @NavIcon("anki")
+                    Anki
+                </a>
+                @if (AvatarSettings.Value.Enabled && User.Identity?.IsAuthenticated == true)
+                {
+                    <a class="@NavClass("Avatar")" href="/Avatar">@NavIcon("face") Speaking</a>
+                }
                 @if (!isFreestyle)
                 {
                     <a class="@NavClass("Transcripts")" asp-controller="Transcripts" asp-action="Index">
@@ -203,14 +211,6 @@
                         @Text["Nav.Translations"]
                     </a>
                 }
-                <a class="@QuizzesNavClass()" asp-controller="Quiz" asp-action="Index">
-                    @NavIcon("quiz")
-                    @Text["Nav.Quizzes"]
-                </a>
-                <a class="@NavClass("Anki")" asp-controller="Anki" asp-action="Index">
-                    @NavIcon("anki")
-                    Anki
-                </a>
                 @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
                 {
                     <a class="@NavClass("Payments")" asp-controller="Payments" asp-action="Index">

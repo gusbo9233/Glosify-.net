@@ -147,7 +147,7 @@ public sealed class AnkiCapacityTests
         static Quiz QuizFor(string language, string name) => new()
         {
             Id = Guid.NewGuid(), UserId = userId, Name = name, SourceLanguage = "English",
-            TargetLanguage = language, Language = language, ProcessingStatus = "Ready",
+            TargetLanguage = language, Language = language,
         };
     }
 }

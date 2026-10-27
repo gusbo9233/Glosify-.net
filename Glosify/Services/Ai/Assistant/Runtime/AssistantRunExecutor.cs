@@ -640,9 +640,6 @@ internal sealed class AssistantRunExecutor(
                 if (applied.CreatedQuizId is Guid createdId)
                 {
                     state.CreatedQuizzes.Add(createdId);
-                    var created = await db.Quizzes.SingleAsync(quiz => quiz.Id == createdId, cancellationToken);
-                    created.ProcessingStatus = "Building";
-                    created.ProcessingMessage = "The assistant is still working on this quiz.";
                 }
 
                 if ((quizId ?? applied.CreatedQuizId) is Guid touched)
@@ -946,7 +943,6 @@ internal sealed class AssistantRunExecutor(
         run.ActiveUserId = null;
         run.CompletedAt = now;
         await store.DropProviderItemsAsync(run, cancellationToken);
-        await SetQuizStatusAsync(run, state, "Ready", null, cancellationToken);
         await CloseTurnAsync(run, AssistantTurnStatus.Completed, null, cancellationToken);
         AssistantRunTelemetry.Runs.Add(1, new KeyValuePair<string, object?>("status", run.Status));
     }
@@ -962,7 +958,6 @@ internal sealed class AssistantRunExecutor(
 
         run.Status = AssistantRunStatus.Paused;
         run.Reason = reason;
-        await SetQuizStatusAsync(run, state, "Paused", reason, cancellationToken);
     }
 
     private async Task FailAsync(
@@ -1002,7 +997,6 @@ internal sealed class AssistantRunExecutor(
         run.ActiveUserId = null;
         run.CompletedAt = now;
         await store.DropProviderItemsAsync(run, cancellationToken);
-        await SetQuizStatusAsync(run, state, "Incomplete", reason, cancellationToken);
         await CloseTurnAsync(run, AssistantTurnStatus.Failed, category, cancellationToken);
         AssistantRunTelemetry.Runs.Add(1, new KeyValuePair<string, object?>("status", run.Status));
     }
@@ -1239,7 +1233,7 @@ internal sealed class AssistantRunExecutor(
             ? []
             : await db.Quizzes.AsNoTracking()
                 .Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == run.UserId)
-                .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name, quiz.ProcessingStatus))
+                .Select(quiz => new AssistantRunArtifact(quiz.Id, quiz.Name))
                 .ToListAsync(cancellationToken);
 
     private async Task<Dictionary<Guid, string>> FingerprintsAsync(AssistantRunState state, RunFacts facts, CancellationToken cancellationToken)
@@ -1350,15 +1344,6 @@ internal sealed class AssistantRunExecutor(
             .OrderByDescending(part => part.Sequence)
             .Select(part => part.Text)
             .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    private async Task SetQuizStatusAsync(AssistantRun run, AssistantRunState state, string status, string? message, CancellationToken cancellationToken)
-    {
-        foreach (var quiz in await db.Quizzes.Where(quiz => state.CreatedQuizzes.Contains(quiz.Id) && quiz.UserId == run.UserId).ToListAsync(cancellationToken))
-        {
-            quiz.ProcessingStatus = status;
-            quiz.ProcessingMessage = message;
-        }
     }
 
     private async Task CloseTurnAsync(AssistantRun run, string status, string? category, CancellationToken cancellationToken)
