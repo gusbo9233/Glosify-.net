@@ -48,7 +48,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Set up Node.js 24
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.x
           cache: npm
@@ -197,7 +197,7 @@ jobs:
           --output "${{ runner.temp }}/migration/efbundle"
 
       - name: Upload web artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: glosify-web
           path: ${{ runner.temp }}/myapp
@@ -206,26 +206,26 @@ jobs:
         run: cp scripts/verify-fractional-tts.py "${{ runner.temp }}/migration/verify-fractional-tts.py"
 
       - name: Upload migration artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: glosify-migration
           path: ${{ runner.temp }}/migration/
 
       - name: Upload Chrome Web Store artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: glosify-live-subtitles-0.5.4-beta
           path: Glosify.LiveSubtitles.Extension/artifacts/package/glosify-live-subtitles-0.5.4-beta.zip
 
       - name: Upload Translator Chrome Web Store artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: glosify-translator-0.1.1-beta
           path: Glosify.Translator.Extension/artifacts/package/glosify-translator-0.1.1-beta.zip
 
       - name: Upload test failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: test-failure-diagnostics
           if-no-files-found: ignore
