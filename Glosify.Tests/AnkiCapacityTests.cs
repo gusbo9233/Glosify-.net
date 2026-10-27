@@ -85,6 +85,14 @@ public sealed class AnkiCapacityTests
         foreach (var card in await db.AnkiCards.Where(card => card.Note.QuizId == excludedQuiz.Id).ToListAsync())
             Assert.True(await service.RemoveCardAsync(card.Id, userId));
 
+        var restoredQuiz = QuizFor("Polish", "Excluded duplicate");
+        db.AddRange(restoredQuiz, new Word { Id = "restored-duplicate", QuizId = restoredQuiz.Id,
+            Lemma = "target 0", Translation = "source 0" });
+        await db.SaveChangesAsync();
+        Assert.True(await service.AddQuizAsync(new(collection.Id, restoredQuiz.Id, true, true, false, false), userId));
+        foreach (var card in await db.AnkiCards.Where(card => card.Note.QuizId == restoredQuiz.Id).ToListAsync())
+            Assert.True(await service.RemoveCardAsync(card.Id, userId));
+
         Assert.True(await service.AddQuizForLanguageAsync("Polish", "UTC", quiz.Id, false, userId));
         Assert.Equal(10000, await ActiveCountAsync());
         var study = new AnkiStudyService(db, service, new Fsrs6AnkiScheduler(), TimeProvider.System);
@@ -104,6 +112,14 @@ public sealed class AnkiCapacityTests
             Assert.True(card.ExcludedFromQuizLink);
             Assert.True(card.QuizLinkIncluded);
         });
+
+        // The assistant can explicitly restore an excluded link. Its duplicate
+        // cards must be deduplicated before the capacity-checked save too.
+        Assert.True(await service.AddQuizAsync(new(collection.Id, restoredQuiz.Id, true, true, false, false), userId));
+        db.ChangeTracker.Clear();
+        Assert.Equal(10000, await ActiveCountAsync());
+        Assert.Equal(2, await db.AnkiCards.CountAsync(card => card.IsActive && card.Note.TargetText == "target 0"));
+        Assert.False(await db.AnkiCards.AnyAsync(card => card.Note.QuizId == restoredQuiz.Id && card.ExcludedFromQuizLink));
 
         // Every entry point must reject the whole addition, including its quiz link.
         foreach (var path in new[] { "single", "membership", "assistant", "quiz", "assistant-quiz" })

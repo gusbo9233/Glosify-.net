@@ -332,7 +332,8 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             card.ExcludedFromQuizLink = false;
             card.IsActive = true;
         }
-        await SaveChangesWithinCapacityAsync(cancellationToken);
+        // Deduplicate restored pairs before the capacity-checked save. Persisting
+        // their temporary activity first rejects no-op restorations at the limit.
         await SyncCollectionAsync(input.CollectionId, cancellationToken);
         return true;
     }

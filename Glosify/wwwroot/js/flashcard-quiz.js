@@ -14,6 +14,7 @@
         const t = (key, fallback, ...values) => window.glosifyText?.(key, fallback, ...values) ?? fallback;
         let submissionInFlight = false;
         let startedAt = performance.now();
+        const isBusy = () => submissionInFlight || container.closest?.('[data-anki-workspace][aria-busy="true"]');
 
         const setRequestError = (message = '') => {
             const status = container.querySelector('[data-flashcard-status]');
@@ -32,7 +33,7 @@
             }
 
             event.preventDefault();
-            if (submissionInFlight || container.closest?.('[data-anki-workspace][aria-busy="true"]')) {
+            if (isBusy()) {
                 return;
             }
 
@@ -93,7 +94,7 @@
         });
 
         const onKeyDown = event => {
-            if (submissionInFlight || event.metaKey || event.ctrlKey || event.altKey || event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return;
+            if (isBusy() || event.metaKey || event.ctrlKey || event.altKey || event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName)) return;
             const button = [...container.querySelectorAll('[data-rating-key]')].find(b => b.dataset.ratingKey === event.key);
             if (button) { event.preventDefault(); button.closest('form').requestSubmit(button); }
             else if (event.key === ' ' && container.querySelector('[data-card-reveal-form]') && !event.target.closest('button,a')) {
@@ -112,7 +113,7 @@
             if (event.pointerType === 'mouse') {
                 return;
             }
-            if (submissionInFlight || event.target.closest('.btn-icon-tts')) return;
+            if (isBusy() || event.target.closest('.btn-icon-tts')) return;
             const card = event.target.closest('.flashcard');
             if (!card) {
                 return;
@@ -161,7 +162,7 @@
             card.classList.remove('is-dragging', 'drag-left', 'drag-right');
             card.style.transform = '';
 
-            if (cancelled || Math.abs(dx) < SWIPE_THRESHOLD) {
+            if (cancelled || isBusy() || Math.abs(dx) < SWIPE_THRESHOLD) {
                 return;
             }
 
