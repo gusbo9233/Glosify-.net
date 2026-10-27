@@ -75,9 +75,9 @@ if (testing) {
 }
 
 await mkdir(cache, { recursive: true });
+// Any interrupted webroot build must leave the next build unable to trust its outputs.
+if (!testing) await rm(resolve(cache, 'outputs.json'), { force: true });
 if (watch) {
-    // Watch builds overwrite the webroot without updating the cached output signature.
-    await rm(resolve(cache, 'outputs.json'), { force: true });
     for (const configuration of configurations) await (await context(configuration)).watch();
     console.log('Watching frontend sources. Restart the ASP.NET host after adding new entrypoints.');
 } else {

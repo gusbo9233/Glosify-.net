@@ -59,6 +59,17 @@ const submitEvent = (form, submitter = null) => ({
     preventDefault() {},
 });
 
+test('empty typing quiz initializes without practice controls or requests', () => {
+    const shell = element();
+    shell.dataset = { totalWords: '0', isComplete: 'false' };
+    shell.querySelector = () => null;
+    assert.doesNotThrow(() => vm.runInNewContext(typingQuizScript, {
+        document: { querySelector: () => shell },
+        window: { glosifyText: null },
+        fetch: () => assert.fail('An empty quiz must not submit answers'),
+    }));
+});
+
 test('typing quiz allows only one answer request and becomes retryable after failure', async () => {
     const form = element();
     const input = element();

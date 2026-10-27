@@ -27,6 +27,8 @@ interface TypingAnswerResult {
         cardLabel: shell.dataset.cardLabel || 'Word'
     };
 
+    if (state.total === 0) return;
+
     const form = requiredElement<HTMLFormElement>(shell, '[data-typing-form]');
     const input = requiredElement<HTMLInputElement>(shell, '[data-answer-input]');
     const prompt = requiredElement(shell, '[data-prompt]');
