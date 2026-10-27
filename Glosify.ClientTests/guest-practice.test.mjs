@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPractice, isReversePractice } from '../Glosify/wwwroot/js/guest-practice-state.js';
+import { createPractice, isReversePractice } from './build/guest/guest-practice-state.js';
 const cards = [{ Target: 'buenos días', Source: 'good morning' }, { Target: 'hola', Source: 'hello' }];
 test('typing scores once, normalizes case and Unicode, and completes', () => {
     const state = createPractice(cards);

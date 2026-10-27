@@ -1,0 +1,414 @@
+/* Extracted from Glosify/Views/Quiz/flashcard-quiz.cshtml */
+.flash-shell {
+        display: grid;
+        gap: 30px;
+        padding-bottom: 48px;
+    }
+
+    .flash-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+    }
+
+    .flash-kicker {
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0.14em;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+    }
+
+    .flash-title {
+        font-size: 34px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        line-height: 1.08;
+        margin: 0;
+    }
+
+    .flash-subtitle,
+    .progress-count {
+        color: var(--on-surface-var);
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .progress-wrap {
+        display: grid;
+        gap: 12px;
+    }
+
+    .flash-shell .progress-wrap {
+        width: min(100%, 720px);
+        margin-inline: auto;
+    }
+
+    .progress-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .progress-track {
+        height: 10px;
+        overflow: hidden;
+        border-radius: 9999px;
+        background: var(--surface-highest);
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--primary), var(--primary-container));
+        transition: width 0.25s ease;
+    }
+
+    .card-stage {
+        display: grid;
+        justify-items: center;
+        gap: 24px;
+        perspective: 1200px;
+    }
+
+    .card-reveal-form {
+        position: relative;
+        width: min(100%, 720px);
+    }
+
+    .card-reveal-button {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: inherit;
+        background: transparent;
+        cursor: inherit;
+        z-index: 1;
+    }
+
+    .card-reveal-button:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 4px;
+    }
+
+    .flashcard-clickable .btn-icon-tts {
+        position: relative;
+        z-index: 2;
+    }
+
+    .flashcard {
+        --flashcard-flip-ease: cubic-bezier(0.22, 1, 0.36, 1);
+        width: min(100%, 720px);
+        min-height: 360px;
+        display: grid;
+        align-content: center;
+        gap: 24px;
+        border: 1px solid rgba(61,74,61, 0.28);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: 0 28px 70px rgba(1,14,36, 0.34);
+        color: var(--on-surface);
+        font: inherit;
+        padding: 44px;
+        text-align: center;
+        backface-visibility: hidden;
+        transform-style: preserve-3d;
+        transition:
+            transform 0.36s var(--flashcard-flip-ease),
+            box-shadow 0.24s ease,
+            border-color 0.24s ease;
+        will-change: transform;
+    }
+
+    .card-reveal-form .flashcard {
+        width: 100%;
+    }
+
+    .flashcard-clickable {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .flashcard-clickable:hover,
+    .flashcard-clickable:focus-within {
+        border-color: rgba(83,224,118, 0.54);
+        box-shadow: 0 32px 78px rgba(1,14,36, 0.4);
+        outline: none;
+        transform: translateY(-3px) rotateY(-3deg);
+    }
+
+    .flashcard-clickable.is-flipping {
+        pointer-events: none;
+        transform: rotateY(88deg) scale(0.98);
+    }
+
+    .flashcard.is-revealed {
+        animation: flashcard-flip-in 0.42s var(--flashcard-flip-ease) both;
+    }
+
+    @keyframes flashcard-flip-in {
+        from {
+            opacity: 0.92;
+            transform: rotateY(-88deg) scale(0.98);
+        }
+
+        to {
+            opacity: 1;
+            transform: rotateY(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .flashcard {
+            transition: none;
+        }
+
+        .flashcard.is-revealed {
+            animation: none;
+        }
+    }
+
+    .card-label {
+        width: fit-content;
+        justify-self: center;
+        border-radius: 9999px;
+        background: rgba(83,224,118, 0.12);
+        color: var(--primary);
+        font-size: 11px;
+        font-weight: 850;
+        letter-spacing: 0.12em;
+        padding: 6px 12px;
+        text-transform: uppercase;
+    }
+
+    [data-flashcard-quiz] .flash-kicker,
+    .card-label-language {
+        color: var(--on-surface-var);
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        text-transform: none;
+    }
+
+    .card-label-language {
+        background: transparent;
+    }
+
+    .card-word {
+        font-size: clamp(36px, 8vw, 70px);
+        font-weight: 900;
+        line-height: 1.05;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .card-text-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        direction: ltr;
+    }
+
+    .card-text-row .card-text {
+        min-width: 0;
+    }
+
+    .card-text-row .btn-icon-tts {
+        flex: 0 0 32px;
+        margin: 0;
+    }
+
+    .card-answer {
+        display: none;
+        gap: 14px;
+    }
+
+    .card-answer.revealed {
+        display: grid;
+    }
+
+    .translation {
+        color: var(--primary);
+        font-size: 26px;
+        font-weight: 850;
+        overflow-wrap: anywhere;
+    }
+
+    .card-answer .translation {
+        font-size: clamp(36px, 7vw, 58px);
+        line-height: 1.08;
+    }
+
+    .example {
+        color: var(--on-surface-var);
+        font-size: 15px;
+        font-weight: 650;
+        line-height: 1.55;
+        overflow-wrap: anywhere;
+    }
+
+    .controls {
+        width: min(100%, 720px);
+        display: grid;
+        gap: 14px;
+    }
+
+    .btn-main,
+    .btn-rating,
+    .btn-linkish {
+        border: none;
+        border-radius: 9999px;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 850;
+    }
+
+    .btn-main {
+        background: var(--primary-container);
+        color: var(--on-primary);
+        padding: 18px 24px;
+    }
+
+    .rating-row {
+        display: none;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .rating-row.revealed {
+        display: grid;
+    }
+
+    .btn-rating {
+        background: var(--surface-low);
+        border: 1px solid rgba(61,74,61, 0.28);
+        color: var(--on-surface);
+        min-height: 58px;
+        padding: 14px;
+    }
+
+    .btn-rating.again {
+        color: var(--error);
+    }
+
+    .btn-rating.easy {
+        color: var(--primary);
+    }
+
+    .btn-linkish {
+        justify-self: center;
+        background: transparent;
+        color: var(--on-surface-var);
+        padding: 8px 12px;
+    }
+
+    .results {
+        display: none;
+        width: min(100%, 720px);
+        border: 1px solid rgba(83,224,118, 0.32);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 32px;
+        text-align: center;
+    }
+
+    .results.visible {
+        display: grid;
+        gap: 18px;
+    }
+
+    .result-score {
+        color: var(--primary);
+        font-size: 52px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .result-stat {
+        border-radius: 8px;
+        background: var(--surface-low);
+        padding: 16px;
+    }
+
+    .result-stat span {
+        display: block;
+    }
+
+    .result-stat span:first-child {
+        color: var(--on-surface-var);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .result-stat span:last-child {
+        font-size: 24px;
+        font-weight: 900;
+    }
+
+    .empty-state {
+        width: min(100%, 720px);
+        border: 1px dashed rgba(83,224,118, 0.36);
+        border-radius: 8px;
+        background: var(--surface-low);
+        color: var(--on-surface-var);
+        padding: 42px;
+        text-align: center;
+    }
+
+    @media (max-width: 700px) {
+        .flash-header,
+        .progress-meta {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .flash-header .flash-subtitle {
+            display: none;
+        }
+
+        .flashcard {
+            min-height: 220px;
+            padding: 24px 18px;
+        }
+
+        .card-stage {
+            gap: 16px;
+        }
+
+        .controls {
+            gap: 10px;
+        }
+
+        .result-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .rating-row,
+        .rating-row.revealed {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .btn-rating {
+            min-height: 50px;
+            padding: 12px 8px;
+            font-size: 14px;
+        }
+
+        .btn-linkish {
+            padding: 6px 10px;
+        }
+    }

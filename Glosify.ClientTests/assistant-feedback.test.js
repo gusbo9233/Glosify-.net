@@ -7,7 +7,7 @@ import {
     feedbackReasons,
     normalizeFeedback,
     validClientDuration,
-} from '../Glosify/wwwroot/js/assistant/feedback.js';
+} from './build/assistant/feedback.js';
 
 test('feedback reason sets preserve the approved analytics codes', () => {
     assert.deepEqual(feedbackReasons.up.map(([code]) => code), [

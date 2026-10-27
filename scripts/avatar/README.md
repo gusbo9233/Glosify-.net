@@ -284,6 +284,9 @@ node scripts/avatar/compress-model.mjs /tmp/avatar-mei-raw.glb Glosify/wwwroot/m
 npm run build --prefix scripts/avatar
 ```
 
+The runtime build delegates to `Glosify/Frontend`; install its dependencies first
+with `npm ci --prefix Glosify/Frontend` using Node 24.
+
 The pinned glTF Transform pipeline uses Meshopt high compression with 14-bit
 positions, 10-bit normals and 12-bit UVs; UVs outside [0,1] remain unquantized.
 It keeps mesh topology, textures, materials and named morph targets. Compression
@@ -314,7 +317,7 @@ before baking so facial expressions are not truncated to four influences.
 The resting smile, cheeks, eyebrows, eyelids, gaze and speaking mouth use the authored CC0 face pose
 units in `face-poses.json`, whose source revision is recorded alongside the poses.
 
-`Glosify/wwwroot/js/avatar/performance.js` drives these morphs and is bundled into
+`Glosify/Frontend/avatar/performance.ts` drives these morphs and is bundled into
 `scene.min.js`. Mouth shapes come from the reply audio's spectrum: loudness and energy
 near 1 kHz open the jaw, 2–3 kHz energy spreads the lips, its absence rounds them and
 hiss parts them. This is approximate, not phoneme-exact lip sync. When texture morphs are unavailable,

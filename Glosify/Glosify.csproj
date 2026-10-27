@@ -51,4 +51,30 @@
                       LogicalName="Glosify.Resources.%(Filename).resources" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Frontend/**" />
+    <Content Remove="wwwroot/js/**;wwwroot/css/**" />
+    <None Remove="Frontend/node_modules/**" />
+    <Content Update="wwwroot/**/*.map" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
+  <!-- Generated files must exist before the SDK discovers and fingerprints assets. -->
+  <Target Name="BuildFrontend" BeforeTargets="ResolveProjectStaticWebAssets;AssignTargetPaths"
+          Condition="'$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
+    <Error Condition="!Exists('Frontend/node_modules/esbuild/package.json')"
+           Text="Install frontend dependencies with: npm ci --prefix Glosify/Frontend (Node 24 required)." />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)/Frontend" Command="npm run typecheck" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)/Frontend" Command="npm run build -- --production"
+          Condition="'$(Configuration)' == 'Release'" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)/Frontend" Command="npm run build"
+          Condition="'$(Configuration)' != 'Release'" />
+    <ItemGroup>
+      <Content Remove="wwwroot/js/**;wwwroot/css/**" />
+      <Content Include="wwwroot/js/**;wwwroot/css/**" Exclude="wwwroot/**/*.map"
+               CopyToPublishDirectory="PreserveNewest" />
+      <Content Include="wwwroot/js/**/*.map;wwwroot/css/**/*.map"
+               CopyToPublishDirectory="Never" Condition="'$(Configuration)' != 'Release'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

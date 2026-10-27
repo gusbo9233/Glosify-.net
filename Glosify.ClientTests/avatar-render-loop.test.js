@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPerformance } from '../Glosify/wwwroot/js/avatar/performance.js';
-import { createRenderLoop, portraitFraming } from '../Glosify/wwwroot/js/avatar/render-loop.js';
+import { createPerformance } from './build/avatar/performance.js';
+import { createRenderLoop, portraitFraming } from './build/avatar/render-loop.js';
 
 function harness() {
     let time = 0, next = 0;

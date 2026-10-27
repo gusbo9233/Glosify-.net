@@ -1,11 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
 import { setImmediate } from 'node:timers/promises';
 
-const source = readFileSync(new URL('../Glosify/wwwroot/js/books-library.js', import.meta.url), 'utf8')
-    .replace("await import('/lib/pdfjs/pdf.min.mjs')", 'pdfjsFixture');
 
 for (const renderFails of [false, true]) {
     test(`Rejected PDF cleanup preserves ${renderFails ? 'the render error' : 'the thumbnail'} and drains the queue`, async () => {
@@ -22,17 +20,22 @@ for (const renderFails of [false, true]) {
         let maximumActiveDocuments = 0;
         const pdfjsFixture = {
             GlobalWorkerOptions: {},
-            getDocument({ url }) {
+            getDocument({ url, disableAutoFetch, disableStream }) {
+                assert.equal(disableAutoFetch, true, 'Thumbnails must not prefetch the whole book');
+                assert.equal(disableStream, true, 'Thumbnails must use range requests');
                 loaded.push(url);
                 activeDocuments++;
                 maximumActiveDocuments = Math.max(maximumActiveDocuments, activeDocuments);
                 return { promise: Promise.resolve({
-                    getPage: async () => ({
-                        getViewport: () => ({ width: 112, height: 150 }),
-                        render: () => ({ promise: rendering.promise.then(() => {
-                            if (renderFails && url === canvases[0].dataset.pdfUrl) throw new Error('PDF page failed');
-                        }) }),
-                    }),
+                    getPage: async pageNumber => {
+                        assert.equal(pageNumber, 1);
+                        return {
+                            getViewport: () => ({ width: 112, height: 150 }),
+                            render: () => ({ promise: rendering.promise.then(() => {
+                                if (renderFails && url === canvases[0].dataset.pdfUrl) throw new Error('PDF page failed');
+                            }) }),
+                        };
+                    },
                     destroy: async () => {
                         destroyed.push(url);
                         activeDocuments--;
@@ -42,11 +45,10 @@ for (const renderFails of [false, true]) {
             },
         };
 
-        await vm.runInNewContext(`(async () => { ${source} })()`, {
+        await loadBrowserModule(new URL('./build/books/books-library.js', import.meta.url), vm.createContext({
             document: { querySelector: () => null, querySelectorAll: () => canvases },
             window: { devicePixelRatio: 1 },
-            pdfjsFixture,
-        });
+        }), { './pdf-library.js': { loadPdfLibrary: async () => pdfjsFixture } });
         await setImmediate();
         assert.equal(loaded.length, 3, 'The fourth thumbnail must wait for a queue slot');
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const script = readFileSync(new URL('../Glosify/wwwroot/js/flashcard-quiz.js', import.meta.url), 'utf8');
+const script = readFileSync(new URL('./build/quiz/flashcard-quiz.bundle.js', import.meta.url), 'utf8');
 
 function eventTarget() {
     const listeners = new Map();

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createPerformance, speechShape } from '../Glosify/wwwroot/js/avatar/performance.js';
+import { createPerformance, speechShape } from './build/avatar/performance.js';
 
 // A 512-point analyser spectrum at 48 kHz (93.75 Hz bins) with band levels in dB.
 function spectrum(bands) {

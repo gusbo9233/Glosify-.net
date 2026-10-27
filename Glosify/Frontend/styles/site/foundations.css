@@ -1,0 +1,464 @@
+/* =============================================================
+   Sonic Polyglot / Glosify — Design System Foundations
+   =============================================================
+   Web fonts are requested by a <link> in the layout <head>, not by an
+   @import here: an @import makes the font stylesheet a child request of
+   this file, so the browser cannot start it until site.css has arrived.
+   ============================================================= */
+
+:root {
+    /* Brand colors */
+    --primary: #53e076;
+    --primary-fixed: #72fe8f;
+    --primary-fixed-dim: #53e076;
+    --primary-container: #1db954;
+    --on-primary: #003914;
+    --on-primary-container: #004118;
+    --inverse-primary: #006e2d;
+    --surface-tint: #53e076;
+
+    --secondary: #99d59d;
+    --secondary-container: #1c5329;
+    --secondary-fixed: #b5f1b8;
+    --on-secondary: #003914;
+    --on-secondary-container: #8cc690;
+
+    --tertiary: #ffb3b3;
+    --tertiary-container: #ff767b;
+    --on-tertiary: #680114;
+
+    --error: #ffb4ab;
+    --error-container: #93000a;
+    --on-error: #690005;
+    --on-error-container: #ffdad6;
+
+    /* Surfaces (midnight blue scale) */
+    --bg: #041329;
+    --background: #041329;
+    --surface: #112036;
+    --surface-lowest: #010e24;
+    --surface-low: #0d1c32;
+    --surface-container-lowest: #010e24;
+    --surface-container-low: #0d1c32;
+    --surface-container: #112036;
+    --surface-container-high: #1c2a41;
+    --surface-container-highest: #27354c;
+    --surface-high: #1c2a41;
+    --surface-highest: #27354c;
+    --surface-bright: #2c3951;
+    --inverse-surface: #d6e3ff;
+    --inverse-on-surface: #233148;
+
+    /* Foreground */
+    --on-surface: #d6e3ff;
+    --on-background: #d6e3ff;
+    --on-surface-var: #bccbb9;
+    --on-surface-variant: #bccbb9;
+    --outline: #869585;
+    --outline-var: #3d4a3d;
+    --outline-variant: #3d4a3d;
+
+    /* Type families */
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-serif: 'Lora', Georgia, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    /* Radius */
+    --radius-sm: 0.5rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* Elevation / shadow / glow */
+    --shadow-card: 0 1px 0 rgba(255,255,255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-pop: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --glow-primary: 0 0 24px rgba(83,224,118, 0.35);
+    --glow-soft: 0 0 80px rgba(83,224,118, 0.18);
+
+    /* Motion */
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+    --dur-fast: 150ms;
+    --dur-base: 250ms;
+    --dur-slow: 400ms;
+}
+
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Selection — neon green like the design system */
+::selection { background: var(--primary); color: var(--on-primary); }
+
+/* The signature uppercase tracked "label" microtype */
+.eyebrow,
+.label-eyebrow {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--on-surface-var);
+    margin: 0;
+}
+
+.eyebrow.is-primary,
+.label-eyebrow.is-primary { color: var(--primary); }
+
+/* Brand wordmark — italic Plus Jakarta Sans 800 */
+.wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    color: var(--primary);
+    margin: 0;
+}
+
+.wordmark a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Material Symbols defaults */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+}
+
+.material-symbols-outlined.filled,
+.material-symbols-filled {
+    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+.material-symbols-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.icon-sm {
+  font-size: 18px;
+}
+
+.language-context-pill {
+  text-decoration: none;
+}
+
+.language-context-pill-active {
+  background: rgba(83,224,118, 0.12);
+  color: #53e076;
+}
+
+.language-context-pill-empty {
+  background: rgba(255, 180, 171, 0.14);
+  color: #ffb4ab;
+}
+
+.language-context-icon {
+  font-size: 14px;
+}
+
+.language-change-link {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.language-change-link-sm {
+  font-size: 12px;
+}
+
+.target-language-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: default;
+}
+
+.admin-credit-search {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    max-width: 720px;
+    margin-bottom: 22px;
+}
+
+.admin-credit-search .form-input {
+    margin: 0;
+}
+
+.admin-credit-grid {
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+}
+
+.admin-credit-panel {
+    min-width: 0;
+}
+
+.admin-pricing-panel {
+    margin-bottom: 22px;
+}
+
+.admin-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.admin-pricing-grid h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.admin-credit-user-list {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-credit-user {
+    display: grid;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+    border-radius: 8px;
+    background: var(--surface-container-low);
+    color: var(--on-surface);
+    text-decoration: none;
+}
+
+.admin-credit-user:hover,
+.admin-credit-user.is-active {
+    border-color: color-mix(in srgb, var(--primary) 40%, var(--outline-variant));
+    background: var(--surface-container);
+}
+
+.admin-credit-user span {
+    color: var(--on-surface-var);
+    font-size: 13px;
+}
+
+.admin-credit-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.admin-credit-summary div {
+    display: grid;
+    gap: 6px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+    border-radius: 8px;
+    background: var(--surface-container-low);
+}
+
+.admin-credit-summary span {
+    color: var(--on-surface-var);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.admin-credit-summary strong {
+    font-size: 28px;
+}
+
+.admin-credit-grant {
+    max-width: 520px;
+    margin-bottom: 24px;
+}
+
+.admin-credit-table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+    border-radius: 8px;
+    background: var(--surface-container-low);
+    font-size: 13px;
+}
+
+.admin-credit-table th,
+.admin-credit-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+    text-align: left;
+    vertical-align: top;
+}
+
+.admin-credit-table th {
+    color: var(--on-surface-var);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.admin-credit-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.admin-credit-empty {
+    padding: 24px;
+}
+
+@media (max-width: 900px) {
+    .admin-credit-grid,
+    .admin-pricing-grid,
+    .admin-credit-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-credit-search {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+.share-form {
+  margin: 0;
+}
+
+.btn-hero-secondary {
+  border: 1px solid rgba(214,227,255, 0.2);
+  background: rgba(17,32,54, 0.72);
+  color: var(--on-surface);
+}
+
+.visibility-checkbox-form {
+  display: inline-flex;
+}
+
+.visibility-checkbox {
+  align-items: center;
+  border: 1px solid rgba(214,227,255, 0.18);
+  border-radius: 8px;
+  background: rgba(17,32,54, 0.48);
+  color: var(--on-surface-var);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 750;
+  gap: 9px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.visibility-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.visibility-checkbox-box {
+  align-items: center;
+  border: 1px solid rgba(214,227,255, 0.32);
+  border-radius: 4px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 18px;
+  justify-content: center;
+  width: 18px;
+}
+
+.visibility-checkbox input[type="checkbox"]:focus-visible + input + .visibility-checkbox-box {
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.visibility-checkbox input[type="checkbox"]:checked + input + .visibility-checkbox-box {
+  border-color: rgba(83,224,118, 0.75);
+  background: rgba(83,224,118, 0.18);
+}
+
+.visibility-checkbox input[type="checkbox"]:checked + input + .visibility-checkbox-box::after {
+  color: var(--primary);
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-size: 16px;
+  font-variation-settings: "FILL" 1, "wght" 700, "GRAD" 0, "opsz" 20;
+  line-height: 1;
+}
+
+.visibility-checkbox:hover {
+  border-color: rgba(83,224,118, 0.35);
+  color: var(--on-surface);
+}
+
+.collection-share-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-inline-share,
+.btn-copy-public {
+  align-items: center;
+  border: 1px solid rgba(83,224,118, 0.28);
+  border-radius: 999px;
+  background: rgba(83,224,118, 0.12);
+  color: var(--primary);
+  display: inline-flex;
+  font-weight: 800;
+  gap: 6px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+}
+
+.btn-inline-share {
+  cursor: pointer;
+}
+
+.btn-copy-public {
+  width: 100%;
+}
+
+.explore-path {
+  margin: -8px 0 16px;
+}

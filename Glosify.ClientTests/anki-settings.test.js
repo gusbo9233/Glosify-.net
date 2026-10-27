@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const script = readFileSync(new URL('../Glosify/wwwroot/js/anki.js', import.meta.url), 'utf8');
+const script = readFileSync(new URL('./build/anki/anki.bundle.js', import.meta.url), 'utf8');
 function page({ empty = false, storage = new Map(), confirm = () => true, respond } = {}) {
     const element = (extra = {}) => ({ dataset: {}, listeners: {}, hidden: false, disabled: false, scrollTop: 0,
         addEventListener(name, handler) { this.listeners[name] = handler; },

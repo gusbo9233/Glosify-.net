@@ -1,0 +1,467 @@
+/* =============================================================
+   Auth shell (Login / Register / Forgot Password)
+   ============================================================= */
+.auth-body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: var(--font-body);
+    color: var(--on-surface);
+    background: var(--background);
+}
+
+.auth-halos {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.auth-halo {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(120px);
+}
+
+.auth-halo-tl {
+    top: -10%;
+    left: -10%;
+    width: 40%;
+    height: 40%;
+    background: rgba(83,224,118, 0.10);
+}
+
+.auth-halo-br {
+    bottom: -10%;
+    right: -10%;
+    width: 50%;
+    height: 50%;
+    background: rgba(39,53,76, 0.40);
+}
+
+.auth-shell {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    z-index: 1;
+}
+
+.auth-shell.legal-shell {
+    max-width: 820px;
+    padding-block: 36px;
+}
+
+.legal-document h1,
+.legal-document h2 {
+    font-family: var(--font-display);
+    color: var(--on-surface);
+}
+
+.legal-document h1 { margin: 0 0 8px; }
+.legal-document h2 { margin: 30px 0 10px; font-size: 20px; }
+.legal-document p,
+.legal-document li { color: var(--on-surface-var); line-height: 1.65; }
+.legal-document a { color: var(--primary); }
+.legal-document .legal-links { margin-top: 32px; }
+
+.brand-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.brand-orb {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    box-shadow: 0 0 30px rgba(83,224,118, 0.30);
+}
+
+.brand-orb .material-symbols-outlined { font-size: 36px; }
+
+.brand-stack h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 36px;
+    letter-spacing: -0.03em;
+    margin: 0 0 8px;
+    color: var(--on-background);
+}
+
+.brand-stack .brand-tagline {
+    color: var(--on-surface-var);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+
+.glass-card {
+    background: rgba(17,32,54, 0.78);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255,255,255, 0.05);
+    border-radius: 24px;
+    padding: 48px 44px;
+    box-shadow: var(--shadow-pop);
+}
+
+.glass-card.is-centered { text-align: center; }
+
+.auth-card-header {
+    margin-bottom: 32px;
+}
+
+.auth-card-header h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--on-surface);
+    margin: 0 0 8px;
+}
+
+.auth-card-header p {
+    color: var(--on-surface-var);
+    font-size: 14px;
+    margin: 0;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Registration renders each enabled identity provider as its own form. Keep
+   those sibling forms visually grouped without letting their buttons merge
+   into one oversized primary action. */
+.glass-card > .auth-form:has(input[name="provider"]) +
+.auth-form:has(input[name="provider"]) {
+    margin-top: 12px;
+}
+
+.glass-card > .auth-form:has(input[name="provider"]) .btn-primary-pill {
+    border: 1px solid rgba(255,255,255, 0.08);
+    border-radius: 12px;
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    box-shadow: none;
+}
+
+.glass-card > .auth-form:has(input[name="provider"]) .btn-primary-pill:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,255,255, 0.14);
+    background: var(--surface-bright);
+    box-shadow: 0 10px 24px rgba(1,14,36, 0.24);
+}
+
+.glass-card > .auth-form:has(input[name="provider"]) .btn-primary-pill:active {
+    transform: translateY(0);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--on-surface-var);
+    margin-left: 4px;
+}
+
+.field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+}
+
+.field-link {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.field-link:hover { color: var(--primary-fixed); }
+
+.field-input {
+    width: 100%;
+    background: var(--surface-container-lowest);
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 16px 20px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--on-surface);
+    box-sizing: border-box;
+    transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.field-input::placeholder { color: var(--outline); }
+
+.field-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(83,224,118, 0.18);
+}
+
+.btn-primary-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--primary-container);
+    color: var(--on-primary);
+    font: inherit;
+    font-weight: 800;
+    font-size: 15px;
+    padding: 16px 24px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(83,224,118, 0.20);
+    transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.btn-primary-pill:hover {
+    background: var(--primary-fixed);
+    transform: scale(1.02);
+    box-shadow: 0 14px 38px rgba(83,224,118, 0.30);
+}
+
+.btn-primary-pill:active { transform: scale(0.98); }
+
+.btn-primary-pill:focus-visible,
+.btn-social:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--primary) 72%, white);
+    outline-offset: 3px;
+}
+
+.btn-primary-pill .material-symbols-outlined { font-size: 20px; }
+
+.auth-divider {
+    position: relative;
+    margin: 36px 0;
+    text-align: center;
+}
+
+.auth-divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255,255,255, 0.08);
+}
+
+.auth-divider span {
+    position: relative;
+    background: #182336;
+    padding: 0 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--outline);
+}
+
+.btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    background: var(--surface-container-highest);
+    color: var(--on-surface);
+    border: 1px solid rgba(255,255,255, 0.05);
+    border-radius: 12px;
+    padding: 14px 20px;
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+
+.btn-social:hover {
+    background: var(--surface-bright);
+    border-color: rgba(255,255,255, 0.10);
+}
+
+.external-login-stack {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.btn-social img { width: 20px; height: 20px; display: block; }
+
+.btn-social-form { margin: 0; }
+
+.auth-footer {
+    margin-top: 32px;
+    text-align: center;
+    color: var(--on-surface-var);
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+    margin-left: 4px;
+}
+
+.auth-footer a:hover { text-decoration: underline; }
+
+.auth-error {
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    border: 1px solid rgba(255, 180, 171, 0.32);
+    border-radius: 12px;
+    background: rgba(255, 180, 171, 0.08);
+    color: var(--error);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.auth-error > div + div { margin-top: 4px; }
+
+.auth-icon-hero {
+    color: var(--primary);
+    font-size: 44px;
+    margin-bottom: 16px;
+    display: inline-block;
+}
+
+.legal-links {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 40px;
+    opacity: 0.45;
+    list-style: none;
+    padding: 0;
+}
+
+.legal-links a {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--on-surface-var);
+    text-decoration: none;
+}
+
+.back-to-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.back-to-login:hover { text-decoration: underline; }
+
+.back-to-login .material-symbols-outlined { font-size: 18px; }
+
+@media (max-width: 540px) {
+    .auth-body {
+        align-items: flex-start;
+        padding: 16px 14px;
+    }
+
+    .brand-stack {
+        margin-bottom: 20px;
+    }
+
+    .brand-orb {
+        width: 48px;
+        height: 48px;
+        margin-bottom: 14px;
+    }
+
+    .brand-orb .material-symbols-outlined {
+        font-size: 30px;
+    }
+
+    .brand-stack h1 {
+        font-size: 30px;
+    }
+
+    .glass-card {
+        border-radius: 18px;
+        padding: 26px 20px;
+    }
+
+    .auth-card-header {
+        margin-bottom: 22px;
+    }
+
+    .auth-card-header h2 {
+        font-size: 22px;
+    }
+
+    .auth-form {
+        gap: 16px;
+    }
+
+    .field-input {
+        padding: 14px 16px;
+    }
+
+    .btn-primary-pill,
+    .btn-social {
+        min-height: 48px;
+        padding: 13px 16px;
+    }
+
+    .auth-divider {
+        margin: 22px 0;
+    }
+
+    .auth-footer {
+        margin-top: 22px;
+    }
+
+    .legal-links {
+        flex-wrap: wrap;
+        gap: 12px 18px;
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 380px) {
+    .auth-body {
+        padding-inline: 10px;
+    }
+
+    .glass-card {
+        padding: 22px 16px;
+    }
+
+    .auth-divider span {
+        padding-inline: 10px;
+    }
+}

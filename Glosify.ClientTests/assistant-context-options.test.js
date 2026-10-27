@@ -5,7 +5,7 @@ import {
     matchesOwnedStatus,
     quizOptionText,
     selectedOptionContextLabel,
-} from '../Glosify/wwwroot/js/assistant/context-options.js';
+} from './build/assistant/context-options.js';
 
 test('assistant quiz labels preserve language direction', () => {
     assert.equal(quizOptionText({

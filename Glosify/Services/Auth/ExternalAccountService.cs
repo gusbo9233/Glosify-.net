@@ -84,7 +84,7 @@ public sealed class ExternalAccountService(
             return new ExternalAccountResolution(user, null);
         }
 
-        var email = GetVerifiedEmailClaim(info);
+        var email = GetEmailClaim(info);
         if (string.IsNullOrWhiteSpace(email))
         {
             return Failure($"{info.ProviderDisplayName ?? info.LoginProvider} did not provide an email address.");
@@ -93,16 +93,8 @@ public sealed class ExternalAccountService(
         user = await userStore.FindByEmailAsync(email);
         if (user is not null)
         {
-            if (!string.Equals(info.LoginProvider, "Google", StringComparison.OrdinalIgnoreCase)
-                || user.PasswordHash is not null && !user.EmailConfirmed)
-            {
-                return Failure("An account with this email already exists. Sign in with the method you originally used.");
-            }
-
-            var linkResult = await userStore.AddLoginAsync(user, info);
-            return linkResult.Succeeded
-                ? new ExternalAccountResolution(user, null)
-                : Failure("Could not link the external account.", linkResult);
+            // A provider's email can outlive ownership of a third-party mailbox.
+            return Failure("An account with this email already exists. Sign in with the method you originally used.");
         }
 
         if (info.LoginProvider is not ("Google" or "Microsoft"))
@@ -150,7 +142,7 @@ public sealed class ExternalAccountService(
     private static string Describe(IdentityResult result) =>
         string.Join("; ", result.Errors.Select(error => $"{error.Code}: {error.Description}"));
 
-    private static string GetVerifiedEmailClaim(ExternalLoginInfo info) =>
+    private static string GetEmailClaim(ExternalLoginInfo info) =>
         info.Principal.FindFirst(ClaimTypes.Email)?.Value
         ?? info.Principal.FindFirst("email")?.Value
         ?? string.Empty;

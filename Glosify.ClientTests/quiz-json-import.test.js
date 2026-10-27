@@ -5,7 +5,7 @@ import {
     isRequestTimeout,
     previewMatches,
     problemMessages
-} from '../Glosify/wwwroot/js/quiz-json-import.js';
+} from './build/quiz/json-import-state.js';
 
 test('validation problems become path-aware messages', () => {
     assert.deepEqual(problemMessages({

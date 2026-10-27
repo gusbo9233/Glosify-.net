@@ -51,8 +51,8 @@ public sealed class AvatarLiveSmokeTests
         await channel.Writer.WriteAsync([], timeout.Token); channel.Writer.Complete();
         var text = await listen;
         Assert.False(string.IsNullOrWhiteSpace(text));
-        var response = await ai.RunAgentTurnAsync(new AgentRequest("Reply warmly in English using at most twelve words. Plain spoken text only.",
-            [AvatarConversation.TextTurn("user", text)], [], MaxOutputTokens: 128),
+        var response = await ai.RunAgentTurnAsync(AvatarReply.Request("Reply warmly in English using at most twelve words. Plain spoken text only.",
+            [AvatarConversation.TextTurn("user", text)], translate: false, suggest: false),
             new AiUsageContext("admin", AiUsageFeatures.Assistant, "avatar.reply", Guid.NewGuid(), "AvatarSession", session.Id.ToString()), cancellationToken: timeout.Token);
         Assert.False(string.IsNullOrWhiteSpace(response.Text));
         var audioBytes = 0;

@@ -4,7 +4,7 @@ import {
     formatLanguageCount,
     languageMatches,
     normalizeLanguageSearch,
-} from '../Glosify/wwwroot/js/language-picker.js';
+} from './build/shared/language-picker.js';
 
 test('language search matches English, native script, aliases, and provider codes', () => {
     const arabic = 'ar ara Arabic العربية';

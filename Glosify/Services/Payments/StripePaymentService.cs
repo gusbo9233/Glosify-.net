@@ -1,6 +1,7 @@
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Glosify.Services.Ai;
+using Glosify.Services.Abuse;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Stripe;
@@ -174,70 +175,74 @@ public sealed class StripePaymentService : IStripePaymentService
             return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
         }
 
-        var purchase = await _context.StripeCreditPurchases
-            .SingleOrDefaultAsync(item => item.Id == purchaseId, cancellationToken);
-        if (purchase is null)
+        // The credit ledger and paid marker must commit together, including early refunds.
+        return await ResourceAccounting.TransactionAsync(_context, async () =>
         {
-            _logger.LogWarning("Ignoring Stripe session {SessionId} for unknown purchase {PurchaseId}.", sessionId, purchaseId);
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
-        }
+            var purchase = await _context.StripeCreditPurchases
+                .SingleOrDefaultAsync(item => item.Id == purchaseId, cancellationToken);
+            if (purchase is null)
+            {
+                _logger.LogWarning("Ignoring Stripe session {SessionId} for unknown purchase {PurchaseId}.", sessionId, purchaseId);
+                return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
+            }
 
-        if (purchase.StripeCheckoutSessionId is not null
-            && !string.Equals(purchase.StripeCheckoutSessionId, sessionId, StringComparison.Ordinal))
-        {
-            _logger.LogWarning(
-                "Ignoring mismatched Stripe session {SessionId} for purchase {PurchaseId}.",
-                sessionId,
-                purchaseId);
-            return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
-        }
+            if (purchase.StripeCheckoutSessionId is not null
+                && !string.Equals(purchase.StripeCheckoutSessionId, sessionId, StringComparison.Ordinal))
+            {
+                _logger.LogWarning(
+                    "Ignoring mismatched Stripe session {SessionId} for purchase {PurchaseId}.",
+                    sessionId,
+                    purchaseId);
+                return new StripePaymentConfirmation(false, false, "The payment could not be matched to a GlobeGlotter purchase.");
+            }
 
-        if (amountTotal != purchase.UnitAmountMinor
-            || !string.Equals(currency, purchase.Currency, StringComparison.OrdinalIgnoreCase))
-        {
-            _logger.LogError(
-                "Refusing to fulfill Stripe session {SessionId}: expected {ExpectedAmount} {ExpectedCurrency}, received {ActualAmount} {ActualCurrency}.",
-                sessionId,
-                purchase.UnitAmountMinor,
-                purchase.Currency,
-                amountTotal,
-                currency);
-            return new StripePaymentConfirmation(false, false, "The payment amount could not be verified.");
-        }
+            if (amountTotal != purchase.UnitAmountMinor
+                || !string.Equals(currency, purchase.Currency, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogError(
+                    "Refusing to fulfill Stripe session {SessionId}: expected {ExpectedAmount} {ExpectedCurrency}, received {ActualAmount} {ActualCurrency}.",
+                    sessionId,
+                    purchase.UnitAmountMinor,
+                    purchase.Currency,
+                    amountTotal,
+                    currency);
+                return new StripePaymentConfirmation(false, false, "The payment amount could not be verified.");
+            }
 
-        if (purchase.PaidAt is not null)
-        {
-            return new StripePaymentConfirmation(true, false, "Payment confirmed. Your credits are ready.");
-        }
+            if (purchase.PaidAt is not null)
+            {
+                return new StripePaymentConfirmation(true, false, "Payment confirmed. Your credits are ready.");
+            }
 
-        var wasGranted = await _credits.GrantStripePurchaseAsync(
-            purchase.UserId,
-            purchase.Id.ToString("D"),
-            purchase.Credits,
-            $"Stripe purchase {sessionId}: {purchase.DisplayName}.",
-            cancellationToken);
-
-        if (purchase.RevokedCredits > 0)
-        {
-            await _credits.ApplyStripePaymentAdjustmentAsync(
+            var wasGranted = await _credits.GrantStripePurchaseAsync(
                 purchase.UserId,
-                $"purchase-reconciliation:{purchase.Id:D}",
-                -purchase.RevokedCredits,
-                $"Stripe refund or dispute already recorded for purchase {purchase.Id:D}.",
+                purchase.Id.ToString("D"),
+                purchase.Credits,
+                $"Stripe purchase {sessionId}: {purchase.DisplayName}.",
                 cancellationToken);
-        }
 
-        purchase.StripeCheckoutSessionId ??= sessionId;
-        purchase.StripePaymentIntentId = paymentIntentId;
-        purchase.LastWebhookEventId = eventId;
-        purchase.PaidAt = DateTimeOffset.UtcNow;
-        purchase.Status = PurchaseStatus(purchase);
-        await _context.SaveChangesAsync(cancellationToken);
+            if (purchase.RevokedCredits > 0)
+            {
+                await _credits.ApplyStripePaymentAdjustmentAsync(
+                    purchase.UserId,
+                    $"purchase-reconciliation:{purchase.Id:D}",
+                    -purchase.RevokedCredits,
+                    $"Stripe refund or dispute already recorded for purchase {purchase.Id:D}.",
+                    cancellationToken);
+            }
 
-        return new StripePaymentConfirmation(
-            true,
-            wasGranted,
-            "Payment confirmed. Your credits are ready.");
+            purchase.StripeCheckoutSessionId ??= sessionId;
+            purchase.StripePaymentIntentId = paymentIntentId;
+            purchase.LastWebhookEventId = eventId;
+            purchase.PaidAt = DateTimeOffset.UtcNow;
+            purchase.Status = PurchaseStatus(purchase);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return new StripePaymentConfirmation(
+                true,
+                wasGranted,
+                "Payment confirmed. Your credits are ready.");
+        }, cancellationToken);
     }
 
     public Task<bool> HandleRefundAsync(

@@ -53,6 +53,7 @@ jobs:
           node-version: 24.x
           cache: npm
           cache-dependency-path: |
+            Glosify/Frontend/package-lock.json
             Glosify.ClientTests/package-lock.json
             Glosify.LiveSubtitles.Extension/package-lock.json
             Glosify.Translator.Extension/package-lock.json
@@ -67,6 +68,12 @@ jobs:
           dotnet restore Glosify.slnx
           --force-evaluate
           -p:WarningsNotAsErrors=
+
+      - name: Install and check web frontend
+        run: |
+          npm ci --prefix Glosify/Frontend
+          npm run lint --prefix Glosify/Frontend
+          npm run typecheck --prefix Glosify/Frontend
 
       - name: Build
         run: dotnet build Glosify.slnx --configuration Release --no-restore
@@ -153,11 +160,13 @@ jobs:
           npm run package:store
           sha256sum --check "${{ runner.temp }}/translator-extension-package.sha256"
 
-      - name: Test assistant state modules
+      - name: Test web frontend modules
         run: npm test --prefix Glosify.ClientTests
 
       - name: Publish web application
-        run: dotnet publish Glosify/Glosify.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
+        run: |
+          dotnet publish Glosify/Glosify.csproj --configuration Release --no-build --output "${{ runner.temp }}/myapp"
+          node Glosify/Frontend/verify-publish.mjs "${{ runner.temp }}/myapp"
 
       - name: Install Playwright Chromium
         run: pwsh Glosify.BrowserTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium

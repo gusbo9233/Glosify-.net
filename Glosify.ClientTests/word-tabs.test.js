@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
 
-const script = readFileSync(new URL('../Glosify/wwwroot/js/word-tabs.js', import.meta.url), 'utf8');
 function content(prefix) {
     const tabs = ['words', 'sentences'].map(name => ({
         dataset: { tab: name }, selected: name === 'words', active: name === 'words',
@@ -14,12 +13,12 @@ function content(prefix) {
         sentencesPanel: { hidden: true, dataset: { title: `${prefix} sentences`, subtitle: 'Sentences subtitle' } },
         collectionTitle: { textContent: `${prefix} words` }, collectionSubtitle: { textContent: 'Words subtitle' } };
 }
-test('quiz tabs switch the newly rendered panels after a learning refresh', () => {
+test('quiz tabs switch the newly rendered panels after a learning refresh', async () => {
     let page = content('Original');
     let click;
     const document = { addEventListener(type, handler) { assert.equal(type, 'click'); click = handler; },
         querySelectorAll: () => page.tabs, getElementById: id => page[id] };
-    vm.runInNewContext(script, { document });
+    await loadBrowserModule(new URL('./build/shared/word-tabs.js', import.meta.url), vm.createContext({ document }));
     const original = page;
     page = content('Updated'); // learning-updates replaces the contents, without reexecuting scripts.
     click({ target: { closest: () => page.tabs[1] } });

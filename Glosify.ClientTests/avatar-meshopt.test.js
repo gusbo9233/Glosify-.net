@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MeshoptWorkerClient } from '../Glosify/wwwroot/js/avatar/meshopt-worker-client.js';
+import { MeshoptWorkerClient } from './build/avatar/meshopt-worker-client.js';
 
 function harness() {
     const sent = [];

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { preserveConversation } from '../Glosify/wwwroot/js/avatar/retention.js';
+import { preserveConversation } from './build/avatar/retention.js';
 
 function flow(decision, overrides = {}) {
     const calls = [];

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { transcriptPresentation } from '../Glosify/wwwroot/js/avatar/transcript.js';
+import { transcriptPresentation } from './build/avatar/transcript.js';
 
 test('saving is unavailable before spoken content exists', () => {
     assert.equal(transcriptPresentation(null).enabled, false);

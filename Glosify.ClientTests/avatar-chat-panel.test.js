@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { constrainChat, setupFloatingChat } from '../Glosify/wwwroot/js/avatar/chat-panel.js';
+import { constrainChat, setupFloatingChat } from './build/avatar/chat-panel.js';
 
 function fixture(minimized = false) {
     const element = () => ({ style: {}, attributes: {}, classList: { toggle() {} }, setAttribute(name, value) { this.attributes[name] = value; }, handlers: {}, captured: new Set(),

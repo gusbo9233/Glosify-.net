@@ -1,0 +1,13 @@
+@import "./site/foundations.css";
+@import "./site/languages.css";
+@import "./site/flashcards.css";
+@import "./site/quiz-details.css";
+@import "./site/quiz-selection.css";
+@import "./site/quiz-settings.css";
+@import "./site/typing.css";
+@import "./site/shell.css";
+@import "./site/account.css";
+@import "./site/study.css";
+@import "./site/assistant.css";
+@import "./site/books.css";
+@import "./site/responsive.css";

@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2023",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "/lib/pdfjs/pdf.min.mjs": [
+        "./books/pdfjs.d.ts"
+      ],
+      "/js/avatar/scene.min.js": [
+        "./avatar/scene-public.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "avatar/capture.worklet.ts",
+    "avatar/meshopt.worker.source.ts",
+    "avatar/worklet-globals.d.ts"
+  ]
+}

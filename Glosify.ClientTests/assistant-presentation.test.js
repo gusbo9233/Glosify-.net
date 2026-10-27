@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { quizLink } from '../Glosify/wwwroot/js/assistant/presentation.js';
+import { quizLink } from './build/assistant/presentation.js';
 
 test('created quiz links target the details page and keep quiz names as text', () => {
     const document = { createElement: tag => ({ tag }) };

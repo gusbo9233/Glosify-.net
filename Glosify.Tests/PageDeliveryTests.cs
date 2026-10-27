@@ -24,6 +24,35 @@ public class PageDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
         AllowAutoRedirect = false
     });
 
+    [Fact]
+    public async Task Generated_module_dependencies_are_served_and_sources_are_private()
+    {
+        var client = CreateClient();
+        var pending = new Queue<string>(["/js/assistant.js", "/js/book-reader.js", "/js/avatar/avatar.js"]);
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        while (pending.TryDequeue(out var path))
+        {
+            if (!visited.Add(path)) continue;
+            var response = await client.GetAsync(path);
+            response.EnsureSuccessStatusCode();
+            Assert.Contains("javascript", response.Content.Headers.ContentType?.MediaType ?? "", StringComparison.Ordinal);
+            var script = await response.Content.ReadAsStringAsync();
+            foreach (Match match in Regex.Matches(script, "(?:from\\s*|import\\s*)[\"']([^\"']+\\.js)[\"']", RegexOptions.CultureInvariant))
+            {
+                var dependency = new Uri(new Uri("http://localhost" + path), match.Groups[1].Value);
+                pending.Enqueue(dependency.AbsolutePath);
+            }
+        }
+        Assert.Contains("/js/avatar/scene.min.js", visited);
+        foreach (var path in new[] { "/Frontend/assistant/state.ts", "/Frontend/package.json", "/js/avatar/scene.source.js" })
+        {
+            var response = await client.GetAsync(path);
+            Assert.Contains(response.StatusCode, new[] { System.Net.HttpStatusCode.NotFound, System.Net.HttpStatusCode.Found });
+            if (response.StatusCode == System.Net.HttpStatusCode.Found)
+                Assert.Contains("/login", response.Headers.Location?.OriginalString ?? "", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     [Theory]
     [InlineData("/")]
     [InlineData("/login")]

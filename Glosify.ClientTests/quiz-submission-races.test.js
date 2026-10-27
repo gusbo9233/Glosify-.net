@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const typingQuizScript = readFileSync(
-    new URL('../Glosify/wwwroot/js/typing-quiz.js', import.meta.url),
+    new URL('./build/quiz/typing-quiz.bundle.js', import.meta.url),
     'utf8');
 const flashcardQuizScript = readFileSync(
-    new URL('../Glosify/wwwroot/js/flashcard-quiz.js', import.meta.url),
+    new URL('./build/quiz/flashcard-quiz.bundle.js', import.meta.url),
     'utf8');
 
 const deferred = () => {
@@ -57,6 +57,17 @@ const submitEvent = (form, submitter = null) => ({
     submitter,
     target: { closest: () => form },
     preventDefault() {},
+});
+
+test('empty typing quiz initializes without practice controls or requests', () => {
+    const shell = element();
+    shell.dataset = { totalWords: '0', isComplete: 'false' };
+    shell.querySelector = () => null;
+    assert.doesNotThrow(() => vm.runInNewContext(typingQuizScript, {
+        document: { querySelector: () => shell },
+        window: { glosifyText: null },
+        fetch: () => assert.fail('An empty quiz must not submit answers'),
+    }));
 });
 
 test('typing quiz allows only one answer request and becomes retryable after failure', async () => {

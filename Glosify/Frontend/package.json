@@ -1,0 +1,28 @@
+{
+  "name": "glosify-frontend",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit && tsc --project tsconfig.workers.json",
+    "lint": "eslint .",
+    "test": "node test.mjs"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.25.0",
+    "@babylonjs/loaders": "9.25.0",
+    "meshoptimizer": "0.24.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "typescript": "~5.9.3",
+    "eslint": "^9.39.0",
+    "@eslint/js": "^9.39.0",
+    "globals": "^16.5.0",
+    "typescript-eslint": "^8.46.0"
+  }
+}

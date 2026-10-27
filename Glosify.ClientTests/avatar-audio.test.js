@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync } from 'node:fs';
-import { AvatarAudio } from '../Glosify/wwwroot/js/avatar/audio.js';
+import { loadBrowserModule } from './browser-module.js';
+import { AvatarAudio } from './build/avatar/audio.js';
 
-test('capture downsamples hardware input to signed 16 kHz PCM with bounded 200 ms frames', () => {
+test('capture downsamples hardware input to signed 16 kHz PCM with bounded 200 ms frames', async () => {
     let Capture;
     const frames = [];
     const context = vm.createContext({ AudioWorkletProcessor: class { port = { postMessage: x => frames.push(x) }; },
         sampleRate: 48000, registerProcessor: (_, type) => { Capture = type; }, Int16Array, Math });
-    vm.runInContext(readFileSync(new URL('../Glosify/wwwroot/js/avatar/capture.worklet.js', import.meta.url), 'utf8'), context);
+    await loadBrowserModule(new URL('./build/avatar/capture.worklet.js', import.meta.url), context);
     const capture = new Capture();
     for (let i = 0; i < 150; i++) capture.process([[new Float32Array(128).fill(-.5)]]);
     assert.equal(frames.length, 2);
@@ -36,11 +36,11 @@ test('closing audio releases microphone tracks and the context', async () => {
     assert.equal(audio.context, null);
 });
 
-test('release flushes a partial microphone frame before acknowledging commit', () => {
+test('release flushes a partial microphone frame before acknowledging commit', async () => {
     let Capture; const messages = [];
     const context = vm.createContext({ AudioWorkletProcessor: class { port = { postMessage: x => messages.push(x) }; },
         sampleRate: 16000, registerProcessor: (_, type) => { Capture = type; }, Int16Array, Math });
-    vm.runInContext(readFileSync(new URL('../Glosify/wwwroot/js/avatar/capture.worklet.js', import.meta.url), 'utf8'), context);
+    await loadBrowserModule(new URL('./build/avatar/capture.worklet.js', import.meta.url), context);
     const capture = new Capture(); capture.process([[new Float32Array(128).fill(.25)]]);
     capture.port.onmessage({ data: { type: 'flush' } });
     assert.equal(messages[0].pcm.byteLength, 256);
@@ -82,8 +82,8 @@ test(`${action} during audio ${stage} cancels capture and releases its resources
         },
         AudioWorkletNode: class { constructor() { throw Error('Canceled setup must not create capture'); } }
     });
-    vm.runInContext(readFileSync(new URL('../Glosify/wwwroot/js/avatar/audio.js', import.meta.url), 'utf8').replace('export class', 'class'), context);
-    const audio = vm.runInContext('new AvatarAudio()', context);
+    const { AvatarAudio: SessionAudio } = await loadBrowserModule(new URL('./build/avatar/audio.js', import.meta.url), context);
+    const audio = new SessionAudio();
     const opening = audio.open(() => assert.fail('Canceled setup must not emit audio'));
     await entered; await audio[action](); unblock();
     assert.equal(await opening, false);

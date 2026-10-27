@@ -1,3 +1,4 @@
+using Xunit;
 using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using static Microsoft.Playwright.Assertions;
@@ -18,7 +19,9 @@ public sealed partial class PortfolioJourneys
             else
                 await Expect(Page.Locator("[data-guest-return]")).ToBeVisibleAsync();
             await Expect(Page.Locator(".guest-preview")).ToHaveCountAsync(0);
-            // The Books sample renders its cover from a PDF fetch that leaving early would abort.
+            // IntersectionObserver starts the PDF fetch after the page's initial requests.
+            if (section == "Books")
+                await Expect(Page.Locator("[data-book-preview]")).ToHaveClassAsync(new Regex(@"\bis-rendered\b"));
             await WaitForNetworkQuiescenceAsync();
         }
         await Page.GotoAsync("/preview/quiz/spanish/practice/typing");
@@ -48,6 +51,7 @@ public sealed partial class PortfolioJourneys
         await SeedExistingAccountAsync(email, password);
         await Page.GotoAsync("/Books");
         await Expect(Page.Locator(".book-title").Filter(new() { HasText = "First words in Spanish" })).ToBeVisibleAsync();
+        await Expect(Page.Locator("[data-book-preview]")).ToHaveClassAsync(new Regex(@"\bis-rendered\b"));
         await WaitForNetworkQuiescenceAsync(); // Signing in navigates away from the cover's PDF fetch.
         await Page.Locator(".books-upload-button").ClickAsync();
         var dialog = Page.Locator("[data-login-dialog]");
@@ -84,4 +88,71 @@ public sealed partial class PortfolioJourneys
         await Expect(Page.Locator("[data-login-dialog]")).ToBeHiddenAsync();
         await Expect(Page.GetByText("The language preference could not be saved.")).ToHaveCountAsync(0);
     }
+
+    [BrowserFact]
+    public async Task ReaderToolbarsRemainReachableOnMobileDesktopAndRtl()
+    {
+        await Page.GotoAsync("/preview/books/sample");
+        await Expect(Page.Locator("[data-reader-tts]")).ToBeEnabledAsync();
+        foreach (var direction in new[] { "ltr", "rtl" })
+        {
+            await Page.EvaluateAsync("direction => document.documentElement.dir = direction", direction);
+            foreach (var width in new[] { 390, 768, 1280, 1920 })
+            {
+                await Page.SetViewportSizeAsync(width, 844);
+                foreach (var selector in new[] { ".reader-back", "[data-zoom-out]", "[data-zoom-in]", "[data-reader-tts]", "[data-reader-speech-settings]", "[data-translation-language]" })
+                {
+                    await Page.Locator(selector).ClickAsync(new() { Trial = true });
+                }
+            }
+        }
+    }
+
+    [BrowserFact]
+    public async Task ReaderPreservesPartialSelectionForSpeechAndStopsBeforeZooming()
+    {
+        await Page.GotoAsync("/preview/books/sample");
+        var read = Page.Locator("[data-reader-tts]");
+        await Expect(read).ToBeEnabledAsync();
+        var selected = await Page.EvaluateAsync<string>("""
+            () => {
+                const node = [...document.querySelectorAll('[data-reader-item-index]')]
+                    .map(element => element.firstChild).find(node => node?.nodeType === Node.TEXT_NODE && node.textContent.trim().length >= 4);
+                const range = document.createRange();
+                range.setStart(node, 1); range.setEnd(node, 3);
+                const selection = window.getSelection();
+                selection.removeAllRanges(); selection.addRange(range);
+                window.readerSpeechProbe = { calls: [], stops: 0, callbacks: null };
+                const probe = window.readerSpeechProbe;
+                window.GlosifyTts = { ...window.GlosifyTts,
+                    playSavedQueue(items, callbacks) {
+                        probe.calls.push(items); probe.callbacks = callbacks;
+                        callbacks.onStateChange('playing', null);
+                        return Promise.resolve({ state: 'completed', error: null });
+                    },
+                    stop() { probe.stops++; probe.callbacks?.onStateChange('stopped', null); },
+                };
+                return selection.toString().trim();
+            }
+            """);
+        Assert.False(string.IsNullOrWhiteSpace(selected));
+        await Expect(read).ToHaveAttributeAsync("aria-label", "Read selected text aloud");
+        var copied = await Page.EvaluateAsync<string>("""
+            () => {
+                const clipboardData = new DataTransfer();
+                document.querySelector('[data-pdf-text-layer]').dispatchEvent(new ClipboardEvent('copy', { clipboardData, bubbles: true, cancelable: true }));
+                return clipboardData.getData('text/plain');
+            }
+            """);
+        Assert.Equal(selected, copied);
+        await read.ClickAsync();
+        Assert.Equal(selected, await Page.EvaluateAsync<string>("readerSpeechProbe.calls[0].map(item => item.text).join(' ')"));
+        await Expect(read).ToHaveAttributeAsync("aria-pressed", "true");
+        await Page.Locator("[data-zoom-in]").ClickAsync();
+        await Expect(read).ToBeEnabledAsync();
+        await Expect(read).ToHaveAttributeAsync("aria-pressed", "false");
+        Assert.True(await Page.EvaluateAsync<int>("readerSpeechProbe.stops") > 0);
+        await Expect(read).ToHaveAttributeAsync("aria-label", "Read this page aloud");
+    }
+
 }

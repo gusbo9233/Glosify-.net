@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bindMorphTargets } from '../Glosify/wwwroot/js/avatar/morphs.js';
+import { bindMorphTargets } from './build/avatar/morphs.js';
 
 function manager(texture) {
     const targets = ['jawOpen', 'mouthWide', 'mouthRound', 'lipsPart', 'mouthPress',

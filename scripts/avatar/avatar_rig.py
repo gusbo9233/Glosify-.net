@@ -1,5 +1,5 @@
 """Posing, morph baking and glTF export shared by every Avatar build.
-The 23 morph names below are the contract with wwwroot/js/avatar/performance.js:
+The 23 morph names below are the contract with Frontend/avatar/performance.ts:
 each character bakes the same set from its anatomical skin weights.
 """
 from pathlib import Path

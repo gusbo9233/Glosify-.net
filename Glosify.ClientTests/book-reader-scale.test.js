@@ -1,10 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
-
-const reader = readFileSync(new URL('../Glosify/wwwroot/js/book-reader.js', import.meta.url), 'utf8');
-const renderCode = reader.slice(reader.indexOf('const renderPage ='), reader.indexOf('const goToPage ='));
 
 test('Every page render gives PDF text the viewport scale, independently of display density', async () => {
     const observed = [];
@@ -28,6 +25,7 @@ test('Every page render gives PDF text the viewport scale, independently of disp
             constructor({ viewport }) {
                 observed.push({ viewportScale: viewport.scale, textScale: Number(surfaceStyle['--scale-factor']) });
             }
+            textDivs = [];
             async render() {}
             cancel() {}
         } },
@@ -39,11 +37,13 @@ test('Every page render gives PDF text the viewport scale, independently of disp
         setStatus: message => { if (message) throw new Error(message); },
         buildPageSegments: () => [{ index: 0, sourceText: 'Serwus!' }],
     });
-    for (const name of ['stopReaderTts', 'clearReaderTtsStatus', 'closeSelectionPopover',
-        'clearReaderHighlights', 'decorateTextLayer', 'updateToolbar', 'updateReaderTtsPrompt', 'syncAssistantPage']) {
-        context[name] = () => {};
-    }
-    const render = vm.runInContext(`${renderCode}; renderPage;`, context);
+    const { createPdfRenderer } = await loadBrowserModule(new URL('./build/books/pdf-renderer.js', import.meta.url), context);
+    const render = createPdfRenderer({
+        canvas, pageSurface: context.pageSurface, textLayerElement: context.textLayerElement, originalPane: {},
+        getDocument: () => context.pdf, getLibrary: () => context.pdfjs, getRotation: () => 0,
+        computeScale: () => context.requestedScale, onScale() {}, onStart() {}, onRendered() {},
+        onError() { assert.fail('Page rendering failed'); },
+    });
     for (const density of [1, 2]) {
         context.window.devicePixelRatio = density;
         for (const scale of [1, 2.5, 0.75]) {
