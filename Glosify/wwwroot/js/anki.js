@@ -43,6 +43,14 @@
             try { input.value = Intl.DateTimeFormat().resolvedOptions().timeZone || input.value; } catch { /* Keep the collection zone. */ }
         });
 
+        const quizPicker = settings.querySelector('[data-anki-quiz-picker]');
+        quizPicker?.addEventListener('change', () => {
+            if (!quizPicker.dataset.ankiWorkspaceUrl) return;
+            const url = new URL(quizPicker.dataset.ankiWorkspaceUrl, window.location.href);
+            url.searchParams.set('quizId', quizPicker.value);
+            window.location.assign(url.href);
+        });
+
         const list = settings.querySelector('[data-anki-item-list]');
         const search = settings.querySelector('[data-anki-item-search]');
         search?.addEventListener('input', () => {

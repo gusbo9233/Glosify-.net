@@ -2,6 +2,7 @@ using Glosify.Services;
 using Glosify.Services.Ai;
 using Glosify.Services.Ai.Generation;
 using Glosify.Services.Ai.Assistant;
+using Glosify.Services.Anki;
 using Glosify.Services.Books;
 using Glosify.Services.Quizzes;
 using Glosify.Services.RealtimeTranslation;
@@ -23,6 +24,7 @@ public static class ApiExceptionMapper
         CollectionNameConflictException => Error(409, ApiErrorCodes.CollectionNameConflict, exception),
         QuizCollectionNotFoundException => Error(400, ApiErrorCodes.QuizCollectionNotFound, exception),
         QuizJsonImportValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
+        AnkiValidationException => Error(400, ApiErrorCodes.ValidationFailed, exception),
         QuizJsonImportAiUnprocessableException => Error(422, ApiErrorCodes.UnprocessableEntity, exception),
         AssistantTurnInProgressException => Error(409, ApiErrorCodes.Conflict, exception),
         Glosify.Services.Ai.Assistant.Runtime.AssistantRunConflictException => Error(409, ApiErrorCodes.Conflict, exception),

@@ -10,7 +10,7 @@ namespace Glosify.Tests;
 public sealed class AnkiWorkspaceTests
 {
     [Fact]
-    public async Task Picker_pages_and_searches_all_items_without_losing_collection_metadata()
+    public async Task Picker_shows_all_selected_quiz_items_then_existing_membership()
     {
         await using var db = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
@@ -18,7 +18,7 @@ public sealed class AnkiWorkspaceTests
     }
 
     [SqlServerFact]
-    public Task SqlServer_picker_pages_and_searches_all_items() =>
+    public Task SqlServer_picker_shows_all_selected_quiz_items_then_existing_membership() =>
         SqlServerTestDatabase.RunAsync("anki-picker", VerifyAsync);
 
     private static async Task VerifyAsync(GlosifyContext db)
@@ -40,19 +40,13 @@ public sealed class AnkiWorkspaceTests
         db.ChangeTracker.Clear();
 
         var first = await service.GetWorkspaceAsync(userId, "Polish");
-        Assert.Equal(100, first.AvailableItems.Count);
-        Assert.True(first.HasMoreItems);
-        Assert.True(first.HasCards); // The selected card is not on this picker page.
+        Assert.Equal(106, first.AvailableItems.Count);
+        Assert.Equal(quiz.Id, first.SelectedQuizId);
+        Assert.True(first.HasCards);
         Assert.Equal(new[] { "English" }, first.SourceLanguages);
-        Assert.All(first.AvailableItems, item => Assert.False(item.InAnki));
-        var second = await service.GetWorkspaceAsync(userId, "Polish", itemOffset: 100);
-        Assert.Equal(6, second.AvailableItems.Count);
-        Assert.False(second.HasMoreItems);
-        Assert.Empty(first.AvailableItems.Select(item => item.ItemId).Intersect(second.AvailableItems.Select(item => item.ItemId)));
-        Assert.True(second.AvailableItems.Single(item => item.ItemId == "word-104").InAnki);
-        Assert.Equal(sentenceId.ToString(), second.AvailableItems.Last().ItemId);
-        var sentencePage = await service.GetWorkspaceAsync(userId, "Polish", itemOffset: 105);
-        Assert.Equal(sentenceId.ToString(), Assert.Single(sentencePage.AvailableItems).ItemId);
+        Assert.Single(first.AvailableItems, item => item.InAnki);
+        Assert.True(first.AvailableItems.Single(item => item.ItemId == "word-104").InAnki);
+        Assert.Equal(sentenceId.ToString(), first.AvailableItems.Last().ItemId);
         var found = await service.GetWorkspaceAsync(userId, "Polish", search: "target-104");
         Assert.Equal("word-104", Assert.Single(found.AvailableItems).ItemId);
         Assert.True(found.AvailableItems[0].InAnki);
@@ -61,6 +55,56 @@ public sealed class AnkiWorkspaceTests
         var missing = await service.GetWorkspaceAsync(userId, "Polish", search: "missing");
         Assert.Empty(missing.AvailableItems);
         Assert.True(missing.HasCards);
+        var selected = new Quiz { Id = Guid.NewGuid(), UserId = userId, Name = "Selected quiz",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        var unrelated = new Quiz { Id = Guid.NewGuid(), UserId = userId, Name = "Unrelated quiz",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        db.AddRange(selected, unrelated,
+            new Word { Id = "selected-word", QuizId = selected.Id, Lemma = "new word", Translation = "new meaning", CreatedAt = created },
+            new Word { Id = "unrelated-word", QuizId = unrelated.Id, Lemma = "not selected", Translation = "not in Anki", CreatedAt = created });
+        await db.SaveChangesAsync();
+        var preview = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
+        Assert.Equal(selected.Id, preview.SelectedQuizId);
+        Assert.Equal(new[] { "selected-word", "word-104" }, preview.AvailableItems.Select(item => item.ItemId));
+        Assert.False(preview.AvailableItems[0].InAnki);
+        Assert.True(preview.AvailableItems[1].InAnki);
+        Assert.Empty(await db.AnkiQuizLinks.ToListAsync()); // Previewing never adds the quiz.
+
+        db.Words.Add(new Word { Id = "selected-duplicate", QuizId = selected.Id,
+            Lemma = "target-104", Translation = "source-104", CreatedAt = created.AddSeconds(1) });
+        await db.SaveChangesAsync();
+        preview = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
+        Assert.Equal(2, preview.AvailableItems.Count);
+        var duplicate = Assert.Single(preview.AvailableItems, item => item.TargetText == "target-104");
+        Assert.True(duplicate.InAnki);
+        Assert.Equal("word-104", duplicate.ItemId); // Removal must address the actual active note.
+        await service.SetMembershipForLanguageAsync("Polish", "UTC", [],
+            [new(duplicate.QuizId, duplicate.ItemType, duplicate.ItemId)], userId);
+        preview = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
+        Assert.All(preview.AvailableItems, item => Assert.False(item.InAnki));
+        Assert.Contains(preview.AvailableItems, item => item.ItemId == "selected-duplicate");
+
+        await service.AddQuizForLanguageAsync("Polish", "UTC", selected.Id, false, userId);
+        preview = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
+        Assert.All(preview.AvailableItems, item => Assert.True(item.InAnki));
+        db.Words.Add(new Word { Id = "linked-duplicate", QuizId = selected.Id,
+            Lemma = "target-104", Translation = "source-104", CreatedAt = created.AddSeconds(2) });
+        await db.SaveChangesAsync();
+        await service.SyncCollectionAsync(preview.Collection!.Id);
+        var row = Assert.Single((await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id)).AvailableItems,
+            item => item.TargetText == "target-104");
+        Assert.True(row.InAnki);
+        await service.SetMembershipAsync(preview.Collection.Id, [], [new(row.QuizId, row.ItemType, row.ItemId)], userId);
+        db.ChangeTracker.Clear();
+        service = new AnkiCollectionService(db, TimeProvider.System);
+        await service.SyncCollectionAsync(preview.Collection.Id);
+        var afterRemoval = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
+        Assert.False(Assert.Single(afterRemoval.AvailableItems, item => item.TargetText == "target-104").InAnki);
+        Assert.True(Assert.Single(afterRemoval.AvailableItems, item => item.ItemId == "selected-word").InAnki);
+
+        var invalidSelection = await service.GetWorkspaceAsync(userId, "Polish", quizId: other.Id);
+        Assert.NotEqual(other.Id, invalidSelection.SelectedQuizId);
+        Assert.DoesNotContain(invalidSelection.AvailableItems, item => item.ItemId == "other-language");
         Assert.Empty((await service.GetWorkspaceAsync("someone-else", "Polish")).AvailableItems);
     }
 }

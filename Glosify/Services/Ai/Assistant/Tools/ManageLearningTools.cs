@@ -122,7 +122,8 @@ internal sealed class InspectAnkiTool(GlosifyContext db, TimeProvider clock) : A
         return ToolResult.Ok("Anki collection details", new
         {
             collection.Id, collection.TargetLanguage, collection.DefaultDirection,
-            AnkiStudyDefaults.DesiredRetention, AnkiStudyDefaults.NewCardsPerDay, AnkiStudyDefaults.MaximumReviewsPerDay, collection.TimeZoneId,
+            AnkiStudyDefaults.DesiredRetention, NewCardsPerDay = (int?)null, MaximumReviewsPerDay = (int?)null,
+            AnkiStudyDefaults.MaximumCardsPerCollection, collection.TimeZoneId,
             total_cards = await cards.CountAsync(ct), active_cards = active.Active, total_reviews = reviews.Total,
             due_cards = active.Due,
             new_cards = active.New,

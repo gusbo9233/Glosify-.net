@@ -5,7 +5,7 @@ Glosify's built-in Anki is one collection per user and learning language. Openin
 quizzes with different translation (source) languages share that collection; each
 note stores the source language it came from. The learner chooses which direction
 to practice (translation → learning language or the reverse). Each direction is its
-own track: separate cards, schedules, daily new/review limits and statistics, and a
+own track: separate cards, schedules and statistics, and a
 review in one direction never hides the other direction for the day.
 
 The collection is created on demand the first time something is added, from the
@@ -15,11 +15,28 @@ assistant. Content added from the page always gets both directions. These Anki
 collections are separate from the collections that organize quizzes in the library.
 External Anki export/synchronization and collection deletion are not exposed.
 
-Study uses common defaults for every learner and language: 90% desired retention,
-20 new cards and 200 reviews per day in each direction. The drawer only manages
-quiz and item membership; neither the browser nor the assistant customizes these
-limits. Existing stored custom limits are ignored by study and assistant session
-suggestions. Changing direction never creates a collection.
+The settings list shows the selected quiz's items first, followed by other items
+already in Anki, without pagination. Selecting a quiz only previews its items;
+items stay unticked until added individually or through Add to Anki. Existing
+membership stays ticked. Search is limited to this list, and saves retain the
+selected quiz and search.
+
+Within a collection, additions skip an item when another active note has exactly
+both the same original text and translation, including across quizzes. Comparison
+is case-sensitive and preserves whitespace; either text differing makes a distinct
+pair. Browser selections, linked quizzes, and assistant additions share this rule.
+Synchronization also suppresses active duplicates caused by edits or older data,
+preferring the note with the most reviews and retaining all stored review history.
+
+Study uses 90% desired retention with no daily limit on new cards or due reviews.
+Scheduled cards still wait until their due dates. Each language collection supports
+up to 10,000 active cards; each practice direction counts separately, so a word
+studied in both directions uses two slots. Removing cards frees slots without
+deleting review history. Additions that exceed capacity fail atomically, including
+whole-quiz links, individual selections, assistant additions and automatic quiz
+synchronization. Exact duplicates consume no additional slots. Legacy stored daily
+limits are ignored by study and assistant suggestions. Changing direction never
+creates a collection.
 
 Examples:
 
@@ -53,8 +70,7 @@ only.
 
 In Anki study, **Again** immediately returns the card to the back of the eligible
 stack. If it is the only card left, it appears again straight away. The repeat
-survives reloading and remains available after the daily new/review limit is
-reached. Other ratings retain their scheduled intervals. Regular flashcard
+survives reloading and remains available regardless of how many cards were studied. Other ratings retain their scheduled intervals. Regular flashcard
 quizzes keep their existing behavior.
 
 `list_anki_collections` and `get_anki_collection` provide read-only, owned,
@@ -127,7 +143,7 @@ All assistant statistics reads are observational and do not synchronize cards.
 `prepare_study_session` provides an owned local study link. Automatic selection
 prefers due Anki cards, then new cards, then the current quiz (or an owned quiz in
 the selected language). The time budget is an estimate at two items per minute,
-not a timer. Anki suggestions add up both direction tracks, exclude buried cards, cap new/review cards by each direction's remaining daily limits, and retain due learning/relearning cards. Availability reads share the study service’s eligibility rules and never synchronize cards. Typing and flashcard links
+not a timer. Anki suggestions count the selected practice direction, exclude buried cards, include all new and due review cards without daily caps, and retain due learning/relearning cards. Availability reads share the study service’s eligibility rules and never synchronize cards. Typing and flashcard links
 can select exact words; sentence subsets require a focused quiz first.
 
 `remove_anki_cards` and `unlink_anki_quiz` use the chat's approval policy and provide readable summaries.

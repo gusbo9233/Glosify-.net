@@ -91,13 +91,13 @@
                 }
                 else
                 {
-                    <select id="anki-quiz" name="QuizId" required>
+                    <select id="anki-quiz" name="QuizId" required data-anki-quiz-picker data-anki-workspace-url="@(ViewData["GuestSample"] is string ? null : Url.Action("Index"))">
                         @foreach (var group in workspace.CompatibleQuizzes.GroupBy(quiz => quiz.SourceLanguage, StringComparer.OrdinalIgnoreCase))
                         {
                             <optgroup label="From @group.Key">
                                 @foreach (var quiz in group)
                                 {
-                                    <option value="@quiz.Id">@quiz.Name@(linkedQuizIds.Contains(quiz.Id) ? " (added)" : "")</option>
+                                    <option value="@quiz.Id" selected="@(quiz.Id == workspace.SelectedQuizId)">@quiz.Name@(linkedQuizIds.Contains(quiz.Id) ? " (added)" : "")</option>
                                 }
                             </optgroup>
                         }
@@ -133,18 +133,19 @@
             else
             {
             <form method="get" asp-action="Index" class="anki-search" data-anki-search-form>
-                <label class="visually-hidden" for="anki-search">Search all words and sentences</label>
+                <input type="hidden" name="quizId" value="@workspace.SelectedQuizId" />
+                <label class="visually-hidden" for="anki-search">Search words and sentences</label>
                 <input id="anki-search" type="search" name="search" value="@workspace.Search" maxlength="200" placeholder="Search all items" />
                 <button type="submit">Search</button>
             </form>
 
             }
 
-            <form method="post" asp-action="Items" asp-route-itemOffset="@workspace.ItemOffset" asp-route-search="@workspace.Search" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
+            <form method="post" asp-action="Items" asp-route-quizId="@workspace.SelectedQuizId" asp-route-search="@workspace.Search" class="anki-items" data-anki-items-form data-anki-max-changes="@Glosify.Services.Anki.AnkiCollectionService.MaximumMembershipChanges">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="TimeZoneId" data-browser-timezone />
                 <h3 class="anki-settings-subheading">Words</h3>
-                <p class="anki-help">Tick items to study them and untick to remove them.</p>
+                <p class="anki-help">Tick items to study them and untick to remove them. Up to 10,000 cards per language; each direction counts separately.</p>
 
                 <div class="anki-item-list" data-anki-item-list tabindex="-1">
                     @if (workspace.AvailableItems.Count == 0)
@@ -167,21 +168,6 @@
                 <p class="anki-help" role="status" hidden data-anki-items-limit></p>
                 <button class="btn-submit" type="submit" disabled data-anki-items-save>Save changes</button>
             </form>
-            @if (workspace.ItemOffset > 0 || workspace.HasMoreItems)
-            {
-                <nav aria-label="Anki item pages" class="anki-item-pages">
-                    @if (workspace.ItemOffset > 0)
-                    {
-                        <a asp-action="Index" asp-route-itemOffset="@Math.Max(0, workspace.ItemOffset - Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize)" asp-route-search="@workspace.Search">Previous</a>
-                    }
-                    <span>Page @(workspace.ItemOffset / Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize + 1)</span>
-                    @if (workspace.HasMoreItems)
-                    {
-                        <a asp-action="Index" asp-route-itemOffset="@(workspace.ItemOffset + Glosify.Services.Anki.AnkiCollectionService.WorkspacePageSize)" asp-route-search="@workspace.Search">Next</a>
-                    }
-                </nav>
-                <p class="anki-help">Save your changes before searching or changing pages.</p>
-            }
         </aside>
     </div>
 </main>

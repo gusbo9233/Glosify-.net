@@ -35,7 +35,7 @@ public sealed class AnkiController : Controller
     public async Task<IActionResult> Index(
         bool reveal = false,
         Guid? cardId = null,
-        int itemOffset = 0,
+        Guid? quizId = null,
         string? search = null,
         CancellationToken cancellationToken = default)
     {
@@ -59,7 +59,7 @@ public sealed class AnkiController : Controller
             if (study is null)
                 return NotFound();
         }
-        var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken, itemOffset, search);
+        var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken, quizId, search);
         return View(new AnkiIndexViewModel
         {
             TargetLanguage = targetLanguage,
@@ -105,7 +105,7 @@ public sealed class AnkiController : Controller
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
         if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Index), new { quizId = form.QuizId });
         var userId = User.GetUserId();
         try
         {
@@ -118,7 +118,7 @@ public sealed class AnkiController : Controller
         {
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Index), new { quizId = form.QuizId });
     }
 
     [HttpPost]
@@ -136,19 +136,19 @@ public sealed class AnkiController : Controller
     // Changed item keys plus the antiforgery token and browser timezone.
     [RequestFormLimits(ValueCountLimit = AnkiCollectionService.MaximumMembershipChanges + 2)]
     public async Task<IActionResult> Items(SaveAnkiItemsForm form, CancellationToken cancellationToken,
-        [FromQuery] int itemOffset = 0, [FromQuery] string? search = null)
+        [FromQuery] Guid? quizId = null, [FromQuery] string? search = null)
     {
         var targetLanguage = _languages.CurrentLanguage;
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
         if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index), new { itemOffset, search });
+            return RedirectToAction(nameof(Index), new { quizId, search });
         var add = ParseKeys(form.Add);
         var remove = ParseKeys(form.Remove);
         if (add is null || remove is null)
             return BadRequest();
         if (add.Count + remove.Count == 0)
-            return RedirectToAction(nameof(Index), new { itemOffset, search });
+            return RedirectToAction(nameof(Index), new { quizId, search });
 
         var userId = User.GetUserId();
         try
@@ -167,7 +167,7 @@ public sealed class AnkiController : Controller
         {
             TempData["AnkiMessage"] = exception.Message;
         }
-        return RedirectToAction(nameof(Index), new { itemOffset, search });
+        return RedirectToAction(nameof(Index), new { quizId, search });
     }
 
     // Used by the quiz page's "Add to Anki" dialog.

@@ -231,10 +231,17 @@
             <div class="app-canvas">
                 @if (ViewData["GuestSample"] is string sampleSection)
                 {
+                    @if (sampleSection == "anki")
+                    {
+                        <span hidden data-guest-return="@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl">@(guestSamples!.Language.Name)</span>
+                    }
+                    else
+                    {
                     <div class="transcripts-notice guest-sample-notice" data-guest-return="@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl">
                         @(guestSamples!.Language.Name) sample · Explore the real app. Practice is temporary.
                         <a href="/login?returnUrl=@Glosify.Services.Guest.GuestSamples.Library(sampleSection).ReturnUrl" data-login-required>Sign in to create your own</a>
                     </div>
+                    }
                 }
                 <div class="speech-error" data-speech-error role="alert" hidden>
                     <span data-speech-error-text></span>
@@ -254,6 +261,10 @@
                     <a asp-controller="Home" asp-action="Privacy">@Text["Legal.PrivacyPolicy"]</a>
                     <a asp-controller="Home" asp-action="Terms">@Text["Legal.TermsOfService"]</a>
                     <a asp-controller="Home" asp-action="Support">@Text["Legal.Support"]</a>
+                    @if (ViewData["GuestSample"] is "anki")
+                    {
+                        <a href="/login" data-login-required>Ask the assistant</a>
+                    }
                 </nav>
             </footer>
             <partial name="_AppSettings" />
@@ -267,7 +278,7 @@
         })
         <script type="module" src="~/js/assistant.js" asp-append-version="true"></script>
     }
-    @if (User.Identity?.IsAuthenticated != true || ViewData["GuestSample"] is string)
+    @if ((User.Identity?.IsAuthenticated != true || ViewData["GuestSample"] is string) && ViewData["GuestSample"] is not "anki")
     {
         <a class="guest-assistant-entry btn-primary-pill" href="/login" data-login-required>Ask the assistant</a>
     }

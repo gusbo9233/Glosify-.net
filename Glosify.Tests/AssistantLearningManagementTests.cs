@@ -176,8 +176,8 @@ public sealed class AssistantLearningManagementTests
         await using var db = h.Db();
         var collection = await db.AnkiCollections.SingleAsync();
         Assert.Equal(AnkiStudyDefaults.DesiredRetention, collection.DesiredRetention);
-        Assert.Equal(AnkiStudyDefaults.NewCardsPerDay, collection.NewCardsPerDay);
-        Assert.Equal(AnkiStudyDefaults.MaximumReviewsPerDay, collection.MaximumReviewsPerDay);
+        Assert.Equal(int.MaxValue, collection.NewCardsPerDay);
+        Assert.Equal(int.MaxValue, collection.MaximumReviewsPerDay);
     }
 
     [Fact]

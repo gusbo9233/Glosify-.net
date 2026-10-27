@@ -10,10 +10,10 @@ public class AnkiCollection
     public string TargetLanguage { get; set; } = string.Empty;
     public string DefaultDirection { get; set; } = PracticeDirection.SourceToTarget;
     // Retained for existing database rows and assistant Undo journals. Scheduling
-    // uses AnkiStudyDefaults, including for collections with old custom values.
+    // ignores these legacy daily limits, including existing stored values.
     public double DesiredRetention { get; set; } = AnkiStudyDefaults.DesiredRetention;
-    public int NewCardsPerDay { get; set; } = AnkiStudyDefaults.NewCardsPerDay;
-    public int MaximumReviewsPerDay { get; set; } = AnkiStudyDefaults.MaximumReviewsPerDay;
+    public int NewCardsPerDay { get; set; } = int.MaxValue;
+    public int MaximumReviewsPerDay { get; set; } = int.MaxValue;
     public string TimeZoneId { get; set; } = "UTC";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

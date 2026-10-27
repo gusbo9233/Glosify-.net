@@ -16,7 +16,10 @@ function page() {
     const form = element({ dataset: { ankiMaxChanges: '2000' },
         querySelector: selector => selector === '[data-anki-items-save]' ? save : limit,
         querySelectorAll: () => [], append: field => fields.push(field) });
+    const quizPicker = element({ value: 'chosen-quiz', dataset: { ankiWorkspaceUrl: '/Anki' } });
+    const navigations = [];
     const settings = element({ querySelector: selector => ({
+        '[data-anki-quiz-picker]': quizPicker,
         '[data-anki-item-list]': list, '[data-anki-items-form]': form,
     })[selector] ?? null });
     const workspace = element({ isConnected: true });
@@ -27,13 +30,14 @@ function page() {
             '[data-anki-settings]': settings, '[data-anki-settings-toggle]': toggle })[selector] ?? null,
         querySelectorAll: () => [], createElement: () => element(),
     };
-    vm.runInNewContext(script, { document, window: { addEventListener(name, handler) { handlers[name] = handler; } },
+    vm.runInNewContext(script, { document, window: { location: { href: 'https://example.test/Anki?search=old', assign: url => navigations.push(url) },
+        addEventListener(name, handler) { handlers[name] = handler; } }, URL,
         localStorage: { getItem: () => null, setItem() {} }, Intl });
     const unload = () => { let prevented = false; handlers.beforeunload({ preventDefault() { prevented = true; } }); return prevented; };
-    return { box, list, form, fields, save, unload, workspace };
+    return { box, list, form, fields, save, unload, workspace, quizPicker, navigations };
 }
 
-test('unsaved picker edits warn before search or page navigation, but not after reverting', () => {
+test('unsaved picker edits warn before search or quiz navigation, but not after reverting', () => {
     const p = page();
     assert.equal(p.unload(), false);
     p.box.checked = true;
@@ -61,4 +65,20 @@ test('replaced workspace does not keep warning on unrelated navigation', () => {
     p.box.checked = true;
     p.workspace.isConnected = false;
     assert.equal(p.unload(), false);
+});
+
+test('choosing a quiz previews it without posting additions and retains unsaved-change protection', () => {
+    const p = page();
+    p.box.checked = true;
+    p.quizPicker.listeners.change();
+    assert.deepEqual(p.navigations, ['https://example.test/Anki?quizId=chosen-quiz']);
+    assert.equal(p.fields.length, 0);
+    assert.equal(p.unload(), true);
+});
+
+test('guest quiz picker does not navigate into the personal workspace', () => {
+    const p = page();
+    delete p.quizPicker.dataset.ankiWorkspaceUrl;
+    p.quizPicker.listeners.change();
+    assert.equal(p.navigations.length, 0);
 });

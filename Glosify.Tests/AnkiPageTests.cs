@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Security.Claims;
 using AngleSharp.Dom;
 using AngleSharp.Html.Parser;
@@ -202,7 +204,7 @@ public sealed class AnkiPageTests : IDisposable
     }
 
     [Fact]
-    public async Task Picker_limits_markup_and_searches_beyond_the_visible_page()
+    public async Task Picker_renders_every_item_without_pagination_and_preserves_selection()
     {
         var quizId = await SeedAsync();
         await using (var scope = _factory.Services.CreateAsyncScope())
@@ -213,17 +215,14 @@ public sealed class AnkiPageTests : IDisposable
             await db.SaveChangesAsync();
         }
         var first = await ReadPageAsync();
-        Assert.Equal(100, first.QuerySelectorAll("[data-anki-item-key]").Length);
-        var next = Assert.Single(first.QuerySelectorAll(".anki-item-pages a"));
-        var response = await _client.GetAsync(next.GetAttribute("href"));
-        response.EnsureSuccessStatusCode();
-        var second = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
-        Assert.Equal(6, second.QuerySelectorAll("[data-anki-item-key]").Length);
-        Assert.Contains("paged-105", second.QuerySelectorAll("[data-anki-item-key]").Last().GetAttribute("data-anki-item-key"));
-        var savedPage = await SaveLastItemAsync(second);
+        Assert.Equal(106, first.QuerySelectorAll("[data-anki-item-key]").Length);
+        Assert.Empty(first.QuerySelectorAll(".anki-item-pages"));
+        Assert.Empty(first.QuerySelectorAll("[data-anki-item-key][checked]"));
+        Assert.Contains("paged-105", first.QuerySelectorAll("[data-anki-item-key]").Last().GetAttribute("data-anki-item-key"));
+        var savedPage = await SaveLastItemAsync(first);
         Assert.Equal(HttpStatusCode.Redirect, savedPage.StatusCode);
-        Assert.Contains("itemOffset=100", savedPage.Headers.Location!.OriginalString);
-        response = await _client.GetAsync("/Anki?search=target-105");
+        Assert.Contains($"quizId={quizId}", savedPage.Headers.Location!.OriginalString);
+        var response = await _client.GetAsync($"/Anki?quizId={quizId}&search=target-105");
         response.EnsureSuccessStatusCode();
         var searched = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
         Assert.EndsWith(":paged-105", Assert.Single(searched.QuerySelectorAll("[data-anki-item-key]")).GetAttribute("data-anki-item-key"));
@@ -245,6 +244,108 @@ public sealed class AnkiPageTests : IDisposable
                 ["TimeZoneId"] = "UTC",
                 ["__RequestVerificationToken"] = Token(form),
             }));
+        }
+    }
+
+    [Fact]
+    public async Task Choosing_a_quiz_previews_its_unticked_items_before_existing_anki_items()
+    {
+        var originalQuizId = await SeedAsync();
+        var selectedQuizId = Guid.NewGuid();
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            db.AddRange(new Quiz { Id = selectedQuizId, UserId = UserId, Name = "Selected",
+                SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" },
+                new Word { Id = "selected-word", QuizId = selectedQuizId, Lemma = "kot", Translation = "cat" });
+            await db.SaveChangesAsync();
+            await scope.ServiceProvider.GetRequiredService<IAnkiCollectionService>()
+                .AddItemForLanguageAsync("Polish", "UTC", new(originalQuizId, "words", "word-0"), UserId);
+        }
+        var response = await _client.GetAsync($"/Anki?quizId={selectedQuizId}");
+        response.EnsureSuccessStatusCode();
+        var page = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        var boxes = page.QuerySelectorAll("[data-anki-item-key]");
+        Assert.Equal(2, boxes.Length);
+        Assert.EndsWith(":selected-word", boxes[0].GetAttribute("data-anki-item-key"));
+        Assert.False(boxes[0].HasAttribute("checked"));
+        Assert.EndsWith(":word-0", boxes[1].GetAttribute("data-anki-item-key"));
+        Assert.True(boxes[1].HasAttribute("checked"));
+        Assert.Equal(selectedQuizId.ToString(), page.QuerySelector("#anki-quiz option[selected]")?.GetAttribute("value"));
+        Assert.Contains($"quizId={selectedQuizId}", page.QuerySelector("[data-anki-items-form]")!.GetAttribute("action"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Adding_a_word_to_a_full_linked_collection_returns_actionable_validation(bool api)
+    {
+        var quizId = await SeedAsync();
+        // Obtain the real antiforgery cookie and token before filling the collection.
+        var page = await ReadPageAsync();
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            // Seed the large fixture directly; the HTTP request below uses the normal
+            // accounting-enabled services. Accounting itself has separate coverage.
+            await using var db = new GlosifyContext(scope.ServiceProvider.GetRequiredService<DbContextOptions<GlosifyContext>>());
+            // Spread the cards across quizzes to stay below the independent 1,000-item quiz limit.
+            var otherQuizzes = Enumerable.Range(0, 5).Select(i => new Quiz
+            {
+                Id = Guid.NewGuid(), UserId = UserId, Name = $"Capacity {i}", SourceLanguage = "English",
+                TargetLanguage = "Polish", Language = "Polish", ProcessingStatus = "Ready",
+            }).ToArray();
+            db.Quizzes.AddRange(otherQuizzes);
+            db.Words.AddRange(Enumerable.Range(1, 4999).Select(i => new Word
+            {
+                Id = $"capacity-{i}", QuizId = otherQuizzes[(i - 1) / 1000].Id,
+                Lemma = $"target {i}", Translation = $"meaning {i}",
+            }));
+            await db.SaveChangesAsync();
+            var collections = new AnkiCollectionService(db, TimeProvider.System);
+            var collection = await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+            db.AnkiQuizLinks.AddRange(otherQuizzes.Select(quiz => quiz.Id).Append(quizId).Select(id => new AnkiQuizLink
+            {
+                AnkiCollectionId = collection.Id, QuizId = id, WordsSourceToTarget = true, WordsTargetToSource = true,
+            }));
+            await db.SaveChangesAsync();
+            await collections.SyncCollectionAsync(collection.Id);
+            Assert.Equal(10000, await db.AnkiCards.CountAsync(card => card.IsActive));
+        }
+        using var request = new HttpRequestMessage(HttpMethod.Post, api ? $"/api/quizzes/{quizId}/words" : "/Quiz/AddWord");
+        if (api)
+        {
+            request.Content = JsonContent.Create(new { Word = "overflow", Translation = "overflow meaning" });
+            request.Headers.Add("RequestVerificationToken", Token(page));
+        }
+        else
+        {
+            request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["QuizId"] = quizId.ToString(), ["Word"] = "overflow", ["Translation"] = "overflow meaning",
+                ["__RequestVerificationToken"] = Token(page),
+            });
+        }
+        var response = await _client.SendAsync(request);
+        if (api)
+        {
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+            using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal("validation_failed", problem.RootElement.GetProperty("code").GetString());
+            var detail = problem.RootElement.GetProperty("detail").GetString();
+            Assert.Contains("10,000", detail);
+            Assert.Contains("Remove some cards", detail);
+            Assert.Equal(detail, problem.RootElement.GetProperty("error").GetString());
+        }
+        else
+        {
+            Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+            Assert.Equal($"/Quizzes/Details/{quizId}", response.Headers.Location!.OriginalString);
+            var returned = await _client.GetAsync(response.Headers.Location);
+            returned.EnsureSuccessStatusCode();
+            var returnedPage = await new HtmlParser().ParseDocumentAsync(await returned.Content.ReadAsStringAsync());
+            Assert.Contains("10,000", returnedPage.Body!.TextContent);
+            Assert.Contains("Remove some cards", returnedPage.Body.TextContent);
         }
     }
 
