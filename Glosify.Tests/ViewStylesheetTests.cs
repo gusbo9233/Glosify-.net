@@ -22,7 +22,7 @@ public sealed class ViewStylesheetTests
     [Fact]
     public void Shared_pronunciation_button_is_defined_in_the_site_stylesheet()
     {
-        var siteCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "site.css"));
+        var siteCss = File.ReadAllText(Path.Combine(StylesDirectory(), "site", "study.css"));
 
         Assert.Contains(".btn-icon-tts {", siteCss, StringComparison.Ordinal);
         Assert.Contains(".btn-icon-tts.is-playing", siteCss, StringComparison.Ordinal);
@@ -31,7 +31,7 @@ public sealed class ViewStylesheetTests
     [Fact]
     public void Register_provider_forms_have_separation_and_a_distinct_button_treatment()
     {
-        var siteCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "site.css"));
+        var siteCss = File.ReadAllText(Path.Combine(StylesDirectory(), "site", "account.css"));
 
         const string providerForm = ".auth-form:has(input[name=\"provider\"])";
         Assert.Contains($"{providerForm} +\n{providerForm}", siteCss, StringComparison.Ordinal);
@@ -42,7 +42,7 @@ public sealed class ViewStylesheetTests
     [Fact]
     public void Payment_views_use_the_button_defined_by_their_stylesheet()
     {
-        var paymentsCss = File.ReadAllText(Path.Combine(WebRootDirectory(), "css", "payments.css"));
+        var paymentsCss = File.ReadAllText(Path.Combine(StylesDirectory(), "payments.css"));
         var paymentsViews = Directory.EnumerateFiles(
             Path.Combine(ViewsDirectory(), "Payments"),
             "*.cshtml",
@@ -108,6 +108,6 @@ public sealed class ViewStylesheetTests
         throw new InvalidOperationException("Could not locate the Glosify Views directory.");
     }
 
-    private static string WebRootDirectory() =>
-        Path.Combine(Directory.GetParent(ViewsDirectory())!.FullName, "wwwroot");
+    private static string StylesDirectory() =>
+        Path.Combine(Directory.GetParent(ViewsDirectory())!.FullName, "Frontend", "styles");
 }

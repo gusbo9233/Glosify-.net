@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createConversationMemory } from '../Glosify/wwwroot/js/avatar/memory.js';
+import { createConversationMemory } from './build/avatar/memory.js';
 const choice = { language: 'sv', characterId: 'rain', quizId: null };
 function storage() {
     const values = new Map();

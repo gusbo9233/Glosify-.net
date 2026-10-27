@@ -4,10 +4,10 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const typingQuizScript = readFileSync(
-    new URL('../Glosify/wwwroot/js/typing-quiz.js', import.meta.url),
+    new URL('./build/quiz/typing-quiz.bundle.js', import.meta.url),
     'utf8');
 const flashcardQuizScript = readFileSync(
-    new URL('../Glosify/wwwroot/js/flashcard-quiz.js', import.meta.url),
+    new URL('./build/quiz/flashcard-quiz.bundle.js', import.meta.url),
     'utf8');
 
 const deferred = () => {

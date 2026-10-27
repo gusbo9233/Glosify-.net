@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRenderQuality, renderScaling, normalizeQuality } from '../Glosify/wwwroot/js/avatar/render-quality.js';
+import { createRenderQuality, renderScaling, normalizeQuality } from './build/avatar/render-quality.js';
 
 function machine() {
     const quality = createRenderQuality();

@@ -15,24 +15,17 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
     }
 
     [Fact]
-    public async Task Shared_tts_client_exposes_queue_api_and_preserves_data_attribute_buttons()
+    public async Task Shared_tts_client_is_served_with_the_layout_script_contract()
     {
         var client = _factory.CreateClient();
 
-        var script = await client.GetStringAsync("/js/tts.js");
-
-        Assert.Contains("window.GlosifyTts = Object.freeze", script, StringComparison.Ordinal);
-        Assert.Contains("playQueue: playQueue", script, StringComparison.Ordinal);
-        Assert.Contains("stop: stop", script, StringComparison.Ordinal);
-        Assert.Contains("closest('[data-tts]')", script, StringComparison.Ordinal);
-        Assert.Contains("playSavedQueue: playSavedQueue", script, StringComparison.Ordinal);
-        Assert.DoesNotContain("falling back to browser TTS", script, StringComparison.Ordinal);
-        Assert.Contains("RequestVerificationToken", script, StringComparison.Ordinal);
-        Assert.Contains("maxCredits: item.maxCredits", script, StringComparison.Ordinal);
-        Assert.Contains("voice: String(item && item.voice", script, StringComparison.Ordinal);
-        Assert.Contains("provider: item && item.provider", script, StringComparison.Ordinal);
-        Assert.Contains("dataset.ttsLocales", script, StringComparison.Ordinal);
-        Assert.DoesNotContain("'danish': 'da-DK'", script, StringComparison.Ordinal);
+        var response = await client.GetAsync("/js/tts.js");
+        response.EnsureSuccessStatusCode();
+        Assert.Contains("javascript", response.Content.Headers.ContentType?.MediaType ?? "", StringComparison.Ordinal);
+        var page = await new HtmlParser().ParseDocumentAsync(await client.GetStringAsync("/"));
+        var script = page.QuerySelector("script[src^='/js/tts.js']");
+        Assert.NotNull(script);
+        Assert.NotEqual("module", script.GetAttribute("type"));
     }
 
     [Fact]
@@ -75,24 +68,16 @@ public sealed class ReaderTtsIntegrationTests : IClassFixture<WebApplicationFact
     }
 
     [Fact]
-    public async Task Reader_client_queues_page_or_selection_and_stops_on_rerender()
+    public async Task Reader_client_is_delivered_as_a_module_on_the_reader_page()
     {
         var client = _factory.CreateClient();
-
-        var script = await client.GetStringAsync("/js/book-reader.js");
-
-        Assert.Contains("const TTS_CHUNK_LENGTH = 180", script, StringComparison.Ordinal);
-        Assert.Contains("const captureReaderSelection", script, StringComparison.Ordinal);
-        Assert.Contains("const pdfItemsShareVisualWord", script, StringComparison.Ordinal);
-        Assert.Contains("const selectedSourceText", script, StringComparison.Ordinal);
-        Assert.Contains("const selectedTextWithinNode", script, StringComparison.Ordinal);
-        Assert.Contains("addEventListener('copy'", script, StringComparison.Ordinal);
-        Assert.Contains("const sourceSpeechLanguage", script, StringComparison.Ordinal);
-        Assert.Contains("window.GlosifyTts.playSavedQueue", script, StringComparison.Ordinal);
-        Assert.DoesNotContain("glosify.reader.polishVoice", script, StringComparison.Ordinal);
-        Assert.Contains("paintSpeechSegment(item.meta.segmentIndex)", script, StringComparison.Ordinal);
-        Assert.Contains("stopReaderTts();", script, StringComparison.Ordinal);
-        Assert.Contains("Finished reading page", script, StringComparison.Ordinal);
+        var response = await client.GetAsync("/js/book-reader.js");
+        response.EnsureSuccessStatusCode();
+        Assert.Contains("javascript", response.Content.Headers.ContentType?.MediaType ?? "", StringComparison.Ordinal);
+        var document = await new HtmlParser().ParseDocumentAsync(await client.GetStringAsync("/preview/books/sample"));
+        var script = document.QuerySelector("script[src^='/js/book-reader.js']");
+        Assert.NotNull(script);
+        Assert.Equal("module", script.GetAttribute("type"));
     }
 
     [Fact]

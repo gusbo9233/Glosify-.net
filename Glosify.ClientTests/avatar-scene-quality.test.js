@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync } from 'node:fs';
-import { createRenderQuality } from '../Glosify/wwwroot/js/avatar/render-quality.js';
-import { createRenderLoop, portraitFraming } from '../Glosify/wwwroot/js/avatar/render-loop.js';
-import { createPerformance } from '../Glosify/wwwroot/js/avatar/performance.js';
+import { loadBrowserModule } from './browser-module.js';
+import { createRenderQuality } from './build/avatar/render-quality.js';
+import { createRenderLoop, portraitFraming } from './build/avatar/render-loop.js';
+import { createPerformance } from './build/avatar/performance.js';
 
 // Run the scene's actual quality/loop wiring with a canvas-clearing engine double.
 // GPU/model loading is irrelevant to scheduling and is covered in browser checks.
@@ -41,9 +41,22 @@ async function sceneHarness(cost = 55) {
         matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
         ResizeObserver: Observer, IntersectionObserver: Observer, canvas
     });
-    const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/scene.source.js', import.meta.url), 'utf8');
-    vm.runInContext(source.replace(/^import .*;\n/gm, '').replace('export async function', 'async function'), context);
-    const visual = await vm.runInContext('createAvatar(canvas)', context);
+    const { createAvatar } = await loadBrowserModule(new URL('./build/avatar/scene.source.js', import.meta.url), context, {
+        '@babylonjs/core/Engines/engine.js': { Engine },
+        '@babylonjs/core/scene.js': { Scene },
+        '@babylonjs/core/Cameras/arcRotateCamera.js': { ArcRotateCamera: Camera },
+        '@babylonjs/core/Maths/math.vector.js': { Vector3: Vector },
+        '@babylonjs/core/Maths/math.color.js': { Color3: Vector, Color4: Vector },
+        '@babylonjs/core/Lights/hemisphericLight.js': { HemisphericLight: Node },
+        '@babylonjs/core/Lights/directionalLight.js': { DirectionalLight: Node },
+        '@babylonjs/core/Meshes/transformNode.js': { TransformNode: Node },
+        '@babylonjs/core/Loading/sceneLoader.js': { ImportMeshAsync: context.ImportMeshAsync },
+        '@babylonjs/core/Materials/imageProcessingConfiguration.js': { ImageProcessingConfiguration: {} },
+        '@babylonjs/loaders/glTF': {}, './meshopt.js': {},
+        './morphs.js': { bindMorphTargets: context.bindMorphTargets },
+        './render-loop.js': { createRenderLoop: context.createRenderLoop, portraitFraming },
+    });
+    const visual = await createAvatar(canvas);
     return { visual, engine, canvas, advance(ms, stateChanges = false) {
         const end = time + ms;
         while (time < end) {

@@ -1,10 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
-
-const source = readFileSync(new URL('../Glosify/wwwroot/js/assistant.js', import.meta.url), 'utf8');
-const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end));
 
 for (const movedOutside of [false, true]) {
     test(`delayed assistant loading ${movedOutside ? 'preserves focus restored by a closed dialog' : 'focuses the composer when focus remains inside'}`, async () => {
@@ -20,13 +17,11 @@ for (const movedOutside of [false, true]) {
             panel: { classList: { add() {} }, contains: element => element === toggle || element === textarea },
             window: { dispatchEvent() {}, requestAnimationFrame: callback => frames.push(callback) },
             CustomEvent: class {}, ensureInitialChat: () => loading, ensureContextOptions: async () => {},
-            setStatus() {}, status: { textContent: '' }, matchesOwnedStatus: () => false,
-            visibleAssistantLoadError: null,
+            setStatus() {}, status: { textContent: '' },
         });
-        vm.runInContext(section('    const canFocusAssistant =', '    const requestHeaders =')
-            + section('    const openAssistant =', '    const closeAssistant =')
-            + 'globalThis.open = openAssistant;', context);
-        const opened = context.open();
+        const { createAssistantShell } = await loadBrowserModule(new URL('./build/assistant/shell.js', import.meta.url), context);
+        const shell = createAssistantShell(context);
+        const opened = shell.open();
         // The collection dialog opens and closes while the assistant HTTP request is pending.
         if (movedOutside) document.activeElement = trigger;
         finishLoading();

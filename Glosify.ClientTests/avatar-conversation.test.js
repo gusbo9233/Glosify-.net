@@ -1,13 +1,15 @@
+import { loadBrowserModule } from './browser-module.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { normalizeQuality } from '../Glosify/wwwroot/js/avatar/render-quality.js';
-import { preserveConversation } from '../Glosify/wwwroot/js/avatar/retention.js';
-import { transcriptPresentation } from '../Glosify/wwwroot/js/avatar/transcript.js';
-import { createConversationMemory } from '../Glosify/wwwroot/js/avatar/memory.js';
+import { errorMessage, errorStatus } from './build/shared/errors.js';
+import { normalizeQuality } from './build/avatar/render-quality.js';
+import { preserveConversation } from './build/avatar/retention.js';
+import { transcriptPresentation } from './build/avatar/transcript.js';
+import { createConversationMemory } from './build/avatar/memory.js';
 import { readFileSync } from 'node:fs';
 
-const source = readFileSync(new URL('../Glosify/wwwroot/js/avatar/avatar.js', import.meta.url), 'utf8');
+const source = readFileSync(new URL('./build/avatar/avatar.cjs', import.meta.url), 'utf8');
 function setup(mode = 'push-to-talk') {
     const elements = new Map(), sent = [], listeners = {}, listenerOptions = {}, windowListeners = {}, timers = new Map();
     const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
@@ -19,7 +21,7 @@ function setup(mode = 'push-to-talk') {
     const context = vm.createContext({
         document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
             querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action, options) => { listeners[name] = action; listenerOptions[name] = options; } },
-        ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, normalizeQuality, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
+        ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, errorMessage, errorStatus, normalizeQuality, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
         setTimeout: (fn, ms) => {
             if ([250, 30000, 60000].includes(ms)) { const timer = {}; timers.set(timer, { fn, ms }); return timer; }
             const timer = setTimeout(fn, ms); timer.unref(); return timer;
@@ -29,12 +31,27 @@ function setup(mode = 'push-to-talk') {
         setupFloatingChat() {}, createAvatar: () => new Promise(() => {}), fetch: path => path.endsWith('/transcript') ? Promise.resolve({ ok: true, json: async () => ({ turnCount: 0, savedTurns: 0 }) }) : new Promise(() => {}),
         wire: value => sent.push(value),
     });
-    vm.runInContext(source.replace(/^import .*;\n/gm, ''), context);
+    const dependencies = {
+        '../shared/errors.js': { errorMessage, errorStatus },
+        './render-quality.js': { normalizeQuality },
+        './transcript.js': { transcriptPresentation },
+        './retention.js': { preserveConversation },
+        './memory.js': { createConversationMemory },
+        './chat-panel.js': { get setupFloatingChat() { return context.setupFloatingChat; } },
+        './audio.js': { get AvatarAudio() { return context.AvatarAudio; } },
+        './connection.js': { get VoiceConnection() { return context.VoiceConnection; } },
+        '/js/avatar/scene.min.js': { get createAvatar() { return context.createAvatar; } },
+    };
+    context.require = path => {
+        assert.ok(Object.hasOwn(dependencies, path), `Unexpected dependency: ${path}`);
+        return dependencies[path];
+    };
+    vm.runInContext(source, context);
     vm.runInContext(`VoiceConnection = class { constructor(url, handlers) {
         const transport = new WebSocket(url); globalThis.connectionHandlers = handlers; return transport;
     } };`, context);
     vm.runInContext("characterLoading = false; el('character').disabled = false; ready = true; socket = { readyState: 1, send: wire, close() {} }; audio = { stop() {}, mute() {}, flush: async () => {} };", context);
-    return { sent, elements, listenerOptions, fireTimer: ms => {
+    return { sent, elements, listenerOptions, loadAudio: async () => Object.assign(context, await loadBrowserModule(new URL('./build/avatar/audio.js', import.meta.url), context)), fireTimer: ms => {
         const entry = [...timers].find(([, value]) => value.ms === ms);
         assert.ok(entry, `Expected ${ms}ms timer`); timers.delete(entry[0]); entry[1].fn();
     }, timerCount: ms => [...timers.values()].filter(value => value.ms === ms).length, chooseMode: value => { modeInput.value = value; modeInput.listeners.change(); }, buttonEvent: (name, event) => element('avatar-talk').listeners[name](event), documentEvent: (name, event = {}) => listeners[name]?.(event), windowEvent: (name, event = {}) => windowListeners[name](event), run: code => vm.runInContext(code, context),
@@ -1380,7 +1397,7 @@ for (const initialMode of ['push-to-talk', 'hands-free']) test(`changing ${initi
     h.run("finishStart({ sessionId: 'warm', memoryId: 'memory', connectUrl: '/voice' })"); await tick();
     await h.run("connectionHandlers.onMessage({ type: 'connected' })");
     // Exercise the real audio.open cancellation contract, including generation invalidation.
-    h.run(readFileSync(new URL('../Glosify/wwwroot/js/avatar/audio.js', import.meta.url), 'utf8').replace('export class AvatarAudio', 'AvatarAudio = class'));
+    await h.loadAudio();
     h.run(`let allowMicrophone, microphoneRequests = 0, stoppedTracks = 0;
         navigator = { mediaDevices: { getUserMedia() {
             microphoneRequests++; return new Promise(resolve => { allowMicrophone = () => resolve({

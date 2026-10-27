@@ -12,8 +12,8 @@ export default [
       '**/coverage/**',
       '**/dist/**',
       '**/*.min.js',
-      // Generated bundle; meshopt.worker.source.js remains linted.
-      'Glosify/wwwroot/js/avatar/meshopt.worker.js',
+      'Glosify/wwwroot/js/**',
+      'Glosify.ClientTests/build/**',
     ],
   },
   js.configs.recommended,
@@ -30,25 +30,6 @@ export default [
     },
     rules: {
       'no-console': 'off',
-    },
-  },
-  {
-    // Existing large browser scripts are linted with the recommended rules,
-    // while these narrowly scoped exceptions baseline known cleanup work.
-    files: [
-      'Glosify/wwwroot/js/assistant.js',
-      'Glosify/wwwroot/js/book-reader.js',
-    ],
-    rules: {
-      'no-unused-vars': 'off',
-    },
-  },
-  {
-    files: [
-      'Glosify/wwwroot/js/quiz-json-import.js',
-    ],
-    rules: {
-      'no-useless-assignment': 'off',
     },
   },
 ];

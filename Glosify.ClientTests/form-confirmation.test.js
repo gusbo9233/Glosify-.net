@@ -1,12 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
 
-const scripts = new Map(['site', 'anki', 'quiz-details'].map(name => [
-    name,
-    readFileSync(new URL(`../Glosify/wwwroot/js/${name}.js`, import.meta.url), 'utf8'),
-]));
+const scriptFiles = { site: 'shared/site', anki: 'anki/anki', 'quiz-details': 'quiz/quiz-details' };
 
 class Element {
     constructor() {
@@ -22,7 +19,7 @@ class Element {
     querySelector() { return null; }
 }
 
-function confirmationPage(pageScript, accepted) {
+async function confirmationPage(pageScript, accepted) {
     const form = new Element();
     form.dataset = { confirm: 'Remove this item?' };
     form.closest = selector => selector === 'form[data-confirm]' ? form : null;
@@ -48,7 +45,7 @@ function confirmationPage(pageScript, accepted) {
     });
     // Match _AppLayout: shared behavior loads before the page's Scripts section.
     for (const name of ['site', pageScript]) {
-        vm.runInContext(scripts.get(name), context, { filename: `${name}.js` });
+        await loadBrowserModule(new URL(`./build/${scriptFiles[name]}.js`, import.meta.url), context);
     }
 
     return {
@@ -71,8 +68,8 @@ function confirmationPage(pageScript, accepted) {
 }
 
 for (const pageScript of ['anki', 'quiz-details']) {
-    test(`${pageScript} confirms once and allows an accepted submission`, () => {
-        const page = confirmationPage(pageScript, true);
+    test(`${pageScript} confirms once and allows an accepted submission`, async () => {
+        const page = await confirmationPage(pageScript, true);
 
         const event = page.submit();
 
@@ -81,8 +78,8 @@ for (const pageScript of ['anki', 'quiz-details']) {
         assert.equal(page.submissions, 1);
     });
 
-    test(`${pageScript} confirms once and prevents a canceled submission`, () => {
-        const page = confirmationPage(pageScript, false);
+    test(`${pageScript} confirms once and prevents a canceled submission`, async () => {
+        const page = await confirmationPage(pageScript, false);
 
         const event = page.submit();
 

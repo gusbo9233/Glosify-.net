@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
-const script = readFileSync(new URL('../Glosify/wwwroot/js/tts.js', import.meta.url), 'utf8');
+const script = readFileSync(new URL('./build/shared/tts.bundle.js', import.meta.url), 'utf8');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
 class Control {
@@ -25,14 +25,16 @@ function setup(fetchResponse = async () => ({ ok: true, blob: async () => ({}) }
     dialog.showModal = () => { dialog.open = true; };
     dialog.close = () => { dialog.open = false; queueMicrotask(() => dialog.fire('close')); };
     const error = new Control();
+    error.value = 'speech-test-token';
     error.querySelector = () => error;
     const browserVoices = [{ name: 'English', voiceURI: 'en-local', lang: 'en-US' }, { name: 'Swedish', voiceURI: 'sv-local', lang: 'sv-SE' }];
     const speechSynthesis = { getVoices: () => browserVoices, addEventListener() {}, removeEventListener() {}, cancel() {}, speak(utterance) { spoken.push(utterance); queueMicrotask(() => utterance.onend?.()); } };
     class Audio { constructor(url) { this.url = url; audio.push(this); } play() { queueMicrotask(() => this.onended?.()); return Promise.resolve(); } pause() {} removeAttribute() {} }
-    const context = { document: { body: { dataset: { speechUser: options.userId ?? 'speaker', ttsLocales: JSON.stringify({ zh: 'zh-CN', english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener() {}, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
+    const documentListeners = {};
+    const context = { document: { body: { dataset: { speechUser: options.userId ?? 'speaker', ttsLocales: JSON.stringify({ zh: 'zh-CN', english: 'en-GB', swedish: 'sv-SE', polish: 'pl-PL' }) } }, querySelector: selector => selector === '[data-speech-dialog]' ? dialog : error, addEventListener(name, listener) { documentListeners[name] = listener; }, dispatchEvent() {} }, window: { speechSynthesis }, localStorage: { getItem: key => stored.get(key), setItem: (key, value) => stored.set(key, value) }, CustomEvent: function(name) { this.type = name; }, Option: function(label, value) { this.label = label; this.value = value; }, Audio, AbortController, setTimeout, console, URL: { createObjectURL: () => 'blob:test', revokeObjectURL() {} }, fetch: async (url, options) => { requests.push(url); requestOptions.push(options); return fetchResponse(url, options); }, SpeechSynthesisUtterance: function(text) { this.text = text; } };
     context.window.SpeechSynthesisUtterance = context.SpeechSynthesisUtterance;
     vm.runInNewContext(script, context);
-    return { api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices, storageKey };
+    return { click: documentListeners.click, api: context.window.GlosifyTts, requests, requestOptions, spoken, audio, controls, dialog, error, stored, browserVoices, storageKey };
 }
 
 test('browser provider never calls ElevenLabs and honors the selected browser voice', async () => {
@@ -41,6 +43,17 @@ test('browser provider never calls ElevenLabs and honors the selected browser vo
     assert.equal(result.state, 'completed');
     assert.equal(h.requests.length, 0);
     assert.equal(h.spoken[0].voice.voiceURI, 'sv-local');
+});
+
+test('the frozen speech facade sends the antiforgery token and explicit spending limit', async () => {
+    const h = setup();
+    assert.equal(Object.isFrozen(h.api), true);
+    assert.deepEqual(Object.keys(h.api).sort(), ['estimateQueue', 'getBookLanguage', 'getProvider', 'openSettings', 'playQueue', 'playSavedQueue', 'stop']);
+    const result = await h.api.playQueue([{ text: 'Hej', lang: 'sv', provider: 'elevenlabs', maxCredits: 2 }]);
+    assert.equal(result.state, 'completed');
+    assert.equal(h.requestOptions[0].headers.RequestVerificationToken, 'speech-test-token');
+    assert.equal(h.requestOptions[0].credentials, 'same-origin');
+    assert.equal(JSON.parse(h.requestOptions[0].body).maxCredits, 2);
 });
 
 for (const status of [401, 402, 429, 501, 502, 503]) {
@@ -312,4 +325,37 @@ test('fractional character billing requires accepting the whole maximum quote', 
     h.api.openSettings({ lang: 'Swedish' });
     await tick();
     assert.equal(h.controls.provider.value, 'browser');
+});
+
+
+test('delegated pronunciation buttons use saved voices and reset their accessible state', async () => {
+    const h = setup();
+    const attributes = { 'data-tts': 'Hej', 'data-tts-lang': 'Swedish' };
+    const classes = new Set();
+    const button = {
+        closest: selector => selector === '[data-tts]' ? button : null,
+        getAttribute: name => attributes[name],
+        setAttribute(name, value) { attributes[name] = value; },
+        classList: {
+            contains: name => classes.has(name),
+            toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); },
+        },
+    };
+    let prevented = false;
+    h.click({ target: button, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(attributes['aria-pressed'], 'true');
+    await tick();
+    assert.equal(h.spoken[0].text, 'Hej');
+    assert.equal(h.spoken[0].voice.voiceURI, 'sv-local');
+    assert.equal(attributes['aria-pressed'], 'false');
+    assert.equal(classes.has('is-playing'), false);
+});
+
+test('malformed stored billing consent never authorizes paid synthesis', async () => {
+    const h = setup(elevenlabsResponse(), { provider: 'elevenlabs', acceptedElevenLabsRate: '1' });
+    const result = await h.api.playSavedQueue([{ text: 'Hej', lang: 'Swedish' }]);
+    assert.equal(result.state, 'error');
+    assert.equal(result.error.message, 'Review rate in settings');
+    assert.equal(paidRequests(h).length, 0);
 });

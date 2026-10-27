@@ -399,3 +399,8 @@ tmp/
 output/
 docs/tmp/
 docs/output/
+
+# Frontend sources live in Glosify/Frontend; these are build outputs.
+Glosify/wwwroot/js/
+Glosify/wwwroot/css/
+Glosify.ClientTests/build/

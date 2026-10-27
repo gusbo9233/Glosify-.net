@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createAssistantRuns, isTerminal, isWaiting, isWorking, newer, sendAction } from '../Glosify/wwwroot/js/assistant/runs.js';
+import { createAssistantRuns, isTerminal, isWaiting, isWorking, newer, sendAction } from './build/assistant/runs.js';
 
 const run = (overrides = {}) => ({ id: 'run-1', threadId: 'chat-1', status: 'running', revision: 1, ...overrides });
 

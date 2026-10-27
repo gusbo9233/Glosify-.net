@@ -40,6 +40,14 @@ public sealed class MaterialSymbolInventoryTests
         @"\b(?:[A-Za-z_$][\w$]*)?[Ii]con\.textContent\s*=\s*([^;]+)",
         RegexOptions.Compiled);
 
+    private static readonly Regex JavaScriptIconMap = new(
+        @"\b\w*[Ii]cons\s*(?::[^=]+)?=\s*\{([^}]+)\}",
+        RegexOptions.Compiled);
+
+    private static readonly Regex JavaScriptIconMapValue = new(
+        @":\s*['""]([a-z0-9_]+)['""]",
+        RegexOptions.Compiled);
+
     private static readonly Regex JavaScriptQuotedName = new(
         @"['""]([a-z0-9_]+)['""]",
         RegexOptions.Compiled);
@@ -110,6 +118,7 @@ public sealed class MaterialSymbolInventoryTests
         { "iconButton('arrow_downward', 'Move down', action);", ["arrow_downward"] },
         { "readerTtsIcon.textContent = playing ? 'stop_circle' : 'volume_up';", ["stop_circle", "volume_up"] },
         { "icon.textContent = 'auto_awesome';", ["auto_awesome"] },
+        { "const toolIcons: Record<string, string> = { completed: 'check_circle', awaiting_approval: 'pending', superseded: 'remove_circle' };", ["check_circle", "pending", "remove_circle"] },
     };
 
     [Theory]
@@ -122,13 +131,15 @@ public sealed class MaterialSymbolInventoryTests
     private static IEnumerable<string> SourceFiles()
     {
         var web = WebProjectDirectory();
-        string[] roots = [Path.Combine(web, "Views"), Path.Combine(web, "wwwroot", "js")];
+        string[] roots = [Path.Combine(web, "Views"), Path.Combine(web, "Frontend")];
 
         return roots
             .Where(Directory.Exists)
             .SelectMany(root => Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}node_modules{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
             .Where(file => file.EndsWith(".cshtml", StringComparison.OrdinalIgnoreCase)
-                || file.EndsWith(".js", StringComparison.OrdinalIgnoreCase));
+                || file.EndsWith(".js", StringComparison.OrdinalIgnoreCase)
+                || file.EndsWith(".ts", StringComparison.OrdinalIgnoreCase));
     }
 
     private static IEnumerable<string> IconsIn(string text)
@@ -154,6 +165,14 @@ public sealed class MaterialSymbolInventoryTests
         foreach (Match match in JavaScriptIconButton.Matches(text))
         {
             yield return match.Groups[1].Value;
+        }
+
+        foreach (Match match in JavaScriptIconMap.Matches(text))
+        {
+            foreach (Match name in JavaScriptIconMapValue.Matches(match.Groups[1].Value))
+            {
+                yield return name.Groups[1].Value;
+            }
         }
 
         foreach (Match match in JavaScriptIconTextContent.Matches(text))

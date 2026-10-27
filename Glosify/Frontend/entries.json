@@ -1,0 +1,106 @@
+{
+  "learning-updates.js": {
+    "source": "shared/learning-updates.ts",
+    "format": "esm"
+  },
+  "assistant.js": {
+    "source": "assistant/assistant.ts",
+    "format": "esm"
+  },
+  "app-sidebar.js": {
+    "source": "shared/app-sidebar.ts",
+    "format": "iife"
+  },
+  "tts.js": {
+    "source": "shared/tts.ts",
+    "format": "iife"
+  },
+  "quiz-details.js": {
+    "source": "quiz/quiz-details.ts",
+    "format": "iife"
+  },
+  "flashcard-quiz.js": {
+    "source": "quiz/flashcard-quiz.ts",
+    "format": "iife"
+  },
+  "language-picker.js": {
+    "source": "shared/language-picker.ts",
+    "format": "esm"
+  },
+  "word-tabs.js": {
+    "source": "shared/word-tabs.ts",
+    "format": "iife"
+  },
+  "local-time.js": {
+    "source": "shared/local-time.ts",
+    "format": "iife"
+  },
+  "anki.js": {
+    "source": "anki/anki.ts",
+    "format": "iife"
+  },
+  "book-reader.js": {
+    "source": "books/book-reader.ts",
+    "format": "esm"
+  },
+  "guest-real-ui.js": {
+    "source": "guest/guest-real-ui.ts",
+    "format": "esm"
+  },
+  "app-settings.js": {
+    "source": "shared/app-settings.ts",
+    "format": "iife"
+  },
+  "quiz-settings.js": {
+    "source": "quiz/quiz-settings.ts",
+    "format": "iife"
+  },
+  "quiz-json-import.js": {
+    "source": "quiz/quiz-json-import.ts",
+    "format": "esm"
+  },
+  "site.js": {
+    "source": "shared/site.ts",
+    "format": "iife"
+  },
+  "saved-translations.js": {
+    "source": "saved-translations/saved-translations.ts",
+    "format": "iife"
+  },
+  "typing-quiz.js": {
+    "source": "quiz/typing-quiz.ts",
+    "format": "iife"
+  },
+  "books-library.js": {
+    "source": "books/books-library.ts",
+    "format": "esm"
+  },
+  "guest-login.js": {
+    "source": "guest/guest-login.ts",
+    "format": "iife"
+  },
+  "home-globe.js": {
+    "source": "home/home-globe.ts",
+    "format": "esm"
+  },
+  "quiz-library.js": {
+    "source": "quiz/quiz-library.ts",
+    "format": "iife"
+  },
+  "avatar/avatar.js": {
+    "source": "avatar/avatar.ts",
+    "format": "esm"
+  },
+  "avatar/scene.min.js": {
+    "source": "avatar/scene.source.ts",
+    "format": "esm"
+  },
+  "avatar/meshopt.worker.js": {
+    "source": "avatar/meshopt.worker.source.ts",
+    "format": "iife"
+  },
+  "avatar/capture.worklet.js": {
+    "source": "avatar/capture.worklet.ts",
+    "format": "iife"
+  }
+}

@@ -102,7 +102,9 @@ scripts/                         Development and operations helpers
 
 ## Local setup
 
-You need the .NET 10 SDK and Docker or another container runtime. Development
+You need the .NET 10 SDK, Node.js 24, and Docker or another container runtime.
+Install web assets before building: `npm ci --prefix Glosify/Frontend`.
+See [frontend ownership and build commands](Glosify/Frontend/README.md). Development
 uses the local SQL Server container rather than Azure SQL.
 
 ```bash
@@ -179,12 +181,15 @@ Use .NET 10 and Node.js 24. Install the locked JavaScript dependencies before
 running any npm check:
 
 ```bash
+npm ci --prefix Glosify/Frontend
 npm ci --prefix Glosify.ClientTests
 npm ci --prefix Glosify.LiveSubtitles.Extension
 npm ci --prefix Glosify.Translator.Extension
 
 dotnet test Glosify.slnx -c Release
 python3 -m unittest discover -s scripts -p 'test_*.py'
+npm run lint --prefix Glosify/Frontend
+npm run typecheck --prefix Glosify/Frontend
 npm test --prefix Glosify.ClientTests
 npm test --prefix Glosify.LiveSubtitles.Extension
 npm run lint --prefix Glosify.LiveSubtitles.Extension

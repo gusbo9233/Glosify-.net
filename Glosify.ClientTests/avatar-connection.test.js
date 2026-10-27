@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VoiceConnection } from '../Glosify/wwwroot/js/avatar/connection.js';
+import { VoiceConnection } from './build/avatar/connection.js';
 
 function setup(callbacks = {}) {
     let now = 0, nextId = 0;

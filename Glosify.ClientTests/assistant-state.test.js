@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload, removeChat, replaceChat, upsertChat } from '../Glosify/wwwroot/js/assistant/state.js';
+import { chatContext, chooseInitialChat, createRecoverablePromiseQueue, createRecoverableSingleFlight, materialPayload, removeChat, replaceChat, upsertChat } from './build/assistant/state.js';
 
 test('material context is all-or-nothing', () => {
     assert.deepEqual(materialPayload('book', 'book-1'), { contextTranscriptId: null, contextBookDocumentId: 'book-1' });

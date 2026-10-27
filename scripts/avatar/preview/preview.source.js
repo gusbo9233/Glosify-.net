@@ -11,10 +11,10 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
 import { ImportMeshAsync } from '@babylonjs/core/Loading/sceneLoader.js';
 import { ImageProcessingConfiguration } from '@babylonjs/core/Materials/imageProcessingConfiguration.js';
 import '@babylonjs/loaders/glTF';
-import '../../../Glosify/wwwroot/js/avatar/meshopt.js';
-import { createPerformance } from '../../../Glosify/wwwroot/js/avatar/performance.js';
-import { bindMorphTargets } from '../../../Glosify/wwwroot/js/avatar/morphs.js';
-import { createRenderLoop, portraitFraming } from '../../../Glosify/wwwroot/js/avatar/render-loop.js';
+import '../../../Glosify/Frontend/avatar/meshopt.js';
+import { createPerformance } from '../../../Glosify/Frontend/avatar/performance.js';
+import { bindMorphTargets } from '../../../Glosify/Frontend/avatar/morphs.js';
+import { createRenderLoop, portraitFraming } from '../../../Glosify/Frontend/avatar/render-loop.js';
 
 const canvas = document.getElementById('portrait');
 const status = document.getElementById('status');

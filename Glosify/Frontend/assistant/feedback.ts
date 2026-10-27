@@ -1,0 +1,65 @@
+export interface Feedback { rating: 'up' | 'down'; reasonCodes?: string[]; comment?: string | null; }
+export const feedbackReasons = {
+    up: [
+        ['helpful', 'Helpful'],
+        ['correct', 'Correct'],
+        ['clear', 'Clear'],
+        ['saved_time', 'Saved time'],
+        ['tool_worked', 'Action worked'],
+        ['other', 'Other'],
+    ],
+    down: [
+        ['incorrect', 'Incorrect'],
+        ['irrelevant', 'Not relevant'],
+        ['confusing', 'Confusing'],
+        ['too_slow', 'Too slow'],
+        ['tool_failed', 'Action failed'],
+        ['unsafe_or_inappropriate', 'Inappropriate'],
+        ['other', 'Other'],
+    ],
+};
+
+export const normalizeFeedback = (feedback: Feedback | null | undefined) => feedback ? {
+    rating: feedback.rating,
+    reasonCodes: Array.isArray(feedback.reasonCodes) ? [...new Set(feedback.reasonCodes)] : [],
+    comment: feedback.comment || null,
+} : null;
+
+/**
+ * Which half of the feedback control is visible.
+ *
+ * A rating opens the detail form so reasons and a comment can be added. Saving those details
+ * closes it and thanks the user, because re-rendering the same open form on success was
+ * indistinguishable from the click doing nothing. Changing or clearing the rating reopens it.
+ */
+export const feedbackPanelState = (feedback: Feedback | null, acknowledged: boolean) => ({
+    showDetails: Boolean(feedback) && !acknowledged,
+    showThanks: Boolean(feedback) && acknowledged,
+});
+
+/**
+ * What the detail form should show: the user's unsaved edits when there are any, otherwise
+ * what the server has stored.
+ *
+ * A failed save reverts the rating to the last persisted value, and the form must not revert
+ * with it — the reasons and comment the user just tried to send are the ones they need back in
+ * front of them to retry.
+ */
+export const feedbackFormValues = (feedback: Feedback | null, draft: Pick<Feedback, "reasonCodes" | "comment"> | null) => {
+    const source = draft ?? feedback;
+    return {
+        reasonCodes: source?.reasonCodes ?? [],
+        comment: source?.comment ?? '',
+    };
+};
+
+export const validClientDuration = (milliseconds: unknown) =>
+    typeof milliseconds === 'number' && Number.isFinite(milliseconds) && milliseconds >= 0 && milliseconds <= 900000;
+
+export const createLatestRequestGate = () => {
+    let latestRequest = 0;
+    return {
+        next: () => ++latestRequest,
+        isCurrent: (request: number) => request === latestRequest,
+    };
+};

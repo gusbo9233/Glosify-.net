@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { avatarAssociations } from '../Glosify/wwwroot/js/assistant/avatar-context.js';
+import { avatarAssociations } from './build/assistant/avatar-context.js';
 
 test('reloading retains opaque conversation/chat associations only for that account', () => {
     const values = new Map(); const storage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };

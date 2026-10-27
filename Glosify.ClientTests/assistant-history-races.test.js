@@ -1,13 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { loadBrowserModule } from './browser-module.js';
 import vm from 'node:vm';
-import { createLatestRequestGate } from '../Glosify/wwwroot/js/assistant/feedback.js';
-import { isTerminal, isWaiting } from '../Glosify/wwwroot/js/assistant/runs.js';
-
-const source = readFileSync(new URL('../Glosify/wwwroot/js/assistant.js', import.meta.url), 'utf8');
-// Execute the production render/reload functions with a minimal DOM and deferred HTTP.
-const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end));
 const deferred = () => {
     let resolve, reject;
     const promise = new Promise((done, fail) => { resolve = done; reject = fail; });
@@ -30,39 +24,36 @@ const element = (tagName = 'div') => ({
         return this.children.flatMap(child => [...(child.tagName === 'button' ? [child] : []), ...(child.querySelectorAll?.(selector) || [])]);
     },
 });
-const harness = () => {
+const harness = async () => {
     const transcript = element();
     const selection = { threadId: 'chat', historyLoaded: true };
     const requests = [];
     const discovery = deferred();
     const answers = [];
+    const runs = { discover: () => discovery.promise, answer: (threadId, values) => {
+        const pending = deferred(); answers.push({ ...pending, values }); return pending.promise;
+    }};
     const context = vm.createContext({
-        transcript, document: { createElement: element }, empty: null,
-        historyGate: createLatestRequestGate(), chatSelection: selection, ownsSelection: value => value === selection,
-        defaultEmptyText: '', renderEmptyState: element, renderParts() {}, bubble: text => ({ dataset: {}, text }),
-        isTerminal, isWaiting, button: element, runStatusText: {}, t: (_key, fallback) => fallback,
-        setStatus() {},
-        chatHistoryUrl: id => id,
-        runs: { discover: () => discovery.promise, answer: (threadId, values) => { const pending = deferred(); answers.push({ ...pending, values }); return pending.promise; } },
+        document: { createElement: element }, window: {},
         fetch: () => { const pending = deferred(); requests.push(pending); return pending.promise; },
     });
-    vm.runInContext([
-        section('    const button = (label, className, onClick,', '    const renderUndo ='),
-        section('    const renderQuestion =', '    const renderApproval ='),
-        section('    const resetTranscript =', '    const getActiveChat ='),
-        section('    const renderMessage =', '    const renderFeedback ='),
-        section('    const renderRun =', '    const runs ='),
-        section('    const loadHistory =', '    const selectCreatedQuiz ='),
-        'const callbacks = {' + section('        onUpdate: async run => {', '    });\n\n    const loadHistory') + '};',
-        'globalThis.ui = { renderRun, renderMessage, renderQuestion, loadHistory, onUpdate: callbacks.onUpdate };',
-    ].join('\n'), context);
-    return { ...context.ui, transcript, selection, requests, discovery, answers };
+    const { createTranscriptView } = await loadBrowserModule(new URL('./build/assistant/transcript-view.js', import.meta.url), context, {
+        './message-parts.js': { renderParts() {}, bubble: text => ({ dataset: {}, text }) },
+    });
+    const { createRunControls } = await loadBrowserModule(new URL('./build/assistant/run-controls.js', import.meta.url), context);
+    const dependencies = { getRuns: () => runs, setStatus() {}, afterUndo: async () => {} };
+    const ui = createTranscriptView({ ...dependencies, transcript, empty: null, defaultEmptyText: '',
+        getTitle: () => 'Assistant', getSelection: () => selection, onRunUpdate() {},
+        renderPendingChanges: element, renderFeedback: element,
+    });
+    const { renderQuestion } = createRunControls(dependencies);
+    return { ...ui, renderQuestion, transcript, selection, requests, discovery, answers };
 };
 const response = messages => ({ ok: true, json: async () => ({ messages }) });
 const run = (id, status = 'running') => ({ id, threadId: 'chat', status, parts: [], savedChanges: 0 });
 
 test('a terminal history response cannot erase a newer message and live run', async () => {
-    const h = harness();
+    const h = await harness();
     h.renderRun(run('A', 'completed'));
     const history = h.loadHistory(h.selection, false);
     h.renderMessage({ id: 'user-B', role: 'user', text: 'Next request' });
@@ -75,7 +66,7 @@ test('a terminal history response cannot erase a newer message and live run', as
 });
 
 test('only the latest overlapping history request may rebuild the transcript', async () => {
-    const h = harness();
+    const h = await harness();
     const older = h.loadHistory(h.selection, false);
     const latest = h.loadHistory(h.selection, false);
     h.requests[1].resolve(response([{ id: 'new', role: 'model', text: 'Latest' }]));
@@ -87,7 +78,7 @@ test('only the latest overlapping history request may rebuild the transcript', a
 });
 
 test('delayed run discovery cannot add an older run after a newer render', async () => {
-    const h = harness();
+    const h = await harness();
     const history = h.loadHistory(h.selection);
     h.requests[0].resolve(response([]));
     assert.equal(await history, true);
@@ -99,7 +90,7 @@ test('delayed run discovery cannot add an older run after a newer render', async
 });
 
 test('stream updates while reopening a chat do not invalidate its initial history load', async () => {
-    const h = harness();
+    const h = await harness();
     h.selection.historyLoaded = false;
     const history = h.loadHistory(h.selection, false);
     await h.onUpdate(run('existing'));
@@ -109,7 +100,7 @@ test('stream updates while reopening a chat do not invalidate its initial histor
 });
 
 test('answering disables all question options and a failure permits a new choice', async () => {
-    const h = harness();
+    const h = await harness();
     const card = h.renderQuestion({ threadId: 'chat', question: { question: 'Choose', options: ['First', 'Second'], multiple: false } });
     const buttons = card.querySelectorAll('button');
     const first = buttons[0].click();
@@ -129,7 +120,7 @@ test('answering disables all question options and a failure permits a new choice
 });
 
 test('multiple answers stay selectable and can be deselected before one submission', async () => {
-    const h = harness();
+    const h = await harness();
     const card = h.renderQuestion({ threadId: 'chat', question: { question: 'Choose', options: ['First', 'Second'], multiple: true } });
     const buttons = card.querySelectorAll('button');
     await buttons[0].click();
@@ -146,7 +137,7 @@ test('multiple answers stay selectable and can be deselected before one submissi
 });
 
 for (const status of ['completed', 'failed', 'cancelled']) test(`duplicate ${status} render keeps its saved history reload valid`, async () => {
-    const h = harness(); const terminal = { ...run('A', status), revision: 3 };
+    const h = await harness(); const terminal = { ...run('A', status), revision: 3 };
     h.renderRun(terminal); const history = h.loadHistory(h.selection, false);
     h.renderRun(terminal);
     h.requests[0].resolve(response([{ id: 'saved', role: 'model', text: 'Completed reply' }]));

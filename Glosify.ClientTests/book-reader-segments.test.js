@@ -1,18 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import vm from 'node:vm';
-
-const reader = readFileSync(new URL('../Glosify/wwwroot/js/book-reader.js', import.meta.url), 'utf8');
-// Execute the production page-segmentation code before the reader's DOM/event and PDF-loading setup.
-const boundary = reader.indexOf('const decorateTextLayer =');
-assert.ok(boundary > 0);
-function segment(items, intl = Intl) {
-    const build = vm.runInNewContext(`${reader.slice(0, boundary)}; buildPageSegments;`, {
-        document: { querySelector: () => null }, window: {}, Intl: intl,
-    });
-    return JSON.parse(JSON.stringify(build({ items })));
-}
+import { buildPageSegments, findSelectedSegments } from './build/books/segments.js';
+const segment = (items, intl = Intl) => buildPageSegments({ items }, intl);
 function verifyOffsets(items, segments) {
     const reconstructed = items.map(() => '');
     segments.forEach((entry, index) => {
@@ -104,18 +93,10 @@ for (const [name, intl] of [['Intl', Intl], ['fallback', {}]]) {
 }
 
 function selectedIndices(items, selectedText, preferred = []) {
-    const start = reader.indexOf('const findSelectedSegments =');
-    const end = reader.indexOf('const positionPopover =', start);
-    assert.ok(start > 0 && end > start);
-    const select = vm.runInNewContext(`${reader.slice(0, boundary)}
-${reader.slice(start, end)}
-(items, selected, preferred) => {
-        currentSegments = buildPageSegments({ items });
-        const result = { segments: currentSegments.map(({ index, paragraphIndex, sourceText }) =>
-            ({ index, paragraphIndex, sourceText, translation: 'translated ' + index })) };
-        return findSelectedSegments(selected, result, preferred).map(segment => segment.index);
-    };`, { document: { querySelector: () => null }, window: {}, Intl });
-    return JSON.parse(JSON.stringify(select(items, selectedText, preferred)));
+    const currentSegments = buildPageSegments({ items });
+    const result = { segments: currentSegments.map(({ index, paragraphIndex, sourceText }) =>
+        ({ index, paragraphIndex, sourceText, translation: 'translated ' + index })) };
+    return findSelectedSegments(selectedText, result, preferred, currentSegments).map(segment => segment.index);
 }
 
 test('A source selection spanning an unbroken size boundary matches both translated pieces', () => {

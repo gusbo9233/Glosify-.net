@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { mountGlobe, resolveGlobeFocus, projectGlobePoint, renderGlobePaths } from '../Glosify/wwwroot/js/home-globe.js';
+import { mountGlobe, resolveGlobeFocus, projectGlobePoint, renderGlobePaths } from './build/home/home-globe.js';
 
 const catalog = readFileSync(new URL('../Glosify/Services/Language/QuizLanguageCatalog.cs', import.meta.url), 'utf8');
 
