@@ -3243,7 +3243,6 @@ body { margin: 0; }
 }
 
 .glass-card > .auth-form:has(input[name="provider"]) .btn-primary-pill:hover {
-    background: var(--primary-fixed);
     transform: translateY(-1px);
     border-color: rgba(255,255,255, 0.14);
     background: var(--surface-bright);

@@ -50,10 +50,10 @@ internal sealed class AssistantSyncAdapter(
             view = await runs.ViewAsync(view.Id, userId, cancellationToken);
         }
 
-        return await ResponseAsync(view, userId, cancellationToken);
+        return await ResponseAsync(view, cancellationToken);
     }
 
-    private async Task<AssistantTurnResponse> ResponseAsync(AssistantRunView view, string userId, CancellationToken cancellationToken)
+    private async Task<AssistantTurnResponse> ResponseAsync(AssistantRunView view, CancellationToken cancellationToken)
     {
         var message = await db.AssistantMessages.AsNoTracking()
             .SingleAsync(candidate => candidate.Id == view.MessageId, cancellationToken);

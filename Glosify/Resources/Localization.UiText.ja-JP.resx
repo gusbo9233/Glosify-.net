@@ -1708,4 +1708,6 @@
   <data name="Transcripts.AvatarConversationFor" xml:space="preserve"><value>Speaking の会話 · {0}</value></data>
   <data name="Transcripts.SpokenTurnOne" xml:space="preserve"><value>発話数：{0}</value></data>
   <data name="Transcripts.SpokenTurnMany" xml:space="preserve"><value>発話数：{0}</value></data>
+  <data name="Settings.RangeStart" xml:space="preserve"><value>範囲の開始（%）</value></data>
+  <data name="Settings.RangeEnd" xml:space="preserve"><value>範囲の終了（%）</value></data>
 </root>

@@ -225,9 +225,9 @@
         </header>
 
         <details class="json-import-instructions">
-            <summary>@Text["Quiz.JsonImportInstructionsSummary"]</summary>
+            <summary id="jsonImportInstructionsTitle">@Text["Quiz.JsonImportInstructionsSummary"]</summary>
             <p>@Text["Quiz.JsonImportInstructionsHelp"]</p>
-            <textarea class="json-import-prompt" data-json-import-generation-prompt readonly>@presentation.JsonGenerationPrompt</textarea>
+            <textarea class="json-import-prompt" aria-labelledby="jsonImportInstructionsTitle" data-json-import-generation-prompt readonly>@presentation.JsonGenerationPrompt</textarea>
             <button class="json-import-copy" type="button" data-copy-json-import-prompt>
                 <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
                 @Text["Quiz.JsonImportCopyInstructions"]
@@ -329,7 +329,7 @@
             </div>
             }
             <div class="form-group">
-                <label class="form-label">@(isFreestyle ? "Learning mode" : Text["Quiz.TargetLanguage"])</label>
+                <span class="form-label">@(isFreestyle ? "Learning mode" : Text["Quiz.TargetLanguage"])</span>
                 <input type="hidden" name="TargetLanguage" value="@currentLanguage" />
                 <div class="form-input target-language-display">
                     <span>@displayLanguage</span>

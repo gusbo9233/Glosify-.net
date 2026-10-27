@@ -88,7 +88,7 @@ test("translator stays private to its extension frame and requires explicit tran
     await expect(frame.locator("#source-text")).toHaveValue("private typed text");
     await frame.locator("#preferences").fill("Informal Mexican Spanish");
     await translate(frame);
-    await expect(frame.locator(".result")).toHaveText("Hola\nmundo");
+    await expect(frame.getByRole("region", { name: "Translation", exact: true })).toHaveText("Hola\nmundo");
     expect(app.mock.translateRequests).toHaveLength(1);
     expect(app.mock.saveRequests).toHaveLength(0);
     await frame.locator("#save-language").selectOption("en");

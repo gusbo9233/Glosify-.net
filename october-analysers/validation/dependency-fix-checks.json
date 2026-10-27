@@ -1,0 +1,152 @@
+[
+  {
+    "finding_id": "1040418099",
+    "advisory": "CVE-2026-109869",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1040418098",
+    "advisory": "CVE-2026-109924",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1040418097",
+    "advisory": "CVE-2026-109841",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478517",
+    "advisory": "GHSA-rgj7-g3m4-5g8c",
+    "package": "sharp",
+    "previous_version": "0.35.2",
+    "current_versions": [
+      "0.35.5"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478516",
+    "advisory": "CVE-2026-19534",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478515",
+    "advisory": "CVE-2026-84961",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478514",
+    "advisory": "GHSA-wq5f-xc86-pv6w",
+    "package": "sharp",
+    "previous_version": "0.35.2",
+    "current_versions": [
+      "0.35.5"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478513",
+    "advisory": "CVE-2026-84933",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478512",
+    "advisory": "CVE-2026-85024",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478511",
+    "advisory": "CVE-2026-84890",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478510",
+    "advisory": "CVE-2026-18149",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478509",
+    "advisory": "CVE-2026-85014",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478508",
+    "advisory": "CVE-2026-84947",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478507",
+    "advisory": "CVE-2026-85008",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  },
+  {
+    "finding_id": "1030478506",
+    "advisory": "CVE-2026-18540",
+    "package": "undici",
+    "previous_version": "7.29.0",
+    "current_versions": [
+      "7.30.1"
+    ],
+    "status": "no locked version falls in the exported affected ranges"
+  }
+]

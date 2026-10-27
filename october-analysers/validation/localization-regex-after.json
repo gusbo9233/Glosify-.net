@@ -1,0 +1,26 @@
+{
+  "resourceValuesCompared": 8148,
+  "randomCasesCompared": 10000,
+  "measurements": [
+    {
+      "digits": 1000,
+      "milliseconds": 0.003
+    },
+    {
+      "digits": 2000,
+      "milliseconds": 0.003
+    },
+    {
+      "digits": 4000,
+      "milliseconds": 0.003
+    },
+    {
+      "digits": 8000,
+      "milliseconds": 0.007
+    },
+    {
+      "digits": 64000,
+      "milliseconds": 0.026
+    }
+  ]
+}

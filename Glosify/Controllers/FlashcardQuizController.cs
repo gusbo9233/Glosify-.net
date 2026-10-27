@@ -200,51 +200,55 @@ public class FlashcardQuizController : Controller
 
     private static FlashcardQuizViewModel BuildViewModel(FlashcardSessionData session, Quiz quiz)
     {
-        var isFreestyle = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage);
-        var totalCards = session.Cards.Count;
-        var completedCards = Math.Min(session.CurrentIndex, totalCards);
-        var currentCardData = session.CurrentIndex < totalCards ? session.Cards[session.CurrentIndex] : null;
-        var currentCard = currentCardData == null ? null : new FlashcardWordViewModel
+        // Read one consistent view while Reveal and Rate mutate the cached session.
+        lock (session)
         {
-            Prompt = currentCardData.Prompt,
-            Answer = currentCardData.Answer,
-            ExampleSentence = currentCardData.ExampleSentence,
-            ExampleTranslation = currentCardData.ExampleTranslation
-        };
-        var totalAnswered = session.RememberedCount + session.AgainCount;
+            var isFreestyle = QuizLanguageCatalog.IsFreestyle(quiz.TargetLanguage);
+            var totalCards = session.Cards.Count;
+            var completedCards = Math.Min(session.CurrentIndex, totalCards);
+            var currentCardData = session.CurrentIndex < totalCards ? session.Cards[session.CurrentIndex] : null;
+            var currentCard = currentCardData == null ? null : new FlashcardWordViewModel
+            {
+                Prompt = currentCardData.Prompt,
+                Answer = currentCardData.Answer,
+                ExampleSentence = currentCardData.ExampleSentence,
+                ExampleTranslation = currentCardData.ExampleTranslation
+            };
+            var totalAnswered = session.RememberedCount + session.AgainCount;
 
-        return new FlashcardQuizViewModel
-        {
-            SelectedQuiz = QuizCard.From(quiz),
-            CurrentCard = currentCard,
-            SessionId = session.SessionId,
-            QuizId = session.QuizId,
-            CurrentIndex = session.CurrentIndex,
-            CurrentCardNumber = currentCard == null ? totalCards : session.CurrentIndex + 1,
-            TotalCards = totalCards,
-            CompletedCards = completedCards,
-            RememberedCount = session.RememberedCount,
-            AgainCount = session.AgainCount,
-            SkippedCount = session.SkippedCount,
-            WordCount = session.WordCount,
-            WordRangeStart = session.WordRangeStart,
-            WordRangeEnd = session.WordRangeEnd,
-            SelectedWordIds = session.SelectedWordIds,
-            PracticeDirection = session.PracticeDirection,
-            PromptLanguage = session.PromptLanguage,
-            AnswerLanguage = session.AnswerLanguage,
-            DirectionLabel = isFreestyle
-                ? (PracticeDirection.IsTargetToSource(session.PracticeDirection) ? "Answer → Prompt" : "Prompt → Answer")
-                : PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
-            PracticeItemType = session.PracticeItemType,
-            ItemSingularLabel = isFreestyle ? "item" : PracticeItemType.SingularLabel(session.PracticeItemType),
-            ItemPluralLabel = isFreestyle ? "items" : PracticeItemType.PluralLabel(session.PracticeItemType),
-            CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
-            IsAnswerRevealed = session.IsAnswerRevealed,
-            IsComplete = totalCards > 0 && currentCard == null,
-            ScorePercent = totalAnswered == 0 ? 0 : (int)Math.Round(session.RememberedCount * 100d / totalAnswered),
-            ProgressPercent = totalCards == 0 ? 0 : (int)Math.Round(completedCards * 100d / totalCards)
-        };
+            return new FlashcardQuizViewModel
+            {
+                SelectedQuiz = QuizCard.From(quiz),
+                CurrentCard = currentCard,
+                SessionId = session.SessionId,
+                QuizId = session.QuizId,
+                CurrentIndex = session.CurrentIndex,
+                CurrentCardNumber = currentCard == null ? totalCards : session.CurrentIndex + 1,
+                TotalCards = totalCards,
+                CompletedCards = completedCards,
+                RememberedCount = session.RememberedCount,
+                AgainCount = session.AgainCount,
+                SkippedCount = session.SkippedCount,
+                WordCount = session.WordCount,
+                WordRangeStart = session.WordRangeStart,
+                WordRangeEnd = session.WordRangeEnd,
+                SelectedWordIds = session.SelectedWordIds,
+                PracticeDirection = session.PracticeDirection,
+                PromptLanguage = session.PromptLanguage,
+                AnswerLanguage = session.AnswerLanguage,
+                DirectionLabel = isFreestyle
+                    ? (PracticeDirection.IsTargetToSource(session.PracticeDirection) ? "Answer → Prompt" : "Prompt → Answer")
+                    : PracticeDirection.Label(session.PracticeDirection, session.SourceLanguage, session.TargetLanguage),
+                PracticeItemType = session.PracticeItemType,
+                ItemSingularLabel = isFreestyle ? "item" : PracticeItemType.SingularLabel(session.PracticeItemType),
+                ItemPluralLabel = isFreestyle ? "items" : PracticeItemType.PluralLabel(session.PracticeItemType),
+                CardLabel = isFreestyle ? "Item" : PracticeItemType.CardLabel(session.PracticeItemType),
+                IsAnswerRevealed = session.IsAnswerRevealed,
+                IsComplete = totalCards > 0 && currentCard == null,
+                ScorePercent = totalAnswered == 0 ? 0 : (int)Math.Round(session.RememberedCount * 100d / totalAnswered),
+                ProgressPercent = totalCards == 0 ? 0 : (int)Math.Round(completedCards * 100d / totalCards)
+            };
+        }
     }
 
     [HttpPost]

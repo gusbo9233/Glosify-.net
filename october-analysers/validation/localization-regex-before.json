@@ -1,0 +1,21 @@
+{
+  "measurements": [
+    {
+      "digits": 1000,
+      "milliseconds": 4.579
+    },
+    {
+      "digits": 2000,
+      "milliseconds": 18.079
+    },
+    {
+      "digits": 4000,
+      "milliseconds": 71.949
+    },
+    {
+      "digits": 8000,
+      "milliseconds": 288.561
+    }
+  ],
+  "maxResourceLength": 268
+}

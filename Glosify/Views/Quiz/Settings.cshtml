@@ -64,10 +64,10 @@
                     <div class="range-slider-track">
                         <div class="range-slider-fill" data-range-fill></div>
                     </div>
-                    <input type="range" name="WordRangeStart" min="0" max="100" step="5" value="0" class="range-thumb range-thumb-min" data-range-min />
-                    <input type="range" name="WordRangeEnd" min="0" max="100" step="5" value="100" class="range-thumb range-thumb-max" data-range-max />
+                    <input type="range" name="WordRangeStart" aria-label="@Text["Settings.RangeStart"]" aria-describedby="wordRangeDescription" min="0" max="100" step="5" value="0" class="range-thumb range-thumb-min" data-range-min />
+                    <input type="range" name="WordRangeEnd" aria-label="@Text["Settings.RangeEnd"]" aria-describedby="wordRangeDescription" min="0" max="100" step="5" value="100" class="range-thumb range-thumb-max" data-range-max />
                 </div>
-                <p class="range-slider-label" data-range-label>@(presentation.IsFreestyle ? "All items in creation order" : Text["Settings.AllWordsOrder"])</p>
+                <p class="range-slider-label" id="wordRangeDescription" data-range-label>@(presentation.IsFreestyle ? "All items in creation order" : Text["Settings.AllWordsOrder"])</p>
 
                 <input type="hidden" name="SelectedWordIds" data-selected-word-ids value="" />
                 <div class="word-picker-row" data-word-picker-row>
@@ -89,7 +89,7 @@
                     <div class="word-picker-toolbar">
                         <button type="button" class="range-preset" data-select-all>@Text["Settings.SelectAll"]</button>
                         <button type="button" class="range-preset" data-deselect-all>@Text["Settings.DeselectAll"]</button>
-                        <input type="search" class="word-picker-search" placeholder="@(presentation.IsFreestyle ? "Filter items" : Text["Settings.FilterWords"] )" data-word-picker-search />
+                        <input type="search" class="word-picker-search" aria-label="@(presentation.IsFreestyle ? "Filter items" : Text["Settings.FilterWords"])" placeholder="@(presentation.IsFreestyle ? "Filter items" : Text["Settings.FilterWords"] )" data-word-picker-search />
                         <span class="word-picker-count" data-word-picker-count></span>
                     </div>
                     <div class="word-picker-list">

@@ -1,0 +1,79 @@
+{
+  "bookFallback": [
+    {
+      "length": 10000,
+      "ms": 0.771
+    },
+    {
+      "length": 100000,
+      "ms": 0.2
+    },
+    {
+      "length": 1000000,
+      "ms": 2.312
+    }
+  ],
+  "boundedChat": [
+    {
+      "inputLength": 800,
+      "ms": 16.988
+    },
+    {
+      "inputLength": 8000,
+      "ms": 2.382
+    },
+    {
+      "inputLength": 80000,
+      "ms": 1.968
+    }
+  ],
+  "pdfRegexes": [
+    {
+      "offset": 13924,
+      "pattern": "[^/?#=]+\\.pdf\\b(?!.*\\.pdf\\b)",
+      "inputLength": 8000,
+      "ms": 184.938
+    },
+    {
+      "offset": 13958,
+      "pattern": "^(?:(?:[^:]+:)?\\/\\/[^/]+)?([^?#]*)(\\?[^#]*)?(#.*)?$",
+      "inputLength": 8000,
+      "ms": 0.268
+    },
+    {
+      "offset": 80564,
+      "pattern": "Mozilla\\/5.0.*?rv:\\d+.*? Gecko",
+      "inputLength": 8017,
+      "ms": 9.678
+    },
+    {
+      "offset": 159235,
+      "pattern": "[^\\S ]+$",
+      "inputLength": 8001,
+      "ms": 128.161
+    },
+    {
+      "offset": 237911,
+      "pattern": "\\w*[^\\w]*$",
+      "inputLength": 8002,
+      "ms": 319.543
+    }
+  ],
+  "pdfCancel": [
+    {
+      "name": "PDFFetchStreamReader",
+      "unhandled": [
+        "PDFFetchStreamReader interrupted response body"
+      ],
+      "aborted": true
+    },
+    {
+      "name": "PDFFetchStreamRangeReader",
+      "unhandled": [
+        "PDFFetchStreamRangeReader interrupted response body"
+      ],
+      "aborted": true
+    }
+  ],
+  "pdfHeaderAndFilename": "passed"
+}

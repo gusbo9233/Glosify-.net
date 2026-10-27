@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Reflection;
 using Glosify.Services;
 using Glosify.Services.Flashcards;
 using Glosify.Services.Quizzes;
@@ -8,6 +10,53 @@ namespace Glosify.Tests;
 
 public class QuizSessionRegistryTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RemovingAnOldUserEntry_DoesNotLoseAReplacementSession(bool findActive)
+    {
+        using var cache = new MemoryCache(new MemoryCacheOptions());
+        var registry = new QuizSessionRegistry(cache);
+        var service = new FlashcardSessionService(cache, registry);
+        var oldSession = StartFlashcardSession(service, "user-1", Guid.NewGuid(), cardCount: 2);
+        service.SaveSession(oldSession);
+        var replacement = StartFlashcardSession(service, "user-1", Guid.NewGuid(), cardCount: 2);
+
+        // Hold the original list so the competing request has fetched that entry
+        // but cannot inspect it until it has been removed and replaced.
+        var entries = (ConcurrentDictionary<string, List<ActiveQuizSession>>)typeof(QuizSessionRegistry)
+            .GetField("_sessionsByUser", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(registry)!;
+        Exception? failure = null;
+        var request = new Thread(() =>
+        {
+            try
+            {
+                if (findActive)
+                    service.FindResumableSession("user-1", oldSession.QuizId,
+                        PracticeDirection.SourceToTarget, PracticeItemType.Words, 2);
+                else
+                    registry.Deregister("user-1", oldSession.SessionId);
+            }
+            catch (Exception exception) { failure = exception; }
+        });
+        bool waiting;
+        lock (entries["user-1"])
+        {
+            request.Start();
+            waiting = SpinWait.SpinUntil(() => (request.ThreadState & ThreadState.WaitSleepJoin) != 0,
+                TimeSpan.FromSeconds(5));
+            registry.Deregister("user-1", oldSession.SessionId);
+            service.SaveSession(replacement);
+        }
+
+        Assert.True(request.Join(TimeSpan.FromSeconds(5)), "The competing request did not finish.");
+        Assert.True(waiting, "The competing request did not reach the original list lock.");
+        Assert.Null(failure);
+        var resumed = service.FindResumableSession("user-1", replacement.QuizId,
+            PracticeDirection.SourceToTarget, PracticeItemType.Words, 2);
+        Assert.Equal(replacement.SessionId, resumed?.SessionId);
+    }
+
     [Fact]
     public void SaveSession_MakesSessionResumableWithMatchingSettings()
     {

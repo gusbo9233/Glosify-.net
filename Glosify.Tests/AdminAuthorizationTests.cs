@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using AngleSharp.Html.Parser;
 using Glosify.Data;
 using Glosify.Models.Entities;
 using Microsoft.AspNetCore.Authentication;
@@ -58,6 +59,16 @@ public sealed class AdminAuthorizationTests
 
         response.EnsureSuccessStatusCode();
         Assert.Equal("text/html; charset=utf-8", response.Content.Headers.ContentType?.ToString());
+        var page = new HtmlParser().ParseDocument(await response.Content.ReadAsStringAsync());
+        foreach (var (name, expectedLabel) in new[] { ("search", "Search users by email"), ("Credits", "Grant credits to"), ("Note", "Note") })
+        {
+            var input = page.QuerySelector($"input[name='{name}']");
+            Assert.NotNull(input);
+            Assert.False(string.IsNullOrWhiteSpace(input.Id));
+            var label = page.QuerySelector($"label[for='{input.Id}']");
+            Assert.NotNull(label);
+            Assert.Contains(expectedLabel, label.TextContent, StringComparison.Ordinal);
+        }
     }
 
     [Fact]

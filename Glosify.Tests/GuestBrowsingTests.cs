@@ -110,6 +110,29 @@ public sealed class GuestBrowsingTests : IClassFixture<GuestWebApplicationFactor
     }
 
     [Fact]
+    public async Task Quiz_controls_have_explicit_names_and_range_descriptions()
+    {
+        var library = new HtmlParser().ParseDocument(await _client.GetStringAsync("/Quiz"));
+        var prompt = library.QuerySelector("[data-json-import-generation-prompt]");
+        Assert.NotNull(prompt);
+        var promptLabel = library.GetElementById(prompt.GetAttribute("aria-labelledby")!);
+        Assert.NotNull(promptLabel);
+        Assert.Contains("instructions", promptLabel.TextContent, StringComparison.OrdinalIgnoreCase);
+
+        var settings = new HtmlParser().ParseDocument(await _client.GetStringAsync("/preview/quiz/sample/settings"));
+        foreach (var (name, label) in new[] { ("WordRangeStart", "Range start (%)"), ("WordRangeEnd", "Range end (%)") })
+        {
+            var input = settings.QuerySelector($"input[name='{name}']");
+            Assert.NotNull(input);
+            Assert.Equal(label, input.GetAttribute("aria-label"));
+            var description = settings.GetElementById(input.GetAttribute("aria-describedby")!);
+            Assert.NotNull(description);
+            Assert.Contains("oldest to newest", description.TextContent, StringComparison.OrdinalIgnoreCase);
+        }
+        Assert.Equal("Filter words…", settings.QuerySelector("[data-word-picker-search]")?.GetAttribute("aria-label"));
+    }
+
+    [Fact]
     public async Task TypingResultsRestart_RemainsLocalPractice()
     {
         var page = new HtmlParser().ParseDocument(await _client.GetStringAsync("/preview/quiz/sample/practice/typing"));

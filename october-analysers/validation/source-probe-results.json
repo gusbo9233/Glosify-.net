@@ -1,0 +1,30 @@
+[
+  {
+    "name": "TTS extra arguments",
+    "evidence": "The actual safeCall implementation forwards both arguments through arguments/apply."
+  },
+  {
+    "name": "books-library floating promise",
+    "evidence": "Current module handles document.destroy() rejection and retains the rendered thumbnail. Queue continuation and render-error preservation are covered by Glosify.ClientTests/books-library.test.js."
+  },
+  {
+    "name": "Named field",
+    "evidence": "Glosify/Views/Quiz/Settings.cshtml name=\"WordRangeStart\" has an explicit ARIA naming attribute; rendered associations are covered by .NET view tests."
+  },
+  {
+    "name": "Named field",
+    "evidence": "Glosify/Views/Quiz/Settings.cshtml name=\"WordRangeEnd\" has an explicit ARIA naming attribute; rendered associations are covered by .NET view tests."
+  },
+  {
+    "name": "Named field",
+    "evidence": "Glosify/Views/Quiz/Index.cshtml data-json-import-generation-prompt has an explicit ARIA naming attribute; rendered associations are covered by .NET view tests."
+  },
+  {
+    "name": "CSS background cleanup",
+    "evidence": "One background declaration preserves the previously effective --surface-bright value."
+  },
+  {
+    "name": "Learning redirect regex",
+    "evidence": "Actual helper accepts the same-origin Quiz library and rejects external/unrecognized regex-like resources."
+  }
+]
