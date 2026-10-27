@@ -377,6 +377,81 @@ public sealed class AnkiCollectionServiceTests
             card => Assert.Equal(secondId, sentences ? card.Note.SentenceId.ToString() : card.Note.WordId));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Removing_a_pair_excludes_both_word_and_sentence_copies(bool sentenceActive)
+    {
+        await using var f = await Fixture.CreateAsync();
+        var sentence = await f.Context.QuizSentences.FirstAsync();
+        sentence.Text = f.Word.Lemma;
+        sentence.Translation = f.Word.Translation;
+        await f.Context.SaveChangesAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddItemAsync(new(collection.Id, f.Quiz.Id,
+            sentenceActive ? PracticeItemType.Sentences : PracticeItemType.Words,
+            sentenceActive ? sentence.Id.ToString() : f.Word.Id, true, true), UserId);
+        await f.Collections.AddQuizForLanguageAsync("Polish", "UTC", f.Quiz.Id, true, UserId);
+        var active = await f.Context.AnkiNotes.SingleAsync(note => note.TargetText == f.Word.Lemma && note.IsActive);
+        Assert.Equal(sentenceActive ? PracticeItemType.Sentences : PracticeItemType.Words, active.ItemType);
+        var reviewed = active.Cards.First();
+        reviewed.ReviewCount = 5;
+        reviewed.Stability = 12;
+        await f.Context.SaveChangesAsync();
+
+        Assert.True(await f.Collections.SetMembershipAsync(collection.Id, [],
+            [new(f.Quiz.Id, active.ItemType, active.WordId ?? active.SentenceId!.Value.ToString())], UserId));
+
+        f.Context.ChangeTracker.Clear();
+        var fresh = new AnkiCollectionService(f.Context, TimeProvider.System);
+        await fresh.SyncCollectionAsync(collection.Id);
+        var copies = await f.Context.AnkiNotes.Include(note => note.Cards)
+            .Where(note => note.TargetText == f.Word.Lemma).ToListAsync();
+        Assert.Equal(2, copies.Count);
+        Assert.All(copies, note =>
+        {
+            Assert.False(note.IsActive);
+            Assert.Equal(2, note.Cards.Count);
+            Assert.All(note.Cards, card =>
+            {
+                Assert.False(card.IsActive);
+                Assert.True(card.ExcludedFromQuizLink);
+            });
+        });
+        var stored = await f.Context.AnkiCards.SingleAsync(card => card.Id == reviewed.Id);
+        Assert.Equal(5, stored.ReviewCount);
+        Assert.Equal(12, stored.Stability);
+        Assert.Equal(2, await f.Context.AnkiCards.CountAsync(card => card.Note.WordId == f.SecondWord.Id && card.IsActive));
+    }
+
+    [Fact]
+    public async Task Unlinking_the_materialized_pair_activates_its_still_linked_copy_immediately()
+    {
+        await using var f = await Fixture.CreateAsync();
+        var collection = await f.Collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+        await f.Collections.AddQuizAsync(new(collection.Id, f.Quiz.Id, true, true, false, false), UserId);
+        var replacement = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Replacement",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        f.Context.AddRange(replacement, new Word { Id = "replacement", QuizId = replacement.Id,
+            Lemma = f.Word.Lemma, Translation = f.Word.Translation });
+        await f.Context.SaveChangesAsync();
+        await f.Collections.AddQuizAsync(new(collection.Id, replacement.Id, true, true, false, false), UserId);
+        Assert.False(await f.Context.AnkiNotes.AnyAsync(note => note.QuizId == replacement.Id));
+        f.Context.ChangeTracker.Clear();
+
+        Assert.True(await f.Collections.RemoveQuizAsync(collection.Id, f.Quiz.Id, UserId));
+
+        // These assistant reads do not synchronize, so the unlink must leave usable cards.
+        var fresh = new AnkiCollectionService(f.Context, TimeProvider.System);
+        Assert.Equal(1, (await fresh.ReadCountsAsync(collection.Id, UserId))!.New);
+        var cards = await f.Context.AnkiCards.AsNoTracking().Include(card => card.Note)
+            .Where(card => card.IsActive).ToListAsync();
+        Assert.Equal(2, cards.Count);
+        Assert.All(cards, card => Assert.Equal(replacement.Id, card.Note.QuizId));
+        Assert.All(await f.Context.AnkiNotes.Where(note => note.QuizId == f.Quiz.Id).ToListAsync(),
+            note => Assert.False(note.IsActive));
+    }
+
     [Fact]
     public async Task Membership_save_rejects_foreign_collections_and_unknown_items_atomically()
     {

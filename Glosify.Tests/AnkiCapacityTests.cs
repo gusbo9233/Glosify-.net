@@ -75,12 +75,35 @@ public sealed class AnkiCapacityTests
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
         var service = new AnkiCollectionService(db, TimeProvider.System);
+        var collection = await service.GetOrCreateAsync(userId, "Polish", "UTC");
+        var excludedQuiz = QuizFor("Polish", "Excluded directions");
+        db.AddRange(excludedQuiz,
+            new Word { Id = "excluded", QuizId = excludedQuiz.Id, Lemma = "excluded word", Translation = "meaning" },
+            new QuizSentence { Id = Guid.NewGuid(), QuizId = excludedQuiz.Id, Text = "excluded sentence", Translation = "sentence meaning" });
+        await db.SaveChangesAsync();
+        Assert.True(await service.AddQuizAsync(new(collection.Id, excludedQuiz.Id, true, false, true, false), userId));
+        foreach (var card in await db.AnkiCards.Where(card => card.Note.QuizId == excludedQuiz.Id).ToListAsync())
+            Assert.True(await service.RemoveCardAsync(card.Id, userId));
+
         Assert.True(await service.AddQuizForLanguageAsync("Polish", "UTC", quiz.Id, false, userId));
-        var collection = (await service.FindForLanguageAsync(userId, "Polish"))!;
         Assert.Equal(10000, await ActiveCountAsync());
         var study = new AnkiStudyService(db, service, new Fsrs6AnkiScheduler(), TimeProvider.System);
         Assert.Equal(5000, (await study.GetNextAsync(collection.Id, userId, PracticeDirection.SourceToTarget))!.Card!.NewRemaining);
         Assert.Equal(5000, (await service.ReadCountsAsync(collection.Id, userId))!.New);
+
+        // Widening excluded word/sentence links adds no active cards, even at capacity.
+        Assert.True(await service.AddQuizForLanguageAsync("Polish", "UTC", excludedQuiz.Id, true, userId));
+        db.ChangeTracker.Clear();
+        await service.SyncCollectionAsync(collection.Id);
+        Assert.Equal(10000, await ActiveCountAsync());
+        var excludedCards = await db.AnkiCards.Where(card => card.Note.QuizId == excludedQuiz.Id).ToListAsync();
+        Assert.Equal(4, excludedCards.Count);
+        Assert.All(excludedCards, card =>
+        {
+            Assert.False(card.IsActive);
+            Assert.True(card.ExcludedFromQuizLink);
+            Assert.True(card.QuizLinkIncluded);
+        });
 
         // Every entry point must reject the whole addition, including its quiz link.
         foreach (var path in new[] { "single", "membership", "assistant", "quiz", "assistant-quiz" })

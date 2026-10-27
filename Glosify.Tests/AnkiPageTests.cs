@@ -362,34 +362,7 @@ public sealed class AnkiPageTests : IDisposable
         var quizId = await SeedAsync();
         // Obtain the real antiforgery cookie and token before filling the collection.
         var page = await ReadPageAsync();
-        await using (var scope = _factory.Services.CreateAsyncScope())
-        {
-            // Seed the large fixture directly; the HTTP request below uses the normal
-            // accounting-enabled services. Accounting itself has separate coverage.
-            await using var db = new GlosifyContext(scope.ServiceProvider.GetRequiredService<DbContextOptions<GlosifyContext>>());
-            // Spread the cards across quizzes to stay below the independent 1,000-item quiz limit.
-            var otherQuizzes = Enumerable.Range(0, 5).Select(i => new Quiz
-            {
-                Id = Guid.NewGuid(), UserId = UserId, Name = $"Capacity {i}", SourceLanguage = "English",
-                TargetLanguage = "Polish", Language = "Polish",
-            }).ToArray();
-            db.Quizzes.AddRange(otherQuizzes);
-            db.Words.AddRange(Enumerable.Range(1, 4999).Select(i => new Word
-            {
-                Id = $"capacity-{i}", QuizId = otherQuizzes[(i - 1) / 1000].Id,
-                Lemma = $"target {i}", Translation = $"meaning {i}",
-            }));
-            await db.SaveChangesAsync();
-            var collections = new AnkiCollectionService(db, TimeProvider.System);
-            var collection = await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
-            db.AnkiQuizLinks.AddRange(otherQuizzes.Select(quiz => quiz.Id).Append(quizId).Select(id => new AnkiQuizLink
-            {
-                AnkiCollectionId = collection.Id, QuizId = id, WordsSourceToTarget = true, WordsTargetToSource = true,
-            }));
-            await db.SaveChangesAsync();
-            await collections.SyncCollectionAsync(collection.Id);
-            Assert.Equal(10000, await db.AnkiCards.CountAsync(card => card.IsActive));
-        }
+        await FillCollectionAsync(quizId);
         using var request = new HttpRequestMessage(HttpMethod.Post, api ? $"/api/quizzes/{quizId}/words" : "/Quiz/AddWord");
         if (api)
         {
@@ -425,6 +398,78 @@ public sealed class AnkiPageTests : IDisposable
             var returnedPage = await new HtmlParser().ParseDocumentAsync(await returned.Content.ReadAsStringAsync());
             Assert.Contains("10,000", returnedPage.Body!.TextContent);
             Assert.Contains("Remove some cards", returnedPage.Body.TextContent);
+        }
+    }
+
+    [Fact]
+    public async Task Add_to_anki_capacity_failure_is_visible_on_the_quiz_return_page()
+    {
+        var quizId = await SeedAsync();
+        await FillCollectionAsync(quizId);
+        var unlinkedQuizId = Guid.NewGuid();
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+            db.AddRange(new Quiz { Id = unlinkedQuizId, UserId = UserId, Name = "Unlinked quiz",
+                SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" },
+                new Word { Id = "overflow", QuizId = unlinkedQuizId, Lemma = "overflow", Translation = "additional" });
+            await db.SaveChangesAsync();
+        }
+        var quizUrl = $"/Quizzes/Details/{unlinkedQuizId}";
+        var response = await _client.GetAsync(quizUrl);
+        response.EnsureSuccessStatusCode();
+        var page = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+        var form = page.QuerySelector("[data-anki-item-dialog] form")!;
+        response = await _client.PostAsync(form.GetAttribute("action"), new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["QuizId"] = unlinkedQuizId.ToString(), ["ItemType"] = "words", ["ItemId"] = "overflow",
+            ["returnUrl"] = form.QuerySelector("input[name='returnUrl']")!.GetAttribute("value")!,
+            ["__RequestVerificationToken"] = Token(form),
+        }));
+
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(quizUrl, response.Headers.Location!.OriginalString);
+        var returned = await _client.GetAsync(response.Headers.Location);
+        returned.EnsureSuccessStatusCode();
+        var returnedPage = await new HtmlParser().ParseDocumentAsync(await returned.Content.ReadAsStringAsync());
+        var error = returnedPage.QuerySelector(".quiz-workspace .panel-message[role='alert']")?.TextContent;
+        Assert.Contains("10,000", error);
+        Assert.Contains("Remove some cards", error);
+        await using var verification = _factory.Services.CreateAsyncScope();
+        var stored = verification.ServiceProvider.GetRequiredService<GlosifyContext>();
+        Assert.Equal(10000, await stored.AnkiCards.CountAsync(card => card.IsActive));
+        Assert.False(await stored.AnkiCards.AnyAsync(card => card.Note.WordId == "overflow"));
+    }
+
+    private async Task FillCollectionAsync(Guid quizId)
+    {
+        await using (var scope = _factory.Services.CreateAsyncScope())
+        {
+            // Seed the large fixture directly; the HTTP request below uses the normal
+            // accounting-enabled services. Accounting itself has separate coverage.
+            await using var db = new GlosifyContext(scope.ServiceProvider.GetRequiredService<DbContextOptions<GlosifyContext>>());
+            // Spread the cards across quizzes to stay below the independent 1,000-item quiz limit.
+            var otherQuizzes = Enumerable.Range(0, 5).Select(i => new Quiz
+            {
+                Id = Guid.NewGuid(), UserId = UserId, Name = $"Capacity {i}", SourceLanguage = "English",
+                TargetLanguage = "Polish", Language = "Polish",
+            }).ToArray();
+            db.Quizzes.AddRange(otherQuizzes);
+            db.Words.AddRange(Enumerable.Range(1, 4999).Select(i => new Word
+            {
+                Id = $"capacity-{i}", QuizId = otherQuizzes[(i - 1) / 1000].Id,
+                Lemma = $"target {i}", Translation = $"meaning {i}",
+            }));
+            await db.SaveChangesAsync();
+            var collections = new AnkiCollectionService(db, TimeProvider.System);
+            var collection = await collections.GetOrCreateAsync(UserId, "Polish", "UTC");
+            db.AnkiQuizLinks.AddRange(otherQuizzes.Select(quiz => quiz.Id).Append(quizId).Select(id => new AnkiQuizLink
+            {
+                AnkiCollectionId = collection.Id, QuizId = id, WordsSourceToTarget = true, WordsTargetToSource = true,
+            }));
+            await db.SaveChangesAsync();
+            await collections.SyncCollectionAsync(collection.Id);
+            Assert.Equal(10000, await db.AnkiCards.CountAsync(card => card.IsActive));
         }
     }
 

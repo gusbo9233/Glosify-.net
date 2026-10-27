@@ -32,34 +32,33 @@ public sealed partial class AnkiCollectionService
             var addSentencesForward = includeSentences && !link.SentencesSourceToTarget;
             var addSentencesReverse = includeSentences && !link.SentencesTargetToSource;
             if (!addWordsForward && !addWordsReverse && !addSentencesForward && !addSentencesReverse) return true;
-            var unticked = await _context.AnkiNotes
+            var unticked = await _context.AnkiNotes.Include(note => note.Cards)
                 .Where(note => note.AnkiCollectionId == collection.Id && note.QuizId == quizId
                     && note.Cards.Any(card => card.ExcludedFromQuizLink))
-                .Select(note => note.Id)
                 .ToListAsync(cancellationToken);
+            // Inherit exclusions before synchronization can activate a newly linked
+            // direction and count it against capacity. Existing directions stay as-is.
+            foreach (var note in unticked)
+            {
+                if (note.ItemType == PracticeItemType.Words ? addWordsForward : addSentencesForward)
+                    ExcludeDirection(note, PracticeDirection.SourceToTarget);
+                if (note.ItemType == PracticeItemType.Words ? addWordsReverse : addSentencesReverse)
+                    ExcludeDirection(note, PracticeDirection.TargetToSource);
+            }
             link.WordsSourceToTarget = link.WordsTargetToSource = true;
             if (includeSentences) link.SentencesSourceToTarget = link.SentencesTargetToSource = true;
             link.UpdatedAt = collection.UpdatedAt = _timeProvider.GetUtcNow();
             await SaveChangesWithinCapacityAsync(cancellationToken);
             await SyncCollectionAsync(collection.Id, cancellationToken);
-            // A newly linked direction of an unticked item is unticked too.
-            var newCards = await _context.AnkiCards
-                .Where(card => unticked.Contains(card.AnkiNoteId) && card.QuizLinkIncluded
-                    && !card.ExcludedFromQuizLink && !card.DirectlyIncluded
-                    && (card.Note.ItemType == PracticeItemType.Words
-                        && (addWordsForward && card.Direction == PracticeDirection.SourceToTarget
-                            || addWordsReverse && card.Direction == PracticeDirection.TargetToSource)
-                        || card.Note.ItemType == PracticeItemType.Sentences
-                        && (addSentencesForward && card.Direction == PracticeDirection.SourceToTarget
-                            || addSentencesReverse && card.Direction == PracticeDirection.TargetToSource)))
-                .ToListAsync(cancellationToken);
-            foreach (var card in newCards)
+            return true;
+
+            void ExcludeDirection(AnkiNote note, string direction)
             {
+                var card = EnsureCard(note, direction);
+                if (card.DirectlyIncluded) return;
                 card.ExcludedFromQuizLink = true;
                 card.IsActive = false;
             }
-            await SaveChangesWithinCapacityAsync(cancellationToken);
-            return true;
         }, cancellationToken);
 
     public Task<bool> AddItemForLanguageAsync(string targetLanguage, string? timeZoneId, AnkiItemKey item,
@@ -229,17 +228,17 @@ public sealed partial class AnkiCollectionService
             EnsureDirectCard(note, PracticeDirection.TargetToSource);
             note.IsActive = true;
         }
-        var removedPairs = new HashSet<(string ItemType, string Target, string Source)>();
+        var removedPairs = new HashSet<(string Target, string Source)>();
         foreach (var key in removals)
         {
             var note = key.ItemType == PracticeItemType.Words ? byWord.GetValueOrDefault(key.ItemId)
                 : Guid.TryParse(key.ItemId, out var id) ? bySentence.GetValueOrDefault(id) : null;
             if (note is null || note.QuizId != key.QuizId) continue;
-            removedPairs.Add((note.ItemType, note.TargetText, note.SourceText));
+            removedPairs.Add((note.TargetText, note.SourceText));
         }
         if (removedPairs.Count > 0)
             await IncludeLinkedRemovalCopiesAsync(collection, notes, removedPairs, cancellationToken);
-        foreach (var note in notes.Where(note => removedPairs.Contains((note.ItemType, note.TargetText, note.SourceText))))
+        foreach (var note in notes.Where(note => removedPairs.Contains((note.TargetText, note.SourceText))))
         {
             // Store exclusions for both directions, even if a linked copy has not
             // been materialized yet or currently has only one practice direction.
@@ -259,7 +258,7 @@ public sealed partial class AnkiCollectionService
     }
 
     private async Task IncludeLinkedRemovalCopiesAsync(AnkiCollection collection, List<AnkiNote> notes,
-        HashSet<(string ItemType, string Target, string Source)> removedPairs, CancellationToken cancellationToken)
+        HashSet<(string Target, string Source)> removedPairs, CancellationToken cancellationToken)
     {
         // Deduplication may have skipped creating a note for another linked source.
         // Persist its exclusion now so the next synchronization cannot revive the row.
@@ -268,21 +267,16 @@ public sealed partial class AnkiCollectionService
             .Select(link => link.Quiz).Where(quiz => Matches(collection, quiz)).ToDictionary(quiz => quiz.Id);
         var quizIds = quizzes.Keys.ToArray();
         var copies = new List<MembershipItem>();
-        if (removedPairs.Any(pair => pair.ItemType == PracticeItemType.Words))
-        {
-            var words = await _context.Words.AsNoTracking().Where(word => quizIds.Contains(word.QuizId)).ToListAsync(cancellationToken);
-            copies.AddRange(words.Select(word => new MembershipItem(new(word.QuizId, PracticeItemType.Words, word.Id),
-                word.Lemma, word.Translation, quizzes[word.QuizId].SourceLanguage)));
-        }
-        if (removedPairs.Any(pair => pair.ItemType == PracticeItemType.Sentences))
-        {
-            var sentences = await _context.QuizSentences.AsNoTracking().Where(sentence => quizIds.Contains(sentence.QuizId)).ToListAsync(cancellationToken);
-            copies.AddRange(sentences.Select(sentence => new MembershipItem(new(sentence.QuizId, PracticeItemType.Sentences, sentence.Id.ToString()),
-                sentence.Text, sentence.Translation, quizzes[sentence.QuizId].SourceLanguage)));
-        }
+        // Words and sentences share the same exact-pair identity during synchronization.
+        var words = await _context.Words.AsNoTracking().Where(word => quizIds.Contains(word.QuizId)).ToListAsync(cancellationToken);
+        copies.AddRange(words.Select(word => new MembershipItem(new(word.QuizId, PracticeItemType.Words, word.Id),
+            word.Lemma, word.Translation, quizzes[word.QuizId].SourceLanguage)));
+        var sentences = await _context.QuizSentences.AsNoTracking().Where(sentence => quizIds.Contains(sentence.QuizId)).ToListAsync(cancellationToken);
+        copies.AddRange(sentences.Select(sentence => new MembershipItem(new(sentence.QuizId, PracticeItemType.Sentences, sentence.Id.ToString()),
+            sentence.Text, sentence.Translation, quizzes[sentence.QuizId].SourceLanguage)));
         var wordIds = notes.Where(note => note.WordId is not null).Select(note => note.WordId!).ToHashSet(StringComparer.Ordinal);
         var sentenceIds = notes.Where(note => note.SentenceId.HasValue).Select(note => note.SentenceId!.Value).ToHashSet();
-        foreach (var copy in copies.Where(copy => removedPairs.Contains((copy.Key.ItemType, copy.Target, copy.Source))))
+        foreach (var copy in copies.Where(copy => removedPairs.Contains((copy.Target, copy.Source))))
         {
             var wordId = copy.Key.ItemType == PracticeItemType.Words ? copy.Key.ItemId : null;
             Guid? sentenceId = wordId is null ? Guid.Parse(copy.Key.ItemId) : null;

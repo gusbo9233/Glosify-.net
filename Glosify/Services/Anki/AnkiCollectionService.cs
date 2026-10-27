@@ -209,7 +209,7 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             sentence.Id.ToString(), sentence.Text, sentence.Translation) with { InAnki = sentenceKeys.Contains(sentence.Id) }));
         // One row per exact pair. Use an active key so membership removal can
         // resolve the pair and exclude all copies represented by this row.
-        items = items.GroupBy(item => (item.ItemType, item.TargetText, item.SourceText))
+        items = items.GroupBy(item => (item.TargetText, item.SourceText))
             .OrderByDescending(group => group.Any(item => item.QuizId == selectedQuizId))
             .Select(group => group.OrderByDescending(item => item.InAnki)
                 .ThenByDescending(item => item.QuizId == selectedQuizId).First()).ToList();
@@ -537,11 +537,12 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             .ToDictionary(note => note.WordId!, StringComparer.Ordinal);
         var notesBySentence = notes.Where(note => note.SentenceId.HasValue)
             .ToDictionary(note => note.SentenceId!.Value);
+        var linksByQuiz = collection.QuizLinks
+            .Where(link => quizzes.TryGetValue(link.QuizId, out var quiz) && Matches(collection, quiz))
+            .ToDictionary(link => link.QuizId);
 
         foreach (var note in notes)
         {
-            foreach (var card in note.Cards)
-                card.QuizLinkIncluded = false;
             var sourceLanguage = quizzes.TryGetValue(note.QuizId, out var noteQuiz) ? noteQuiz.SourceLanguage : note.SourceLanguage;
             if (note.WordId is not null && wordsById.TryGetValue(note.WordId, out var word))
             {
@@ -551,6 +552,24 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             {
                 UpdateSnapshot(note, sentence.Text, sentence.Translation, sourceLanguage);
             }
+            // Duplicate suppression must see current eligibility, not activity left
+            // over from a removed link, disabled direction, or deleted source.
+            var sourceExists = note.WordId is not null
+                ? wordsById.ContainsKey(note.WordId)
+                : note.SentenceId.HasValue && sentencesById.ContainsKey(note.SentenceId.Value);
+            foreach (var card in note.Cards)
+            {
+                card.QuizLinkIncluded = linksByQuiz.TryGetValue(note.QuizId, out var link)
+                    && (note.ItemType, card.Direction) switch
+                    {
+                        (PracticeItemType.Words, PracticeDirection.SourceToTarget) => link.WordsSourceToTarget,
+                        (PracticeItemType.Words, PracticeDirection.TargetToSource) => link.WordsTargetToSource,
+                        (PracticeItemType.Sentences, PracticeDirection.SourceToTarget) => link.SentencesSourceToTarget,
+                        (PracticeItemType.Sentences, PracticeDirection.TargetToSource) => link.SentencesTargetToSource,
+                        _ => false,
+                    };
+                card.IsActive = sourceExists && (card.DirectlyIncluded || card.QuizLinkIncluded && !card.ExcludedFromQuizLink);
+            }
         }
 
         // Build once per synchronization. Exact-pair checks must not repeatedly scan
@@ -558,10 +577,9 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
         _notesByPair.Clear();
         foreach (var note in notes) IndexPair(note);
 
-        foreach (var link in collection.QuizLinks)
+        foreach (var link in linksByQuiz.Values)
         {
-            if (!quizzes.TryGetValue(link.QuizId, out var quiz) || !Matches(collection, quiz))
-                continue;
+            var quiz = quizzes[link.QuizId];
             foreach (var word in wordsByQuiz[link.QuizId])
             {
                 var note = GetOrCreateNote(notes, notesByWord, notesBySentence, collectionId, link.QuizId, PracticeItemType.Words, word.Id, null, word.Lemma, word.Translation, quiz.SourceLanguage);

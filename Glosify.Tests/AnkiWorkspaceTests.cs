@@ -72,6 +72,8 @@ public sealed class AnkiWorkspaceTests
 
         db.Words.Add(new Word { Id = "selected-duplicate", QuizId = selected.Id,
             Lemma = "target-104", Translation = "source-104", CreatedAt = created.AddSeconds(1) });
+        db.QuizSentences.Add(new QuizSentence { Id = Guid.NewGuid(), QuizId = selected.Id,
+            Text = "target-104", Translation = "source-104", CreatedAt = created.AddSeconds(1) });
         await db.SaveChangesAsync();
         preview = await service.GetWorkspaceAsync(userId, "Polish", quizId: selected.Id);
         Assert.Equal(2, preview.AvailableItems.Count);
