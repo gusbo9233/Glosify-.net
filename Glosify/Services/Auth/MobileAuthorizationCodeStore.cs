@@ -56,7 +56,7 @@ public sealed class MobileAuthorizationCodeStore : IMobileAuthorizationCodeStore
         userId = string.Empty;
         if (string.IsNullOrWhiteSpace(code)
             || !_cache.TryGetValue(CacheKeyPrefix + code, out AuthorizationCodeEntry? entry)
-            || entry is null)
+            || entry is null || !entry.TryConsume())
         {
             return false;
         }
@@ -77,5 +77,9 @@ public sealed class MobileAuthorizationCodeStore : IMobileAuthorizationCodeStore
     private sealed record AuthorizationCodeEntry(
         string UserId,
         string CodeChallenge,
-        DateTimeOffset ExpiresAt);
+        DateTimeOffset ExpiresAt)
+    {
+        private int _consumed;
+        public bool TryConsume() => Interlocked.Exchange(ref _consumed, 1) == 0;
+    }
 }

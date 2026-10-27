@@ -4,26 +4,30 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 const worker = readFileSync(new URL("../background/service-worker.js", import.meta.url), "utf8");
-const authStart = worker.indexOf("async function acceptTokenResponse(");
+const authStart = worker.indexOf("async function signOut(");
 const authEnd = worker.indexOf("async function refreshAccountState(");
 const errorStart = worker.indexOf("class ApiRequestError extends Error");
 assert.ok(authStart > 0 && authEnd > authStart && errorStart > authEnd);
 
-function harness(fetch) {
+function harness(fetch, beforeSet = async () => {}) {
   const storage = { glosifyRefreshToken: "original-refresh" };
   const auth = vm.runInNewContext(`
     const CONFIG = { glosifyBaseUrl: "https://example.invalid" };
     const STORAGE_KEYS = { refreshToken: "glosifyRefreshToken" };
     let accessToken = null, accessExpiresAt = 0, refreshToken = "original-refresh";
     let refreshTokenGeneration = 1, refreshPromise = null;
+    let authStoragePromise = Promise.resolve();
+    const startPromise = null;
+    const tabAuth = { cancel: async () => {} };
+    const broadcastState = () => {};
     const state = { signedIn: true, status: "ready", catalog: {} };
     ${worker.slice(authStart, authEnd)}
     ${worker.slice(errorStart)}
-    ({ ensureAccessToken, acceptTokenResponse, state });
+    ({ ensureAccessToken, acceptTokenResponse, signOut, state });
   `, {
     fetch, URL, Headers, Date,
     chrome: { storage: { local: {
-      set: async values => Object.assign(storage, values),
+      set: async values => { await beforeSet(); Object.assign(storage, values); },
       remove: async key => { delete storage[key]; },
     } } },
   });
@@ -57,6 +61,48 @@ test("non-JSON server errors retain status without exposing the upstream body", 
   await assert.rejects(auth.ensureAccessToken(), { status: 502, message: "GlobeGlotter request failed (502)." });
   assert.equal(auth.storage.glosifyRefreshToken, "original-refresh");
   assert.equal(auth.state.signedIn, true);
+});
+
+for (const replacement of ["sign-out", "new-login"]) {
+  test(`refresh body arriving after ${replacement} cannot restore old credentials`, async () => {
+    let deliverBody;
+    let bodyStarted;
+    const reading = new Promise(resolve => { bodyStarted = resolve; });
+    const auth = harness(async () => ({ ok: true, json: () => {
+      bodyStarted();
+      return new Promise(resolve => { deliverBody = resolve; });
+    } }));
+    const pending = auth.ensureAccessToken();
+    await reading;
+    await auth.signOut();
+    if (replacement === "new-login") await auth.acceptTokenResponse(tokens);
+    deliverBody({ ...tokens, accessToken: "stale-access", refreshToken: "stale-refresh" });
+    await pending;
+
+    assert.equal(auth.state.signedIn, replacement === "new-login");
+    assert.equal(auth.storage.glosifyRefreshToken, replacement === "new-login" ? "new-refresh" : undefined);
+    if (replacement === "sign-out") await assert.rejects(auth.ensureAccessToken(), { status: 401 });
+    else assert.equal(await auth.ensureAccessToken(), "new-access");
+  });
+}
+
+test("sign-out waits for a pending credential write and clears it last", async () => {
+  let releaseWrite;
+  let writeStarted;
+  const writing = new Promise(resolve => { writeStarted = resolve; });
+  const auth = harness(async () => Response.json(tokens), () => {
+    writeStarted();
+    return new Promise(resolve => { releaseWrite = resolve; });
+  });
+  const refresh = auth.ensureAccessToken();
+  await writing;
+  const signOut = auth.signOut();
+  releaseWrite();
+  await Promise.all([refresh, signOut]);
+
+  assert.equal(auth.state.signedIn, false);
+  assert.equal(auth.storage.glosifyRefreshToken, undefined);
+  await assert.rejects(auth.ensureAccessToken(), { status: 401 });
 });
 
 test("network failures retain credentials and allow the next refresh", async () => {

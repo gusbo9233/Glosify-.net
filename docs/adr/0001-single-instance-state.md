@@ -20,6 +20,11 @@ Restarting the process can end active sessions and invalidate short-lived codes.
 is acceptable for a learning/portfolio deployment and is preferable to adding
 distributed infrastructure that the current workload does not require.
 
+Credit maintenance releases unfinished ordinary AI generation reservations created
+before the current process started, in batches of 100. Reservations from this
+process remain untouched, and durable tool evaluations use their own recovery
+flow. This recovery rule also depends on never overlapping app instances.
+
 ## Scale-out trigger and replacement
 
 Before running two instances, move session/authorization state and rate-limit counters

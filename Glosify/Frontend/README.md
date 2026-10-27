@@ -25,6 +25,13 @@ Restart/rebuild the ASP.NET host when entrypoints or shared chunk names change,
 so its static asset manifest can discover them. Existing pages should be reloaded
 after rebuilding. This is asset watching, not hot module replacement.
 
+After pulling a frontend refactor or switching between Debug and Release builds,
+stop the running app, rebuild it, and start it again. A host started before the
+rebuild can retain asset metadata pointing to replaced compressed files, causing
+empty CSS/JavaScript responses even when the uncompressed files load correctly.
+If a page loses its layout or a module reports an empty MIME type, check the
+browser's asset responses and restart the rebuilt host before changing styles.
+
 ## Ownership
 
 Feature folders own their DOM behavior, state, and feature helpers. `shared`

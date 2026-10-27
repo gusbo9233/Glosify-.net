@@ -1,4 +1,5 @@
 using Glosify.Data;
+using Glosify.Services.Ai;
 using Glosify.Services.Speech;
 using Glosify.Services.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,9 @@ namespace Glosify.Services.Abuse;
 
 public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILogger<ResourceMaintenanceService> logger) : BackgroundService
 {
+    // ADR 0001 forbids overlapping app instances: older generation work cannot still be running.
+    private readonly DateTimeOffset _startedAt = DateTimeOffset.UtcNow;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var reconcileAt = DateTimeOffset.MinValue;
@@ -24,7 +28,7 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
                         await RebuildAsync(db, scope.ServiceProvider, stoppingToken);
                     reconcileAt = DateTimeOffset.UtcNow.AddDays(1);
                 }
-                await CleanupAsync(scope.ServiceProvider, stoppingToken);
+                await CleanupAsync(scope.ServiceProvider, _startedAt, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception ex) { logger.LogWarning(ex, "Resource accounting maintenance failed; new content remains protected."); }
@@ -132,7 +136,7 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
         return (await query.Skip(offset).Take(200).ToListAsync(ct)).Cast<object>().ToList();
     }
 
-    private static async Task CleanupAsync(IServiceProvider services, CancellationToken ct)
+    internal static async Task CleanupAsync(IServiceProvider services, DateTimeOffset startedAt, CancellationToken ct)
     {
         var db = services.GetRequiredService<GlosifyContext>();
         var now = DateTimeOffset.UtcNow;
@@ -156,14 +160,18 @@ public sealed class ResourceMaintenanceService(IServiceScopeFactory scopes, ILog
             await db.SaveChangesAsync(ct);
         }
         var speechExpiry = now.AddMinutes(-5);
-        var abandonedSpeech = await db.AiCreditTransactions.AsNoTracking()
+        string[] generationFeatures = [AiUsageFeatures.Assistant, AiUsageFeatures.JsonImportRepair,
+            AiUsageFeatures.ImageExtraction, AiUsageFeatures.PageTranslation, AiUsageFeatures.TextTranslation];
+        var abandoned = await db.AiCreditTransactions.AsNoTracking()
             .Where(r => r.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.Reservation
-                && r.Feature == Glosify.Services.Ai.AiUsageFeatures.TextToSpeech && r.CreatedAt <= speechExpiry
+                && (r.Feature == AiUsageFeatures.TextToSpeech && r.CreatedAt <= speechExpiry
+                    || r.CreatedAt < startedAt && r.Provider == AiUsageProviders.OpenAi
+                        && generationFeatures.Contains(r.Feature) && r.Operation != "tool_use_evaluation")
                 && !db.AiCreditTransactions.Any(t => t.ReservationId == r.ReservationId
                     && (t.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.UsageDebit
                         || t.Kind == Glosify.Models.Entities.AiCreditTransactionKinds.Release)))
             .OrderBy(r => r.CreatedAt).Take(100).Select(r => r.ReservationId!.Value).ToListAsync(ct);
-        foreach (var id in abandonedSpeech)
+        foreach (var id in abandoned)
             await services.GetRequiredService<Glosify.Services.Ai.IAiCreditService>().ReleaseAsync(id, ct);
         // Settlements are financial records and are intentionally retained. Use the
         // expiry index and bound each cleanup pass instead of loading their history.

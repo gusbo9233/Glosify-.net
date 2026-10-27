@@ -31,6 +31,7 @@ let accessExpiresAt = 0;
 let refreshToken = null;
 let refreshTokenGeneration = 0;
 let refreshPromise = null;
+let authStoragePromise = Promise.resolve();
 let offscreenCreationPromise = null;
 let startPromise = null;
 let startAbortController = null;
@@ -329,7 +330,6 @@ async function signOut() {
   accessExpiresAt = 0;
   refreshToken = null;
   refreshTokenGeneration += 1;
-  await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
   Object.assign(state, {
     status: "disconnected",
     signedIn: false,
@@ -345,10 +345,12 @@ async function signOut() {
     error: null,
     notice: null,
   });
+  await persistAuthentication();
   broadcastState();
 }
 
-async function acceptTokenResponse(tokens) {
+async function acceptTokenResponse(tokens, generation = refreshTokenGeneration) {
+  if (refreshTokenGeneration !== generation) return;
   if (!tokens?.accessToken || !tokens?.refreshToken) {
     throw new Error("GlobeGlotter returned an invalid token response.");
   }
@@ -356,8 +358,8 @@ async function acceptTokenResponse(tokens) {
   accessExpiresAt = Date.now() + Math.max(30, Number(tokens.expiresIn ?? 3600) - 30) * 1000;
   refreshToken = tokens.refreshToken;
   refreshTokenGeneration += 1;
-  await chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: refreshToken });
   state.signedIn = true;
+  await persistAuthentication();
 }
 
 async function ensureAccessToken() {
@@ -386,10 +388,7 @@ async function ensureAccessToken() {
         }
         throw await apiError(response);
       }
-      if (refreshTokenGeneration !== generationUsed || refreshToken !== tokenUsed) {
-        return accessToken;
-      }
-      await acceptTokenResponse(await response.json());
+      await acceptTokenResponse(await response.json(), generationUsed);
       return accessToken;
     })().finally(() => {
       refreshPromise = null;
@@ -403,10 +402,20 @@ async function clearExpiredAuthentication() {
   accessExpiresAt = 0;
   refreshToken = null;
   refreshTokenGeneration += 1;
-  await chrome.storage.local.remove(STORAGE_KEYS.refreshToken);
   state.signedIn = false;
   state.status = "disconnected";
   state.catalog = null;
+  await persistAuthentication();
+}
+
+function persistAuthentication() {
+  const token = refreshToken;
+  // Serialize writes so a slow refresh cannot persist credentials after sign-out clears them.
+  const write = authStoragePromise.then(() => token
+    ? chrome.storage.local.set({ [STORAGE_KEYS.refreshToken]: token })
+    : chrome.storage.local.remove(STORAGE_KEYS.refreshToken));
+  authStoragePromise = write.catch(() => {});
+  return write;
 }
 
 async function apiFetch(path, options = {}, retry = true) {
