@@ -188,8 +188,7 @@ public class AccountController : Controller
                     await _userManager.UpdateAsync(resolution.User);
                 }
 
-                // A newly linked account can already require a second factor or be
-                // locked out. Use the same Identity checks as an existing login.
+                // Recheck Identity restrictions after creating or resolving the provider account.
                 result = await _signInManager.ExternalLoginSignInAsync(
                     info.LoginProvider, info.ProviderKey, isPersistent: false);
             }

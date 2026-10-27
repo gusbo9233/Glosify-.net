@@ -46,6 +46,13 @@ public sealed class ExtensionAuthApiController : ControllerBase
             return Unauthorized(new { error = "Invalid or expired extension authorization code." });
         }
 
+        // The browser completed authentication, but restrictions can change before exchange.
+        if (!await _signInManager.CanSignInAsync(user)
+            || _userManager.SupportsUserLockout && await _userManager.IsLockedOutAsync(user))
+        {
+            return Unauthorized(new { error = "Sign-in is not allowed for this account." });
+        }
+
         // Identity's bearer handler writes the standard accessToken/expiresIn/
         // refreshToken JSON contract used by /api/auth/refresh.
         _signInManager.AuthenticationScheme = IdentityConstants.BearerScheme;

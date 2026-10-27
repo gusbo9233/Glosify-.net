@@ -10,8 +10,8 @@ namespace Glosify.Controllers.Api;
 
 /// <summary>
 /// Google sign-in for the mobile app, reusing the same Google OAuth client and
-/// account-linking rules as the web AccountController (match by email, create on
-/// first sign-in). The flow runs in the system browser:
+/// account rules as the web AccountController (reuse the provider link, create on
+/// first sign-in, reject email collisions). The flow runs in the system browser:
 ///   app -> GET google/start?code_challenge=... -> Google -> GET google/callback ->
 ///   redirect to glosify://auth?code=... -> app POSTs the code and its verifier to
 ///   exchange -> bearer tokens.
