@@ -60,13 +60,14 @@ public sealed class AnkiController : Controller
                 return NotFound();
         }
         var workspace = await _collections.GetWorkspaceAsync(userId, targetLanguage, cancellationToken, quizId, search);
-        return View(new AnkiIndexViewModel
+        var model = new AnkiIndexViewModel
         {
             TargetLanguage = targetLanguage,
             Direction = direction,
             Workspace = workspace,
             Study = study,
-        });
+        };
+        return IsAjax() ? PartialView("_Workspace", model) : View(model);
     }
 
     // Old collection links (bookmarks, assistant messages) land on the single page.
@@ -105,7 +106,8 @@ public sealed class AnkiController : Controller
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
         if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index), new { quizId = form.QuizId });
+            return IsAjax() ? Problem(statusCode: 400, detail: "Check the quiz settings and try again.")
+                : RedirectToAction(nameof(Index), new { quizId = form.QuizId });
         var userId = User.GetUserId();
         try
         {
@@ -116,8 +118,10 @@ public sealed class AnkiController : Controller
         }
         catch (AnkiValidationException exception)
         {
+            if (IsAjax()) return Problem(statusCode: 400, detail: exception.Message);
             TempData["AnkiMessage"] = exception.Message;
         }
+        if (IsAjax()) return await Index(quizId: form.QuizId, cancellationToken: cancellationToken);
         return RedirectToAction(nameof(Index), new { quizId = form.QuizId });
     }
 
@@ -128,6 +132,11 @@ public sealed class AnkiController : Controller
         var collection = await CurrentCollectionAsync(cancellationToken);
         if (collection is null || !await _collections.RemoveQuizAsync(collection.Id, quizId, User.GetUserId(), cancellationToken))
             return NotFound();
+        if (IsAjax())
+        {
+            TempData["AnkiMessage"] = "Quiz removed from Anki.";
+            return await Index(quizId: quizId, cancellationToken: cancellationToken);
+        }
         return RedirectToAction(nameof(Index));
     }
 
@@ -142,13 +151,15 @@ public sealed class AnkiController : Controller
         if (targetLanguage is null)
             return RedirectToAction("Index", "Languages");
         if (!ModelState.IsValid)
-            return RedirectToAction(nameof(Index), new { quizId, search });
+            return IsAjax() ? Problem(statusCode: 400, detail: "Check the selected items and try again.")
+                : RedirectToAction(nameof(Index), new { quizId, search });
         var add = ParseKeys(form.Add);
         var remove = ParseKeys(form.Remove);
         if (add is null || remove is null)
             return BadRequest();
         if (add.Count + remove.Count == 0)
-            return RedirectToAction(nameof(Index), new { quizId, search });
+            return IsAjax() ? await Index(quizId: quizId, search: search, cancellationToken: cancellationToken)
+                : RedirectToAction(nameof(Index), new { quizId, search });
 
         var userId = User.GetUserId();
         try
@@ -165,8 +176,10 @@ public sealed class AnkiController : Controller
         }
         catch (AnkiValidationException exception)
         {
+            if (IsAjax()) return Problem(statusCode: 400, detail: exception.Message);
             TempData["AnkiMessage"] = exception.Message;
         }
+        if (IsAjax()) return await Index(quizId: quizId, search: search, cancellationToken: cancellationToken);
         return RedirectToAction(nameof(Index), new { quizId, search });
     }
 

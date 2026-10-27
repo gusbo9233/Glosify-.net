@@ -91,6 +91,85 @@ public sealed class AnkiPageTests : IDisposable
     }
 
     [Fact]
+    public async Task Ajax_add_quiz_returns_updated_workspace_without_a_redirect_or_layout()
+    {
+        var quizId = await SeedAsync();
+        var page = await ReadPageAsync();
+        _client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+
+        var response = await _client.PostAsync("/Anki/AddQuiz", new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["__RequestVerificationToken"] = Token(page),
+            ["TimeZoneId"] = "Europe/Stockholm",
+            ["QuizId"] = quizId.ToString(),
+        }));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("<html", html, StringComparison.OrdinalIgnoreCase);
+        var updated = await new HtmlParser().ParseDocumentAsync(html);
+        Assert.NotNull(updated.QuerySelector("[data-anki-workspace]"));
+        Assert.NotNull(updated.QuerySelector("[data-flashcard-session]"));
+        Assert.Single(updated.QuerySelectorAll("[data-anki-item-key][checked]"));
+        Assert.Equal("Quiz added to Anki.", updated.QuerySelector("[data-anki-request-status]")?.TextContent);
+        Assert.Equal(quizId.ToString(), updated.QuerySelector("#anki-quiz option[selected]")?.GetAttribute("value"));
+        Assert.NotEmpty(Token(updated));
+        await using var scope = _factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<GlosifyContext>();
+        Assert.Equal(2, await db.AnkiCards.CountAsync(card => card.IsActive));
+    }
+
+    [Fact]
+    public async Task Ajax_picker_and_item_saves_return_partial_workspaces_and_keep_search()
+    {
+        var quizId = await SeedAsync();
+        _client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        var response = await _client.GetAsync($"/Anki?quizId={quizId}&search=dom");
+        response.EnsureSuccessStatusCode();
+        var html = await response.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("<html", html, StringComparison.OrdinalIgnoreCase);
+        var page = await new HtmlParser().ParseDocumentAsync(html);
+        Assert.Single(page.QuerySelectorAll("[data-anki-item-key]"));
+        Assert.Empty(page.QuerySelectorAll("[data-anki-item-key][checked]"));
+
+        foreach (var change in new[] { "Add", "Remove" })
+        {
+            response = await _client.PostAsync($"/Anki/Items?quizId={quizId}&search=dom", new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["__RequestVerificationToken"] = Token(page),
+                [change] = $"words:{quizId}:word-0",
+            }));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Null(response.Headers.Location);
+            page = await new HtmlParser().ParseDocumentAsync(await response.Content.ReadAsStringAsync());
+            Assert.Equal(change == "Add" ? 1 : 0, page.QuerySelectorAll("[data-anki-item-key][checked]").Length);
+            Assert.Equal("dom", page.QuerySelector("input[name='search']")?.GetAttribute("value"));
+        }
+    }
+
+    [Fact]
+    public async Task Ajax_add_still_requires_antiforgery_and_reports_validation_as_problem_details()
+    {
+        var quizId = await SeedAsync();
+        var page = await ReadPageAsync();
+        _client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+        var fields = new Dictionary<string, string> { ["QuizId"] = quizId.ToString() };
+        var response = await _client.PostAsync("/Anki/AddQuiz", new FormUrlEncodedContent(fields));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        fields["__RequestVerificationToken"] = Token(page);
+        fields["TimeZoneId"] = new string('x', 129);
+        response = await _client.PostAsync("/Anki/AddQuiz", new FormUrlEncodedContent(fields));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Contains("Check the quiz settings", problem.RootElement.GetProperty("detail").GetString());
+        await using var scope = _factory.Services.CreateAsyncScope();
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<GlosifyContext>().AnkiCards.ToListAsync());
+    }
+
+    [Fact]
     public async Task Items_persists_the_bound_changes()
     {
         var quizId = await SeedAsync();

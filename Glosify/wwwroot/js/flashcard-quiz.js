@@ -32,7 +32,7 @@
             }
 
             event.preventDefault();
-            if (submissionInFlight) {
+            if (submissionInFlight || container.closest?.('[data-anki-workspace][aria-busy="true"]')) {
                 return;
             }
 

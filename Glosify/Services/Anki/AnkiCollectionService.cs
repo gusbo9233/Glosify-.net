@@ -322,8 +322,11 @@ public sealed partial class AnkiCollectionService : IAnkiCollectionService
             .Include(card => card.Note)
             .Where(card => card.Note.AnkiCollectionId == input.CollectionId
                 && card.Note.QuizId == input.QuizId
-                && card.QuizLinkIncluded)
+                && card.QuizLinkIncluded && card.ExcludedFromQuizLink)
             .ToListAsync(cancellationToken);
+        // Synchronization already activated new cards. Only restoring excluded
+        // cards needs another save and deduplication pass over the collection.
+        if (linkedCards.Count == 0) return true;
         foreach (var card in linkedCards)
         {
             card.ExcludedFromQuizLink = false;

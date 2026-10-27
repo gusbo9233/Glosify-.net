@@ -16,6 +16,35 @@ public sealed class AnkiMembershipBatchTests(ITestOutputHelper output)
 {
     private const string UserId = "anki-batch-user";
 
+    [Fact]
+    public async Task Adding_a_whole_quiz_reads_source_words_only_once()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var reads = new NoteReads();
+        await using var db = new GlosifyContext(new DbContextOptionsBuilder<GlosifyContext>()
+            .UseSqlite(connection).AddInterceptors(reads).Options);
+        await db.Database.EnsureCreatedAsync();
+        db.Users.Add(new ApplicationUser { Id = UserId, UserName = "batch@example.test" });
+        var quiz = new Quiz { Id = Guid.NewGuid(), UserId = UserId, Name = "Whole quiz",
+            SourceLanguage = "English", TargetLanguage = "Polish", Language = "Polish" };
+        db.Quizzes.Add(quiz);
+        db.Words.AddRange(Enumerable.Range(0, 1000).Select(i => new Word
+        {
+            Id = $"whole-{i}", QuizId = quiz.Id, Lemma = $"word {i}", Translation = $"meaning {i}",
+        }));
+        await db.SaveChangesAsync();
+        db.ChangeTracker.Clear();
+        reads.SourceReads = 0;
+
+        Assert.True(await new AnkiCollectionService(db, TimeProvider.System)
+            .AddQuizForLanguageAsync("Polish", "UTC", quiz.Id, false, UserId));
+
+        Assert.Equal(1, reads.SourceReads);
+        Assert.Equal(2000, await db.AnkiCards.CountAsync(card => card.IsActive));
+        Assert.Single(await db.AnkiQuizLinks.ToListAsync());
+    }
+
     [Theory]
     [InlineData(10)]
     [InlineData(2000)]
@@ -112,6 +141,7 @@ public sealed class AnkiMembershipBatchTests(ITestOutputHelper output)
     private sealed class NoteReads : DbCommandInterceptor
     {
         public int Count { get; set; }
+        public int SourceReads { get; set; }
 
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
             DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
@@ -119,6 +149,8 @@ public sealed class AnkiMembershipBatchTests(ITestOutputHelper output)
         {
             if (command.CommandText.StartsWith("SELECT", StringComparison.Ordinal)
                 && command.CommandText.Contains("AnkiNotes", StringComparison.Ordinal)) Count++;
+            if (command.CommandText.StartsWith("SELECT", StringComparison.Ordinal)
+                && command.CommandText.Contains("FROM \"Words\"", StringComparison.OrdinalIgnoreCase)) SourceReads++;
             return ValueTask.FromResult(result);
         }
     }
