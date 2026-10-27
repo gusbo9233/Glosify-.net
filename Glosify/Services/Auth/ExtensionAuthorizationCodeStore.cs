@@ -60,7 +60,7 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
         userId = string.Empty;
         if (string.IsNullOrWhiteSpace(code)
             || !_cache.TryGetValue(CacheKeyPrefix + code, out AuthorizationCodeEntry? entry)
-            || entry is null)
+            || entry is null || !entry.TryConsume())
         {
             return false;
         }
@@ -85,5 +85,9 @@ public sealed class ExtensionAuthorizationCodeStore : IExtensionAuthorizationCod
         string UserId,
         string RedirectUri,
         string CodeChallenge,
-        DateTimeOffset ExpiresAt);
+        DateTimeOffset ExpiresAt)
+    {
+        private int _consumed;
+        public bool TryConsume() => Interlocked.Exchange(ref _consumed, 1) == 0;
+    }
 }

@@ -58,21 +58,39 @@ public sealed class ExternalAccountServiceTests
         Assert.Equal(0, store.AddLoginCalls);
     }
 
-    [Fact]
-    public async Task GoogleProvider_CanLinkToVerifiedPasswordAccount()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task ReassignedGoogleEmail_DoesNotLinkToExistingAccount(bool hasPassword)
     {
         var existing = new ApplicationUser
         {
-            Id = "existing", Email = "learner@example.test", PasswordHash = "password-hash", EmailConfirmed = true,
+            Id = "existing", Email = "learner@example.test", PasswordHash = hasPassword ? "password-hash" : null, EmailConfirmed = true,
         };
         var store = new StubExternalAccountUserStore { ExistingByEmail = existing };
         var service = CreateService(store);
 
-        var result = await service.ResolveOrCreateAsync(CreateLogin("Google"));
+        var login = CreateLogin("Google");
+        ((ClaimsIdentity)login.Principal.Identity!).AddClaim(new Claim("email_verified", "true"));
+        var result = await service.ResolveOrCreateAsync(login);
 
-        Assert.True(result.Succeeded);
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, store.AddLoginCalls);
+        Assert.Null(store.CreatedUser);
+        Assert.Contains("originally used", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ExistingProviderLink_StillSignsInAfterEmailChanges()
+    {
+        var existing = new ApplicationUser { Id = "existing", Email = "changed@example.test" };
+        var store = new StubExternalAccountUserStore { ExistingByLogin = existing };
+
+        var result = await CreateService(store).ResolveOrCreateAsync(CreateLogin("Google"));
+
         Assert.Same(existing, result.User);
-        Assert.Equal(1, store.AddLoginCalls);
+        Assert.Equal(0, store.AddLoginCalls);
+        Assert.Null(store.CreatedUser);
     }
 
     [Fact]

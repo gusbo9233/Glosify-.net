@@ -46,7 +46,7 @@ public sealed class ExternalSignInSecurityTests
         var response = await client.GetAsync($"/Account/ExternalLoginCallback?returnUrl={ReturnUrl}");
 
         AssertNoApplicationCookie(factory, response);
-        if (restriction == "twofactor")
+        if (restriction == "twofactor" && linked)
         {
             Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
             Assert.StartsWith("/Identity/Account/LoginWith2fa?", response.Headers.Location?.OriginalString);
@@ -68,13 +68,11 @@ public sealed class ExternalSignInSecurityTests
         Assert.StartsWith("/login?", protectedPage.Headers.Location?.PathAndQuery);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task WebCallback_SecondFactorCanCompleteBeforeProtectedAccess(bool linked)
+    [Fact]
+    public async Task WebCallback_SecondFactorCanCompleteBeforeProtectedAccess()
     {
         using var factory = CreateFactory();
-        var userId = await CreateUserAsync(factory, linked, "twofactor");
+        var userId = await CreateUserAsync(factory, linked: true, "twofactor");
         string recoveryCode;
         using (var scope = factory.Services.CreateScope())
         {
@@ -107,7 +105,6 @@ public sealed class ExternalSignInSecurityTests
 
     [Theory]
     [InlineData("existing")]
-    [InlineData("link")]
     [InlineData("new")]
     public async Task WebCallback_UnrestrictedAccountsStillSignIn(string account)
     {
@@ -125,6 +122,83 @@ public sealed class ExternalSignInSecurityTests
         var protectedPage = await client.GetAsync(ReturnUrl);
         protectedPage.EnsureSuccessStatusCode();
         Assert.Contains(Email, await protectedPage.Content.ReadAsStringAsync());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnlinkedGoogleEmailCannotTakeOverExistingAccount(bool mobile)
+    {
+        using var factory = CreateFactory();
+        var userId = await CreateUserAsync(factory, linked: false);
+        using var client = CreateClient(factory);
+        AddExternalCookie(factory, client);
+
+        var response = await client.GetAsync(mobile
+            ? "/api/auth/external/google/callback" : "/Account/ExternalLoginCallback");
+
+        if (mobile)
+        {
+            var query = QueryHelpers.ParseQuery(response.Headers.Location!.Query);
+            Assert.Contains("originally used", query["error"].ToString());
+            Assert.False(query.ContainsKey("code"));
+        }
+        else
+        {
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Contains("auth-error", await response.Content.ReadAsStringAsync());
+        }
+        AssertNoApplicationCookie(factory, response);
+        client.DefaultRequestHeaders.Remove("Cookie");
+        Assert.Equal(HttpStatusCode.Redirect, (await client.GetAsync(ReturnUrl)).StatusCode);
+        using var scope = factory.Services.CreateScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        Assert.Empty(await users.GetLoginsAsync((await users.FindByIdAsync(userId))!));
+    }
+
+    [Theory]
+    [InlineData("locked")]
+    [InlineData("unconfirmed")]
+    [InlineData(null)]
+    [InlineData("twofactor")]
+    public async Task ExtensionExchange_RechecksRestrictionsAndPreservesCompletedBrowserAuthentication(string? restriction)
+    {
+        const string redirectUri = "https://abcdefghijklmnop.chromiumapp.org/glosify";
+        using var factory = CreateFactory(requireConfirmation: true);
+        var userId = await CreateUserAsync(factory, linked: true, restriction == "twofactor" ? restriction : null);
+        string code;
+        using (var scope = factory.Services.CreateScope())
+        {
+            // This code represents a completed browser login, including its second factor.
+            var codes = scope.ServiceProvider.GetRequiredService<IExtensionAuthorizationCodeStore>();
+            code = codes.Create(userId, redirectUri, Pkce.CreateChallenge(Verifier));
+            if (restriction is "locked" or "unconfirmed")
+            {
+                var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+                await RestrictAsync(users, (await users.FindByIdAsync(userId))!, restriction);
+            }
+        }
+        using var client = CreateClient(factory);
+
+        var response = await client.PostAsJsonAsync("/api/extension-auth/exchange",
+            new { code, redirectUri, codeVerifier = Verifier });
+
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        if (restriction is "locked" or "unconfirmed")
+        {
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+            Assert.Equal("unauthorized", json.RootElement.GetProperty("code").GetString());
+            Assert.False(json.RootElement.TryGetProperty("accessToken", out _));
+        }
+        else
+        {
+            response.EnsureSuccessStatusCode();
+            Assert.NotEmpty(json.RootElement.GetProperty("refreshToken").GetString()!);
+            client.DefaultRequestHeaders.Authorization = new("Bearer", json.RootElement.GetProperty("accessToken").GetString());
+            Assert.Equal(Email, (await client.GetFromJsonAsync<JsonElement>("/api/me")).GetProperty("email").GetString());
+        }
+        Assert.True(response.Headers.CacheControl?.NoStore);
     }
 
     [Theory]
@@ -280,6 +354,8 @@ public sealed class ExternalSignInSecurityTests
                 services.RemoveAll<IDbContextOptionsConfiguration<GlosifyContext>>();
                 services.AddDbContext<GlosifyContext>(options => options.UseInMemoryDatabase(databaseName));
                 services.Configure<IdentityOptions>(options => options.SignIn.RequireConfirmedAccount = requireConfirmation);
+                services.Configure<ExtensionAuthOptions>(options =>
+                    options.AllowedRedirectUris = ["https://abcdefghijklmnop.chromiumapp.org/glosify"]);
                 services.Configure<Glosify.Services.Abuse.AbuseOptions>(options =>
                 {
                     options.SignupsEnabled = signupsEnabled;
