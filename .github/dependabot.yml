@@ -11,3 +11,23 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: npm
+    directories:
+      - "/Glosify/Frontend"
+      - "/Glosify.ClientTests"
+      - "/Glosify.LiveSubtitles.Extension"
+      - "/Glosify.Translator.Extension"
+      - "/Glosify.CloudflareTranslator.Worker"
+      - "/scripts/avatar"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Stockholm
+  - package-ecosystem: nuget
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Stockholm
