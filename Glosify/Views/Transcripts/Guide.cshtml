@@ -1,0 +1,58 @@
+@{
+    Layout = "~/Views/Shared/_AppLayout.cshtml";
+    ViewData["Title"] = Text["Transcripts.Guide.Title"];
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/transcripts.css" asp-append-version="true" />
+}
+<article class="transcripts-page transcript-guide">
+    <header class="transcripts-hero">
+        <div>
+            <h1>@Text["Transcripts.Guide.Title"]</h1>
+            <p>@Text["Transcripts.Guide.Intro"]</p>
+        </div>
+    </header>
+    <nav class="transcript-pagination transcript-extension-links" aria-label="@Text["Transcripts.Guide.GuideLink"]">
+        <a href="https://chromewebstore.google.com/detail/globeglotter-live-subtitl/edcgopkkphcbdnmngajjjhkdmlielalc">@Text["Transcripts.Guide.Install"]</a>
+        <a asp-action="Index">@Text["Transcripts.Guide.Back"]</a>
+    </nav>
+    <section>
+        <h2>@Text["Transcripts.Guide.SetupTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Setup"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.ChooseTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Choose"]</p>
+        <ul>
+            <li>@Text["Transcripts.Guide.Original"]</li>
+            <li>@Text["Transcripts.Guide.Scribe"]</li>
+            <li>@Text["Transcripts.Guide.Enhanced"]</li>
+        </ul>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.SaveTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Save"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.StartTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Start"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.LibraryTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Library"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.CreditsTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Credits"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.PrivacyTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Privacy"]</p>
+    </section>
+    <section>
+        <h2>@Text["Transcripts.Guide.TroubleTitle"]</h2>
+        <p>@Text["Transcripts.Guide.Trouble"]</p>
+        <p>@Text["Transcripts.Guide.Missing"]</p>
+        <p>@Text["Transcripts.Guide.Accuracy"]</p>
+    </section>
+</article>

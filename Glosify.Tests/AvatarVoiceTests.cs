@@ -751,9 +751,11 @@ public sealed class AvatarVoiceTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task InvalidListenCannotReclaimOtherLearnersTranscripts(bool invalidMode)
+    [InlineData("mode")]
+    [InlineData("help")]
+    [InlineData("level")]
+    [InlineData("levelType")]
+    public async Task InvalidListenCannotReclaimOtherLearnersTranscripts(string invalid)
     {
         using var app = App(new Reply());
         using var client = await app.Client("admin"); await app.Antiforgery(client);
@@ -773,8 +775,9 @@ public sealed class AvatarVoiceTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
         await Until(socket, "connected", timeout.Token);
-        await AvatarWire.SendAsync(socket, new { type = "listen", mode = invalidMode ? "invalid" : "hands-free",
-            translateReplies = invalidMode ? (object)false : "invalid" }, timeout.Token);
+        await AvatarWire.SendAsync(socket, new { type = "listen", mode = invalid == "mode" ? "invalid" : "hands-free",
+            translateReplies = invalid == "help" ? (object)"invalid" : false,
+            languageLevel = invalid == "level" ? "D" : invalid == "levelType" ? (object)42 : "C" }, timeout.Token);
         Assert.Equal(400, (await Until(socket, "error", timeout.Token)).GetProperty("status").GetInt32());
         Assert.All(retained, s => Assert.Equal(40, sessions.Snapshot(s.MemoryId, s.UserId, s.Language.Code).Turns.Length));
     }
@@ -998,9 +1001,10 @@ public sealed class AvatarVoiceTests
         using var socket = await ws.ConnectAsync(new Uri($"wss://localhost/api/avatar/sessions/{id}/voice"), timeout.Token);
         await Until(socket, "connected", timeout.Token);
         // Options can change for the next turn without a new session or lost history.
-        foreach (var options in new[] { (translate, suggest), (false, false) })
+        string? defaultInstruction = null;
+        foreach (var options in new[] { (translate, suggest, "C"), (translate, suggest, "A"), (translate, suggest, "B"), (false, false, "C") })
         {
-            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "hands-free", translateReplies = options.Item1, suggestAnswers = options.Item2 }, timeout.Token);
+            await AvatarWire.SendAsync(socket, new { type = "listen", mode = "hands-free", translateReplies = options.Item1, suggestAnswers = options.Item2, languageLevel = options.Item3 }, timeout.Token);
             await Until(socket, "listening", timeout.Token);
             await socket.SendAsync(new byte[6400], WebSocketMessageType.Binary, true, timeout.Token);
             var reply = await Until(socket, "reply", timeout.Token);
@@ -1008,6 +1012,18 @@ public sealed class AvatarVoiceTests
             Assert.Equal(options.Item1 ? "Hi! How are you?" : null, reply.GetProperty("translation").GetString());
             Assert.Equal(options.Item2 ? "Hur har din dag varit?" : null, reply.GetProperty("suggestion").GetString());
             Assert.Equal(options.Item1 && options.Item2 ? "How has your day been?" : null, reply.GetProperty("suggestionTranslation").GetString());
+            var instruction = ai.LastRequest!.SystemInstruction.Split(" Return the requested JSON object.")[0];
+            if (options.Item3 == "C")
+            {
+                Assert.DoesNotContain("The learner selected level", instruction);
+                if (defaultInstruction is null) defaultInstruction = instruction;
+                else Assert.Equal(defaultInstruction, instruction);
+            }
+            else
+            {
+                Assert.Contains("The learner selected level " + options.Item3, instruction);
+                Assert.Contains(options.Item3 == "A" ? "very common words" : "everyday vocabulary", instruction);
+            }
             await Until(socket, "audio-end", timeout.Token);
             await Until(socket, "usage", timeout.Token);
             Assert.Equal("Hej! Hur mår du?", speech.SpokenText);
@@ -1018,14 +1034,14 @@ public sealed class AvatarVoiceTests
             await AssertNoReservations(app);
         }
         var history = app.Services.GetRequiredService<AvatarSessions>().Get(id, "admin").History;
-        Assert.Equal(4, history.Count);
+        Assert.Equal(8, history.Count);
         Assert.All(history.Where(turn => turn.Role == "assistant"), turn =>
         {
             Assert.Contains("Hej! Hur", turn.ContentJson);
             Assert.DoesNotContain("How", turn.ContentJson);
             Assert.DoesNotContain("suggestion", turn.ContentJson);
         });
-        Assert.Equal(2, ai.Calls);
+        Assert.Equal(4, ai.Calls);
         await AvatarWire.SendAsync(socket, new { type = "end" }, timeout.Token);
     }
 

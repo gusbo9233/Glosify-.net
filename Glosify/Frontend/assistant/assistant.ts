@@ -417,7 +417,8 @@ import {
         }
 
         await loadChats();
-        const storedChatId = sessionStorage.getItem(activeChatStorageKey);
+        let storedChatId: string | null = null;
+        try { storedChatId = sessionStorage.getItem(activeChatStorageKey); } catch { /* Storage is optional for chat selection. */ }
         const storedChat = chooseInitialChat(chats, storedChatId);
         // First open in this session: start empty. Reuse the newest chat when it is
         // already blank so repeat sessions don't pile up empty threads in the list.
@@ -445,7 +446,7 @@ import {
 
     const loadSelectedChat = async (selection: ChatSelection) => {
         const { threadId } = selection;
-        sessionStorage.setItem(activeChatStorageKey, threadId);
+        try { sessionStorage.setItem(activeChatStorageKey, threadId); } catch { /* Keep the selected chat usable without storage. */ }
         let contextPersisted = true;
         while (pendingContextWrites.has(threadId)) {
             contextPersisted = await pendingContextWrites.get(threadId)!;

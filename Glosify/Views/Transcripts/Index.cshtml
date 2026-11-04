@@ -27,6 +27,11 @@
         <span class="transcripts-count">@(Model.Library.TotalCount == 1 ? Text["Transcripts.CountOne", Model.Library.TotalCount] : Text["Transcripts.CountMany", Model.Library.TotalCount])</span>
     </header>
 
+    <nav class="transcript-pagination transcript-extension-links" aria-label="@Text["Transcripts.Guide.GuideLink"]">
+        <a href="https://chromewebstore.google.com/detail/globeglotter-live-subtitl/edcgopkkphcbdnmngajjjhkdmlielalc">@Text["Transcripts.Guide.Install"]</a>
+        <a asp-action="Guide">@Text["Transcripts.Guide.GuideLink"]</a>
+    </nav>
+
     @if (TempData["TranscriptMessage"] is string message)
     {
         <div class="transcripts-notice" role="status">@message</div>

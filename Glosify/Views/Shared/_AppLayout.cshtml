@@ -206,10 +206,6 @@
                         @NavIcon("subtitles")
                         @Text["Nav.Transcripts"]
                     </a>
-                    <a class="@NavClass("Translations")" asp-controller="Translations" asp-action="Index">
-                        @NavIcon("translate")
-                        @Text["Nav.Translations"]
-                    </a>
                 }
                 @if (User.Identity?.IsAuthenticated == true && StripePayments.IsEnabled)
                 {

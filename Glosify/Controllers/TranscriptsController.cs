@@ -67,6 +67,10 @@ public sealed class TranscriptsController : Controller
         return View(new TranscriptLibraryViewModel { Library = library });
     }
 
+    [HttpGet("Guide")]
+    [AllowAnonymous]
+    public IActionResult Guide() => View();
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> Details(Guid id, int page = 1, string? stream = null, CancellationToken cancellationToken = default)
     {

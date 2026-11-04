@@ -25,6 +25,22 @@ public class PageDeliveryTests : IClassFixture<WebApplicationFactory<Program>>
     });
 
     [Fact]
+    public async Task Transcript_library_links_to_public_setup_guide_and_store()
+    {
+        var client = CreateClient();
+        const string store = "https://chromewebstore.google.com/detail/globeglotter-live-subtitl/edcgopkkphcbdnmngajjjhkdmlielalc";
+        var parser = new HtmlParser();
+        var library = await parser.ParseDocumentAsync(await client.GetStringAsync("/Transcripts"));
+        Assert.NotNull(library.QuerySelector("a[href='/Transcripts/Guide']"));
+        Assert.NotNull(library.QuerySelector($"a[href='{store}']"));
+        var guide = await parser.ParseDocumentAsync(await client.GetStringAsync("/Transcripts/Guide"));
+        Assert.NotNull(guide.QuerySelector($"a[href='{store}']"));
+        Assert.NotNull(guide.QuerySelector("article a[href='/Transcripts']"));
+        Assert.Equal(8, guide.QuerySelectorAll("article section h2").Length);
+        Assert.DoesNotContain("Transcripts.Guide.", guide.Body!.TextContent);
+    }
+
+    [Fact]
     public async Task Generated_module_dependencies_are_served_and_sources_are_private()
     {
         var client = CreateClient();
