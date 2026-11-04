@@ -12,7 +12,7 @@ import { createAvatar } from '/js/avatar/scene.min.js';
 
 interface AvatarElements {
     'practice-context': HTMLTextAreaElement;
-    quality: HTMLSelectElement; character: HTMLSelectElement; quiz: HTMLSelectElement;
+    level: HTMLSelectElement; quality: HTMLSelectElement; character: HTMLSelectElement; quiz: HTMLSelectElement;
     translate: HTMLInputElement; suggest: HTMLInputElement; autosave: HTMLInputElement;
     canvas: HTMLCanvasElement; 'saved-link': HTMLAnchorElement; 'unsaved-dialog': HTMLDialogElement;
     talk: HTMLButtonElement; 'hands-free': HTMLButtonElement; ask: HTMLButtonElement;
@@ -38,12 +38,14 @@ el('quality').addEventListener('change', () => {
     visual?.setQuality(qualityMode);
 });
 const helpKey = document.body?.dataset.speechUser ? `glosify.avatar.help.${document.body.dataset.speechUser}` : null;
-const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked });
+const helpOptions = () => ({ translateReplies: !!el('translate').checked, suggestAnswers: !!el('suggest').checked, languageLevel: el('level').value || 'C' });
+el('level').value = 'C';
 let replyHelp: ReplyHelp | null = null, spaceHeld = false, spaceRecording = false;
 try {
     const saved = JSON.parse(helpKey && sessionStore?.getItem(helpKey) || '{}');
     el('translate').checked = saved?.translateReplies === true;
     el('suggest').checked = saved?.suggestAnswers === true;
+    el('level').value = ['A', 'B', 'C'].includes(saved?.languageLevel) ? saved.languageLevel : 'C';
 } catch { /* Disabled or invalid storage leaves both options off. */ }
 function renderHelp() {
     const options = helpOptions();
@@ -57,7 +59,7 @@ function renderHelp() {
     el('chat-empty').hidden = !!lastTranscript || !el('chat-current').hidden;
     if (translation || suggestion) chat?.markUnread();
 }
-for (const name of ['translate', 'suggest'] as const) el(name).addEventListener('change', () => {
+for (const name of ['translate', 'suggest', 'level'] as const) el(name).addEventListener('change', () => {
     try { if (helpKey) sessionStore?.setItem(helpKey, JSON.stringify(helpOptions())); } catch { /* Optional preference storage. */ }
     renderHelp();
 });
@@ -65,7 +67,7 @@ const characters: Record<string, { name: string; gender: string }> = {
     rain: { name: 'Rain', gender: 'female' }, rowan: { name: 'Rowan', gender: 'male' },
     kwame: { name: 'Kwame', gender: 'male' }, mei: { name: 'Mei', gender: 'female' }
 };
-let characterId = preferences && Object.hasOwn(characters, preferences.characterId) ? preferences.characterId : 'rain', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
+let characterId = preferences && Object.hasOwn(characters, preferences.characterId) ? preferences.characterId : 'kwame', characterLoading = false, pageLeaving = false, modelEpoch = 0, configEpoch = 0, pageCleanup = Promise.resolve();
 const character = () => characters[characterId];
 const number = (value: number) => new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 }).format(value);
 let ending: Promise<void> | null = null, retiring: Promise<void> | null = null, changingQuiz = false, captureEpoch = 0, usageEpoch = 0;
@@ -197,7 +199,7 @@ async function chooseCharacter() {
         try { if (!await prepareConversationChange(previous)) { el('character').value = characterId; return; } }
         finally { changingQuiz = false; refreshStart(); }
     }
-    characterId = Object.hasOwn(characters, selected) ? selected : 'rain';
+    characterId = Object.hasOwn(characters, selected) ? selected : 'kwame';
     el('character').value = characterId;
     const generation = ++modelEpoch;
     characterLoading = true; modelReady = false; refreshStart();

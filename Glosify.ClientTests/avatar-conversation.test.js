@@ -10,7 +10,7 @@ import { createConversationMemory } from './build/avatar/memory.js';
 import { readFileSync } from 'node:fs';
 
 const source = readFileSync(new URL('./build/avatar/avatar.cjs', import.meta.url), 'utf8');
-function setup(mode = 'push-to-talk') {
+function setup(mode = 'push-to-talk', storage) {
     const elements = new Map(), sent = [], listeners = {}, listenerOptions = {}, windowListeners = {}, timers = new Map();
     const modeInput = { value: mode, listeners: {}, addEventListener(name, action) { this.listeners[name] = action; } };
     const element = id => {
@@ -19,7 +19,8 @@ function setup(mode = 'push-to-talk') {
         return elements.get(id);
     };
     const context = vm.createContext({
-        document: { getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
+        sessionStorage: storage,
+        document: { body: { dataset: { speechUser: 'learner' } }, getElementById: element, querySelector: selector => selector.includes('avatar-mode') ? modeInput : { value: 'csrf' },
             querySelectorAll: selector => selector.includes('avatar-mode') ? [modeInput] : [], addEventListener: (name, action, options) => { listeners[name] = action; listenerOptions[name] = options; } },
         ResizeObserver: class { observe() {} }, window: { innerWidth: 1200, dispatchEvent() {}, addEventListener(name, action) { windowListeners[name] = action; } }, WebSocket: { OPEN: 1 }, Intl, console, URL, AbortController, errorMessage, errorStatus, normalizeQuality, createConversationMemory, transcriptPresentation, preserveConversation, CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
         setTimeout: (fn, ms) => {
@@ -129,7 +130,7 @@ test('current learning language is a label and starting submits the chosen quiz 
     await h.run("chooseQuiz('Practice ordering coffee')");
     await h.run('start()');
     const request = h.sent.find(x => x.path === '/api/avatar/sessions');
-    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz', characterId: 'rain', memoryId: null, practiceContext: 'Practice ordering coffee' });
+    assert.deepEqual(JSON.parse(JSON.stringify(request.body)), { quizId: 'polish-quiz', characterId: 'kwame', memoryId: null, practiceContext: 'Practice ordering coffee' });
     assert.equal(h.sent.at(-1).socketUrl, 'wss://localhost/api/avatar/sessions/session/voice');
     assert.equal(h.elements.get('avatar-quiz').disabled, true);
 });
@@ -605,7 +606,7 @@ test('leaving the actual page stops capture but retains memory for the next visi
     assert.equal(h.sent.filter(x => x.microphoneClosed).length, 1);
     assert.equal(h.sent.filter(x => x.socketClosed).length, 1);
     assert.equal(h.sent.filter(x => x.path === '/api/avatar/sessions/session/end').length, 1);
-    assert.equal(h.run("memory.get({ language: 'sv', characterId: 'rain', quizId: null })"), 'memory');
+    assert.equal(h.run("memory.get({ language: 'sv', characterId: 'kwame', quizId: null })"), 'memory');
 });
 
 
@@ -951,7 +952,7 @@ test('hands-free automatically listens again after a reply without a microphone 
 test('conversation help is opt-in and independently included in every new turn', () => {
     const h = setup(); h.run('listen()');
     const requests = () => h.sent.filter(x => typeof x === 'string').map(x => JSON.parse(x));
-    assert.deepEqual(requests().at(-1), { type: 'listen', mode: 'push-to-talk', translateReplies: false, suggestAnswers: false });
+    assert.deepEqual(requests().at(-1), { type: 'listen', mode: 'push-to-talk', translateReplies: false, suggestAnswers: false, languageLevel: 'C' });
     h.elements.get('avatar-translate').checked = true; h.run('listen()');
     assert.equal(requests().at(-1).translateReplies, true);
     assert.equal(requests().at(-1).suggestAnswers, false);
@@ -1020,7 +1021,7 @@ test('chat retains completed messages, removes duplicate live captions, and resp
     assert.equal(h.elements.get('avatar-chat-body').scrollTop, 50);
     h.run("caption('Hur mår du?');");
     assert.equal(h.elements.get('avatar-caption').hidden, false);
-    assert.equal(h.elements.get('avatar-chat-speaker').textContent, 'Rain');
+    assert.equal(h.elements.get('avatar-chat-speaker').textContent, 'Kwame');
     h.run("for(let i=0;i<55;i++) transcript('Rain', String(i));");
     assert.equal(h.run("el('transcript').children.length"), 48);
     h.run("sessionId = 'active-session'; holding = true;");
@@ -1223,7 +1224,7 @@ for (const choice of ['cancel', 'save', 'discard']) test(`partner transition hon
         chooseUnsavedConversation = async () => '${choice}';
         api = async path => wire({ path }); createAvatar = async () => ({ setQuality() {}, setState() {}, dispose() {} }); refreshStart();`);
     h.elements.get('avatar-character').value = 'rowan'; await h.run('chooseCharacter()');
-    assert.equal(h.run('characterId'), choice === 'cancel' ? 'rain' : 'rowan');
+    assert.equal(h.run('characterId'), choice === 'cancel' ? 'kwame' : 'rowan');
     assert.equal(h.sent.some(x => x.path?.endsWith('/forget')), choice !== 'cancel');
     assert.equal(h.sent.some(x => x.path?.endsWith('/transcript')), choice === 'save');
     if (choice === 'cancel') assert.equal(h.run('memory.get(selection())'), 'unsaved');
@@ -1686,4 +1687,33 @@ test('idle cleanup behind the unsaved-conversation dialog keeps that conversatio
     assert.equal(h.run('memory.get(selection())'), 'remembered');
     h.run('press()'); await tick();
     assert.equal(h.sent.find(x => x.path === '/api/avatar/sessions').body.memoryId, 'remembered');
+});
+
+
+test('language level changes apply to the next turn without replacing the conversation', () => {
+    const h = setup();
+    const requests = () => h.sent.filter(x => typeof x === 'string').map(x => JSON.parse(x));
+    for (const level of ['A', 'B', 'C']) {
+        h.elements.get('avatar-level').value = level;
+        h.elements.get('avatar-level').listeners.change();
+        h.run('listen()');
+        assert.equal(requests().at(-1).languageLevel, level);
+        assert.equal(requests().at(-1).type, 'listen');
+    }
+});
+
+
+test('language level is restored for the tab and invalid or missing preferences default to C', () => {
+    const key = 'glosify.avatar.help.learner';
+    const values = new Map();
+    const storage = { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) };
+    for (const saved of [{}, { languageLevel: 'D' }, { languageLevel: 'A' }, { languageLevel: 'B' }]) {
+        values.set(key, JSON.stringify(saved));
+        const h = setup('push-to-talk', storage);
+        assert.equal(h.elements.get('avatar-level').value, ['A', 'B'].includes(saved.languageLevel) ? saved.languageLevel : 'C');
+    }
+    const h = setup('push-to-talk', storage);
+    h.elements.get('avatar-level').value = 'A';
+    h.elements.get('avatar-level').listeners.change();
+    assert.equal(setup('push-to-talk', storage).elements.get('avatar-level').value, 'A');
 });

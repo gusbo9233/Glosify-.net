@@ -464,3 +464,10 @@
 .transcripts-hero h1,.transcript-detail-header h1 { font-family: var(--font-serif); font-size: clamp(32px,3.4vw,46px); font-weight: 500; line-height: 1.16; letter-spacing: -.035em; }
 .transcripts-empty { border: 1px solid rgba(214,227,255,.12); border-radius: 16px; padding: 40px 24px; }
 .transcripts-empty h2 { font-size: 22px; font-weight: 650; }
+
+.transcript-guide > section { max-width: 75ch; padding-inline: 16px; }
+.transcript-guide h2 { font-size: 22px; margin: 0 0 12px; }
+.transcript-guide p, .transcript-guide li { line-height: 1.7; color: var(--on-surface-var); }
+.transcript-guide li + li { margin-top: 8px; }
+
+.transcript-extension-links { flex-wrap: wrap; justify-content: flex-start; }

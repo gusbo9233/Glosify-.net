@@ -1,11 +1,687 @@
 {
-  "exportedAt": "2026-10-27T12:31:19.774366+00:00",
+  "exportedAt": "2026-10-28T07:14:45.682200+00:00",
   "repository": "gusbo9233/Glosify-.net",
   "deployment": "gusbo923_personal_org",
-  "scope": "SAST and Supply Chain findings returned by the v1 API without status filters. Secrets are not included: this endpoint rejected Secrets issue types.",
+  "scope": "SAST and Supply Chain findings returned by the v1 API without status filters. Secrets are not included. Fresh export of available findings; no new scan triggered.",
   "findings": [
     {
-      "issue_type": "sast",
+      "id": 1044469930,
+      "ref": "refs/pull/144/merge",
+      "syntactic_id": "f2cbbd1d8c9d36e5ac92050da6b73ad7",
+      "match_based_id": "a7588f2fcf51efc8e34256aa1eb04bc373f0885159380d23eb4f8a7eed457c5ca80734a9283cb2e886619dd73368ddd07f8708bf2062ea2d0c56325ff6a910b1_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/57b4b2538747ea95ff287f3ba29e8a7144847e54/Glosify/Frontend/shared/learning-changes.ts#L61",
+      "first_seen_scan_id": 255591036,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T22:13:21.061955Z",
+      "relevant_since": "2026-10-27T22:13:21.049987Z",
+      "rule_name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+      "rule_message": "RegExp() called with a `requestUrl` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+      "location": {
+        "file_path": "Glosify/Frontend/shared/learning-changes.ts",
+        "line": 61,
+        "column": 16,
+        "end_line": 61,
+        "end_column": 62
+      },
+      "state_updated_at": "2026-10-27T22:13:21.123994Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+        "message": "RegExp() called with a `requestUrl` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "vuln"
+        ],
+        "vulnerability_classes": [
+          "Denial-of-Service (DoS)"
+        ],
+        "cwe_names": [
+          "CWE-1333: Inefficient Regular Expression Complexity"
+        ],
+        "owasp_names": [
+          "A05:2021 - Security Misconfiguration",
+          "A06:2017 - Security Misconfiguration",
+          "A02:2025 - Security Misconfiguration"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "none",
+          "risk": "neutral"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1044005125,
+      "ref": "refs/pull/143/merge",
+      "syntactic_id": "f2cbbd1d8c9d36e5ac92050da6b73ad7",
+      "match_based_id": "a7588f2fcf51efc8e34256aa1eb04bc373f0885159380d23eb4f8a7eed457c5ca80734a9283cb2e886619dd73368ddd07f8708bf2062ea2d0c56325ff6a910b1_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/138b28c94ddf9c456f35809eaeae82d8617d0c41/Glosify/Frontend/shared/learning-changes.ts#L61",
+      "first_seen_scan_id": 255477327,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T19:56:27.334983Z",
+      "relevant_since": "2026-10-27T19:56:27.320013Z",
+      "rule_name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+      "rule_message": "RegExp() called with a `requestUrl` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+      "location": {
+        "file_path": "Glosify/Frontend/shared/learning-changes.ts",
+        "line": 61,
+        "column": 16,
+        "end_line": 61,
+        "end_column": 62
+      },
+      "state_updated_at": "2026-10-27T19:56:27.396526Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+        "message": "RegExp() called with a `requestUrl` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "vuln"
+        ],
+        "vulnerability_classes": [
+          "Denial-of-Service (DoS)"
+        ],
+        "cwe_names": [
+          "CWE-1333: Inefficient Regular Expression Complexity"
+        ],
+        "owasp_names": [
+          "A05:2021 - Security Misconfiguration",
+          "A06:2017 - Security Misconfiguration",
+          "A02:2025 - Security Misconfiguration"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "none",
+          "risk": "neutral"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473749,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "65e7cce4206cddb83533dc7e60afcbff",
+      "match_based_id": "7f9364b15946203467d8e6c8568d862a7ccaed33a3fd30c7f526e21b5dc78a40d15e8245ec0132186b2c0d926688c574537fee6585c0409f3bb73bfd38300a2c_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/semgrep-issues.csv#L58",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316658Z",
+      "relevant_since": "2026-10-27T15:21:35.305444Z",
+      "rule_name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "rule_message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+      "location": {
+        "file_path": "october-analysers/semgrep-issues.csv",
+        "line": 58,
+        "column": 321,
+        "end_line": 58,
+        "end_column": 326
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460396Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+        "message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Mishandled Sensitive Information"
+        ],
+        "cwe_names": [
+          "CWE-319: Cleartext Transmission of Sensitive Information"
+        ],
+        "owasp_names": [
+          "A03:2017 - Sensitive Data Exposure",
+          "A02:2021 - Cryptographic Failures",
+          "A04:2025 - Cryptographic Failures"
+        ]
+      },
+      "severity": "high",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "none",
+          "risk": "neutral"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473748,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "022240dd888ee999ed365ebf2ee25ac4",
+      "match_based_id": "4a4ffe58f329d8f0ac08fd137afc5d7414f4abfc7e124d9f05e08478d2059f8eb4dc3d4f6e72996846966105df0ab0c6654116bfcb685d734d819c3879b926a3_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/semgrep-issues.json#L3997",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316639Z",
+      "relevant_since": "2026-10-27T15:21:35.305438Z",
+      "rule_name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "rule_message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+      "location": {
+        "file_path": "october-analysers/semgrep-issues.json",
+        "line": 3997,
+        "column": 249,
+        "end_line": 3997,
+        "end_column": 254
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460378Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+        "message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Mishandled Sensitive Information"
+        ],
+        "cwe_names": [
+          "CWE-319: Cleartext Transmission of Sensitive Information"
+        ],
+        "owasp_names": [
+          "A03:2017 - Sensitive Data Exposure",
+          "A02:2021 - Cryptographic Failures",
+          "A04:2025 - Cryptographic Failures"
+        ]
+      },
+      "severity": "high",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "none",
+          "risk": "neutral"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473747,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "e90ba3135ab87b462c43bdf1b5cfa65f",
+      "match_based_id": "4a4ffe58f329d8f0ac08fd137afc5d7414f4abfc7e124d9f05e08478d2059f8eb4dc3d4f6e72996846966105df0ab0c6654116bfcb685d734d819c3879b926a3_1",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/semgrep-issues.json#L4013",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316620Z",
+      "relevant_since": "2026-10-27T15:21:35.305431Z",
+      "rule_name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+      "rule_message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+      "location": {
+        "file_path": "october-analysers/semgrep-issues.json",
+        "line": 4013,
+        "column": 246,
+        "end_line": 4013,
+        "end_column": 251
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460360Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket",
+        "message": "Insecure WebSocket Detected. WebSocket Secure (wss) should be used for all WebSocket connections.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Mishandled Sensitive Information"
+        ],
+        "cwe_names": [
+          "CWE-319: Cleartext Transmission of Sensitive Information"
+        ],
+        "owasp_names": [
+          "A03:2017 - Sensitive Data Exposure",
+          "A02:2021 - Cryptographic Failures",
+          "A04:2025 - Cryptographic Failures"
+        ]
+      },
+      "severity": "high",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "none",
+          "risk": "neutral"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473746,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "646a6840ab1283ef12ba2c1f601e678d",
+      "match_based_id": "a30899ea2fb12fc8b29209496ffd2e308136a0be35c4747264b9a9778b63530c3d80dc524370895c96ac72d8144141851cc7ce4a12a9bb296ec7076df0c2efc2_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/validation/pdf-browser-probe.mjs#L32",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316603Z",
+      "relevant_since": "2026-10-27T15:21:35.305424Z",
+      "rule_name": "javascript.playwright.security.audit.playwright-goto-injection.playwright-goto-injection",
+      "rule_message": "If unverified user data can reach the `goto` method it can result in Server-Side Request Forgery vulnerabilities",
+      "location": {
+        "file_path": "october-analysers/validation/pdf-browser-probe.mjs",
+        "line": 32,
+        "column": 8,
+        "end_line": 32,
+        "end_column": 63
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460343Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.playwright.security.audit.playwright-goto-injection.playwright-goto-injection",
+        "message": "If unverified user data can reach the `goto` method it can result in Server-Side Request Forgery vulnerabilities",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Server-Side Request Forgery (SSRF)"
+        ],
+        "cwe_names": [
+          "CWE-918: Server-Side Request Forgery (SSRF)"
+        ],
+        "owasp_names": [
+          "A10:2021 - Server-Side Request Forgery (SSRF)",
+          "A01:2025 - Broken Access Control"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "tests",
+          "risk": "low"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473745,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "d6db9648da67639223d3aab035d1c755",
+      "match_based_id": "5762c8c7aa8d1e0aec1110243033d5596a0d4466934ccc3a934d283a5204b16815d1b5e89a1ab9cc677ede0fce4e83865ea6ce6318f7b396b793280712ddc6b3_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/validation/remaining-blender-probes.py#L62",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316586Z",
+      "relevant_since": "2026-10-27T15:21:35.305417Z",
+      "rule_name": "python.lang.security.audit.eval-detected.eval-detected",
+      "rule_message": "Detected the use of eval(). eval() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources.",
+      "location": {
+        "file_path": "october-analysers/validation/remaining-blender-probes.py",
+        "line": 62,
+        "column": 12,
+        "end_line": 62,
+        "end_column": 72
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460325Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "python.lang.security.audit.eval-detected.eval-detected",
+        "message": "Detected the use of eval(). eval() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Code Injection"
+        ],
+        "cwe_names": [
+          "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')"
+        ],
+        "owasp_names": [
+          "A03:2021 - Injection",
+          "A05:2025 - Injection"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "tests",
+          "risk": "low"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473744,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "7640bf5e46cbc027bcb7fb9d50b312de",
+      "match_based_id": "8f3069d8924a47698505ac4f85a9bb362d4ba4a87a32b4e0b78909e510632fc10bc0437218215fdf1393cb47a07af4572270ce78d27e983663d4131742d5bb52_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/october-analysers/validation/remaining-blender-probes.py#L58",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316568Z",
+      "relevant_since": "2026-10-27T15:21:35.305409Z",
+      "rule_name": "python.lang.security.audit.exec-detected.exec-detected",
+      "rule_message": "Detected the use of exec(). exec() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources.",
+      "location": {
+        "file_path": "october-analysers/validation/remaining-blender-probes.py",
+        "line": 58,
+        "column": 1,
+        "end_line": 58,
+        "end_column": 74
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460307Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "python.lang.security.audit.exec-detected.exec-detected",
+        "message": "Detected the use of exec(). exec() can be dangerous if used to evaluate dynamic content. If this content can be input from outside the program, this may be a code injection vulnerability. Ensure evaluated content is not definable by external sources.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "audit"
+        ],
+        "vulnerability_classes": [
+          "Code Injection"
+        ],
+        "cwe_names": [
+          "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')"
+        ],
+        "owasp_names": [
+          "A03:2021 - Injection",
+          "A05:2025 - Injection"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "tests",
+          "risk": "low"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473743,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "b9dd5725643a2cf48624a55760740eed",
+      "match_based_id": "5bc3ba568663a4ee61586278f9a46b6d1889af929181b125ae9cb73ae56b5bc219dc974c9ba3309f7f1493e7b002c6f78acf9cf9f29e8e9461b9239955d49b04_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/Glosify/wwwroot/lib/pdfjs/pdf.min.mjs#L21",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316549Z",
+      "relevant_since": "2026-10-27T15:21:35.305398Z",
+      "rule_name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+      "rule_message": "RegExp() called with a `e` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+      "location": {
+        "file_path": "Glosify/wwwroot/lib/pdfjs/pdf.min.mjs",
+        "line": 21,
+        "column": 149792,
+        "end_line": 21,
+        "end_column": 149875
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460289Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+        "message": "RegExp() called with a `e` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "vuln"
+        ],
+        "vulnerability_classes": [
+          "Denial-of-Service (DoS)"
+        ],
+        "cwe_names": [
+          "CWE-1333: Inefficient Regular Expression Complexity"
+        ],
+        "owasp_names": [
+          "A05:2021 - Security Misconfiguration",
+          "A06:2017 - Security Misconfiguration",
+          "A02:2025 - Security Misconfiguration"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "vendored code",
+          "risk": "low"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
+      "id": 1043473742,
+      "ref": "refs/pull/142/merge",
+      "syntactic_id": "a3f40ed4d363328afbdc9e5806616ac0",
+      "match_based_id": "cda2af2ebb1d007777781c3f09cb0d265e0fab5c1d40f44e8a012f93a54cf16dccc6f329b3b7faec518402bc6602a20fe2d7f90d14b306d9770c168685472162_0",
+      "repository": {
+        "name": "gusbo9233/Glosify-.net",
+        "url": "https://github.com/gusbo9233/Glosify-.net"
+      },
+      "line_of_code_url": "https://github.com/gusbo9233/Glosify-.net/blob/c28843836443b6e5af02f5773b674f115395c753/Glosify/wwwroot/lib/pdfjs/pdf.min.mjs#L21",
+      "first_seen_scan_id": 255238639,
+      "state": "unresolved",
+      "triage_state": "untriaged",
+      "status": "open",
+      "confidence": "low",
+      "created_at": "2026-10-27T15:21:35.316505Z",
+      "relevant_since": "2026-10-27T15:21:35.305350Z",
+      "rule_name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+      "rule_message": "RegExp() called with a `t` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+      "location": {
+        "file_path": "Glosify/wwwroot/lib/pdfjs/pdf.min.mjs",
+        "line": 21,
+        "column": 149792,
+        "end_line": 21,
+        "end_column": 149875
+      },
+      "state_updated_at": "2026-10-27T15:21:35.460250Z",
+      "categories": [
+        "security"
+      ],
+      "rule": {
+        "name": "javascript.lang.security.audit.detect-non-literal-regexp.detect-non-literal-regexp",
+        "message": "RegExp() called with a `t` function argument, this might allow an attacker to cause a Regular Expression Denial-of-Service (ReDoS) within your application as RegExP blocks the main thread. For this reason, it is recommended to use hardcoded regexes instead. If your regex is run on user-controlled input, consider performing input validation or use a regex checking/sanitization library such as https://www.npmjs.com/package/recheck to verify that the regex does not appear vulnerable to ReDoS.",
+        "confidence": "low",
+        "category": "security",
+        "subcategories": [
+          "vuln"
+        ],
+        "vulnerability_classes": [
+          "Denial-of-Service (DoS)"
+        ],
+        "cwe_names": [
+          "CWE-1333: Inefficient Regular Expression Complexity"
+        ],
+        "owasp_names": [
+          "A05:2021 - Security Misconfiguration",
+          "A06:2017 - Security Misconfiguration",
+          "A02:2025 - Security Misconfiguration"
+        ]
+      },
+      "severity": "medium",
+      "sourcing_policy": {
+        "id": 120698,
+        "name": "Global Policy",
+        "slug": "global-policy"
+      },
+      "assistant": {
+        "component": {
+          "tag": "vendored code",
+          "risk": "low"
+        }
+      },
+      "review_comments": [],
+      "click_to_fix_prs": [],
+      "click_to_fix_failures": [],
+      "external_ticket": null,
+      "issue_type": "sast"
+    },
+    {
       "id": 1040418095,
       "ref": "master",
       "syntactic_id": "a390c1d5c889060e3c1a9d32835266b5",
@@ -86,10 +762,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418094,
       "ref": "master",
       "syntactic_id": "3dd128d8241ce59fe866bf1ea1095488",
@@ -161,10 +837,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418093,
       "ref": "master",
       "syntactic_id": "a9576b3984e884b2ded0ba4f991ac798",
@@ -236,10 +912,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418092,
       "ref": "master",
       "syntactic_id": "5d3060f0cb9d4b77347c1dcb3bb69366",
@@ -311,10 +987,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418091,
       "ref": "master",
       "syntactic_id": "59578a9c34dedae4f66457358490fd37",
@@ -387,10 +1063,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418090,
       "ref": "master",
       "syntactic_id": "08490268154eeaa5daaaa5115497aa3d",
@@ -463,10 +1139,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418089,
       "ref": "master",
       "syntactic_id": "a198b40a0daf4567d01033bd082ad30c",
@@ -539,10 +1215,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1040418088,
       "ref": "master",
       "syntactic_id": "ea4c4033dd0ee479add4b586333f3444",
@@ -615,10 +1291,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712675,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "a390c1d5c889060e3c1a9d32835266b5",
@@ -699,10 +1375,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712674,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "3dd128d8241ce59fe866bf1ea1095488",
@@ -774,10 +1450,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712673,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "a9576b3984e884b2ded0ba4f991ac798",
@@ -849,10 +1525,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712672,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "5d3060f0cb9d4b77347c1dcb3bb69366",
@@ -924,10 +1600,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712671,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "59578a9c34dedae4f66457358490fd37",
@@ -1000,10 +1676,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712670,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "08490268154eeaa5daaaa5115497aa3d",
@@ -1076,10 +1752,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712669,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "a198b40a0daf4567d01033bd082ad30c",
@@ -1152,10 +1828,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1037712668,
       "ref": "refs/pull/141/merge",
       "syntactic_id": "ea4c4033dd0ee479add4b586333f3444",
@@ -1228,10 +1904,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478185,
       "ref": "master",
       "syntactic_id": "bead5484ad5abc9c56389b8caece0eff",
@@ -1291,10 +1967,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478175,
       "ref": "master",
       "syntactic_id": "2243d417a422ddc2ea33458489072e0f",
@@ -1367,10 +2043,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478174,
       "ref": "master",
       "syntactic_id": "8602f6b7a3cab7d43ba22a95da5af0c3",
@@ -1431,10 +2107,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478173,
       "ref": "master",
       "syntactic_id": "abf8800c252d15f87494819ccc8281f0",
@@ -1495,10 +2171,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478172,
       "ref": "master",
       "syntactic_id": "347f211e6d060eb54f654a2eb4674564",
@@ -1559,10 +2235,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478169,
       "ref": "master",
       "syntactic_id": "5f3b2e98e03559e68802c2b55303e46a",
@@ -1623,10 +2299,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478166,
       "ref": "master",
       "syntactic_id": "a83a2fba57ef811deb2f66915c8e71e6",
@@ -1687,10 +2363,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478165,
       "ref": "master",
       "syntactic_id": "5aae5cd749a29aa03e7c63c27e4f045b",
@@ -1751,10 +2427,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478164,
       "ref": "master",
       "syntactic_id": "bd5ce4946f7ef96f59dc5933384010a4",
@@ -1815,10 +2491,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478161,
       "ref": "master",
       "syntactic_id": "0ae792a775969154b4a438465d0eaa3d",
@@ -1879,10 +2555,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478159,
       "ref": "master",
       "syntactic_id": "3237e4f24641d8fe491c187e8537e01f",
@@ -1943,10 +2619,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478158,
       "ref": "master",
       "syntactic_id": "d9d4bd4009cf1e9e412c91ed3c5e0b60",
@@ -2007,10 +2683,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478157,
       "ref": "master",
       "syntactic_id": "a6a59946b30d8dcb2a7062e48e7345a3",
@@ -2068,10 +2744,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478155,
       "ref": "master",
       "syntactic_id": "28bd5b9f78aa4b922d563853c64e216d",
@@ -2130,10 +2806,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478154,
       "ref": "master",
       "syntactic_id": "d957bc5914177e928f62ab85c6f55e60",
@@ -2192,10 +2868,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478152,
       "ref": "master",
       "syntactic_id": "a37906eccf4c815436e4d22f6229093a",
@@ -2254,10 +2930,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478148,
       "ref": "master",
       "syntactic_id": "d9dec07d0043a25ee460a3361d001c83",
@@ -2316,10 +2992,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478145,
       "ref": "master",
       "syntactic_id": "bdfd11c45e8de5206ab6e8a12944a0b0",
@@ -2378,10 +3054,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478142,
       "ref": "master",
       "syntactic_id": "ea3998ae626eb0a9191dc04959abf5ed",
@@ -2446,10 +3122,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478140,
       "ref": "master",
       "syntactic_id": "7f030a65f05d9e14f242b0ccce9ee087",
@@ -2514,10 +3190,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478134,
       "ref": "master",
       "syntactic_id": "3517aabe1b6582206c8e9dedbb2405ae",
@@ -2582,10 +3258,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478132,
       "ref": "master",
       "syntactic_id": "b26f425e405adb73c588c5fb9aefba40",
@@ -2649,10 +3325,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478129,
       "ref": "master",
       "syntactic_id": "a8c5072be38fa130f91ffb7abccc180b",
@@ -2716,10 +3392,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478127,
       "ref": "master",
       "syntactic_id": "ce9697c810bec069ede2f83f246cb583",
@@ -2783,10 +3459,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478126,
       "ref": "master",
       "syntactic_id": "b9874b3c63690a8e3d53e902c0a11650",
@@ -2850,10 +3526,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478122,
       "ref": "master",
       "syntactic_id": "6b9bb99ea7e08f0d137493a0119b1018",
@@ -2917,10 +3593,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478120,
       "ref": "master",
       "syntactic_id": "50d166efc15b90cbb81f8c000819ec02",
@@ -2984,10 +3660,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478119,
       "ref": "master",
       "syntactic_id": "f4cd9d85268563605958493baa67c2bc",
@@ -3059,10 +3735,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478118,
       "ref": "master",
       "syntactic_id": "561a69454a5bc133d7ccc2804c054fb9",
@@ -3134,10 +3810,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478116,
       "ref": "master",
       "syntactic_id": "059ab0ec4fe8bd9133e07b57bdea1949",
@@ -3210,10 +3886,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478115,
       "ref": "master",
       "syntactic_id": "170edc7456fe078ebc913dfb189e3c84",
@@ -3284,10 +3960,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478113,
       "ref": "master",
       "syntactic_id": "21f802ddf0ec3f9280bd69c87d4eceea",
@@ -3358,10 +4034,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478111,
       "ref": "master",
       "syntactic_id": "9751316bc3c294517f54f56f3a43964b",
@@ -3432,10 +4108,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478104,
       "ref": "master",
       "syntactic_id": "2e54cf3821557da2319bd7377846fecc",
@@ -3506,10 +4182,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478101,
       "ref": "master",
       "syntactic_id": "0edd8db5f0da814ba339f4d1379e2b82",
@@ -3581,10 +4257,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sast",
       "id": 1030478089,
       "ref": "master",
       "syntactic_id": "525ec1573f09425d88fc0ee531aeeb32",
@@ -3656,10 +4332,10 @@
       "review_comments": [],
       "click_to_fix_prs": [],
       "click_to_fix_failures": [],
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sast"
     },
     {
-      "issue_type": "sca",
       "id": 1040418099,
       "ref": "master",
       "syntactic_id": "4b708b20cee09c471f8ad3e11c0385bb",
@@ -3713,7 +4389,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00344,
-        "percentile": 0.27674
+        "percentile": 0.27738
       },
       "found_dependency": {
         "package": "undici",
@@ -3739,10 +4415,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1040418098,
       "ref": "master",
       "syntactic_id": "19e5adfebb8734896ae500ba7b15e877",
@@ -3794,7 +4470,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00321,
-        "percentile": 0.24879
+        "percentile": 0.24941
       },
       "found_dependency": {
         "package": "undici",
@@ -3820,10 +4496,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1040418097,
       "ref": "master",
       "syntactic_id": "932bb39894fceec0f616effa4b925255",
@@ -3875,7 +4551,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00252,
-        "percentile": 0.16485
+        "percentile": 0.16546
       },
       "found_dependency": {
         "package": "undici",
@@ -3897,10 +4573,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478517,
       "ref": "master",
       "syntactic_id": "93e6d39c55033c5079b05ee3b30f9e0f",
@@ -3973,10 +4649,10 @@
       "review_comments": [],
       "epss_score": null,
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478516,
       "ref": "master",
       "syntactic_id": "8270e6daaf0fd73e496d06b4f02f03f2",
@@ -4032,7 +4708,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00394,
-        "percentile": 0.33339
+        "percentile": 0.33411
       },
       "found_dependency": {
         "package": "undici",
@@ -4058,10 +4734,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478515,
       "ref": "master",
       "syntactic_id": "a56c9a15b20fd071a4a535e43d5e5c09",
@@ -4118,7 +4794,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00178,
-        "percentile": 0.07326
+        "percentile": 0.07329
       },
       "found_dependency": {
         "package": "undici",
@@ -4140,10 +4816,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478514,
       "ref": "master",
       "syntactic_id": "ba726d59b8a8edd957fe692e62f6e236",
@@ -4212,10 +4888,10 @@
       "review_comments": [],
       "epss_score": null,
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478513,
       "ref": "master",
       "syntactic_id": "7e66e98353cd7232f3162b206aa9e1cd",
@@ -4271,7 +4947,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00303,
-        "percentile": 0.2282
+        "percentile": 0.22885
       },
       "found_dependency": {
         "package": "undici",
@@ -4293,10 +4969,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478512,
       "ref": "master",
       "syntactic_id": "e8997ebca668aea409d856ceef1d73bd",
@@ -4349,7 +5025,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00412,
-        "percentile": 0.35218
+        "percentile": 0.35291
       },
       "found_dependency": {
         "package": "undici",
@@ -4375,10 +5051,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478511,
       "ref": "master",
       "syntactic_id": "c6b19ffb77aebf56b04e7e5d948b5488",
@@ -4430,7 +5106,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00412,
-        "percentile": 0.35218
+        "percentile": 0.35292
       },
       "found_dependency": {
         "package": "undici",
@@ -4452,10 +5128,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478510,
       "ref": "master",
       "syntactic_id": "1b5e3db0413c36afd38fd54c94c00170",
@@ -4507,7 +5183,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00481,
-        "percentile": 0.41206
+        "percentile": 0.41281
       },
       "found_dependency": {
         "package": "undici",
@@ -4529,10 +5205,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478509,
       "ref": "master",
       "syntactic_id": "3f5bbaa4309ced485ef034b76970ecd7",
@@ -4586,7 +5262,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00368,
-        "percentile": 0.30401
+        "percentile": 0.30469
       },
       "found_dependency": {
         "package": "undici",
@@ -4608,10 +5284,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478508,
       "ref": "master",
       "syntactic_id": "a9504799f45a4d28d7e9d1d1cb1abd85",
@@ -4668,7 +5344,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00196,
-        "percentile": 0.09258
+        "percentile": 0.09274
       },
       "found_dependency": {
         "package": "undici",
@@ -4690,10 +5366,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478507,
       "ref": "master",
       "syntactic_id": "cfc2d1244ce2ddd667a13db4b541691a",
@@ -4747,7 +5423,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00118,
-        "percentile": 0.01695
+        "percentile": 0.01694
       },
       "found_dependency": {
         "package": "undici",
@@ -4769,10 +5445,10 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     },
     {
-      "issue_type": "sca",
       "id": 1030478506,
       "ref": "master",
       "syntactic_id": "514dbc9b4484c196f60f768fb9bf67ac",
@@ -4826,7 +5502,7 @@
       "reachable_condition": "",
       "epss_score": {
         "score": 0.00309,
-        "percentile": 0.23542
+        "percentile": 0.23605
       },
       "found_dependency": {
         "package": "undici",
@@ -4852,7 +5528,8 @@
       "is_malicious": false,
       "review_comments": [],
       "usage": null,
-      "external_ticket": null
+      "external_ticket": null,
+      "issue_type": "sca"
     }
   ]
 }
